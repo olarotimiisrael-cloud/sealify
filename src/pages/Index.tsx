@@ -4,6 +4,7 @@ import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
 import FilterDrawer from '../components/FilterDrawer';
 import SafetyTipsModal from '../components/SafetyTipsModal';
+import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import { 
@@ -13,7 +14,9 @@ import {
   ShieldCheck, 
   Zap, 
   TrendingUp, 
-  History
+  History,
+  LayoutGrid,
+  Map
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing'];
@@ -22,6 +25,7 @@ const Index: React.FC = () => {
   const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
@@ -157,6 +161,33 @@ const Index: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Grid vs Map Mode Switcher */}
+            <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Grid</span>
+              </button>
+
+              <button
+                onClick={() => setViewMode('map')}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  viewMode === 'map'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Map className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Map View</span>
+              </button>
+            </div>
+
             <button
               onClick={() => setIsFilterOpen(true)}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-850 text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition-colors"
@@ -170,14 +201,16 @@ const Index: React.FC = () => {
                 onClick={resetFilters}
                 className="text-xs text-slate-400 hover:text-emerald-400 underline font-medium px-2"
               >
-                Clear Filters
+                Clear
               </button>
             )}
           </div>
         </div>
 
-        {/* Listings Grid */}
-        {filteredListings.length > 0 ? (
+        {/* Listings Grid OR Map View */}
+        {viewMode === 'map' ? (
+          <MapView listings={filteredListings} />
+        ) : filteredListings.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filteredListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />

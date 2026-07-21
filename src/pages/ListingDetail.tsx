@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
+import ShareQrModal from '../components/ShareQrModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import { 
@@ -23,9 +24,9 @@ import {
   ShieldAlert,
   ExternalLink,
   Tag,
-  Sparkles
+  Sparkles,
+  QrCode
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -38,6 +39,7 @@ const ListingDetail: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
+  const [isQrOpen, setIsQrOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
 
   useEffect(() => {
@@ -93,11 +95,6 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Listing link copied to clipboard!');
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
@@ -115,12 +112,22 @@ const ListingDetail: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={handleShare}
+              onClick={() => setIsQrOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              title="QR Code & Share"
+            >
+              <QrCode className="w-4 h-4" />
+              <span className="hidden sm:inline">QR Code</span>
+            </button>
+
+            <button
+              onClick={() => setIsQrOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white"
               title="Share"
             >
               <Share2 className="w-4 h-4" />
             </button>
+
             <button
               onClick={() => toggleSaveListing(listing.id)}
               className={`p-2 border rounded-xl transition-colors ${
@@ -351,6 +358,13 @@ const ListingDetail: React.FC = () => {
         listingTitle={listing.title}
         originalPrice={listing.price}
         onSendOffer={handleSendOffer}
+      />
+      <ShareQrModal
+        isOpen={isQrOpen}
+        onClose={() => setIsQrOpen(false)}
+        listingTitle={listing.title}
+        listingPrice={listing.price}
+        listingUrl={window.location.href}
       />
       <MobileNav />
     </div>
