@@ -22,6 +22,7 @@ interface SealifyContextType {
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
   createListing: (data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'status' | 'createdAt' | 'viewsCount'>) => void;
+  updateListing: (id: string, updatedData: Partial<Listing>) => void;
   deleteListing: (id: string) => void;
   markAsSold: (id: string) => void;
   conversations: Conversation[];
@@ -145,6 +146,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('🎉 Your ad has been published successfully!');
   };
 
+  const updateListing = (id: string, updatedData: Partial<Listing>) => {
+    setListings((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
+    );
+    toast.success('Listing details updated successfully!');
+  };
+
   const deleteListing = (id: string) => {
     setListings((prev) => prev.filter((l) => l.id !== id));
     toast.success('Listing deleted');
@@ -234,6 +242,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setFilters,
         resetFilters,
         createListing,
+        updateListing,
         deleteListing,
         markAsSold,
         conversations,

@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
+import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import { 
   MapPin, 
@@ -21,7 +22,8 @@ import {
   ChevronRight,
   ShieldAlert,
   ExternalLink,
-  Tag
+  Tag,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -60,6 +62,11 @@ const ListingDetail: React.FC = () => {
     );
   }
 
+  // Related items in the same category excluding current item
+  const relatedListings = listings
+    .filter((l) => l.category === listing.category && l.id !== listing.id)
+    .slice(0, 4);
+
   const saved = isSaved(listing.id);
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
@@ -95,7 +102,7 @@ const ListingDetail: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-8">
         {/* Breadcrumb / Back button */}
         <div className="flex items-center justify-between">
           <Link
@@ -316,6 +323,24 @@ const ListingDetail: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Related / Similar Listings Section */}
+        {relatedListings.length > 0 && (
+          <div className="space-y-4 pt-6 border-t border-slate-800">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-emerald-400" />
+              <h2 className="text-xl font-bold text-white">
+                Similar Classifieds in {listing.category}
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+              {relatedListings.map((rel) => (
+                <ListingCard key={rel.id} listing={rel} />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

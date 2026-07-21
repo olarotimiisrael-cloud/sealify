@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
-import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap } from 'lucide-react';
+import EditListingModal from '../components/EditListingModal';
+import { Listing } from '../types/sealify';
+import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const MyAds: React.FC = () => {
-  const { user, listings, deleteListing, markAsSold } = useSealify();
+  const { user, listings, deleteListing, markAsSold, updateListing } = useSealify();
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
 
@@ -69,6 +72,14 @@ const MyAds: React.FC = () => {
                   {ad.status === 'active' && (
                     <>
                       <button
+                        onClick={() => setEditingListing(ad)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
                         onClick={() => handlePromoteAd(ad.title)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold rounded-xl text-xs"
                         title="Promote Ad to TOP AD"
@@ -101,6 +112,12 @@ const MyAds: React.FC = () => {
         </div>
       </main>
 
+      <EditListingModal
+        isOpen={!!editingListing}
+        onClose={() => setEditingListing(null)}
+        listing={editingListing}
+        onSave={updateListing}
+      />
       <MobileNav />
     </div>
   );
