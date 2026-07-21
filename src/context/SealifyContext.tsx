@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { Listing, UserProfile, FilterState, Category, Conversation, Message } from '../types/sealify';
 import { INITIAL_LISTINGS, CURRENT_USER, INITIAL_CONVERSATIONS } from '../data/mockData';
 import { toast } from 'sonner';
@@ -11,9 +11,13 @@ interface SealifyContextType {
   listings: Listing[];
   savedListingIds: string[];
   recentlyViewedIds: string[];
+  compareListingIds: string[];
   addRecentlyViewed: (id: string) => void;
   toggleSaveListing: (id: string) => void;
   isSaved: (id: string) => boolean;
+  toggleCompareListing: (id: string) => void;
+  isInCompare: (id: string) => boolean;
+  clearCompare: () => void;
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
@@ -44,6 +48,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [listings, setListings] = useState<Listing[]>(INITIAL_LISTINGS);
   const [savedListingIds, setSavedListingIds] = useState<string[]>(['lst_101', 'lst_104']);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(['lst_102', 'lst_105']);
+  const [compareListingIds, setCompareListingIds] = useState<string[]>(['lst_101', 'lst_102']);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
 
@@ -90,6 +95,26 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const isSaved = (id: string) => savedListingIds.includes(id);
+
+  const toggleCompareListing = (id: string) => {
+    setCompareListingIds((prev) => {
+      if (prev.includes(id)) {
+        toast.info('Removed from comparison');
+        return prev.filter((item) => item !== id);
+      } else {
+        if (prev.length >= 3) {
+          toast.error('You can compare a maximum of 3 items at once');
+          return prev;
+        }
+        toast.success('Added item to comparison matrix!');
+        return [...prev, id];
+      }
+    });
+  };
+
+  const isInCompare = (id: string) => compareListingIds.includes(id);
+
+  const clearCompare = () => setCompareListingIds([]);
 
   const resetFilters = () => setFilters(defaultFilters);
 
@@ -198,9 +223,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         listings,
         savedListingIds,
         recentlyViewedIds,
+        compareListingIds,
         addRecentlyViewed,
         toggleSaveListing,
         isSaved,
+        toggleCompareListing,
+        isInCompare,
+        clearCompare,
         filters,
         setFilters,
         resetFilters,

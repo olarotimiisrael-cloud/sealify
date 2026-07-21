@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 import SqlSchemaViewer from './SqlSchemaViewer';
 import SafetyTipsModal from './SafetyTipsModal';
+import CompareModal from './CompareModal';
 import { 
   ShieldCheck, 
   PlusCircle, 
@@ -15,20 +16,55 @@ import {
   Search,
   Menu,
   X,
-  HelpCircle
+  HelpCircle,
+  Scale
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
-  const { user, isAuthenticated, logout, savedListingIds, conversations, filters, setFilters } = useSealify();
+  const { 
+    user, 
+    isAuthenticated, 
+    logout, 
+    savedListingIds, 
+    conversations, 
+    filters, 
+    setFilters, 
+    listings,
+    compareListingIds
+  } = useSealify();
+
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isSafetyModalOpen, setIsSafetyModalOpen] = useState(false);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
+
+  // Filter live search matches
+  const liveSearchResults = filters.searchQuery.trim()
+    ? listings.filter((l) =>
+        l.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        l.category.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        l.location.toLowerCase().includes(filters.searchQuery.toLowerCase())
+      ).slice(0, 5)
+    : [];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchFocused(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilters((prev) => ({ ...prev, searchQuery: e.target.value }));
+    setIsSearchFocused(true);
   };
 
   return (
@@ -69,20 +105,60 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Quick Search Header bar for desktop */}
-          <div className="hidden md:flex items-center flex-1 max-w-lg relative">
-            <Search className="absolute left-3 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search phones, cars, apartments..."
-              value={filters.searchQuery}
-              onChange={handleSearchChange}
-              className="w-full bg-slate-800 text-white pl-9 pr-4 py-2 rounded-xl text-sm border border-slate-700 focus:outline-none focus:border-emerald-500 transition-colors"
-            />
+          {/* Quick Search Header bar with Live Auto-Complete */}
+          <div ref={searchContainerRef} className="hidden md:block flex-1 max-w-lg relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search phones, cars, apartments..."
+                value={filters.searchQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                onChange={handleSearchChange}
+                className="w-full bg-slate-800 text-white pl-9 pr-4 py-2 rounded-xl text-sm border border-slate-700 focus:outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+
+            {/* Live Search Auto-Complete Dropdown */}
+            {isSearchFocused && liveSearchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 space-y-1">
+                <p className="text-[10px] font-bold text-slate-500 uppercase px-3 py-1">Matching Listings</p>
+                {liveSearchResults.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/listing/${item.id}`}
+                    onClick={() => setIsSearchFocused(false)}
+                    className="flex items-center justify-between p-2 hover:bg-slate-800 rounded-xl transition-colors gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img src={item.images[0]} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <div className="truncate">
+                        <p className="font-bold text-xs text-white truncate">{item.title}</p>
+                        <p className="text-[10px] text-slate-400">{item.category} • {item.location}</p>
+                      </div>
+                    </div>
+                    <span className="font-extrabold text-xs text-emerald-400 shrink-0">${item.price}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Nav Controls */}
           <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => setIsCompareModalOpen(true)}
+              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Compare Listings Matrix"
+            >
+              <Scale className="w-5 h-5" />
+              {compareListingIds.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {compareListingIds.length}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setIsSafetyModalOpen(true)}
               className="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
@@ -185,6 +261,17 @@ const Navbar: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-sm">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsCompareModalOpen(true);
+                }}
+                className="flex items-center gap-2 p-2 bg-slate-800 rounded-lg text-slate-200"
+              >
+                <Scale className="w-4 h-4 text-emerald-400" />
+                <span>Compare Matrix ({compareListingIds.length})</span>
+              </button>
+
               <Link
                 to="/saved"
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -192,14 +279,6 @@ const Navbar: React.FC = () => {
               >
                 <Heart className="w-4 h-4 text-emerald-400" />
                 <span>Saved Ads ({savedListingIds.length})</span>
-              </Link>
-              <Link
-                to="/messages"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-2 p-2 bg-slate-800 rounded-lg text-slate-200"
-              >
-                <MessageSquare className="w-4 h-4 text-teal-400" />
-                <span>Inbox</span>
               </Link>
             </div>
 
@@ -251,6 +330,9 @@ const Navbar: React.FC = () => {
 
       {/* Safety Guidelines Modal */}
       <SafetyTipsModal isOpen={isSafetyModalOpen} onClose={() => setIsSafetyModalOpen(false)} />
+
+      {/* Compare Listings Matrix Modal */}
+      <CompareModal isOpen={isCompareModalOpen} onClose={() => setIsCompareModalOpen(false)} />
     </>
   );
 };

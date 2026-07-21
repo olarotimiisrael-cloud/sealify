@@ -2,15 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
-import { Heart, MapPin, ShieldCheck, Eye } from 'lucide-react';
+import { Heart, MapPin, ShieldCheck, Eye, Scale } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
-  const { toggleSaveListing, isSaved } = useSealify();
+  const { toggleSaveListing, isSaved, toggleCompareListing, isInCompare } = useSealify();
   const saved = isSaved(listing.id);
+  const compared = isInCompare(listing.id);
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -27,22 +28,40 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         </span>
       )}
 
-      {/* Save Button */}
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleSaveListing(listing.id);
-        }}
-        className={`absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
-          saved
-            ? 'bg-red-500/90 text-white'
-            : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
-        }`}
-        title={saved ? 'Unsave' : 'Save ad'}
-      >
-        <Heart className={`w-4 h-4 ${saved ? 'fill-white' : ''}`} />
-      </button>
+      {/* Action Buttons Top Right */}
+      <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleCompareListing(listing.id);
+          }}
+          className={`p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+            compared
+              ? 'bg-emerald-500 text-slate-950 font-bold'
+              : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
+          }`}
+          title={compared ? 'Remove from comparison' : 'Compare this ad'}
+        >
+          <Scale className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSaveListing(listing.id);
+          }}
+          className={`p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+            saved
+              ? 'bg-red-500/90 text-white'
+              : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
+          }`}
+          title={saved ? 'Unsave' : 'Save ad'}
+        >
+          <Heart className={`w-3.5 h-3.5 ${saved ? 'fill-white' : ''}`} />
+        </button>
+      </div>
 
       <div>
         {/* Thumbnail Image */}
