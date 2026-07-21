@@ -32,9 +32,7 @@ const Index: React.FC = () => {
 
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
-  // Filter listings based on current search & filters state
   const filteredListings = listings.filter((item) => {
-    // Search Query
     if (filters.searchQuery) {
       const q = filters.searchQuery.toLowerCase();
       const matchTitle = item.title.toLowerCase().includes(q);
@@ -43,22 +41,18 @@ const Index: React.FC = () => {
       if (!matchTitle && !matchDesc && !matchLoc) return false;
     }
 
-    // Category
     if (filters.category !== 'All' && item.category !== filters.category) {
       return false;
     }
 
-    // Condition
     if (filters.condition !== 'All' && item.condition !== filters.condition) {
       return false;
     }
 
-    // Location
     if (filters.location && !item.location.toLowerCase().includes(filters.location.toLowerCase())) {
       return false;
     }
 
-    // Price Range
     if (filters.minPrice !== null && item.price < filters.minPrice) return false;
     if (filters.maxPrice !== null && item.price > filters.maxPrice) return false;
 
@@ -66,7 +60,7 @@ const Index: React.FC = () => {
   }).sort((a, b) => {
     if (filters.sortBy === 'price-asc') return a.price - b.price;
     if (filters.sortBy === 'price-desc') return b.price - a.price;
-    return 0; // default newest
+    return 0;
   });
 
   return (
@@ -74,13 +68,12 @@ const Index: React.FC = () => {
       <Navbar />
       <CategoryBar />
 
-      {/* Hero Banner Section */}
       <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/60 py-8 px-4 relative overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
           <div className="space-y-3 text-center md:text-left max-w-xl">
             <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
               <Zap className="w-3.5 h-3.5" />
-              <span>Fastest Local Classifieds in USA</span>
+              <span>Fastest Local Classifieds in Ogbomoso</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
               Buy & Sell Anything <br />
@@ -92,7 +85,6 @@ const Index: React.FC = () => {
               Sealify connects verified buyers and sellers nearby. Discover cars, phones, homes, and everyday items with guaranteed fraud protection.
             </p>
 
-            {/* Popular Search Tag Chips */}
             <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-1.5">
               <span className="text-[11px] font-bold text-slate-500">Popular:</span>
               {POPULAR_SEARCHES.map((tag) => (
@@ -107,7 +99,6 @@ const Index: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Metrics Badge */}
           <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
             <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow">
               <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
@@ -132,9 +123,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      {/* Main Container */}
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
-        {/* Recently Viewed Strip */}
         {recentlyViewedListings.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -151,7 +140,6 @@ const Index: React.FC = () => {
           </div>
         )}
 
-        {/* Controls Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />
@@ -164,7 +152,6 @@ const Index: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Grid vs Map Mode Switcher */}
             <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
               <button
                 onClick={() => setViewMode('grid')}
@@ -219,7 +206,6 @@ const Index: React.FC = () => {
           </div>
         </div>
 
-        {/* Listings Grid OR Map View */}
         {viewMode === 'map' ? (
           <MapView listings={filteredListings} />
         ) : filteredListings.length > 0 ? (
@@ -247,16 +233,10 @@ const Index: React.FC = () => {
         )}
       </main>
 
-      {/* Filter Drawer Component */}
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
-
-      {/* Safety Tips Modal */}
       <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
-
-      {/* Saved Alerts Modal */}
       <SavedAlertsModal isOpen={isSavedAlertsOpen} onClose={() => setIsSavedAlertsOpen(false)} />
 
-      {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2">

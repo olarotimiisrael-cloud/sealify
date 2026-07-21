@@ -41,7 +41,7 @@ const PostAd: React.FC = () => {
   const [category, setCategory] = useState<Category>('Electronics');
   const [condition, setCondition] = useState<Condition>('Like New');
   const [price, setPrice] = useState('');
-  const [location, setLocation] = useState('New York, NY');
+  const [location, setLocation] = useState('Ogbomoso, Nigeria');
   const [description, setDescription] = useState('');
   const [customImageUrl, setCustomImageUrl] = useState('');
   const [images, setImages] = useState<string[]>([SAMPLE_UPLOADS[0]]);
@@ -100,7 +100,6 @@ const PostAd: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-          {/* Image Uploader */}
           <div className="space-y-2">
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Product Photos</label>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -127,7 +126,6 @@ const PostAd: React.FC = () => {
               </button>
             </div>
 
-            {/* Custom Photo URL Input */}
             <div className="flex gap-2 pt-2">
               <div className="relative flex-1">
                 <ImageIcon className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
@@ -149,7 +147,6 @@ const PostAd: React.FC = () => {
             </div>
           </div>
 
-          {/* Ad Title */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Ad Title *</label>
             <input
@@ -162,7 +159,6 @@ const PostAd: React.FC = () => {
             />
           </div>
 
-          {/* Category & Condition */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Category *</label>
@@ -191,16 +187,15 @@ const PostAd: React.FC = () => {
             </div>
           </div>
 
-          {/* Price & Location */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price ($ USD) *</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN) *</label>
               <input
                 type="number"
                 required
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="0.00"
+                placeholder="0"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -212,13 +207,12 @@ const PostAd: React.FC = () => {
                 required
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Brooklyn, NY"
+                placeholder="e.g. Ogbomoso, Nigeria"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
-          {/* Description */}
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Detailed Description *</label>
             <textarea

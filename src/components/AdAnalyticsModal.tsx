@@ -15,13 +15,20 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
 }) => {
   if (!isOpen || !listing) return null;
 
-  // Mock performance metrics based on listing views
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const totalViews = listing.viewsCount || 142;
   const savedCount = Math.round(totalViews * 0.18);
   const totalInquiries = Math.round(totalViews * 0.08) || 3;
   const ctrRate = ((totalInquiries / totalViews) * 100).toFixed(1);
 
-  // Simulated 7-day view distribution
   const weeklyViews = [
     { day: 'Mon', count: Math.round(totalViews * 0.1) },
     { day: 'Tue', count: Math.round(totalViews * 0.12) },
@@ -45,7 +52,6 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
         </button>
 
         <div className="space-y-6">
-          {/* Header */}
           <div className="flex items-center gap-3">
             <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
               <BarChart2 className="w-6 h-6" />
@@ -56,7 +62,6 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Metrics Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
               <Eye className="w-4 h-4 text-emerald-400 mx-auto" />
@@ -77,7 +82,6 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             </div>
           </div>
 
-          {/* 7-Day Traffic Bar Chart */}
           <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3">
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-slate-200">Weekly View Traffic</span>
@@ -101,7 +105,6 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             </div>
           </div>
 
-          {/* Optimization Checklist Recommendations */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Visibility Optimization Checklist</h4>
             <div className="space-y-2 text-xs">

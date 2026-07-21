@@ -22,6 +22,15 @@ export const OfferModal: React.FC<OfferModalProps> = ({
 
   if (!isOpen) return null;
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const numericPrice = Number(offerPrice);
@@ -30,9 +39,9 @@ export const OfferModal: React.FC<OfferModalProps> = ({
       return;
     }
 
-    const offerMessage = `💰 OFFER PROPOSAL: $${numericPrice.toLocaleString()}\n${note}`;
+    const offerMessage = `💰 OFFER PROPOSAL: ${formatNGN(numericPrice)}\n${note}`;
     onSendOffer(numericPrice, offerMessage);
-    toast.success(`Price offer of $${numericPrice.toLocaleString()} sent to seller!`);
+    toast.success(`Price offer of ${formatNGN(numericPrice)} sent to seller!`);
     onClose();
   };
 
@@ -60,11 +69,11 @@ export const OfferModal: React.FC<OfferModalProps> = ({
 
           <div className="bg-slate-950 border border-slate-800 p-3 rounded-2xl flex justify-between items-center text-xs">
             <span className="text-slate-400">Listed Asking Price:</span>
-            <span className="font-black text-white text-sm">${originalPrice.toLocaleString()}</span>
+            <span className="font-black text-white text-sm">{formatNGN(originalPrice)}</span>
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Offer Price ($ USD)</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Your Offer Price (₦ NGN)</label>
             <div className="relative">
               <DollarSign className="w-4 h-4 text-emerald-400 absolute left-3 top-3" />
               <input

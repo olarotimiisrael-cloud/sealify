@@ -8,13 +8,12 @@ interface FinancingCalculatorProps {
 
 export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPrice, category }) => {
   const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
-  const [interestRate, setInterestRate] = useState<number>(6.5);
-  const [termMonths, setTermMonths] = useState<number>(category === 'Real Estate' ? 360 : 60);
+  const [interestRate, setInterestRate] = useState<number>(18.5);
+  const [termMonths, setTermMonths] = useState<number>(category === 'Real Estate' ? 240 : 36);
 
   const downPaymentAmount = Math.round((itemPrice * downPaymentPercent) / 100);
   const loanPrincipal = Math.max(0, itemPrice - downPaymentAmount);
 
-  // Monthly interest rate calculation formula: M = P [ i(1 + i)^n ] / [ (1 + i)^n – 1 ]
   const monthlyRate = interestRate / 100 / 12;
   let monthlyPayment = 0;
 
@@ -27,6 +26,15 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
     monthlyPayment = Math.round(loanPrincipal / termMonths);
   }
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -36,21 +44,20 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
           </div>
           <div>
             <h3 className="font-bold text-sm text-white">Financing & Monthly Payment Calculator</h3>
-            <p className="text-[11px] text-slate-400">Estimate installment options for ${itemPrice.toLocaleString()}</p>
+            <p className="text-[11px] text-slate-400">Estimate installment options for {formatNGN(itemPrice)}</p>
           </div>
         </div>
         <span className="text-xl font-black text-emerald-400">
-          ${monthlyPayment.toLocaleString()}
+          {formatNGN(monthlyPayment)}
           <span className="text-[10px] font-normal text-slate-400 block text-right">/ month</span>
         </span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-        {/* Down Payment Slider */}
         <div className="space-y-1.5 bg-slate-950 p-3 rounded-2xl border border-slate-800">
           <div className="flex justify-between text-slate-300 font-semibold">
             <span>Down Payment ({downPaymentPercent}%)</span>
-            <span className="text-emerald-400 font-extrabold">${downPaymentAmount.toLocaleString()}</span>
+            <span className="text-emerald-400 font-extrabold">{formatNGN(downPaymentAmount)}</span>
           </div>
           <input
             type="range"
@@ -63,7 +70,6 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
           />
         </div>
 
-        {/* Interest Rate */}
         <div className="space-y-1.5 bg-slate-950 p-3 rounded-2xl border border-slate-800">
           <div className="flex justify-between text-slate-300 font-semibold">
             <span>Interest Rate</span>
@@ -71,8 +77,8 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
           </div>
           <input
             type="range"
-            min={2.0}
-            max={15.0}
+            min={10.0}
+            max={30.0}
             step={0.5}
             value={interestRate}
             onChange={(e) => setInterestRate(Number(e.target.value))}
@@ -80,7 +86,6 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
           />
         </div>
 
-        {/* Loan Term */}
         <div className="space-y-1.5 bg-slate-950 p-3 rounded-2xl border border-slate-800">
           <div className="flex justify-between text-slate-300 font-semibold">
             <span>Loan Term</span>
@@ -110,7 +115,7 @@ export const FinancingCalculator: React.FC<FinancingCalculatorProps> = ({ itemPr
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           Estimated calculation. Contact seller for direct payment terms.
         </span>
-        <span>Financed Amount: ${loanPrincipal.toLocaleString()}</span>
+        <span>Financed Amount: {formatNGN(loanPrincipal)}</span>
       </div>
     </div>
   );

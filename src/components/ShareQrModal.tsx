@@ -21,6 +21,15 @@ export const ShareQrModal: React.FC<ShareQrModalProps> = ({
 
   if (!isOpen) return null;
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   const handleCopy = () => {
     navigator.clipboard.writeText(listingUrl);
     setCopied(true);
@@ -32,7 +41,7 @@ export const ShareQrModal: React.FC<ShareQrModalProps> = ({
     if (navigator.share) {
       navigator.share({
         title: listingTitle,
-        text: `Check out "${listingTitle}" for $${listingPrice.toLocaleString()} on Sealify!`,
+        text: `Check out "${listingTitle}" for ${formatNGN(listingPrice)} on Sealify!`,
         url: listingUrl,
       }).catch(() => {});
     } else {
@@ -40,7 +49,6 @@ export const ShareQrModal: React.FC<ShareQrModalProps> = ({
     }
   };
 
-  // Generate SVG QR Code representation
   const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
     listingUrl
   )}&color=000000&bgcolor=ffffff`;
@@ -62,11 +70,10 @@ export const ShareQrModal: React.FC<ShareQrModalProps> = ({
             </div>
             <h3 className="font-black text-xl text-white">Share & Scan QR Code</h3>
             <p className="text-xs text-slate-400 truncate max-w-xs mx-auto">
-              {listingTitle} • <span className="text-emerald-400 font-bold">${listingPrice.toLocaleString()}</span>
+              {listingTitle} • <span className="text-emerald-400 font-bold">{formatNGN(listingPrice)}</span>
             </p>
           </div>
 
-          {/* QR Code Container */}
           <div className="bg-white p-4 rounded-2xl w-48 h-48 mx-auto flex items-center justify-center border-4 border-emerald-500/30 shadow-xl">
             <img src={qrDataUrl} alt="QR Code" className="w-full h-full object-contain" />
           </div>
@@ -75,7 +82,6 @@ export const ShareQrModal: React.FC<ShareQrModalProps> = ({
             Scan with any phone camera to view listing details instantly or show during in-person meetups.
           </p>
 
-          {/* Direct Share Options */}
           <div className="grid grid-cols-4 gap-2 pt-1">
             <button
               onClick={handleCopy}

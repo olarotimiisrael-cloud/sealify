@@ -68,20 +68,24 @@ const ListingDetail: React.FC = () => {
     );
   }
 
-  // Related items in the same category excluding current item
   const relatedListings = listings
     .filter((l) => l.category === listing.category && l.id !== listing.id)
     .slice(0, 4);
 
   const saved = isSaved(listing.id);
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(listing.price);
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
-  const isEligibleForFinancing = ['Vehicles', 'Real Estate', 'Electronics'].includes(listing.category) || listing.price >= 500;
+  const formattedPrice = formatNGN(listing.price);
+
+  const isEligibleForFinancing = ['Vehicles', 'Real Estate', 'Electronics'].includes(listing.category) || listing.price >= 200000;
 
   const handleStartChat = () => {
     if (!isAuthenticated) {
@@ -116,7 +120,6 @@ const ListingDetail: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-8">
-        {/* Breadcrumb / Back button */}
         <div className="flex items-center justify-between">
           <Link
             to="/"
@@ -166,11 +169,8 @@ const ListingDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Column: Image Gallery & Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Gallery */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3">
               <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
                 <img
@@ -201,7 +201,6 @@ const ListingDetail: React.FC = () => {
                 )}
               </div>
 
-              {/* Thumbnails */}
               {listing.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {listing.images.map((img, idx) => (
@@ -219,7 +218,6 @@ const ListingDetail: React.FC = () => {
               )}
             </div>
 
-            {/* Description Card */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
               <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800">
                 <div>
@@ -275,15 +273,12 @@ const ListingDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Financing Calculator Widget */}
             {isEligibleForFinancing && (
               <FinancingCalculator itemPrice={listing.price} category={listing.category} />
             )}
           </div>
 
-          {/* Right Sidebar: Seller Snippet & Actions */}
           <div className="space-y-6">
-            {/* Seller Info Card */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Seller Information</h3>
 
@@ -315,9 +310,7 @@ const ListingDetail: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-3 pt-2">
-                {/* Phone reveal button */}
                 <button
                   onClick={() => setShowPhone(!showPhone)}
                   className="w-full py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-sm flex items-center justify-center gap-2 border border-slate-700 transition-colors"
@@ -326,7 +319,6 @@ const ListingDetail: React.FC = () => {
                   <span>{showPhone ? listing.sellerPhone : 'Show Phone Number'}</span>
                 </button>
 
-                {/* Instant Message area */}
                 <div className="space-y-2 pt-2 border-t border-slate-800">
                   <textarea
                     rows={2}
@@ -346,7 +338,6 @@ const ListingDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Safety Tips & Meetup spot banner */}
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
@@ -370,7 +361,6 @@ const ListingDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Related / Similar Listings Section */}
         {relatedListings.length > 0 && (
           <div className="space-y-4 pt-6 border-t border-slate-800">
             <div className="flex items-center gap-2">

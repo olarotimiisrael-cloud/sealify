@@ -24,10 +24,10 @@ interface MeetupSpot {
 const SAFE_SPOTS: MeetupSpot[] = [
   {
     id: 'spot_1',
-    name: 'NYPD 78th Precinct Safe Exchange Zone',
+    name: 'Ogbomoso Police Divisional HQ Safe Zone',
     category: 'Police Safe Zone',
-    address: '65 6th Ave, Brooklyn, NY 11217',
-    distance: '0.6 miles away',
+    address: 'Oja-Igbo Road, Ogbomoso, Oyo State',
+    distance: '0.8 km away',
     hours: 'Open 24/7 (24hr Police Surveillance)',
     cctvVerified: true,
     icon: Shield,
@@ -35,33 +35,33 @@ const SAFE_SPOTS: MeetupSpot[] = [
   },
   {
     id: 'spot_2',
-    name: 'Brooklyn Public Library - Central Branch Lobby',
+    name: 'Ogbomoso Public Library - Main Branch',
     category: 'Public Library',
-    address: '10 Grand Army Plaza, Brooklyn, NY 11238',
-    distance: '1.1 miles away',
-    hours: 'Mon-Sat 9:00 AM - 8:00 PM',
+    address: 'Iluju Area, Ogbomoso, Oyo State',
+    distance: '1.2 km away',
+    hours: 'Mon-Sat 8:00 AM - 6:00 PM',
     cctvVerified: true,
     icon: Building2,
     badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
   },
   {
     id: 'spot_3',
-    name: 'City Point Brooklyn Mall Center Atrium',
+    name: 'Ogbomoso Shopping Complex Atrium',
     category: 'Shopping Mall',
-    address: '445 Albee Square W, Brooklyn, NY 11201',
-    distance: '1.4 miles away',
-    hours: 'Daily 10:00 AM - 10:00 PM',
+    address: 'Sabo Market Road, Ogbomoso, Oyo State',
+    distance: '1.5 km away',
+    hours: 'Daily 9:00 AM - 9:00 PM',
     cctvVerified: true,
     icon: Building2,
     badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
   },
   {
     id: 'spot_4',
-    name: 'Starbucks Reserve Center (Busy Public Café)',
+    name: 'Popular Café at LAUTECH Gate',
     category: 'Café',
-    address: '61 9th Ave, New York, NY 10011',
-    distance: '2.3 miles away',
-    hours: 'Daily 7:00 AM - 9:00 PM',
+    address: 'LAUTECH Main Gate, Ogbomoso, Oyo State',
+    distance: '2.1 km away',
+    hours: 'Daily 7:00 AM - 10:00 PM',
     cctvVerified: true,
     icon: Coffee,
     badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
@@ -104,7 +104,6 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
         </button>
 
         <div className="space-y-6">
-          {/* Header */}
           <div className="text-center space-y-1">
             <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
               <ShieldCheck className="w-6 h-6" />
@@ -115,7 +114,6 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
             </p>
           </div>
 
-          {/* List of Safe Exchange Locations */}
           <div className="space-y-3">
             {SAFE_SPOTS.map((spot) => {
               const Icon = spot.icon;
@@ -168,7 +166,6 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
             })}
           </div>
 
-          {/* Action buttons */}
           <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

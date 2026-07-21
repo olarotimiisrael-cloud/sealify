@@ -19,16 +19,16 @@ CREATE TABLE IF NOT EXISTS public.users (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Listings Table
+-- 2. Listings Table (Prices stored in Nigerian Naira - NGN)
 CREATE TABLE IF NOT EXISTS public.listings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   seller_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  price NUMERIC(12, 2) NOT NULL,
+  price NUMERIC(14, 2) NOT NULL, -- NGN currency
   category TEXT NOT NULL,
   condition TEXT NOT NULL,
-  location TEXT NOT NULL,
+  location TEXT NOT NULL DEFAULT 'Ogbomoso, Nigeria',
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'sold')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -89,7 +89,6 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
       <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-200 flex flex-col max-h-[85vh]">
-        {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2">
             <Database className="w-5 h-5 text-emerald-400" />
@@ -100,19 +99,16 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
           </button>
         </div>
 
-        {/* Info notice */}
         <p className="text-xs text-slate-400 my-3">
-          Copy and run this migration in your Supabase SQL Editor to set up `users`, `listings`, `listing_images`, and `messages` tables with RLS policies.
+          Copy and run this migration in your Supabase SQL Editor to set up `users`, `listings`, `listing_images`, and `messages` tables with RLS policies. All prices are stored in Nigerian Naira (NGN).
         </p>
 
-        {/* Code block */}
         <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-300 leading-relaxed">
           <pre>{SQL_SCRIPT}</pre>
         </div>
 
-        {/* Footer actions */}
         <div className="pt-4 mt-2 border-t border-slate-800 flex justify-between items-center">
-          <span className="text-xs text-slate-500">Sealify Core Tables & Security</span>
+          <span className="text-xs text-slate-500">Sealify Core Tables & Security (NGN Currency)</span>
           <button
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-colors shadow"

@@ -25,7 +25,7 @@ const PLANS: Plan[] = [
     id: 'top_ad',
     name: 'Top Ad Highlight',
     badge: 'POPULAR',
-    price: '$9.99',
+    price: '₦7,500',
     period: '3 days',
     viewsBoost: '5x More Views',
     features: ['Highlighted in search results', 'Yellow background badge', 'Priority buyer inbox placement'],
@@ -36,7 +36,7 @@ const PLANS: Plan[] = [
     id: 'featured',
     name: 'Featured Category Banner',
     badge: 'MAX IMPACT',
-    price: '$19.99',
+    price: '₦15,000',
     period: '7 days',
     viewsBoost: '10x More Views',
     features: ['Top of category gallery', 'Featured badge banner', 'Social share boost', 'Dedicated customer support'],
@@ -47,7 +47,7 @@ const PLANS: Plan[] = [
     id: 'urgent',
     name: 'Urgent Seller Tag',
     badge: 'QUICK SALE',
-    price: '$4.99',
+    price: '₦3,500',
     period: '5 days',
     viewsBoost: '3x More Views',
     features: ['Red URGENT badge on card', 'Fast buyer notification blast'],
@@ -88,7 +88,6 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({ isOpen, onClose, lis
             </p>
           </div>
 
-          {/* Package Selection Options */}
           <div className="space-y-3">
             {PLANS.map((plan) => {
               const Icon = plan.icon;

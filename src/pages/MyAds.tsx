@@ -19,12 +19,20 @@ const MyAds: React.FC = () => {
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        {/* User profile snippet */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 text-center sm:text-left">
             <img src={user?.avatarUrl} className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500" />
@@ -56,7 +64,6 @@ const MyAds: React.FC = () => {
           </div>
         </div>
 
-        {/* Listings List */}
         <div className="space-y-3">
           <h2 className="text-lg font-bold text-white">Your Classified Ads ({myAds.length})</h2>
 
@@ -70,7 +77,7 @@ const MyAds: React.FC = () => {
                   <img src={ad.images[0]} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                   <div>
                     <h3 className="font-bold text-sm text-white">{ad.title}</h3>
-                    <p className="text-xs font-semibold text-emerald-400">${ad.price}</p>
+                    <p className="text-xs font-semibold text-emerald-400">{formatNGN(ad.price)}</p>
                     <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase mt-1 ${
                       ad.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
                     }`}>

@@ -81,7 +81,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price ($ USD)</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN)</label>
               <input
                 type="number"
                 required

@@ -13,11 +13,16 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   const saved = isSaved(listing.id);
   const compared = isInCompare(listing.id);
 
-  const formattedPrice = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  }).format(listing.price);
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formattedPrice = formatNGN(listing.price);
 
   const hasPriceDrop = listing.originalPrice && listing.originalPrice > listing.price;
   const discountPercent = hasPriceDrop
@@ -26,7 +31,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative">
-      {/* Featured / Top Ad Badge */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
         {listing.featured && (
           <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow">
@@ -40,7 +44,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         )}
       </div>
 
-      {/* Action Buttons Top Right */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
         <button
           onClick={(e) => {
@@ -76,7 +79,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
       </div>
 
       <div>
-        {/* Thumbnail Image */}
         <Link to={`/listing/${listing.id}`} className="block relative aspect-[4/3] bg-slate-850 overflow-hidden">
           <img
             src={listing.images[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80'}
@@ -97,9 +99,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           </div>
         </Link>
 
-        {/* Content Body */}
         <div className="p-4 space-y-2">
-          {/* Price & Category */}
           <div className="flex justify-between items-baseline gap-2">
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-black text-emerald-400 tracking-tight">
@@ -107,7 +107,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
               </span>
               {hasPriceDrop && (
                 <span className="text-xs text-slate-500 line-through font-semibold">
-                  ${listing.originalPrice?.toLocaleString()}
+                  {formatNGN(listing.originalPrice!)}
                 </span>
               )}
             </div>
@@ -116,14 +116,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             </span>
           </div>
 
-          {/* Title */}
           <Link to={`/listing/${listing.id}`}>
             <h3 className="text-sm font-semibold text-slate-100 line-clamp-2 hover:text-emerald-400 transition-colors leading-snug">
               {listing.title}
             </h3>
           </Link>
 
-          {/* Condition Tag */}
           <div className="flex items-center gap-1.5 pt-1">
             <span className="text-[11px] font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
               {listing.condition}
@@ -132,7 +130,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         </div>
       </div>
 
-      {/* Card Footer: Location & Seller */}
       <div className="px-4 py-3 border-t border-slate-800/80 bg-slate-900/50 text-xs text-slate-400 flex justify-between items-center gap-2">
         <div className="flex items-center gap-1 truncate text-slate-400">
           <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />

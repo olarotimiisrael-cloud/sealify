@@ -17,8 +17,8 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
       id: 'alt_1',
       query: 'Tesla Model 3',
       category: 'Vehicles',
-      maxPrice: 30000,
-      location: 'New York',
+      maxPrice: 30000000,
+      location: 'Ogbomoso',
       createdAt: '2 days ago',
       matchCount: 3,
     },
@@ -26,14 +26,23 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
       id: 'alt_2',
       query: 'MacBook Pro M2',
       category: 'Electronics',
-      maxPrice: 1800,
-      location: 'Manhattan',
+      maxPrice: 1500000,
+      location: 'Ibadan',
       createdAt: '1 week ago',
       matchCount: 5,
     },
   ]);
 
   if (!isOpen) return null;
+
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   const handleSaveCurrentFilter = () => {
     const query = filters.searchQuery || filters.category;
@@ -93,14 +102,13 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
           </div>
         </div>
 
-        {/* Current Filter Quick-Save Banner */}
         <div className="my-4 p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
           <div className="text-xs min-w-0">
             <p className="font-bold text-white truncate">
               {filters.searchQuery || filters.category || 'Active Filter'}
             </p>
             <p className="text-[10px] text-slate-400 truncate">
-              {filters.location ? `In ${filters.location}` : 'All Locations'} • {filters.maxPrice ? `Under $${filters.maxPrice}` : 'Any Price'}
+              {filters.location ? `In ${filters.location}` : 'All Locations'} • {filters.maxPrice ? `Under ₦${filters.maxPrice.toLocaleString()}` : 'Any Price'}
             </p>
           </div>
 
@@ -113,7 +121,6 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
           </button>
         </div>
 
-        {/* Alerts List */}
         <div className="flex-1 overflow-y-auto space-y-3 pr-1">
           {alerts.length === 0 ? (
             <div className="py-8 text-center text-xs text-slate-500">No saved alerts yet.</div>
@@ -131,7 +138,7 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-400 truncate">
-                    {alt.category} • {alt.location} {alt.maxPrice ? `(Max $${alt.maxPrice})` : ''}
+                    {alt.category} • {alt.location} {alt.maxPrice ? `(Max ₦${alt.maxPrice.toLocaleString()})` : ''}
                   </p>
                 </div>
 

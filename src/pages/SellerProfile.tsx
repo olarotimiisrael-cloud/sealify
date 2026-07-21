@@ -25,8 +25,8 @@ export const SellerProfile: React.FC = () => {
   const sellerName = sampleListing?.sellerName || 'Verified Seller';
   const sellerAvatar = sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
   const sellerVerified = sampleListing?.sellerVerified ?? true;
-  const sellerLocation = sampleListing?.location || 'New York, NY';
-  const sellerPhone = sampleListing?.sellerPhone || '+1 (555) 234-5678';
+  const sellerLocation = sampleListing?.location || 'Ogbomoso, Nigeria';
+  const sellerPhone = sampleListing?.sellerPhone || '+234 800 000 0000';
 
   const [reviews, setReviews] = useState<ReviewItem[]>([
     {
@@ -54,6 +54,15 @@ export const SellerProfile: React.FC = () => {
     reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)
   ).toFixed(1);
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
@@ -67,7 +76,6 @@ export const SellerProfile: React.FC = () => {
           <span>Back to Marketplace</span>
         </Link>
 
-        {/* Vendor Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
             <img
@@ -79,7 +87,7 @@ export const SellerProfile: React.FC = () => {
               <div className="flex items-center gap-2 justify-center sm:justify-start">
                 <h1 className="text-2xl font-black text-white">{sellerName}</h1>
                 {sellerVerified && (
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" title="Verified Vendor" />
+                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
                 )}
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
@@ -122,7 +130,6 @@ export const SellerProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Listings by this seller */}
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-emerald-400" />
@@ -144,7 +151,6 @@ export const SellerProfile: React.FC = () => {
           )}
         </div>
 
-        {/* Seller Feedback Section */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
           <h3 className="font-bold text-base text-white">Buyer Feedback & Reviews ({reviews.length})</h3>
 
