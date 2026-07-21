@@ -6,6 +6,7 @@ import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
+import SafeMeetupModal from '../components/SafeMeetupModal';
 import FinancingCalculator from '../components/FinancingCalculator';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -26,7 +27,8 @@ import {
   ExternalLink,
   Tag,
   Sparkles,
-  QrCode
+  QrCode,
+  Shield
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -41,6 +43,7 @@ const ListingDetail: React.FC = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
+  const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
 
   useEffect(() => {
@@ -98,6 +101,16 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
+  const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
+    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, meetupProposal);
+    navigate('/messages');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
@@ -114,6 +127,15 @@ const ListingDetail: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMeetupOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-teal-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              title="Find Safe Meetup Spot"
+            >
+              <Shield className="w-4 h-4" />
+              <span className="hidden sm:inline">Safe Exchange Zone</span>
+            </button>
+
             <button
               onClick={() => setIsQrOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
@@ -324,11 +346,20 @@ const ListingDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Safety Tips */}
+            {/* Safety Tips & Meetup spot banner */}
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                <AlertTriangle className="w-4 h-4" />
-                <span>Safety Guidelines</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span>Safety Guidelines</span>
+                </div>
+
+                <button
+                  onClick={() => setIsMeetupOpen(true)}
+                  className="text-[11px] font-bold text-emerald-400 hover:underline"
+                >
+                  Safe Meetup Spots →
+                </button>
               </div>
               <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
                 <li>Meet the seller in a public, well-lit area.</li>
@@ -373,6 +404,12 @@ const ListingDetail: React.FC = () => {
         listingTitle={listing.title}
         listingPrice={listing.price}
         listingUrl={window.location.href}
+      />
+      <SafeMeetupModal
+        isOpen={isMeetupOpen}
+        onClose={() => setIsMeetupOpen(false)}
+        itemTitle={listing.title}
+        onSelectSpot={handleSelectMeetupSpot}
       />
       <MobileNav />
     </div>
