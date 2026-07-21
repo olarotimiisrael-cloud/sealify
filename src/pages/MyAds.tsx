@@ -4,14 +4,16 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
+import VerificationModal from '../components/VerificationModal';
 import { Listing } from '../types/sealify';
-import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3 } from 'lucide-react';
+import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3, Award } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const MyAds: React.FC = () => {
   const { user, listings, deleteListing, markAsSold, updateListing } = useSealify();
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
 
@@ -33,13 +35,23 @@ const MyAds: React.FC = () => {
             </div>
           </div>
 
-          <Link
-            to="/post-ad"
-            className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-extrabold rounded-xl text-xs shadow-lg"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>Post Another Ad</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsVerificationOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700"
+            >
+              <Award className="w-4 h-4" />
+              <span>Get Verified Badge</span>
+            </button>
+
+            <Link
+              to="/post-ad"
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-extrabold rounded-xl text-xs shadow-lg"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Post Another Ad</span>
+            </Link>
+          </div>
         </div>
 
         {/* Listings List */}
@@ -120,6 +132,12 @@ const MyAds: React.FC = () => {
         isOpen={!!promotingListing}
         onClose={() => setPromotingListing(null)}
         listingTitle={promotingListing?.title || 'Listing'}
+      />
+
+      <VerificationModal
+        isOpen={isVerificationOpen}
+        onClose={() => setIsVerificationOpen(false)}
+        sellerName={user?.fullName || 'Seller'}
       />
 
       <MobileNav />
