@@ -5,6 +5,7 @@ import AuthModal from './AuthModal';
 import SqlSchemaViewer from './SqlSchemaViewer';
 import SafetyTipsModal from './SafetyTipsModal';
 import CompareModal from './CompareModal';
+import SavedAlertsModal from './SavedAlertsModal';
 import { 
   ShieldCheck, 
   PlusCircle, 
@@ -17,7 +18,8 @@ import {
   Menu,
   X,
   HelpCircle,
-  Scale
+  Scale,
+  Bell
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -37,6 +39,7 @@ const Navbar: React.FC = () => {
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [isSafetyModalOpen, setIsSafetyModalOpen] = useState(false);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -146,6 +149,14 @@ const Navbar: React.FC = () => {
 
           {/* Nav Controls */}
           <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => setIsAlertsModalOpen(true)}
+              className="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Saved Search Alerts"
+            >
+              <Bell className="w-5 h-5" />
+            </button>
+
             <button
               onClick={() => setIsCompareModalOpen(true)}
               className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
@@ -272,14 +283,16 @@ const Navbar: React.FC = () => {
                 <span>Compare Matrix ({compareListingIds.length})</span>
               </button>
 
-              <Link
-                to="/saved"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAlertsModalOpen(true);
+                }}
                 className="flex items-center gap-2 p-2 bg-slate-800 rounded-lg text-slate-200"
               >
-                <Heart className="w-4 h-4 text-emerald-400" />
-                <span>Saved Ads ({savedListingIds.length})</span>
-              </Link>
+                <Bell className="w-4 h-4 text-emerald-400" />
+                <span>Saved Alerts</span>
+              </button>
             </div>
 
             {isAuthenticated ? (
@@ -323,7 +336,7 @@ const Navbar: React.FC = () => {
       </header>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
 
       {/* SQL Migration Modal */}
       <SqlSchemaViewer isOpen={isSqlModalOpen} onClose={() => setIsSqlModalOpen(false)} />
@@ -333,6 +346,9 @@ const Navbar: React.FC = () => {
 
       {/* Compare Listings Matrix Modal */}
       <CompareModal isOpen={isCompareModalOpen} onClose={() => setIsCompareModalOpen(false)} />
+
+      {/* Saved Search Alerts Modal */}
+      <SavedAlertsModal isOpen={isAlertsModalOpen} onClose={() => setIsAlertsModalOpen(false)} />
     </>
   );
 };

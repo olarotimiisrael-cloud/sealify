@@ -6,6 +6,7 @@ import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
+import FinancingCalculator from '../components/FinancingCalculator';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import { 
@@ -76,6 +77,8 @@ const ListingDetail: React.FC = () => {
     currency: 'USD',
     maximumFractionDigits: 0,
   }).format(listing.price);
+
+  const isEligibleForFinancing = ['Vehicles', 'Real Estate', 'Electronics'].includes(listing.category) || listing.price >= 500;
 
   const handleStartChat = () => {
     if (!isAuthenticated) {
@@ -249,6 +252,11 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Financing Calculator Widget */}
+            {isEligibleForFinancing && (
+              <FinancingCalculator itemPrice={listing.price} category={listing.category} />
+            )}
           </div>
 
           {/* Right Sidebar: Seller Snippet & Actions */}

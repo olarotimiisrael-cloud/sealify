@@ -32,6 +32,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  originalPrice?: number;
   category: Category;
   condition: Condition;
   location: string;
@@ -66,6 +67,16 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   messages: Message[];
+}
+
+export interface SearchAlert {
+  id: string;
+  query: string;
+  category: string;
+  maxPrice: number | null;
+  location: string;
+  createdAt: string;
+  matchCount: number;
 }
 
 export interface FilterState {
