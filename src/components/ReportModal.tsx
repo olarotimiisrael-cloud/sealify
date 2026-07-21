@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle, ShieldAlert, Check } from 'lucide-react';
+import { X, ShieldAlert, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ReportModalProps {

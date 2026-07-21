@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
 import ReviewModal from '../components/ReviewModal';
 import MobileNav from '../components/MobileNav';
-import { ShieldCheck, MapPin, Calendar, Phone, ArrowLeft, Package, Star, MessageSquare } from 'lucide-react';
+import { ShieldCheck, MapPin, Calendar, Phone, ArrowLeft, Package, Star } from 'lucide-react';
 
 interface ReviewItem {
   id: string;
