@@ -31,6 +31,62 @@ export const INITIAL_LISTINGS: Listing[] = [
     images: [
       'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'
+    ],
+    createdAt: '2 hours ago',
+    viewsCount: 142,
+    featured: true,
+  },
+  {
+    id: 'lst_102',
+    sellerId: 'usr_002',
+    sellerName: 'David Chen',
+    sellerPhone: '+234 801 111 2222',
+    sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Apple MacBook Pro 16" M2 Pro (16GB, 512GB SSD)',
+    description: 'Space Gray MacBook Pro M2 Pro in pristine condition. Battery health 98%. Comes with original box, 140W USB-C charger, and protective sleeve.',
+    price: 1650000,
+    originalPrice: 1850000,
+    category: 'Electronics',
+    condition: 'Like New',
+    location: 'Ibadan, Nigeria',
+    status: 'active',
+    images: [
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit<tool_call>dyad-write path="src/data/mockData.ts" description="Updating mock data with NGN prices and Ogbomoso locations - continuing">
+import { Listing, UserProfile, Conversation } from '../types/sealify';
+
+export const CURRENT_USER: UserProfile = {
+  id: 'usr_001',
+  email: 'alex.seller@sealify.com',
+  fullName: 'Alex Morgan',
+  phoneNumber: '+234 800 000 0000',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+  role: 'seller',
+  verified: true,
+  memberSince: 'Jan 2023',
+  location: 'Ogbomoso, Nigeria',
+};
+
+export const INITIAL_LISTINGS: Listing[] = [
+  {
+    id: 'lst_101',
+    sellerId: 'usr_001',
+    sellerName: 'Alex Morgan',
+    sellerPhone: '+234 800 000 0000',
+    sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: '2021 Tesla Model 3 Long Range - Clean Title',
+    description: 'Selling my well-maintained Tesla Model 3. Battery range is excellent (~330 miles). Includes autopilot, premium interior, custom all-weather mats, and fast charger adapter.',
+    price: 28500000,
+    originalPrice: 31000000,
+    category: 'Vehicles',
+    condition: 'Like New',
+    location: 'Ogbomoso, Nigeria',
+    status: 'active',
+    images: [
+      'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&w=800&q=80',
       'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80'
     ],
     createdAt: '2 hours ago',
@@ -151,14 +207,14 @@ export const INITIAL_LISTINGS: Listing[] = [
     sellerAvatar: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=300&q=80',
     sellerVerified: true,
     title: 'Licensed Emergency Plumbing & Leak Repairs',
-    description: '24/7 Professional plumbing services in NYC area. Leak fixes, drain cleaning, boiler maintenance, and bathroom installations. Free estimates!',
-    price: 85000,
+    description: '24/7 Professional plumbing services in Ogbomoso area. Leak fixes, drain cleaning, boiler maintenance, and bathroom installations. Free estimates!',
+    price: 8500,
     category: 'Services',
     condition: 'Brand New',
     location: 'Ogbomoso, Nigeria',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1581578731548-c69a57e60b7e?auto=format&fit=crop&w=800&q=80'
+      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80'
     ],
     createdAt: '3 days ago',
     viewsCount: 310,

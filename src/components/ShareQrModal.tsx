@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, QrCode, Copy, Check, Share2, MessageCircle, Mail, Send, Download } from 'lucide-react';
+import { X, QrCode, Copy, Check, Share2, MessageCircle, Mail, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShareQrModalProps {

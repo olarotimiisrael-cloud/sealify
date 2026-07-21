@@ -44,11 +44,10 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="text-center space-y-1">
-            <h3 className="font-black text-xl text-white">Rate Seller</h3>
+            <h3 className="font-bold text-xl text-white">Rate Seller</h3>
             <p className="text-xs text-slate-400">Share your trading experience with <strong className="text-emerald-400">{sellerName}</strong></p>
           </div>
 
-          {/* Star Rating Picker */}
           <div className="flex justify-center items-center gap-2 py-3">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -84,7 +83,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
           >
             <Send className="w-4 h-4" />
             <span>Submit Review</span>
