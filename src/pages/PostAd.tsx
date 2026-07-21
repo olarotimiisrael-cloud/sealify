@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import { Category, Condition } from '../types/sealify';
-import { Upload, X, Plus, ShieldCheck } from 'lucide-react';
+import { X, Plus, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORIES: Category[] = [
@@ -29,6 +29,7 @@ const CONDITIONS: Condition[] = [
 const SAMPLE_UPLOADS = [
   'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
   'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1583394838336-acd977736f90?auto=format&fit=crop&w=800&q=80',
 ];
 
 const PostAd: React.FC = () => {
@@ -42,12 +43,20 @@ const PostAd: React.FC = () => {
   const [price, setPrice] = useState('');
   const [location, setLocation] = useState('New York, NY');
   const [description, setDescription] = useState('');
+  const [customImageUrl, setCustomImageUrl] = useState('');
   const [images, setImages] = useState<string[]>([SAMPLE_UPLOADS[0]]);
 
   const handleAddSampleImage = () => {
     const nextImage = SAMPLE_UPLOADS[images.length % SAMPLE_UPLOADS.length];
     setImages((prev) => [...prev, nextImage]);
     toast.info('Sample image attached');
+  };
+
+  const handleAddCustomUrl = () => {
+    if (!customImageUrl.trim()) return;
+    setImages((prev) => [...prev, customImageUrl.trim()]);
+    setCustomImageUrl('');
+    toast.success('Custom image URL attached!');
   };
 
   const handleRemoveImage = (index: number) => {
@@ -115,6 +124,27 @@ const PostAd: React.FC = () => {
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-[10px] font-bold">Add Photo</span>
+              </button>
+            </div>
+
+            {/* Custom Photo URL Input */}
+            <div className="flex gap-2 pt-2">
+              <div className="relative flex-1">
+                <ImageIcon className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="url"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  placeholder="Or paste image URL (https://...)"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAddCustomUrl}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 shrink-0"
+              >
+                Attach
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -28,7 +28,7 @@ import { toast } from 'sonner';
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage } = useSealify();
+  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed } = useSealify();
   
   const listing = listings.find((l) => l.id === id);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -37,6 +37,12 @@ const ListingDetail: React.FC = () => {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
+
+  useEffect(() => {
+    if (listing?.id) {
+      addRecentlyViewed(listing.id);
+    }
+  }, [listing?.id]);
 
   if (!listing) {
     return (

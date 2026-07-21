@@ -12,12 +12,16 @@ import {
   ShieldCheck, 
   Zap, 
   TrendingUp, 
-  Tag
+  History
 } from 'lucide-react';
 
+const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing'];
+
 const Index: React.FC = () => {
-  const { listings, filters, setFilters, resetFilters } = useSealify();
+  const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
   // Filter listings based on current search & filters state
   const filteredListings = listings.filter((item) => {
@@ -78,6 +82,20 @@ const Index: React.FC = () => {
             <p className="text-slate-400 text-sm md:text-base leading-relaxed">
               Sealify connects verified buyers and sellers nearby. Discover cars, phones, homes, and everyday items with guaranteed fraud protection.
             </p>
+
+            {/* Popular Search Tag Chips */}
+            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-1.5">
+              <span className="text-[11px] font-bold text-slate-500">Popular:</span>
+              {POPULAR_SEARCHES.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setFilters((prev) => ({ ...prev, searchQuery: tag }))}
+                  className="text-[11px] font-semibold text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 px-2.5 py-0.5 rounded-lg transition-colors"
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Quick Metrics Badge */}
@@ -106,9 +124,26 @@ const Index: React.FC = () => {
       </section>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1">
+      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
+        {/* Recently Viewed Strip */}
+        {recentlyViewedListings.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <History className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold text-slate-200">Recently Viewed</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {recentlyViewedListings.map((listing) => (
+                <div key={listing.id} className="scale-95">
+                  <ListingCard listing={listing} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />
             <h2 className="text-xl font-bold text-white tracking-tight">

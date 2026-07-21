@@ -3,7 +3,14 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
-import { MessageSquare, Send, User, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Send, Sparkles } from 'lucide-react';
+
+const QUICK_REPLIES = [
+  'Is the price negotiable?',
+  'Can I inspect it today?',
+  'What is your best price?',
+  'Is delivery available?',
+];
 
 const Messages: React.FC = () => {
   const { conversations, sendMessage, isAuthenticated, user } = useSealify();
@@ -18,6 +25,11 @@ const Messages: React.FC = () => {
     if (!text.trim() || !activeConv) return;
     sendMessage(activeConv.listingId, activeConv.otherUser.id, text);
     setText('');
+  };
+
+  const handleQuickReply = (reply: string) => {
+    if (!activeConv) return;
+    sendMessage(activeConv.listingId, activeConv.otherUser.id, reply);
   };
 
   if (!isAuthenticated) {
@@ -106,7 +118,7 @@ const Messages: React.FC = () => {
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
                         }`}
                       >
-                        <p>{m.content}</p>
+                        <p className="whitespace-pre-wrap">{m.content}</p>
                         <span className={`block text-[9px] text-right ${isMe ? 'text-slate-900/70' : 'text-slate-500'}`}>
                           {m.createdAt}
                         </span>
@@ -114,6 +126,21 @@ const Messages: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Quick Suggestion Reply Chips */}
+              <div className="px-3 py-2 bg-slate-900/90 border-t border-slate-800 flex gap-1.5 overflow-x-auto no-scrollbar">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0 self-center" />
+                {QUICK_REPLIES.map((q) => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => handleQuickReply(q)}
+                    className="text-[10px] font-semibold text-slate-300 hover:text-emerald-400 bg-slate-800 hover:bg-slate-750 px-2.5 py-1 rounded-full shrink-0 border border-slate-700/60"
+                  >
+                    {q}
+                  </button>
+                ))}
               </div>
 
               {/* Chat Input */}
