@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 import SqlSchemaViewer from './SqlSchemaViewer';
 import SafetyTipsModal from './SafetyTipsModal';
 import CompareModal from './CompareModal';
 import SavedAlertsModal from './SavedAlertsModal';
+import NotificationCenter from './NotificationCenter';
 import { 
   ShieldCheck, 
   PlusCircle, 
@@ -40,6 +41,7 @@ const Navbar: React.FC = () => {
   const [isSafetyModalOpen, setIsSafetyModalOpen] = useState(false);
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -150,11 +152,14 @@ const Navbar: React.FC = () => {
           {/* Nav Controls */}
           <div className="hidden md:flex items-center gap-3">
             <button
-              onClick={() => setIsAlertsModalOpen(true)}
-              className="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
-              title="Saved Search Alerts"
+              onClick={() => setIsNotifOpen(true)}
+              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Notifications"
             >
               <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                2
+              </span>
             </button>
 
             <button
@@ -349,6 +354,9 @@ const Navbar: React.FC = () => {
 
       {/* Saved Search Alerts Modal */}
       <SavedAlertsModal isOpen={isAlertsModalOpen} onClose={() => setIsAlertsModalOpen(false)} />
+
+      {/* In-App Notification Center Drawer */}
+      <NotificationCenter isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} />
     </>
   );
 };
