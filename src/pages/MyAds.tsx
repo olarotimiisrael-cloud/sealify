@@ -5,14 +5,16 @@ import MobileNav from '../components/MobileNav';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
+import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import { Listing } from '../types/sealify';
-import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3, Award } from 'lucide-react';
+import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3, Award, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const MyAds: React.FC = () => {
   const { user, listings, deleteListing, markAsSold, updateListing } = useSealify();
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
+  const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
@@ -78,6 +80,15 @@ const MyAds: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-800">
+                  <button
+                    onClick={() => setAnalyticsListing(ad)}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs"
+                    title="View Ad Analytics"
+                  >
+                    <BarChart2 className="w-3.5 h-3.5 text-teal-400" />
+                    <span>Stats</span>
+                  </button>
+
                   {ad.status === 'active' && (
                     <>
                       <button
@@ -132,6 +143,12 @@ const MyAds: React.FC = () => {
         isOpen={!!promotingListing}
         onClose={() => setPromotingListing(null)}
         listingTitle={promotingListing?.title || 'Listing'}
+      />
+
+      <AdAnalyticsModal
+        isOpen={!!analyticsListing}
+        onClose={() => setAnalyticsListing(null)}
+        listing={analyticsListing}
       />
 
       <VerificationModal
