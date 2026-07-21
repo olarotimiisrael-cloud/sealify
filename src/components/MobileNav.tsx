@@ -67,6 +67,18 @@ export const MobileNav: React.FC = () => {
         </NavLink>
 
         <NavLink
+          to="/faq"
+          className={({ isActive }) =>
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <Info className="w-5 h-5 mb-0.5" />
+          <span>FAQ</span>
+        </NavLink>
+
+        <NavLink
           to="/my-ads"
           className={({ isActive }) =>
             `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
