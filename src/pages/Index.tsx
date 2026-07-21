@@ -4,6 +4,7 @@ import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
 import FilterDrawer from '../components/FilterDrawer';
 import SafetyTipsModal from '../components/SafetyTipsModal';
+import SavedAlertsModal from '../components/SavedAlertsModal';
 import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -16,7 +17,8 @@ import {
   TrendingUp, 
   History,
   LayoutGrid,
-  Map
+  Map,
+  Bell
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing'];
@@ -25,6 +27,7 @@ const Index: React.FC = () => {
   const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
+  const [isSavedAlertsOpen, setIsSavedAlertsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
@@ -160,7 +163,7 @@ const Index: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Grid vs Map Mode Switcher */}
             <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
               <button
@@ -187,6 +190,15 @@ const Index: React.FC = () => {
                 <span className="hidden sm:inline">Map View</span>
               </button>
             </div>
+
+            <button
+              onClick={() => setIsSavedAlertsOpen(true)}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition-colors"
+              title="Save search alert for current filters"
+            >
+              <Bell className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Saved Alerts</span>
+            </button>
 
             <button
               onClick={() => setIsFilterOpen(true)}
@@ -240,6 +252,9 @@ const Index: React.FC = () => {
 
       {/* Safety Tips Modal */}
       <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
+
+      {/* Saved Alerts Modal */}
+      <SavedAlertsModal isOpen={isSavedAlertsOpen} onClose={() => setIsSavedAlertsOpen(false)} />
 
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
