@@ -4,6 +4,7 @@ import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
 import FilterDrawer from '../components/FilterDrawer';
 import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
 import { 
   SlidersHorizontal, 
   Search, 
@@ -56,7 +57,7 @@ const Index: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
       <Navbar />
       <CategoryBar />
 
@@ -185,6 +186,8 @@ const Index: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      <MobileNav />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
 import { Trash2, CheckCircle, PlusCircle, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -10,7 +11,7 @@ const MyAds: React.FC = () => {
   const myAds = listings.filter((l) => l.sellerId === user?.id);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
@@ -83,6 +84,8 @@ const MyAds: React.FC = () => {
           </div>
         </div>
       </main>
+
+      <MobileNav />
     </div>
   );
 };

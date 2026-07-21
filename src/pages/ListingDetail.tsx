@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { useParams, Link, useNavigate } from 'reactwindow' ? '' : 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
+import ReportModal from '../components/ReportModal';
+import MobileNav from '../components/MobileNav';
 import { 
   MapPin, 
   ShieldCheck, 
@@ -11,12 +13,13 @@ import {
   Heart, 
   Share2, 
   ArrowLeft, 
-  CheckCircle, 
   AlertTriangle,
   Calendar,
   Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ShieldAlert,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,11 +32,12 @@ const ListingDetail: React.FC = () => {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
@@ -42,6 +46,7 @@ const ListingDetail: React.FC = () => {
             Back to Home
           </Link>
         </div>
+        <MobileNav />
       </div>
     );
   }
@@ -69,7 +74,7 @@ const ListingDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
@@ -193,6 +198,16 @@ const ListingDetail: React.FC = () => {
                   {listing.description}
                 </p>
               </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setIsReportOpen(true)}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-400 transition-colors"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Report suspicious ad</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -202,22 +217,32 @@ const ListingDetail: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Seller Information</h3>
 
-              <div className="flex items-center gap-3">
-                <img
-                  src={listing.sellerAvatar}
-                  alt={listing.sellerName}
-                  className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
-                />
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
-                    {listing.sellerVerified && (
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" title="Verified Seller" />
-                    )}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={listing.sellerAvatar}
+                    alt={listing.sellerName}
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
+                  />
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
+                      {listing.sellerVerified && (
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" title="Verified Seller" />
+                      )}
+                    </div>
+                    <p className="text-xs text-emerald-400 font-medium">Verified Vendor</p>
+                    <p className="text-[11px] text-slate-500">Member since 2023</p>
                   </div>
-                  <p className="text-xs text-emerald-400 font-medium">Verified Vendor</p>
-                  <p className="text-[11px] text-slate-500">Member since 2023</p>
                 </div>
+
+                <Link
+                  to={`/seller/${listing.sellerId}`}
+                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white"
+                  title="View Seller Profile"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
               </div>
 
               {/* Action Buttons */}
@@ -268,6 +293,8 @@ const ListingDetail: React.FC = () => {
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} />
+      <MobileNav />
     </div>
   );
 };

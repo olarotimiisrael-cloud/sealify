@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
+import MobileNav from '../components/MobileNav';
 import { MessageSquare, Send, User, ShieldCheck } from 'lucide-react';
 
 const Messages: React.FC = () => {
@@ -21,7 +22,7 @@ const Messages: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <MessageSquare className="w-12 h-12 text-emerald-400 mb-3" />
@@ -35,12 +36,13 @@ const Messages: React.FC = () => {
           </button>
         </div>
         <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+        <MobileNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col">
@@ -139,6 +141,8 @@ const Messages: React.FC = () => {
           )}
         </div>
       </main>
+
+      <MobileNav />
     </div>
   );
 };

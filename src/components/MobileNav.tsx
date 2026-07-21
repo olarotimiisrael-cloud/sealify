@@ -1,21 +1,20 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Search, PlusCircle, MessageSquare, User } from 'lucide-react';
-import { useApp } from '@/context/AppContext';
+import { Home, Heart, PlusCircle, MessageSquare, User } from 'lucide-react';
+import { useSealify } from '../context/SealifyContext';
 
 export const MobileNav: React.FC = () => {
-  const { messages, currentUser } = useApp();
-  const unreadCount = messages.filter((m) => !m.read && m.receiver_id === currentUser?.id).length;
+  const { savedListingIds, conversations, user } = useSealify();
+  const totalUnreadMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-3 py-1.5 shadow-lg">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40 px-3 py-1.5 shadow-2xl">
       <div className="flex justify-around items-center">
-        
         <NavLink
           to="/"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-              isActive ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
             }`
           }
         >
@@ -24,18 +23,18 @@ export const MobileNav: React.FC = () => {
         </NavLink>
 
         <NavLink
-          to="/messages"
+          to="/saved"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-xs font-medium relative transition-colors ${
-              isActive ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold relative transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
             }`
           }
         >
-          <MessageSquare className="w-5 h-5 mb-0.5" />
-          <span>Chats</span>
-          {unreadCount > 0 && (
-            <span className="absolute top-0 right-2 bg-rose-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              {unreadCount}
+          <Heart className="w-5 h-5 mb-0.5" />
+          <span>Saved</span>
+          {savedListingIds.length > 0 && (
+            <span className="absolute top-0 right-2 bg-emerald-500 text-slate-950 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              {savedListingIds.length}
             </span>
           )}
         </NavLink>
@@ -44,37 +43,43 @@ export const MobileNav: React.FC = () => {
           to="/post-ad"
           className="flex flex-col items-center -mt-5"
         >
-          <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-emerald-200 border-2 border-white">
+          <div className="w-12 h-12 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 border-2 border-slate-900 font-black">
             <PlusCircle className="w-7 h-7" />
           </div>
-          <span className="text-[10px] font-bold text-emerald-700 mt-0.5">Post Ad</span>
+          <span className="text-[10px] font-extrabold text-emerald-400 mt-0.5">Sell Ad</span>
         </NavLink>
 
         <NavLink
-          to="/saved"
+          to="/messages"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-              isActive ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold relative transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
             }`
           }
         >
-          <Search className="w-5 h-5 mb-0.5" />
-          <span>Saved</span>
+          <MessageSquare className="w-5 h-5 mb-0.5" />
+          <span>Inbox</span>
+          {totalUnreadMessages > 0 && (
+            <span className="absolute top-0 right-2 bg-teal-400 text-slate-950 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
+              {totalUnreadMessages}
+            </span>
+          )}
         </NavLink>
 
         <NavLink
-          to="/dashboard"
+          to="/my-ads"
           className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-              isActive ? 'text-emerald-600' : 'text-slate-500 hover:text-slate-800'
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
             }`
           }
         >
           <User className="w-5 h-5 mb-0.5" />
-          <span>Account</span>
+          <span>{user ? 'My Ads' : 'Account'}</span>
         </NavLink>
-
       </div>
     </nav>
   );
 };
+
+export default MobileNav;

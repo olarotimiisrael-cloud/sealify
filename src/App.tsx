@@ -7,6 +7,7 @@ import PostAd from "./pages/PostAd";
 import Messages from "./pages/Messages";
 import SavedAds from "./pages/SavedAds";
 import MyAds from "./pages/MyAds";
+import SellerProfile from "./pages/SellerProfile";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
@@ -16,6 +17,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/listing/:id" element={<ListingDetail />} />
+        <Route path="/seller/:id" element={<SellerProfile />} />
         <Route path="/post-ad" element={<PostAd />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/saved" element={<SavedAds />} />

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
+import MobileNav from '../components/MobileNav';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -10,7 +11,7 @@ const SavedAds: React.FC = () => {
   const savedListings = listings.filter((l) => savedListingIds.includes(l.id));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
@@ -44,6 +45,8 @@ const SavedAds: React.FC = () => {
           </div>
         )}
       </main>
+
+      <MobileNav />
     </div>
   );
 };

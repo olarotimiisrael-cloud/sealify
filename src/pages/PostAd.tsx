@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
+import MobileNav from '../components/MobileNav';
 import { Category, Condition } from '../types/sealify';
 import { Upload, X, Plus, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -80,7 +81,7 @@ const PostAd: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
       <main className="max-w-3xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
@@ -211,6 +212,7 @@ const PostAd: React.FC = () => {
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <MobileNav />
     </div>
   );
 };
