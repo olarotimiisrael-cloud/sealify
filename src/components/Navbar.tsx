@@ -338,7 +338,7 @@ const Navbar: React.FC = () => {
               + POST AN AD
             </Link>
           </div>
-        </div>
+        )}
       </header>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
