@@ -1,166 +1,181 @@
 import React from 'react';
-import { useApp } from '@/context/AppContext';
-import { X, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { CATEGORIES } from '@/data/mockData';
+import { useSealify } from '../context/SealifyContext';
+import { Category, Condition } from '../types/sealify';
+import { Filter, RotateCcw, X } from 'lucide-react';
 
 interface FilterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
-  const { searchFilter, setSearchFilter, resetFilters } = useApp();
+const CATEGORIES: (Category | 'All')[] = [
+  'All',
+  'Vehicles',
+  'Electronics',
+  'Real Estate',
+  'Fashion',
+  'Home & Furniture',
+  'Services',
+  'Jobs',
+  'Beauty & Health',
+];
+
+const CONDITIONS: (Condition | 'All')[] = [
+  'All',
+  'Brand New',
+  'Like New',
+  'Used - Good',
+  'Used - Fair',
+];
+
+const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
+  const { filters, setFilters, resetFilters } = useSealify();
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/50 backdrop-blur-sm flex justify-end">
-      <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-        
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end">
+      <div className="w-full max-w-md bg-slate-900 h-full overflow-y-auto p-6 space-y-6 shadow-2xl border-l border-slate-800 text-slate-200">
         {/* Header */}
-        <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div>
-            <h3 className="font-bold text-slate-900 text-lg">Filter Ads</h3>
-            <p className="text-xs text-slate-500">Refine your marketplace search</p>
+        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="flex items-center gap-2 font-bold text-lg text-white">
+            <Filter className="w-5 h-5 text-emerald-400" />
+            <span>Filter Classifieds</span>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 rounded-full">
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-5 flex-1 overflow-y-auto space-y-6 text-slate-700">
-          
-          {/* Category Filter */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Category
-            </label>
-            <select
-              value={searchFilter.category}
-              onChange={(e) => setSearchFilter((p) => ({ ...p, category: e.target.value }))}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">All Categories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+        {/* Category Selection */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Category</label>
+          <div className="grid grid-cols-2 gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setFilters((prev) => ({ ...prev, category: cat }))}
+                className={`py-2 px-3 rounded-xl text-xs font-medium text-left transition-colors ${
+                  filters.category === cat
+                    ? 'bg-emerald-500 text-slate-950 font-bold'
+                    : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Price Range */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Price Range ($)
-            </label>
-            <div className="flex gap-3 items-center">
-              <input
-                type="number"
-                placeholder="Min"
-                value={searchFilter.minPrice ?? ''}
-                onChange={(e) =>
-                  setSearchFilter((p) => ({
-                    ...p,
-                    minPrice: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-              <span className="text-slate-400 font-bold">-</span>
-              <input
-                type="number"
-                placeholder="Max"
-                value={searchFilter.maxPrice ?? ''}
-                onChange={(e) =>
-                  setSearchFilter((p) => ({
-                    ...p,
-                    maxPrice: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
-                className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Condition Filter */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Condition
-            </label>
-            <select
-              value={searchFilter.condition}
-              onChange={(e) => setSearchFilter((p) => ({ ...p, condition: e.target.value }))}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="all">Any Condition</option>
-              <option value="Brand New">Brand New</option>
-              <option value="Like New">Like New</option>
-              <option value="Refurbished">Refurbished</option>
-              <option value="Used - Good">Used - Good</option>
-              <option value="Used - Fair">Used - Fair</option>
-            </select>
-          </div>
-
-          {/* Location Search */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Location / City
-            </label>
+        {/* Price Range */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Price Range ($)</label>
+          <div className="flex items-center gap-2">
             <input
-              type="text"
-              placeholder="e.g. Lagos, Ikeja, Lekki..."
-              value={searchFilter.location}
-              onChange={(e) => setSearchFilter((p) => ({ ...p, location: e.target.value }))}
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-            />
-          </div>
-
-          {/* Sorting */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-              Sort By
-            </label>
-            <select
-              value={searchFilter.sortBy}
+              type="number"
+              placeholder="Min"
+              value={filters.minPrice || ''}
               onChange={(e) =>
-                setSearchFilter((p) => ({
-                  ...p,
-                  sortBy: e.target.value as any,
+                setFilters((prev) => ({
+                  ...prev,
+                  minPrice: e.target.value ? Number(e.target.value) : null,
                 }))
               }
-              className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-            >
-              <option value="newest">Newest Ads First</option>
-              <option value="price_low">Price: Low to High</option>
-              <option value="price_high">Price: High to Low</option>
-              <option value="popular">Most Viewed</option>
-            </select>
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
+            <span className="text-slate-500">-</span>
+            <input
+              type="number"
+              placeholder="Max"
+              value={filters.maxPrice || ''}
+              onChange={(e) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  maxPrice: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
           </div>
-
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex gap-3">
-          <Button
-            variant="outline"
-            onClick={resetFilters}
-            className="flex-1 rounded-xl border-slate-300"
+        {/* Condition */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Condition</label>
+          <div className="space-y-1">
+            {CONDITIONS.map((cond) => (
+              <label
+                key={cond}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-800 cursor-pointer text-sm"
+              >
+                <span className={filters.condition === cond ? 'text-emerald-400 font-semibold' : 'text-slate-300'}>
+                  {cond}
+                </span>
+                <input
+                  type="radio"
+                  name="condition"
+                  checked={filters.condition === cond}
+                  onChange={() => setFilters((prev) => ({ ...prev, condition: cond }))}
+                  className="accent-emerald-500"
+                />
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {/* Location search */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Location</label>
+          <input
+            type="text"
+            placeholder="e.g. New York, Brooklyn, Queens"
+            value={filters.location}
+            onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+          />
+        </div>
+
+        {/* Sort option */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Sort By</label>
+          <select
+            value={filters.sortBy}
+            onChange={(e) =>
+              setFilters((prev) => ({
+                ...prev,
+                sortBy: e.target.value as 'newest' | 'price-asc' | 'price-desc',
+              }))
+            }
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Reset
-          </Button>
-          <Button
+            <option value="newest">Newest First</option>
+            <option value="price-asc">Price: Low to High</option>
+            <option value="price-desc">Price: High to Low</option>
+          </select>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="pt-4 border-t border-slate-800 flex items-center gap-3">
+          <button
+            onClick={resetFilters}
+            className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Reset</span>
+          </button>
+          <button
             onClick={onClose}
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl"
+            className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-sm transition-colors shadow-lg shadow-emerald-500/20"
           >
             Apply Filters
-          </Button>
+          </button>
         </div>
-
       </div>
     </div>
   );
 };
+
+export default FilterDrawer;

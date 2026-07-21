@@ -1,135 +1,192 @@
 import React, { useState } from 'react';
-import { useApp } from '@/context/AppContext';
-import { Navbar } from '@/components/Navbar';
-import { MobileNav } from '@/components/MobileNav';
-import { CategoryGrid } from '@/components/CategoryGrid';
-import { ListingCard } from '@/components/ListingCard';
-import { FilterDrawer } from '@/components/FilterDrawer';
-import { MadeWithDyad } from '@/components/made-with-dyad';
-import { SlidersHorizontal, ShieldCheck, Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useSealify } from '../context/SealifyContext';
+import CategoryBar from '../components/CategoryBar';
+import ListingCard from '../components/ListingCard';
+import FilterDrawer from '../components/FilterDrawer';
+import Navbar from '../components/Navbar';
+import { 
+  SlidersHorizontal, 
+  Search, 
+  Sparkles, 
+  ShieldCheck, 
+  Zap, 
+  TrendingUp, 
+  Tag
+} from 'lucide-react';
 
-export default function Index() {
-  const { listings, searchFilter } = useApp();
+const Index: React.FC = () => {
+  const { listings, filters, setFilters, resetFilters } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Filter listings based on global search state
+  // Filter listings based on current search & filters state
   const filteredListings = listings.filter((item) => {
-    if (item.status !== 'active') return false;
-
-    if (searchFilter.category !== 'all' && item.category !== searchFilter.category) {
-      return false;
-    }
-
-    if (searchFilter.condition !== 'all' && item.condition !== searchFilter.condition) {
-      return false;
-    }
-
-    if (searchFilter.minPrice !== null && item.price < searchFilter.minPrice) {
-      return false;
-    }
-
-    if (searchFilter.maxPrice !== null && item.price > searchFilter.maxPrice) {
-      return false;
-    }
-
-    if (
-      searchFilter.location &&
-      !item.location.toLowerCase().includes(searchFilter.location.toLowerCase())
-    ) {
-      return false;
-    }
-
-    if (searchFilter.query) {
-      const q = searchFilter.query.toLowerCase();
+    // Search Query
+    if (filters.searchQuery) {
+      const q = filters.searchQuery.toLowerCase();
       const matchTitle = item.title.toLowerCase().includes(q);
       const matchDesc = item.description.toLowerCase().includes(q);
-      return matchTitle || matchDesc;
+      const matchLoc = item.location.toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchLoc) return false;
     }
 
+    // Category
+    if (filters.category !== 'All' && item.category !== filters.category) {
+      return false;
+    }
+
+    // Condition
+    if (filters.condition !== 'All' && item.condition !== filters.condition) {
+      return false;
+    }
+
+    // Location
+    if (filters.location && !item.location.toLowerCase().includes(filters.location.toLowerCase())) {
+      return false;
+    }
+
+    // Price Range
+    if (filters.minPrice !== null && item.price < filters.minPrice) return false;
+    if (filters.maxPrice !== null && item.price > filters.maxPrice) return false;
+
     return true;
+  }).sort((a, b) => {
+    if (filters.sortBy === 'price-asc') return a.price - b.price;
+    if (filters.sortBy === 'price-desc') return b.price - a.price;
+    return 0; // default newest
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-16 md:pb-0">
-      <Navbar onOpenFilter={() => setIsFilterOpen(true)} />
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+      <Navbar />
+      <CategoryBar />
 
       {/* Hero Banner Section */}
-      <section className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] opacity-10" />
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
-          <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 text-xs font-semibold px-3 py-1 rounded-full mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-300" />
-            Buy & Sell Anything safely on Sealify
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight mb-4 max-w-3xl mx-auto">
-            Find Great Deals Near You
-          </h1>
-          <p className="text-sm sm:text-base text-emerald-100 max-w-xl mx-auto mb-6">
-            Over thousands of verified sellers posting cars, phones, housing, and everyday items every minute.
-          </p>
+      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/60 py-8 px-4 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3 text-center md:text-left max-w-xl">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
+              <Zap className="w-3.5 h-3.5" />
+              <span>Fastest Local Classifieds in USA</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
+              Buy & Sell Anything <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+                Safely & Instantly.
+              </span>
+            </h1>
+            <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+              Sealify connects verified buyers and sellers nearby. Discover cars, phones, homes, and everyday items with guaranteed fraud protection.
+            </p>
+          </div>
 
-          <div className="flex flex-wrap justify-center gap-4 text-xs font-medium text-emerald-200">
-            <span className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-1 text-emerald-400" /> Verified Sellers</span>
-            <span className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-1 text-emerald-400" /> Safe Escrow Communication</span>
-            <span className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-1 text-emerald-400" /> Zero Listing Fees</span>
+          {/* Quick Metrics Badge */}
+          <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
+            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow">
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-white">100%</p>
+                <p className="text-[11px] text-slate-400 font-medium">Verified Sellers</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow">
+              <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400">
+                <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-lg font-black text-white">2.4k+</p>
+                <p className="text-[11px] text-slate-400 font-medium">Active Ads</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 w-full py-6">
-        
-        {/* Categories Grid */}
-        <CategoryGrid />
-
-        {/* Section Header & Active Filters Bar */}
-        <div className="flex items-center justify-between mt-8 mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
-              Fresh Ads & Trending Items
+      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1">
+        {/* Controls Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-emerald-400" />
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              {filters.category === 'All' ? 'Trending Classifieds' : `${filters.category} Ads`}
             </h2>
-            <p className="text-xs text-slate-500">
-              Showing {filteredListings.length} items
-            </p>
+            <span className="text-xs bg-slate-800 text-slate-400 font-semibold px-2.5 py-0.5 rounded-full">
+              {filteredListings.length} items
+            </span>
           </div>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsFilterOpen(true)}
-            className="rounded-full border-slate-300 text-slate-700 md:hidden"
-          >
-            <SlidersHorizontal className="w-4 h-4 mr-1.5" />
-            Filters
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsFilterOpen(true)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-850 text-slate-200 border border-slate-800 rounded-xl text-xs font-bold transition-colors"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+              <span>Filter & Sort</span>
+            </button>
+
+            {(filters.category !== 'All' || filters.searchQuery || filters.condition !== 'All') && (
+              <button
+                onClick={resetFilters}
+                className="text-xs text-slate-400 hover:text-emerald-400 underline font-medium px-2"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Listing Cards Grid */}
-        {filteredListings.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 my-8">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-4">
-              <SlidersHorizontal className="w-8 h-8" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-800">No listings match your criteria</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
-              Try adjusting your price range, category selection, or search keywords.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+        {/* Listings Grid */}
+        {filteredListings.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
             {filteredListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
+        ) : (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center max-w-md mx-auto my-12 space-y-4">
+            <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto text-slate-500">
+              <Search className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-white">No ad listings found</h3>
+            <p className="text-xs text-slate-400">
+              We couldn't find any items matching your filter criteria. Try searching for something else or resetting filters.
+            </p>
+            <button
+              onClick={resetFilters}
+              className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-emerald-400 transition-colors"
+            >
+              Reset All Filters
+            </button>
+          </div>
         )}
-
       </main>
 
+      {/* Filter Drawer Component */}
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
-      <MobileNav />
-      <MadeWithDyad />
+
+      {/* Footer */}
+      <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-xs">
+              S
+            </div>
+            <span className="font-bold text-slate-200">Sealify Classifieds</span>
+            <span>© {new Date().getFullYear()}</span>
+          </div>
+          <div className="flex items-center gap-4 text-slate-400">
+            <a href="#" className="hover:text-emerald-400">Safety Tips</a>
+            <a href="#" className="hover:text-emerald-400">Terms of Use</a>
+            <a href="#" className="hover:text-emerald-400">Privacy Policy</a>
+            <a href="#" className="hover:text-emerald-400">Support</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
-}
+};
+
+export default Index;

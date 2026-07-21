@@ -1,30 +1,29 @@
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppProvider } from "@/context/AppContext";
-
+import { SealifyProvider } from "./context/SealifyContext";
 import Index from "./pages/Index";
-import ProductDetail from "./pages/ProductDetail";
+import ListingDetail from "./pages/ListingDetail";
 import PostAd from "./pages/PostAd";
-import Dashboard from "./pages/Dashboard";
-import SavedItems from "./pages/SavedItems";
-import MessagesPage from "./pages/MessagesPage";
+import Messages from "./pages/Messages";
+import SavedAds from "./pages/SavedAds";
+import MyAds from "./pages/MyAds";
 import NotFound from "./pages/NotFound";
 
 const App = () => (
-  <AppProvider>
-    <Toaster position="top-center" />
+  <SealifyProvider>
+    <Toaster position="bottom-right" richColors />
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/listing/:id" element={<ListingDetail />} />
         <Route path="/post-ad" element={<PostAd />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/saved" element={<SavedItems />} />
-        <Route path="/messages" element={<MessagesPage />} />
+        <Route path="/messages" element={<Messages />} />
+        <Route path="/saved" element={<SavedAds />} />
+        <Route path="/my-ads" element={<MyAds />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
-  </AppProvider>
+  </SealifyProvider>
 );
 
 export default App;

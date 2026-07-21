@@ -1,18 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Listing } from '@/types';
-import { useApp } from '@/context/AppContext';
-import { Bookmark, MapPin, ShieldCheck, Eye } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { Listing } from '../types/sealify';
+import { useSealify } from '../context/SealifyContext';
+import { Heart, MapPin, ShieldCheck, Eye } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
-  const { savedIds, toggleSaveListing } = useApp();
-  const isSaved = savedIds.includes(listing.id);
+const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
+  const { toggleSaveListing, isSaved } = useSealify();
+  const saved = isSaved(listing.id);
 
   const formattedPrice = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -21,87 +19,97 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   }).format(listing.price);
 
   return (
-    <div className="group bg-white rounded-2xl border border-slate-200 hover:border-emerald-300 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden flex flex-col h-full relative">
-      
+    <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative">
       {/* Featured Badge */}
-      {listing.is_featured && (
-        <span className="absolute top-3 left-3 z-10 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shadow">
-          Featured
+      {listing.featured && (
+        <span className="absolute top-3 left-3 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow">
+          TOP AD
         </span>
       )}
 
-      {/* Save / Bookmark Button */}
+      {/* Save Button */}
       <button
-        type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           toggleSaveListing(listing.id);
         }}
-        className={`absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-md transition-colors ${
-          isSaved
-            ? 'bg-rose-500 text-white shadow-sm'
-            : 'bg-black/30 hover:bg-black/50 text-white'
+        className={`absolute top-3 right-3 z-10 p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+          saved
+            ? 'bg-red-500/90 text-white'
+            : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
         }`}
+        title={saved ? 'Unsave' : 'Save ad'}
       >
-        <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
+        <Heart className={`w-4 h-4 ${saved ? 'fill-white' : ''}`} />
       </button>
 
-      {/* Image Thumbnail Link */}
-      <Link to={`/product/${listing.id}`} className="relative aspect-[4/3] bg-slate-100 overflow-hidden">
-        <img
-          src={listing.images[0] || 'https://images.unsplash.com/photo-1560343090-f0409e92791a?w=600'}
-          alt={listing.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
-        <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
-          <Badge variant="secondary" className="bg-slate-900/70 backdrop-blur-md text-white text-[10px] font-medium border-0">
-            {listing.condition}
-          </Badge>
-        </div>
-      </Link>
+      <div>
+        {/* Thumbnail Image */}
+        <Link to={`/listing/${listing.id}`} className="block relative aspect-[4/3] bg-slate-850 overflow-hidden">
+          <img
+            src={listing.images[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80'}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            loading="lazy"
+          />
+          {listing.status === 'sold' && (
+            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center">
+              <span className="bg-red-600 text-white font-extrabold text-xs px-3 py-1 rounded-full tracking-widest uppercase">
+                SOLD
+              </span>
+            </div>
+          )}
+          <div className="absolute bottom-2 right-2 bg-slate-950/80 text-slate-300 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+            <Eye className="w-3 h-3" />
+            <span>{listing.viewsCount}</span>
+          </div>
+        </Link>
 
-      {/* Content */}
-      <div className="p-4 flex-1 flex flex-col justify-between">
-        <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-xs text-emerald-700 font-semibold uppercase tracking-wider">
-              {listing.category}
+        {/* Content Body */}
+        <div className="p-4 space-y-2">
+          {/* Price & Category */}
+          <div className="flex justify-between items-baseline gap-2">
+            <span className="text-xl font-black text-emerald-400 tracking-tight">
+              {formattedPrice}
             </span>
-            <span className="text-[11px] text-slate-400">
-              {formatDistanceToNow(new Date(listing.created_at), { addSuffix: true })}
+            <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md uppercase">
+              {listing.category}
             </span>
           </div>
 
-          <Link to={`/product/${listing.id}`}>
-            <h3 className="font-semibold text-slate-800 text-sm sm:text-base line-clamp-2 hover:text-emerald-600 transition-colors mb-2">
+          {/* Title */}
+          <Link to={`/listing/${listing.id}`}>
+            <h3 className="text-sm font-semibold text-slate-100 line-clamp-2 hover:text-emerald-400 transition-colors leading-snug">
               {listing.title}
             </h3>
           </Link>
-        </div>
 
-        <div>
-          <div className="text-lg font-bold text-slate-900 mb-2">
-            {formattedPrice}
-          </div>
-
-          <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs text-slate-500">
-            <div className="flex items-center text-slate-500 truncate max-w-[140px]">
-              <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" />
-              <span className="truncate">{listing.location}</span>
-            </div>
-
-            {listing.seller?.verified && (
-              <span className="flex items-center text-emerald-600 font-medium text-[11px]" title="Verified Seller">
-                <ShieldCheck className="w-3.5 h-3.5 mr-0.5" />
-                Verified
-              </span>
-            )}
+          {/* Condition Tag */}
+          <div className="flex items-center gap-1.5 pt-1">
+            <span className="text-[11px] font-medium text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
+              {listing.condition}
+            </span>
           </div>
         </div>
+      </div>
 
+      {/* Card Footer: Location & Seller */}
+      <div className="px-4 py-3 border-t border-slate-800/80 bg-slate-900/50 text-xs text-slate-400 flex justify-between items-center gap-2">
+        <div className="flex items-center gap-1 truncate text-slate-400">
+          <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+          <span className="truncate text-[11px]">{listing.location}</span>
+        </div>
+
+        <div className="flex items-center gap-1 shrink-0">
+          {listing.sellerVerified && (
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" title="Verified Seller" />
+          )}
+          <span className="text-[10px] text-slate-500">{listing.createdAt}</span>
+        </div>
       </div>
     </div>
   );
 };
+
+export default ListingCard;

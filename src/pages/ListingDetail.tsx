@@ -1,0 +1,275 @@
+import React, { useState } from 'react';
+import { useParams, Link, useNavigate } from 'reactwindow' ? '' : 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import Navbar from '../components/Navbar';
+import AuthModal from '../components/AuthModal';
+import { 
+  MapPin, 
+  ShieldCheck, 
+  Phone, 
+  MessageSquare, 
+  Heart, 
+  Share2, 
+  ArrowLeft, 
+  CheckCircle, 
+  AlertTriangle,
+  Calendar,
+  Eye,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+const ListingDetail: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage } = useSealify();
+  
+  const listing = listings.find((l) => l.id === id);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showPhone, setShowPhone] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
+
+  if (!listing) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
+          <p className="text-slate-400 text-sm mb-6">This item may have been removed or sold by the owner.</p>
+          <Link to="/" className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs">
+            Back to Home
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const saved = isSaved(listing.id);
+
+  const formattedPrice = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    maximumFractionDigits: 0,
+  }).format(listing.price);
+
+  const handleStartChat = () => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, chatMessage);
+    navigate('/messages');
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Listing link copied to clipboard!');
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+      <Navbar />
+
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
+        {/* Breadcrumb / Back button */}
+        <div className="flex items-center justify-between">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Listings</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-slate-300 hover:text-white"
+              title="Share"
+            >
+              <Share2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => toggleSaveListing(listing.id)}
+              className={`p-2 border rounded-xl transition-colors ${
+                saved
+                  ? 'bg-red-500/20 border-red-500 text-red-400'
+                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${saved ? 'fill-red-500' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Content Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Column: Image Gallery & Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Gallery */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3">
+              <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
+                <img
+                  src={listing.images[activeImageIndex]}
+                  alt={listing.title}
+                  className="w-full h-full object-contain"
+                />
+
+                {listing.images.length > 1 && (
+                  <>
+                    <button
+                      onClick={() =>
+                        setActiveImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1))
+                      }
+                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() =>
+                        setActiveImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1))
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* Thumbnails */}
+              {listing.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {listing.images.map((img, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                        activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
+                      }`}
+                    >
+                      <img src={img} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Description Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+              <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800">
+                <div>
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                    {listing.category}
+                  </span>
+                  <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
+                  <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                      {listing.location}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                      {listing.createdAt}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Eye className="w-3.5 h-3.5 text-slate-500" />
+                      {listing.viewsCount} views
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <p className="text-3xl font-black text-emerald-400">{formattedPrice}</p>
+                  <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>
+                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
+                  {listing.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar: Seller Snippet & Actions */}
+          <div className="space-y-6">
+            {/* Seller Info Card */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
+              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Seller Information</h3>
+
+              <div className="flex items-center gap-3">
+                <img
+                  src={listing.sellerAvatar}
+                  alt={listing.sellerName}
+                  className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
+                />
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
+                    {listing.sellerVerified && (
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" title="Verified Seller" />
+                    )}
+                  </div>
+                  <p className="text-xs text-emerald-400 font-medium">Verified Vendor</p>
+                  <p className="text-[11px] text-slate-500">Member since 2023</p>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="space-y-3 pt-2">
+                {/* Phone reveal button */}
+                <button
+                  onClick={() => setShowPhone(!showPhone)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-sm flex items-center justify-center gap-2 border border-slate-700 transition-colors"
+                >
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span>{showPhone ? listing.sellerPhone : 'Show Phone Number'}</span>
+                </button>
+
+                {/* Instant Message area */}
+                <div className="space-y-2 pt-2 border-t border-slate-800">
+                  <textarea
+                    rows={2}
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
+                    placeholder="Type your message..."
+                  />
+                  <button
+                    onClick={handleStartChat}
+                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-colors"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Start Live Chat</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Safety Tips */}
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
+              <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Safety Guidelines</span>
+              </div>
+              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
+                <li>Meet the seller in a public, well-lit area.</li>
+                <li>Inspect the product thoroughly before making payment.</li>
+                <li>Avoid wire transfers or paying advance deposits.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+    </div>
+  );
+};
+
+export default ListingDetail;

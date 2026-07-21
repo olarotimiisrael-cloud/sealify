@@ -1,38 +1,52 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '@/context/AppContext';
-import { Navbar } from '@/components/Navbar';
-import { MobileNav } from '@/components/MobileNav';
-import { CATEGORIES } from '@/data/mockData';
-import { Upload, X, Plus, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useSealify } from '../context/SealifyContext';
+import Navbar from '../components/Navbar';
+import AuthModal from '../components/AuthModal';
+import { Category, Condition } from '../types/sealify';
+import { Upload, X, Plus, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function PostAd() {
+const CATEGORIES: Category[] = [
+  'Vehicles',
+  'Electronics',
+  'Real Estate',
+  'Fashion',
+  'Home & Furniture',
+  'Services',
+  'Jobs',
+  'Beauty & Health',
+];
+
+const CONDITIONS: Condition[] = [
+  'Brand New',
+  'Like New',
+  'Used - Good',
+  'Used - Fair',
+];
+
+const SAMPLE_UPLOADS = [
+  'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=800&q=80',
+  'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80',
+];
+
+const PostAd: React.FC = () => {
+  const { createListing, isAuthenticated } = useSealify();
   const navigate = useNavigate();
-  const { addListing, currentUser } = useApp();
+  const [isAuthOpen, setIsAuthOpen] = useState(!isAuthenticated);
 
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<Category>('Electronics');
+  const [condition, setCondition] = useState<Condition>('Like New');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0].id);
-  const [condition, setCondition] = useState<'Brand New' | 'Like New' | 'Refurbished' | 'Used - Good' | 'Used - Fair'>('Brand New');
-  const [location, setLocation] = useState(currentUser?.location || 'Ikeja, Lagos');
-  const [images, setImages] = useState<string[]>([
-    'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=800&auto=format&fit=crop&q=80',
-  ]);
+  const [location, setLocation] = useState('New York, NY');
+  const [description, setDescription] = useState('');
+  const [images, setImages] = useState<string[]>([SAMPLE_UPLOADS[0]]);
 
   const handleAddSampleImage = () => {
-    const samples = [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800',
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800',
-    ];
-    const random = samples[Math.floor(Math.random() * samples.length)];
-    setImages((prev) => [...prev, random]);
+    const nextImage = SAMPLE_UPLOADS[images.length % SAMPLE_UPLOADS.length];
+    setImages((prev) => [...prev, nextImage]);
+    toast.info('Sample image attached');
   };
 
   const handleRemoveImage = (index: number) => {
@@ -42,182 +56,163 @@ export default function PostAd() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title || !description || !price) {
-      toast.error('Please fill in all required fields');
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
       return;
     }
 
-    if (images.length === 0) {
-      toast.error('Please upload at least one image');
+    if (!title || !price || !description) {
+      toast.error('Please complete all required fields');
       return;
     }
 
-    addListing({
+    createListing({
       title,
-      description,
-      price: Number(price),
       category,
       condition,
+      price: Number(price),
       location,
-      images,
-      is_featured: false,
+      description,
+      images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80'],
     });
 
-    navigate('/dashboard');
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col pb-20 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto px-4 py-8 w-full flex-1">
-        
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Post a Free Ad</h1>
-            <p className="text-xs text-slate-500">Reach thousands of buyers on Sealify today</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            {/* Image Upload Area */}
-            <div>
-              <Label className="block text-xs font-bold text-slate-700 uppercase mb-2">
-                Product Images
-              </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 group">
-                    <img src={img} alt="" className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveImage(idx)}
-                      className="absolute top-1 right-1 bg-rose-500 text-white rounded-full p-1 opacity-90 hover:opacity-100"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={handleAddSampleImage}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 hover:border-emerald-500 flex flex-col items-center justify-center p-3 text-slate-400 hover:text-emerald-600 transition-colors"
-                >
-                  <Plus className="w-6 h-6 mb-1" />
-                  <span className="text-[10px] font-semibold">Add Photo</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Title */}
-            <div>
-              <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Ad Title *
-              </Label>
-              <Input
-                type="text"
-                required
-                placeholder="e.g. iPhone 14 Pro 128GB Purple"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-
-            {/* Category & Condition */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Category *
-                </Label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Condition *
-                </Label>
-                <select
-                  value={condition}
-                  onChange={(e) => setCondition(e.target.value as any)}
-                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm"
-                >
-                  <option value="Brand New">Brand New</option>
-                  <option value="Like New">Like New</option>
-                  <option value="Refurbished">Refurbished</option>
-                  <option value="Used - Good">Used - Good</option>
-                  <option value="Used - Fair">Used - Fair</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Price & Location */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Price ($) *
-                </Label>
-                <Input
-                  type="number"
-                  required
-                  placeholder="250"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  className="rounded-xl"
-                />
-              </div>
-
-              <div>
-                <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                  Location / City *
-                </Label>
-                <Input
-                  type="text"
-                  required
-                  placeholder="e.g. Lekki, Lagos"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="rounded-xl"
-                />
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <Label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Detailed Description *
-              </Label>
-              <Textarea
-                required
-                rows={4}
-                placeholder="Include details like reason for selling, age, features, accessories included..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-
-            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl py-6 font-bold text-base shadow-md">
-              Publish Ad Now
-            </Button>
-
-          </form>
+      <main className="max-w-3xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+        <div className="text-center space-y-1">
+          <h1 className="text-3xl font-black text-white">Post a New Classified Ad</h1>
+          <p className="text-xs text-slate-400">Reach thousands of active buyers on Sealify marketplace</p>
         </div>
 
+        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          {/* Image Uploader */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Product Photos</label>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-700 group">
+                  <img src={img} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(idx)}
+                    className="absolute top-1.5 right-1.5 p-1 bg-slate-950/80 text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleAddSampleImage}
+                className="aspect-square rounded-2xl border-2 border-dashed border-slate-700 hover:border-emerald-500 bg-slate-950/50 flex flex-col items-center justify-center p-3 text-center gap-1 text-slate-400 hover:text-emerald-400 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span className="text-[10px] font-bold">Add Photo</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Ad Title */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Ad Title *</label>
+            <input
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. iPhone 15 Pro Max 256GB Natural Titanium"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          {/* Category & Condition */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Category *</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as Category)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              >
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Condition *</label>
+              <select
+                value={condition}
+                onChange={(e) => setCondition(e.target.value as Condition)}
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              >
+                {CONDITIONS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Price & Location */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price ($ USD) *</label>
+              <input
+                type="number"
+                required
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder="0.00"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Location *</label>
+              <input
+                type="text"
+                required
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Brooklyn, NY"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Detailed Description *</label>
+            <textarea
+              rows={4}
+              required
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your item key features, reason for selling, inclusions, etc."
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-base shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+          >
+            <ShieldCheck className="w-5 h-5" />
+            <span>Publish Classified Ad</span>
+          </button>
+        </form>
       </main>
 
-      <MobileNav />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
   );
-}
+};
+
+export default PostAd;

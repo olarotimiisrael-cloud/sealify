@@ -1,209 +1,425 @@
-import { Listing, Category, UserProfile, Message } from '@/types';
+import { Listing, UserProfile, Conversation } from '../types/sealify';
 
-export const MOCK_USER: UserProfile = {
-  id: 'usr_seller_1',
-  full_name: 'Alex Johnson',
+export const CURRENT_USER: UserProfile = {
+  id: 'usr_001',
   email: 'alex.seller@sealify.com',
-  phone_number: '+234 803 123 4567',
-  avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-  role: 'both',
-  location: 'Ikeja, Lagos',
+  fullName: 'Alex Morgan',
+  phoneNumber: '+1 (555) 234-5678',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+  role: 'seller',
   verified: true,
-  member_since: 'Jan 2023',
+  memberSince: 'Jan 2023',
+  location: 'New York, NY',
 };
 
-export const CATEGORIES: Category[] = [
-  { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 1240, color: 'bg-blue-500' },
-  { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 3410, color: 'bg-emerald-500' },
-  { id: 'real-estate', name: 'Real Estate', iconName: 'Home', count: 890, color: 'bg-amber-500' },
-  { id: 'fashion', name: 'Fashion & Beauty', iconName: 'Shirt', count: 2150, color: 'bg-pink-500' },
-  { id: 'services', name: 'Services', iconName: 'Wrench', count: 670, color: 'bg-purple-500' },
-  { id: 'home-garden', name: 'Home & Furniture', iconName: 'Armchair', count: 1430, color: 'bg-indigo-500' },
-  { id: 'jobs', name: 'Jobs & Careers', iconName: 'Briefcase', count: 420, color: 'bg-teal-500' },
-  { id: 'sports', name: 'Hobbies & Sports', iconName: 'Dumbbell', count: 980, color: 'bg-orange-500' },
-];
-
-export const MOCK_LISTINGS: Listing[] = [
+export const INITIAL_LISTINGS: Listing[] = [
   {
-    id: 'lst_1',
-    seller_id: 'usr_seller_1',
-    seller: MOCK_USER,
-    title: 'Apple iPhone 15 Pro Max 256GB - Natural Titanium',
-    description: 'Factory unlocked Apple iPhone 15 Pro Max in pristine condition. Battery health 98%. Comes with original USB-C box and fast charger adapter.',
-    price: 1150,
-    category: 'electronics',
+    id: 'lst_101',
+    sellerId: 'usr_001',
+    sellerName: 'Alex Morgan',
+    sellerPhone: '+1 (555) 234-5678',
+    sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: '2021 Tesla Model 3 Long Range - Clean Title',
+    description: 'Selling my well-maintained Tesla Model 3. Battery range is excellent (~330 miles). Includes autopilot, premium interior, custom all-weather mats, and fast charger adapter.',
+    price: 28500,
+    category: 'Vehicles',
     condition: 'Like New',
-    location: 'Victoria Island, Lagos',
+    location: 'Brooklyn, NY',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80'
     ],
-    views_count: 342,
-    created_at: new Date(Date.now() - 3600000 * 4).toISOString(),
-    is_saved: false,
-    is_featured: true,
+    createdAt: '2 hours ago',
+    viewsCount: 142,
+    featured: true,
   },
   {
-    id: 'lst_2',
-    seller_id: 'usr_seller_2',
-    seller: {
-      id: 'usr_seller_2',
-      full_name: 'Toyota Direct Sales',
-      phone_number: '+234 802 999 8888',
-      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-      role: 'seller',
-      location: 'Lekki Phase 1, Lagos',
-      verified: true,
-      member_since: 'Mar 2022',
-    },
-    title: 'Toyota Camry 2021 XSE Automatic Full Option',
-    description: 'Foreign used Toyota Camry 2021. Low mileage (32,000 km), panoramic sunroof, leather interior, lane assist, reverse camera, custom alloy wheels. Customs duty fully cleared.',
-    price: 18500,
-    category: 'vehicles',
+    id: 'lst_102',
+    sellerId: 'usr_002',
+    sellerName: 'David Chen',
+    sellerPhone: '+1 (555) 987-6543',
+    sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Apple MacBook Pro 16" M2 Pro (16GB, 512GB SSD)',
+    description: 'Space Gray MacBook Pro M2 Pro in pristine condition. Battery health 98%. Comes with original box, 140W USB-C charger, and protective sleeve.',
+    price: 1650,
+    category: 'Electronics',
+    condition: 'Like New',
+    location: 'Manhattan, NY',
+    status: 'active',
+    images: [
+      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?auto=format&fit=crop&w=800&q=80'
+    ],
+    createdAt: '5 hours ago',
+    viewsCount: 89,
+    featured: true,
+  },
+  {
+    id: 'lst_103',
+    sellerId: 'usr_003',
+    sellerName: 'Sarah Jenkins',
+    sellerPhone: '+1 (555) 345-6789',
+    sellerAvatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: false,
+    title: 'Modern 2 Bedroom Luxury Apartment for Rent',
+    description: 'Spacious 2 bedroom, 2 bath apartment featuring floor-to-ceiling windows, stainless steel appliances, in-unit laundry, and rooftop terrace access.',
+    price: 3200,
+    category: 'Real Estate',
+    condition: 'Brand New',
+    location: 'Queens, NY',
+    status: 'active',
+    images: [
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'
+    ],
+    createdAt: '1 day ago',
+    viewsCount: 230,
+    featured: true,
+  },
+  {
+    id: 'lst_104',
+    sellerId: 'usr_004',
+    sellerName: 'Marcus Vance',
+    sellerPhone: '+1 (555) 654-3210',
+    sellerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Sony Alpha A7 IV Mirrorless Camera Body',
+    description: '33MP full-frame camera body. Shutter count under 4,500. Perfect working condition with dual card slots, 4K 60p video, and original strap/battery.',
+    price: 1890,
+    category: 'Electronics',
     condition: 'Used - Good',
-    location: 'Lekki Phase 1, Lagos',
+    location: 'Jersey City, NJ',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=800&q=80'
     ],
-    views_count: 1205,
-    created_at: new Date(Date.now() - 3600000 * 12).toISOString(),
-    is_saved: true,
-    is_featured: true,
+    createdAt: '1 day ago',
+    viewsCount: 64,
   },
   {
-    id: 'lst_3',
-    seller_id: 'usr_seller_3',
-    seller: {
-      id: 'usr_seller_3',
-      full_name: 'Luxury Homes Ltd',
-      phone_number: '+234 818 000 1122',
-      avatar_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-      role: 'seller',
-      location: 'Ikoyi, Lagos',
-      verified: true,
-      member_since: 'Nov 2021',
-    },
-    title: 'Modern 3 Bedroom Apartment with Ocean View Pool',
-    description: 'Luxury fully serviced 3 bedroom apartment located in a serene gated estate. Features smart home automation, 24/7 power supply, swimming pool, gym, and underground parking.',
-    price: 120000,
-    category: 'real-estate',
-    condition: 'Brand New',
-    location: 'Ikoyi, Lagos',
+    id: 'lst_105',
+    sellerId: 'usr_005',
+    sellerName: 'Elena Rostova',
+    sellerPhone: '+1 (555) 876-5432',
+    sellerAvatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Mid-Century Velvet Green Accent Sofa',
+    description: 'Beautiful emerald green velvet 3-seater couch with gold metal legs. Purchased last year, non-smoking and pet-free home.',
+    price: 450,
+    category: 'Home & Furniture',
+    condition: 'Used - Good',
+    location: 'Hoboken, NJ',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&auto=format&fit=crop&q=80',
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80'
     ],
-    views_count: 850,
-    created_at: new Date(Date.now() - 3600000 * 24).toISOString(),
-    is_saved: false,
-    is_featured: true,
+    createdAt: '2 days ago',
+    viewsCount: 110,
   },
   {
-    id: 'lst_4',
-    seller_id: 'usr_seller_1',
-    seller: MOCK_USER,
-    title: 'Sony PlayStation 5 Disc Edition + 2 DualSense Controllers',
-    description: 'Barely used PS5 console complete with FIFA 24, Spider-Man 2, and extra Midnight Black controller. Quiet operation and spotless original box.',
-    price: 620,
-    category: 'electronics',
-    condition: 'Like New',
-    location: 'Ikeja, Lagos',
-    status: 'active',
-    images: [
-      'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800&auto=format&fit=crop&q=80',
-    ],
-    views_count: 512,
-    created_at: new Date(Date.now() - 3600000 * 36).toISOString(),
-    is_saved: false,
-    is_featured: false,
-  },
-  {
-    id: 'lst_5',
-    seller_id: 'usr_seller_4',
-    seller: {
-      id: 'usr_seller_4',
-      full_name: 'Kemi Designer Boutique',
-      phone_number: '+234 701 555 4433',
-      avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-      role: 'seller',
-      location: 'Surulere, Lagos',
-      verified: false,
-      member_since: 'Aug 2023',
-    },
-    title: 'Original Leather Designer Handbag - Limited Edition',
-    description: 'Brand new premium Italian handcrafted leather shoulder bag. Includes dust bag and authenticity card. Perfect gift for special occasions.',
+    id: 'lst_106',
+    sellerId: 'usr_001',
+    sellerName: 'Alex Morgan',
+    sellerPhone: '+1 (555) 234-5678',
+    sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Authentic Vintage Leather Jacket (Size L)',
+    description: 'Genuine vintage distressed brown leather motorcycle jacket. Very sturdy hardware and quilted interior lining.',
     price: 180,
-    category: 'fashion',
-    condition: 'Brand New',
-    location: 'Surulere, Lagos',
+    category: 'Fashion',
+    condition: 'Used - Good',
+    location: 'Brooklyn, NY',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=800&q=80'
     ],
-    views_count: 210,
-    created_at: new Date(Date.now() - 3600000 * 48).toISOString(),
-    is_saved: false,
-    is_featured: false,
+    createdAt: '3 days ago',
+    viewsCount: 52,
   },
   {
-    id: 'lst_6',
-    seller_id: 'usr_seller_5',
-    seller: {
-      id: 'usr_seller_5',
-      full_name: 'David Craftsman',
-      phone_number: '+234 811 222 3344',
-      avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-      role: 'seller',
-      location: 'Yaba, Lagos',
-      verified: true,
-      member_since: 'May 2022',
-    },
-    title: 'Solid Teak Wood Dining Table with 6 Upholstered Chairs',
-    description: 'Custom handmade hardwood dining table set. Sturdy, beautifully polished teak finish. Fits modern dining room aesthetics perfectly.',
-    price: 750,
-    category: 'home-garden',
+    id: 'lst_107',
+    sellerId: 'usr_006',
+    sellerName: 'Professional Plumbing Services',
+    sellerPhone: '+1 (555) 432-1098',
+    sellerAvatar: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&w=300&q=80',
+    sellerVerified: true,
+    title: 'Licensed Emergency Plumbing & Leak Repairs',
+    description: '24/7 Professional plumbing services in NYC area. Leak fixes, drain cleaning, boiler maintenance, and bathroom installations. Free estimates!',
+    price: 85,
+    category: 'Services',
     condition: 'Brand New',
-    location: 'Yaba, Lagos',
+    location: 'New York, NY',
     status: 'active',
     images: [
-      'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?w=800&auto=format&fit=crop&q=80',
+      'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=800&q=80'
     ],
-    views_count: 189,
-    created_at: new Date(Date.now() - 3600000 * 60).toISOString(),
-    is_saved: false,
-    is_featured: false,
-  },
+    createdAt: '3 days ago',
+    viewsCount: 310,
+  }
 ];
 
-export const MOCK_MESSAGES: Message[] = [
+export const INITIAL_CONVERSATIONS: Conversation[] = [
   {
-    id: 'msg_1',
-    sender_id: 'usr_buyer_10',
-    receiver_id: 'usr_seller_1',
-    listing_id: 'lst_1',
-    listing_title: 'Apple iPhone 15 Pro Max 256GB - Natural Titanium',
-    listing_image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
-    content: 'Hi Alex, is this iPhone still available? Can we meet today in Ikeja City Mall?',
-    read: false,
-    created_at: new Date(Date.now() - 1800000).toISOString(),
-    sender_name: 'Michael Chen',
-    sender_avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-  },
-  {
-    id: 'msg_2',
-    sender_id: 'usr_seller_1',
-    receiver_id: 'usr_buyer_10',
-    listing_id: 'lst_1',
-    listing_title: 'Apple iPhone 15 Pro Max 256GB - Natural Titanium',
-    listing_image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
-    content: 'Yes Michael, it is available! I can meet at Ikeja Mall around 4 PM.',
-    read: true,
-    created_at: new Date(Date.now() - 900000).toISOString(),
-    sender_name: 'Alex Johnson',
-    sender_avatar: MOCK_USER.avatar_url,
+    id: 'conv_1',
+    listingId: 'lst_102',
+    listingTitle: 'Apple MacBook Pro 16" M2 Pro',
+    listingImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=300&q=80',
+    listingPrice: 1650,
+    otherUser: {
+      id: 'usr_002',
+      name: 'David Chen',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80',
+    },
+    lastMessage: 'Is $1,550 okay if I pick it up today?',
+    lastMessageTime: '10:45 AM',
+    messages: [
+      {
+        id: 'msg_1',
+        senderId: 'usr_002',
+        receiverId: 'usr_001',
+        listingId: 'lst_102',
+        content: 'Hi Alex! Is this MacBook Pro still available?',
+        createdAt: 'Yesterday, 4:20 PM',
+      },
+      {
+        id: 'msg_2',
+        senderId: 'usr_001',
+        receiverId: 'usr_002',
+        listingId: 'lst_102',
+        content: 'Yes it is! Perfectly clean condition with low battery cycles.',
+        createdAt: 'Yesterday, 4:25 PM',
+      },
+      {
+        id: 'msg_3',
+        senderId: 'usr_002',
+        receiverId: 'usr_001',
+        listingId: 'lst_102',
+        content: 'Is $1,550 okay if I pick it up today?',
+        createdAt: '10:45 AM',
+      },
+    ],
   },
 ];
+</dyad-data>
+
+<dyad-write path="src/context/SealifyContext.tsx" description="Global state provider for Sealify users, listings, search filters, favorites, and real-time chat">
+import React, { createContext, useContext, useState } from 'react';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message } from '../types/sealify';
+import { INITIAL_LISTINGS, CURRENT_USER, INITIAL_CONVERSATIONS } from '../data/mockData';
+import { toast } from 'sonner';
+
+interface SealifyContextType {
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+  login: (email: string, role: 'buyer' | 'seller') => void;
+  logout: () => void;
+  listings: Listing[];
+  savedListingIds: string[];
+  toggleSaveListing: (id: string) => void;
+  isSaved: (id: string) => boolean;
+  filters: FilterState;
+  setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
+  resetFilters: () => void;
+  createListing: (data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'status' | 'createdAt' | 'viewsCount'>) => void;
+  deleteListing: (id: string) => void;
+  markAsSold: (id: string) => void;
+  conversations: Conversation[];
+  sendMessage: (listingId: string, receiverId: string, content: string) => void;
+  getConversationByListing: (listingId: string) => Conversation | undefined;
+  activeCategory: Category | 'All';
+  setActiveCategory: (cat: Category | 'All') => void;
+}
+
+const defaultFilters: FilterState = {
+  searchQuery: '',
+  category: 'All',
+  minPrice: null,
+  maxPrice: null,
+  condition: 'All',
+  location: '',
+  sortBy: 'newest',
+};
+
+const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
+
+export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserProfile | null>(CURRENT_USER);
+  const [listings, setListings] = useState<Listing[]>(INITIAL_LISTINGS);
+  const [savedListingIds, setSavedListingIds] = useState<string[]>(['lst_101', 'lst_104']);
+  const [filters, setFilters] = useState<FilterState>(defaultFilters);
+  const [conversations, setConversations] = useState<Conversation[]>(INITIAL_CONVERSATIONS);
+
+  const isAuthenticated = !!user;
+
+  const login = (email: string, role: 'buyer' | 'seller') => {
+    const newUser: UserProfile = {
+      id: 'usr_' + Math.random().toString(36).substr(2, 6),
+      email,
+      fullName: email.split('@')[0].replace('.', ' '),
+      phoneNumber: '+1 (555) 019-2831',
+      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
+      role,
+      verified: true,
+      memberSince: 'Just now',
+      location: 'New York, NY',
+    };
+    setUser(newUser);
+    toast.success(`Welcome back, ${newUser.fullName}!`);
+  };
+
+  const logout = () => {
+    setUser(null);
+    toast.info('Logged out successfully');
+  };
+
+  const toggleSaveListing = (id: string) => {
+    setSavedListingIds((prev) => {
+      if (prev.includes(id)) {
+        toast.info('Removed from saved items');
+        return prev.filter((item) => item !== id);
+      } else {
+        toast.success('Ad saved to your favorites!');
+        return [...prev, id];
+      }
+    });
+  };
+
+  const isSaved = (id: string) => savedListingIds.includes(id);
+
+  const resetFilters = () => setFilters(defaultFilters);
+
+  const setActiveCategory = (category: Category | 'All') => {
+    setFilters((prev) => ({ ...prev, category }));
+  };
+
+  const createListing = (data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'status' | 'createdAt' | 'viewsCount'>) => {
+    if (!user) {
+      toast.error('Please login to post an ad');
+      return;
+    }
+
+    const newListing: Listing = {
+      ...data,
+      id: 'lst_' + Math.random().toString(36).substr(2, 6),
+      sellerId: user.id,
+      sellerName: user.fullName,
+      sellerPhone: user.phoneNumber,
+      sellerAvatar: user.avatarUrl,
+      sellerVerified: user.verified,
+      status: 'active',
+      createdAt: 'Just now',
+      viewsCount: 1,
+    };
+
+    setListings((prev) => [newListing, ...prev]);
+    toast.success('🎉 Your ad has been published successfully!');
+  };
+
+  const deleteListing = (id: string) => {
+    setListings((prev) => prev.filter((l) => l.id !== id));
+    toast.success('Listing deleted');
+  };
+
+  const markAsSold = (id: string) => {
+    setListings((prev) =>
+      prev.map((l) => (l.id === id ? { ...l, status: 'sold' as const } : l))
+    );
+    toast.success('Listing status updated to Sold');
+  };
+
+  const getConversationByListing = (listingId: string) => {
+    return conversations.find((c) => c.listingId === listingId);
+  };
+
+  const sendMessage = (listingId: string, receiverId: string, content: string) => {
+    if (!user) {
+      toast.error('Please log in to send a message');
+      return;
+    }
+
+    const targetListing = listings.find((l) => l.id === listingId);
+    if (!targetListing) return;
+
+    const newMsg: Message = {
+      id: 'msg_' + Date.now(),
+      senderId: user.id,
+      receiverId,
+      listingId,
+      content,
+      createdAt: 'Just now',
+    };
+
+    setConversations((prev) => {
+      const existingIndex = prev.findIndex((c) => c.listingId === listingId);
+      if (existingIndex > -1) {
+        const updated = [...prev];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [...updated[existingIndex].messages, newMsg],
+        };
+        return updated;
+      } else {
+        const newConv: Conversation = {
+          id: 'conv_' + Date.now(),
+          listingId,
+          listingTitle: targetListing.title,
+          listingImage: targetListing.images[0] || '',
+          listingPrice: targetListing.price,
+          otherUser: {
+            id: receiverId,
+            name: targetListing.sellerName,
+            avatar: targetListing.sellerAvatar,
+          },
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [newMsg],
+        };
+        return [newConv, ...prev];
+      }
+    });
+
+    toast.success('Message sent to seller!');
+  };
+
+  return (
+    <SealifyContext.Provider
+      value={{
+        user,
+        isAuthenticated,
+        login,
+        logout,
+        listings,
+        savedListingIds,
+        toggleSaveListing,
+        isSaved,
+        filters,
+        setFilters,
+        resetFilters,
+        createListing,
+        deleteListing,
+        markAsSold,
+        conversations,
+        sendMessage,
+        getConversationByListing,
+        activeCategory: filters.category,
+        setActiveCategory,
+      }}
+    >
+      {children}
+    </SealifyContext.Provider>
+  );
+};
+
+export const useSealify = () => {
+  const context = useContext(SealifyContext);
+  if (!context) {
+    throw new Error('useSealify must be used within SealifyProvider');
+  }
+  return context;
+};
