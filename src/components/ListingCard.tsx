@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
-import { Heart, MapPin, ShieldCheck, Eye, Scale } from 'lucide-react';
+import { Heart, MapPin, ShieldCheck, Eye, Scale, TrendingDown } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -19,14 +19,26 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     maximumFractionDigits: 0,
   }).format(listing.price);
 
+  const hasPriceDrop = listing.originalPrice && listing.originalPrice > listing.price;
+  const discountPercent = hasPriceDrop
+    ? Math.round(((listing.originalPrice! - listing.price) / listing.originalPrice!) * 100)
+    : 0;
+
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative">
-      {/* Featured Badge */}
-      {listing.featured && (
-        <span className="absolute top-3 left-3 z-10 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow">
-          TOP AD
-        </span>
-      )}
+      {/* Featured / Top Ad Badge */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-1 items-start">
+        {listing.featured && (
+          <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow">
+            TOP AD
+          </span>
+        )}
+        {hasPriceDrop && (
+          <span className="bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md shadow flex items-center gap-0.5">
+            <TrendingDown className="w-3 h-3" /> PRICE DROP -{discountPercent}%
+          </span>
+        )}
+      </div>
 
       {/* Action Buttons Top Right */}
       <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5">
@@ -89,9 +101,16 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         <div className="p-4 space-y-2">
           {/* Price & Category */}
           <div className="flex justify-between items-baseline gap-2">
-            <span className="text-xl font-black text-emerald-400 tracking-tight">
-              {formattedPrice}
-            </span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xl font-black text-emerald-400 tracking-tight">
+                {formattedPrice}
+              </span>
+              {hasPriceDrop && (
+                <span className="text-xs text-slate-500 line-through font-semibold">
+                  ${listing.originalPrice?.toLocaleString()}
+                </span>
+              )}
+            </div>
             <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md uppercase">
               {listing.category}
             </span>
