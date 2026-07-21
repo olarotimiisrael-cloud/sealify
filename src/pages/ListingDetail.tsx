@@ -4,6 +4,7 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
+import OfferModal from '../components/OfferModal';
 import MobileNav from '../components/MobileNav';
 import { 
   MapPin, 
@@ -19,7 +20,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldAlert,
-  ExternalLink
+  ExternalLink,
+  Tag
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,6 +35,7 @@ const ListingDetail: React.FC = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
 
   if (!listing) {
@@ -65,6 +68,15 @@ const ListingDetail: React.FC = () => {
       return;
     }
     sendMessage(listing.id, listing.sellerId, chatMessage);
+    navigate('/messages');
+  };
+
+  const handleSendOffer = (offerPrice: number, offerMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, offerMsg);
     navigate('/messages');
   };
 
@@ -199,7 +211,15 @@ const ListingDetail: React.FC = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex justify-end">
+              <div className="pt-2 flex justify-between items-center border-t border-slate-800/80">
+                <button
+                  onClick={() => setIsOfferOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30"
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Make an Offer</span>
+                </button>
+
                 <button
                   onClick={() => setIsReportOpen(true)}
                   className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-400 transition-colors"
@@ -294,6 +314,13 @@ const ListingDetail: React.FC = () => {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} />
+      <OfferModal
+        isOpen={isOfferOpen}
+        onClose={() => setIsOfferOpen(false)}
+        listingTitle={listing.title}
+        originalPrice={listing.price}
+        onSendOffer={handleSendOffer}
+      />
       <MobileNav />
     </div>
   );

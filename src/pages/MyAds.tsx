@@ -2,13 +2,18 @@ import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
-import { Trash2, CheckCircle, PlusCircle, ShieldCheck } from 'lucide-react';
+import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const MyAds: React.FC = () => {
   const { user, listings, deleteListing, markAsSold } = useSealify();
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
+
+  const handlePromoteAd = (title: string) => {
+    toast.success(`"TOP AD" status activated for ${title}!`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
@@ -62,13 +67,24 @@ const MyAds: React.FC = () => {
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-800">
                   {ad.status === 'active' && (
-                    <button
-                      onClick={() => markAsSold(ad.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold rounded-xl text-xs"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>Mark as Sold</span>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handlePromoteAd(ad.title)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold rounded-xl text-xs"
+                        title="Promote Ad to TOP AD"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>Promote</span>
+                      </button>
+
+                      <button
+                        onClick={() => markAsSold(ad.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold rounded-xl text-xs"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        <span>Mark Sold</span>
+                      </button>
+                    </>
                   )}
 
                   <button

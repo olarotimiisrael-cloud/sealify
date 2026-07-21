@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { Category, Condition } from '../types/sealify';
-import { Filter, RotateCcw, X } from 'lucide-react';
+import { Filter, RotateCcw, X, MapPin } from 'lucide-react';
 
 interface FilterDrawerProps {
   isOpen: boolean;
@@ -26,6 +26,15 @@ const CONDITIONS: (Condition | 'All')[] = [
   'Like New',
   'Used - Good',
   'Used - Fair',
+];
+
+const POPULAR_CITIES = [
+  'New York',
+  'Brooklyn',
+  'Manhattan',
+  'Queens',
+  'Hoboken',
+  'Jersey City',
 ];
 
 const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
@@ -76,7 +85,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <input
               type="number"
-              placeholder="Min"
+              placeholder="Min Price"
               value={filters.minPrice || ''}
               onChange={(e) =>
                 setFilters((prev) => ({
@@ -89,7 +98,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
             <span className="text-slate-500">-</span>
             <input
               type="number"
-              placeholder="Max"
+              placeholder="Max Price"
               value={filters.maxPrice || ''}
               onChange={(e) =>
                 setFilters((prev) => ({
@@ -99,6 +108,41 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
               }
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
             />
+          </div>
+        </div>
+
+        {/* Location search & Quick Chips */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Location</label>
+          <input
+            type="text"
+            placeholder="e.g. New York, Brooklyn, Queens"
+            value={filters.location}
+            onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
+            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+          />
+
+          <div className="flex flex-wrap gap-1.5 pt-1">
+            {POPULAR_CITIES.map((city) => (
+              <button
+                key={city}
+                type="button"
+                onClick={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    location: prev.location === city ? '' : city,
+                  }))
+                }
+                className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
+                  filters.location.toLowerCase().includes(city.toLowerCase())
+                    ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+                    : 'border-slate-800 bg-slate-800/60 text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <MapPin className="w-3 h-3" />
+                <span>{city}</span>
+              </button>
+            ))}
           </div>
         </div>
 
@@ -124,18 +168,6 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
               </label>
             ))}
           </div>
-        </div>
-
-        {/* Location search */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Location</label>
-          <input
-            type="text"
-            placeholder="e.g. New York, Brooklyn, Queens"
-            value={filters.location}
-            onChange={(e) => setFilters((prev) => ({ ...prev, location: e.target.value }))}
-            className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
-          />
         </div>
 
         {/* Sort option */}
