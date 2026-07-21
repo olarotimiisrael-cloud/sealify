@@ -20,7 +20,8 @@ import {
   X,
   HelpCircle,
   Scale,
-  Bell
+  Bell,
+  Info
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -190,6 +191,15 @@ const Navbar: React.FC = () => {
             </Link>
 
             <Link
+              to="/faq"
+              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="FAQ"
+            >
+              <Info className="w-5 h-5" />
+              <span className="hidden sm:inline text-slate-300">FAQ</span>
+            </Link>
+
+            <Link
               to="/messages"
               className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
               title="Messages"
@@ -328,7 +338,7 @@ const Navbar: React.FC = () => {
               + POST AN AD
             </Link>
           </div>
-        )}
+        </div>
       </header>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
