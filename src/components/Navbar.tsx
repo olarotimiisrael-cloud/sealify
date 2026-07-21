@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 import SqlSchemaViewer from './SqlSchemaViewer';
+import SafetyTipsModal from './SafetyTipsModal';
 import { 
   ShieldCheck, 
   PlusCircle, 
@@ -11,18 +12,18 @@ import {
   User as UserIcon, 
   LogOut, 
   Database,
-  Tag,
   Search,
   Menu,
-  X
+  X,
+  HelpCircle
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout, savedListingIds, conversations, filters, setFilters } = useSealify();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+  const [isSafetyModalOpen, setIsSafetyModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
 
@@ -35,16 +36,20 @@ const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-md">
         {/* Top Mini Bar */}
         <div className="bg-emerald-600 text-xs py-1 px-4 text-center font-medium flex justify-between items-center max-w-7xl mx-auto">
-          <div className="flex items-center gap-1">
+          <button 
+            onClick={() => setIsSafetyModalOpen(true)}
+            className="flex items-center gap-1 hover:underline text-white font-semibold cursor-pointer"
+          >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Sealify Secure Marketplace — Buyer & Seller Protection Guaranteed</span>
-          </div>
+            <span>Sealify Safety Protocol — Read Buyer & Seller Tips</span>
+          </button>
+
           <button 
             onClick={() => setIsSqlModalOpen(true)}
             className="flex items-center gap-1 hover:underline text-emerald-100 font-semibold cursor-pointer"
           >
             <Database className="w-3.5 h-3.5" />
-            <span>View DB Migration Schema</span>
+            <span>View DB Schema</span>
           </button>
         </div>
 
@@ -78,6 +83,14 @@ const Navbar: React.FC = () => {
 
           {/* Nav Controls */}
           <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={() => setIsSafetyModalOpen(true)}
+              className="p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Safety Guidelines"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+
             <Link
               to="/saved"
               className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
@@ -231,10 +244,13 @@ const Navbar: React.FC = () => {
       </header>
 
       {/* Auth Modal */}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
 
       {/* SQL Migration Modal */}
       <SqlSchemaViewer isOpen={isSqlModalOpen} onClose={() => setIsSqlModalOpen(false)} />
+
+      {/* Safety Guidelines Modal */}
+      <SafetyTipsModal isOpen={isSafetyModalOpen} onClose={() => setIsSafetyModalOpen(false)} />
     </>
   );
 };

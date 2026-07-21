@@ -3,6 +3,7 @@ import { useSealify } from '../context/SealifyContext';
 import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
 import FilterDrawer from '../components/FilterDrawer';
+import SafetyTipsModal from '../components/SafetyTipsModal';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import { 
@@ -20,6 +21,7 @@ const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Pl
 const Index: React.FC = () => {
   const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
 
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
@@ -203,6 +205,9 @@ const Index: React.FC = () => {
       {/* Filter Drawer Component */}
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
 
+      {/* Safety Tips Modal */}
+      <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
+
       {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
@@ -214,10 +219,14 @@ const Index: React.FC = () => {
             <span>© {new Date().getFullYear()}</span>
           </div>
           <div className="flex items-center gap-4 text-slate-400">
-            <a href="#" className="hover:text-emerald-400">Safety Tips</a>
+            <button onClick={() => setIsSafetyTipsOpen(true)} className="hover:text-emerald-400">
+              Safety Guidelines
+            </button>
             <a href="#" className="hover:text-emerald-400">Terms of Use</a>
             <a href="#" className="hover:text-emerald-400">Privacy Policy</a>
-            <a href="#" className="hover:text-emerald-400">Support</a>
+            <button onClick={() => setIsSafetyTipsOpen(true)} className="hover:text-emerald-400">
+              Support & Help
+            </button>
           </div>
         </div>
       </footer>
