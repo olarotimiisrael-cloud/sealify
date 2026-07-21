@@ -3,20 +3,17 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import EditListingModal from '../components/EditListingModal';
+import PromoteModal from '../components/PromoteModal';
 import { Listing } from '../types/sealify';
 import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { toast } from 'sonner';
 
 const MyAds: React.FC = () => {
   const { user, listings, deleteListing, markAsSold, updateListing } = useSealify();
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
-
-  const handlePromoteAd = (title: string) => {
-    toast.success(`"TOP AD" status activated for ${title}!`);
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
@@ -80,7 +77,7 @@ const MyAds: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => handlePromoteAd(ad.title)}
+                        onClick={() => setPromotingListing(ad)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold rounded-xl text-xs"
                         title="Promote Ad to TOP AD"
                       >
@@ -118,6 +115,13 @@ const MyAds: React.FC = () => {
         listing={editingListing}
         onSave={updateListing}
       />
+
+      <PromoteModal
+        isOpen={!!promotingListing}
+        onClose={() => setPromotingListing(null)}
+        listingTitle={promotingListing?.title || 'Listing'}
+      />
+
       <MobileNav />
     </div>
   );
