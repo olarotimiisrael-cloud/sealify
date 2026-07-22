@@ -8,6 +8,7 @@ import Messages from "./pages/Messages";
 import SavedAds from "./pages/SavedAds";
 import MyAds from "./pages/MyAds";
 import SellerProfile from "./pages/SellerProfile";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import FAQ from "./pages/FAQ";
 import HelpCenter from "./pages/HelpCenter";
@@ -25,6 +26,7 @@ const App = () => (
         <Route path="/messages" element={<Messages />} />
         <Route path="/saved" element={<SavedAds />} />
         <Route path="/my-ads" element={<MyAds />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/help-center" element={<HelpCenter />} />
         <Route path="/contact" element={<Contact />} />
