@@ -2,12 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import { 
-  Bell, 
   ShieldCheck, 
   Info, 
   BookOpen, 
   Phone, 
-  Calendar, 
   Mail, 
   Sparkles, 
   CheckCircle2 
@@ -16,18 +14,8 @@ import {
 const FAQ: React.FC = () => {
   const { isAuthenticated } = useSealify();
 
-  const formatNGN = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
-      <div className="Navbar" />
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
           <div className="text-center space-y-2">
@@ -43,7 +31,7 @@ const FAQ: React.FC = () => {
             </p>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 mt-6">
             {/* General Questions */}
             <h2 className="font-bold text-xl text-white">General Questions</h2>
             <div className="space-y-3">
