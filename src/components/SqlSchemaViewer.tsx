@@ -9,13 +9,17 @@ interface SqlSchemaViewerProps {
 
 const SQL_SCRIPT = `-- Sealify Supabase PostgreSQL Schema & Row Level Security (RLS)
 
--- 1. Users Table
+-- 1. Users / Profiles Table
 CREATE TABLE IF NOT EXISTS public.users (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  role VARCHAR(20) DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller')),
+  role VARCHAR(20) DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
   full_name TEXT NOT NULL,
   phone_number TEXT,
   avatar_url TEXT,
+  verified BOOLEAN DEFAULT false,
+  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'none')),
+  business_name TEXT,
+  location TEXT DEFAULT 'Ogbomoso, Oyo State',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -30,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
   condition TEXT NOT NULL,
   location TEXT NOT NULL DEFAULT 'Ogbomoso, Nigeria',
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'sold')),
+  featured BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -40,7 +45,19 @@ CREATE TABLE IF NOT EXISTS public.listing_images (
   image_url TEXT NOT NULL
 );
 
--- 4. Messages Table
+-- 4. Verification Submissions Table
+CREATE TABLE IF NOT EXISTS public.verification_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  applicant_type TEXT CHECK (applicant_type IN ('individual', 'business')),
+  doc_type TEXT NOT NULL,
+  doc_number TEXT NOT NULL,
+  business_name TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 5. Messages Table
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   sender_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -54,20 +71,18 @@ CREATE TABLE IF NOT EXISTS public.messages (
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listing_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
--- Users: Anyone can view profiles, users update their own
 CREATE POLICY "Public profile view" ON public.users FOR SELECT USING (true);
 CREATE POLICY "User update self" ON public.users FOR UPDATE USING (auth.uid() = id);
 
--- Listings: Public read, authenticated users create, owner updates/deletes
 CREATE POLICY "Anyone view active listings" ON public.listings FOR SELECT USING (true);
 CREATE POLICY "Users insert listings" ON public.listings FOR INSERT WITH CHECK (auth.uid() = seller_id);
 CREATE POLICY "Seller update own listing" ON public.listings FOR UPDATE USING (auth.uid() = seller_id);
 CREATE POLICY "Seller delete own listing" ON public.listings FOR DELETE USING (auth.uid() = seller_id);
 
--- Messages: Users can only read/send messages where they are sender or receiver
 CREATE POLICY "Read personal messages" ON public.messages FOR SELECT 
   USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
 CREATE POLICY "Send messages" ON public.messages FOR INSERT 
@@ -100,7 +115,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <p className="text-xs text-slate-400 my-3">
-          Copy and run this migration in your Supabase SQL Editor to set up `users`, `listings`, `listing_images`, and `messages` tables with RLS policies. All prices are stored in Nigerian Naira (NGN).
+          Copy and run this migration in your Supabase SQL Editor to set up `users`, `listings`, `verification_requests`, and `messages` tables with individual vs business verification support and RLS policies.
         </p>
 
         <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-300 leading-relaxed">
@@ -108,7 +123,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <div className="pt-4 mt-2 border-t border-slate-800 flex justify-between items-center">
-          <span className="text-xs text-slate-500">Sealify Core Tables & Security (NGN Currency)</span>
+          <span className="text-xs text-slate-500">Sealify Core Tables & Verification Security</span>
           <button
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-colors shadow"

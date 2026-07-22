@@ -7,6 +7,7 @@ import SafetyTipsModal from './SafetyTipsModal';
 import CompareModal from './CompareModal';
 import SavedAlertsModal from './SavedAlertsModal';
 import NotificationCenter from './NotificationCenter';
+import VerifiedBadge from './VerifiedBadge';
 import { 
   ShieldCheck, 
   PlusCircle, 
@@ -207,13 +208,20 @@ const Navbar: React.FC = () => {
                   to="/my-ads"
                   className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-lg text-sm text-slate-200"
                 >
-                  <img
-                    src={user?.avatarUrl}
-                    alt={user?.fullName}
-                    className="w-7 h-7 rounded-full object-cover border border-emerald-500"
-                  />
+                  <div className="relative">
+                    <img
+                      src={user?.avatarUrl}
+                      alt={user?.fullName}
+                      className="w-8 h-8 rounded-full object-cover border border-emerald-500"
+                    />
+                  </div>
                   <div className="text-left hidden lg:block">
-                    <p className="font-semibold text-xs leading-none">{user?.fullName}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-semibold text-xs leading-none">{user?.fullName}</p>
+                      {user?.verified && (
+                        <VerifiedBadge type={user.verificationType || 'individual'} />
+                      )}
+                    </div>
                     <p className="text-[10px] text-emerald-400 font-medium capitalize">{user?.role}</p>
                   </div>
                 </Link>
@@ -305,7 +313,12 @@ const Navbar: React.FC = () => {
                 >
                   <img src={user?.avatarUrl} className="w-8 h-8 rounded-full border border-emerald-400" />
                   <div>
-                    <p className="font-bold text-sm">{user?.fullName}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="font-bold text-sm">{user?.fullName}</p>
+                      {user?.verified && (
+                        <VerifiedBadge type={user.verificationType || 'individual'} />
+                      )}
+                    </div>
                     <p className="text-xs text-emerald-400">{isAdmin ? 'Admin Panel' : 'My Listings & Profile'}</p>
                   </div>
                 </Link>
