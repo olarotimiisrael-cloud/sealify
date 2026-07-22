@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType } from '../types/sealify';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -39,7 +39,7 @@ interface SealifyContextType {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   resetFilters: () => void;
-  createListing: (data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'status' | 'createdAt' | 'viewsCount'>) => void;
+  createListing: (data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'sellerVerificationType' | 'status' | 'createdAt' | 'viewsCount'>) => void;
   updateListing: (id: string, updatedData: Partial<Listing>) => void;
   deleteListing: (id: string) => void;
   markAsSold: (id: string) => void;
@@ -74,6 +74,8 @@ const DEFAULT_ADMIN: UserProfile = {
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
   role: 'admin',
   verified: true,
+  verificationType: 'business',
+  businessName: 'Sealify Marketplace Admin HQ',
   memberSince: 'Jan 2023',
   location: 'Ogbomoso, Oyo State',
   password: 'Tscw+1234',
@@ -89,6 +91,7 @@ const INITIAL_MOCK_USERS: UserProfile[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
     role: 'seller',
     verified: true,
+    verificationType: 'individual',
     memberSince: 'Mar 2023',
     location: 'Ogbomoso, Oyo State',
     password: 'password123',
@@ -101,6 +104,8 @@ const INITIAL_MOCK_USERS: UserProfile[] = [
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
     role: 'seller',
     verified: true,
+    verificationType: 'business',
+    businessName: 'Blessing Tech Hub Enterprise',
     memberSince: 'Apr 2023',
     location: 'LAUTECH Area, Ogbomoso',
     password: 'password123',
@@ -115,6 +120,7 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     sellerPhone: '+234 803 123 4567',
     sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
     sellerVerified: true,
+    sellerVerificationType: 'individual',
     title: 'Toyota Camry 2018 XSE (Unregistered Foreign Used)',
     description: 'Clean foreign used 2018 Toyota Camry XSE with panoramic roof, leather interior, custom alloy wheels, reverse camera, and duty paid. Location: Ogbomoso, Oyo State.',
     price: 18500000,
@@ -138,6 +144,7 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     sellerPhone: '+234 812 987 6543',
     sellerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
     sellerVerified: true,
+    sellerVerificationType: 'business',
     title: 'Apple iPhone 15 Pro Max 256GB Natural Titanium',
     description: 'Factory unlocked iPhone 15 Pro Max in pristine condition. Battery health 98%, comes with original USB-C braided cable, receipt, and protective silicon case.',
     price: 1450000,
@@ -159,6 +166,7 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     sellerPhone: '+234 802 333 4455',
     sellerAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
     sellerVerified: true,
+    sellerVerificationType: 'business',
     title: 'Newly Built 2 Bedroom Flat Self-Contain Apartment',
     description: 'Modern 2-bedroom apartment with ensuite bathrooms, POP ceiling, water heater, paved compound, secure gate, and prepaid meter near LAUTECH Under-G.',
     price: 450000,
@@ -271,6 +279,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           sellerPhone: item.seller?.phone_number || '+234 800 000 0000',
           sellerAvatar: item.seller?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
           sellerVerified: item.seller?.verified || false,
+          sellerVerificationType: item.seller?.verification_type || 'individual',
           title: item.title,
           description: item.description,
           price: item.price,
@@ -343,6 +352,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       role,
       verified: role === 'admin',
+      verificationType: role === 'admin' ? 'business' : 'none',
       memberSince: 'Just now',
       location: 'Ogbomoso, Oyo State',
     };
@@ -408,10 +418,33 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAllUsers(prev =>
       prev.map(u => (u.id === id ? { ...u, ...updatedData } : u))
     );
+
     if (user?.id === id) {
-      setUser(prev => (prev ? { ...prev, ...updatedData } : null));
+      setUser(prev => {
+        const updated = prev ? { ...prev, ...updatedData } : null;
+        if (updated) localStorage.setItem('sealify_user', JSON.stringify(updated));
+        return updated;
+      });
     }
-    toast.success('User record updated');
+
+    // Synchronize user profile updates (avatar & verified status badge) to all active listings
+    setListings(prevListings =>
+      prevListings.map(item => {
+        if (item.sellerId === id) {
+          return {
+            ...item,
+            sellerName: updatedData.fullName || item.sellerName,
+            sellerAvatar: updatedData.avatarUrl || item.sellerAvatar,
+            sellerPhone: updatedData.phoneNumber || item.sellerPhone,
+            sellerVerified: updatedData.verified !== undefined ? updatedData.verified : item.sellerVerified,
+            sellerVerificationType: updatedData.verificationType || item.sellerVerificationType,
+          };
+        }
+        return item;
+      })
+    );
+
+    toast.success('User profile & active ad badges synchronized!');
   }, [user]);
 
   const updateUserPassword = useCallback((id: string, newPass: string) => {
@@ -502,14 +535,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const createListing = useCallback(async (
-    data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'status' | 'createdAt' | 'viewsCount'>
+    data: Omit<Listing, 'id' | 'sellerId' | 'sellerName' | 'sellerPhone' | 'sellerAvatar' | 'sellerVerified' | 'sellerVerificationType' | 'status' | 'createdAt' | 'viewsCount'>
   ) => {
     const currentSeller = user || {
       id: 'usr_guest',
       fullName: 'Verified Seller',
       phoneNumber: '+234 800 000 0000',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
-      verified: true
+      verified: true,
+      verificationType: 'individual' as VerificationBadgeType
     };
 
     const formattedListing: Listing = {
@@ -519,6 +553,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sellerPhone: currentSeller.phoneNumber,
       sellerAvatar: currentSeller.avatarUrl,
       sellerVerified: currentSeller.verified || true,
+      sellerVerificationType: currentSeller.verificationType || 'individual',
       title: data.title,
       description: data.description,
       price: data.price,
