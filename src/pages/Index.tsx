@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
+import FeaturedAdSection from '../components/FeaturedAdSection';
 import FilterDrawer from '../components/FilterDrawer';
 import SafetyTipsModal from '../components/SafetyTipsModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
@@ -149,6 +150,9 @@ const Index: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
+        {/* Promoted TOP ADS Section */}
+        <FeaturedAdSection listings={listings} />
+
         {recentlyViewedListings.length > 0 && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
