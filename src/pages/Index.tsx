@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import CategoryBar from '../components/CategoryBar';
 import ListingCard from '../components/ListingCard';
@@ -15,14 +16,11 @@ import {
   Sparkles, 
   ShieldCheck, 
   Zap, 
-  TrendingUp, 
   History,
   LayoutGrid,
   Map,
   Bell,
-  CheckCircle2,
-  MapPin,
-  Users
+  MapPin
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
@@ -72,13 +70,11 @@ const Index: React.FC = () => {
       <Navbar />
       <CategoryBar />
 
-      {/* Hero Showcase with Official Sealify Promotional Banner */}
+      {/* Hero Showcase */}
       <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-8 px-4 relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
-          
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            
-            {/* Left Column: Value Prop */}
+            {/* Left Column */}
             <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
               <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3.5 py-1.5 rounded-full">
                 <MapPin className="w-3.5 h-3.5" />
@@ -128,7 +124,7 @@ const Index: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Featured Banner Graphic */}
+            {/* Right Column: Hero Banner */}
             <div className="lg:col-span-7">
               <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl group bg-slate-900">
                 <img
@@ -143,9 +139,7 @@ const Index: React.FC = () => {
                 </div>
               </div>
             </div>
-
           </div>
-
         </div>
       </section>
 
@@ -266,6 +260,7 @@ const Index: React.FC = () => {
       <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
       <SavedAlertsModal isOpen={isSavedAlertsOpen} onClose={() => setIsSavedAlertsOpen(false)} />
 
+      {/* Footer */}
       <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
           <div className="flex items-center gap-2.5">
@@ -277,15 +272,20 @@ const Index: React.FC = () => {
             <span className="font-bold text-slate-200">Sealify Classifieds</span>
             <span>© {new Date().getFullYear()}</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <button onClick={() => setIsSafetyTipsOpen(true)} className="hover:text-emerald-400">
+
+          <div className="flex flex-wrap items-center justify-center gap-4 text-slate-400">
+            <button onClick={() => setIsSafetyTipsOpen(true)} className="hover:text-emerald-400 transition-colors">
               Safety Guidelines
             </button>
-            <a href="#" className="hover:text-emerald-400">Terms of Use</a>
-            <a href="#" className="hover:text-emerald-400">Privacy Policy</a>
-            <button onClick={() => setIsSafetyTipsOpen(true)} className="hover:text-emerald-400">
-              Support & Help
-            </button>
+            <Link to="/faq" className="hover:text-emerald-400 transition-colors">
+              FAQ
+            </Link>
+            <Link to="/help-center" className="hover:text-emerald-400 transition-colors">
+              Help Center
+            </Link>
+            <Link to="/contact" className="hover:text-emerald-400 transition-colors">
+              Contact Support
+            </Link>
           </div>
         </div>
       </footer>
