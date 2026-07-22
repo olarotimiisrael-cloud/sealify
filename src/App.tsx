@@ -16,6 +16,7 @@ import Contact from "./pages/Contact";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import Notifications from "./pages/Notifications";
+import SafetyCenter from "./pages/SafetyCenter";
 
 const App = () => (
   <SealifyProvider>
@@ -36,6 +37,7 @@ const App = () => (
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/notifications" element={<Notifications />} />
+        <Route path="/safety" element={<SafetyCenter />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

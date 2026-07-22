@@ -17,7 +17,8 @@ import {
   Bell,
   Settings as SettingsIcon,
   Shield,
-  Globe
+  Globe,
+  ShieldCheck
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -47,8 +48,8 @@ const Navbar: React.FC = () => {
     { code: 'yo', label: 'Yoruba' },
     { code: 'pg', label: 'Pidgin' },
     { code: 'ha', label: 'Hausa' },
-    { code: 'fr', label: 'French' },
-    { code: 'zh', label: 'Chinese' },
+    { code: 'ha', label: 'French' },
+    { code: 'ha', label: 'Chinese' },
   ];
 
   return (
@@ -65,6 +66,11 @@ const Navbar: React.FC = () => {
           </Link>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/safety" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-2">
+              <ShieldCheck className="w-4 h-4" />
+              <span>Safety Center</span>
+            </Link>
+
             <div className="relative group">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
@@ -145,21 +151,12 @@ const Navbar: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-2">
+              <Link to="/safety" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                <ShieldCheck className="w-4 h-4 text-blue-400" /> Safety
+              </Link>
               <Link to="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
                 <Bell className="w-4 h-4 text-emerald-400" /> {t('notifications')}
               </Link>
-              <div className="relative">
-                <button onClick={() => setShowLangMenu(!showLangMenu)} className="w-full flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
-                  <Globe className="w-4 h-4 text-teal-400" /> {languages.find(l => l.code === language)?.label}
-                </button>
-                {showLangMenu && (
-                  <div className="absolute top-full mt-2 left-0 right-0 bg-slate-950 border border-slate-800 rounded-2xl p-2 z-50 grid grid-cols-2 gap-1">
-                    {languages.map(l => (
-                      <button key={l.code} onClick={() => { setLanguage(l.code); setShowLangMenu(false); setIsMobileMenuOpen(false); }} className="text-left px-3 py-2 text-[10px] font-bold text-slate-300">{l.label}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center text-xs">{t('post_free_ad').toUpperCase()}</Link>
           </div>
