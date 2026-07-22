@@ -18,7 +18,6 @@ import {
   Heart, 
   Share2, 
   ArrowLeft, 
-  AlertTriangle,
   Calendar,
   Eye,
   ChevronLeft,
@@ -28,7 +27,9 @@ import {
   Tag,
   Sparkles,
   QrCode,
-  Shield
+  Shield,
+  Maximize2,
+  X
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -44,6 +45,7 @@ const ListingDetail: React.FC = () => {
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
 
   useEffect(() => {
@@ -58,7 +60,7 @@ const ListingDetail: React.FC = () => {
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
-          <p className="text-slate-400 text-sm mb-6">This item may have been removed or sold by the owner.</p>
+          <p className="text-slate-400 text-xs mb-6">This item may have been removed or sold by the owner.</p>
           <Link to="/" className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs">
             Back to Home
           </Link>
@@ -171,28 +173,44 @@ const ListingDetail: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3">
-              <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3 relative group">
+              <div
+                onClick={() => setIsLightboxOpen(true)}
+                className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer"
+              >
                 <img
                   src={listing.images[activeImageIndex]}
                   alt={listing.title}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                 />
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsLightboxOpen(true);
+                  }}
+                  className="absolute top-3 right-3 p-2 bg-slate-950/80 text-white rounded-xl backdrop-blur-md opacity-80 hover:opacity-100 transition-opacity"
+                  title="View Fullscreen Photo"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
 
                 {listing.images.length > 1 && (
                   <>
                     <button
-                      onClick={() =>
-                        setActiveImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1))
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1));
+                      }}
                       className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
-                      onClick={() =>
-                        setActiveImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1))
-                      }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1));
+                      }}
                       className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
                     >
                       <ChevronRight className="w-5 h-5" />
@@ -341,7 +359,7 @@ const ListingDetail: React.FC = () => {
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                  <AlertTriangle className="w-4 h-4" />
+                  <ShieldAlert className="w-4 h-4" />
                   <span>Safety Guidelines</span>
                 </div>
 
@@ -378,6 +396,57 @@ const ListingDetail: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Lightbox Fullscreen Photo Modal */}
+      {isLightboxOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md flex flex-col items-center justify-between p-4">
+          <div className="w-full flex justify-between items-center text-white">
+            <span className="text-xs font-bold text-slate-400">
+              Photo {activeImageIndex + 1} of {listing.images.length}
+            </span>
+            <button
+              onClick={() => setIsLightboxOpen(false)}
+              className="p-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-slate-300 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          <div className="relative flex-1 w-full max-w-4xl flex items-center justify-center my-4">
+            <img
+              src={listing.images[activeImageIndex]}
+              alt={listing.title}
+              className="max-h-[75vh] w-auto max-w-full object-contain rounded-2xl shadow-2xl"
+            />
+
+            {listing.images.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setActiveImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1))
+                  }
+                  className="absolute left-2 p-3 bg-slate-900/80 text-white rounded-full backdrop-blur hover:bg-slate-900"
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                <button
+                  onClick={() =>
+                    setActiveImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1))
+                  }
+                  className="absolute right-2 p-3 bg-slate-900/80 text-white rounded-full backdrop-blur hover:bg-slate-900"
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="text-center text-xs text-slate-400 space-y-1">
+            <p className="font-bold text-white text-sm">{listing.title}</p>
+            <p className="text-emerald-400 font-extrabold">{formattedPrice}</p>
+          </div>
+        </div>
+      )}
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} />
