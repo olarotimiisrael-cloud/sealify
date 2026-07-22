@@ -3,6 +3,7 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
+import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import { UserProfile, Listing, VerificationBadgeType } from '../types/sealify';
 import { 
   Users, 
@@ -25,7 +26,7 @@ import {
   Building2,
   Crown,
   Sparkles,
-  DollarSign
+  Database
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -115,6 +116,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Modals state
   const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [passwordUser, setPasswordUser] = useState<UserProfile | null>(null);
 
@@ -301,13 +303,23 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <button
-            onClick={() => setIsAddUserOpen(true)}
-            className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 shrink-0"
-          >
-            <UserPlus className="w-4 h-4" />
-            <span>Add New User Record</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap justify-center md:justify-end">
+            <button
+              onClick={() => setIsSqlModalOpen(true)}
+              className="px-4 py-3 bg-slate-800 hover:bg-slate-750 text-teal-400 font-bold rounded-2xl text-xs flex items-center gap-2 border border-slate-700 transition-colors"
+            >
+              <Database className="w-4 h-4" />
+              <span>Database SQL Migration</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddUserOpen(true)}
+              className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 shrink-0"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Add New User Record</span>
+            </button>
+          </div>
         </div>
 
         {/* Overview Stats Grid with 3 Badges Count */}
@@ -1059,6 +1071,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
+      <SqlSchemaViewer isOpen={isSqlModalOpen} onClose={() => setIsSqlModalOpen(false)} />
       <MobileNav />
     </div>
   );
