@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, PlusCircle, MessageSquare, User, Info, Mail, Phone, BookOpen } from 'lucide-react';
+import { Home, Heart, PlusCircle, MessageSquare, User } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 export const MobileNav: React.FC = () => {
@@ -46,7 +46,7 @@ export const MobileNav: React.FC = () => {
           <div className="w-12 h-12 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 border-2 border-slate-900 font-black">
             <PlusCircle className="w-7 h-7" />
           </div>
-          <span className="text-[10px] font-extrabold text-emerald-400 mt-0.5">Sell Ad</span>
+          <span className="text-[10px] font-extrabold text-emerald-400 mt-0.5">Sell</span>
         </NavLink>
 
         <NavLink
@@ -64,42 +64,6 @@ export const MobileNav: React.FC = () => {
               {totalUnreadMessages}
             </span>
           )}
-        </NavLink>
-
-        <NavLink
-          to="/faq"
-          className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
-              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`
-          }
-        >
-          <Info className="w-5 h-5 mb-0.5" />
-          <span>FAQ</span>
-        </NavLink>
-
-        <NavLink
-          to="/help-center"
-          className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
-              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`
-          }
-        >
-          <BookOpen className="w-5 h-5 mb-0.5" />
-          <span>Help</span>
-        </NavLink>
-
-        <NavLink
-          to="/contact"
-          className={({ isActive }) =>
-            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
-              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
-            }`
-          }
-        >
-          <Mail className="w-5 h-5 mb-0.5" />
-          <span>Contact</span>
         </NavLink>
 
         <NavLink
