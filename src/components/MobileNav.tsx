@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, PlusCircle, MessageSquare, User } from 'lucide-react';
+import { Home, Heart, PlusCircle, MessageSquare, User, Info, Mail, Phone } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 export const MobileNav: React.FC = () => {
@@ -76,6 +76,30 @@ export const MobileNav: React.FC = () => {
         >
           <Info className="w-5 h-5 mb-0.5" />
           <span>FAQ</span>
+        </NavLink>
+
+        <NavLink
+          to="/help-center"
+          className={({ isActive }) =>
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <BookOpen className="w-5 h-5 mb-0.5" />
+          <span>Help</span>
+        </NavLink>
+
+        <NavLink
+          to="/contact"
+          className={({ isActive }) =>
+            `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
+              isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
+            }`
+          }
+        >
+          <Mail className="w-5 h-5 mb-0.5" />
+          <span>Contact</span>
         </NavLink>
 
         <NavLink
