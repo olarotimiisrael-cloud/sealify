@@ -5,6 +5,7 @@ import MobileNav from '../components/MobileNav';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
+import SoldConfirmationModal from '../components/SoldConfirmationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
@@ -16,6 +17,7 @@ const MyAds: React.FC = () => {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
+  const [soldPromptListing, setSoldPromptListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
@@ -53,13 +55,6 @@ const MyAds: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
-            <Link
-              to="/settings"
-              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700"
-            >
-              Update Profile Photo
-            </Link>
-
             <button
               onClick={() => setIsVerificationOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700"
@@ -79,10 +74,7 @@ const MyAds: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Your Classified Ads ({myAds.length})</h2>
-            <p className="text-xs text-slate-400">Click <strong className="text-purple-400">Apply Ad Promotion</strong> on any item to get TOP AD boost & Premium badge</p>
-          </div>
+          <h2 className="text-lg font-bold text-white">Your Classified Ads ({myAds.length})</h2>
 
           <div className="space-y-3">
             {myAds.map((ad) => (
@@ -98,7 +90,7 @@ const MyAds: React.FC = () => {
                       {ad.featured && (
                         <span className="text-[9px] font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded uppercase flex items-center gap-1 shadow">
                           <Crown className="w-3 h-3 text-amber-300 fill-amber-300" />
-                          <span>{ad.promotionPlanName || 'TOP AD'}</span>
+                          <span>TOP AD</span>
                         </span>
                       )}
                     </div>
@@ -111,7 +103,7 @@ const MyAds: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-800 flex-wrap">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
                   <button
                     onClick={() => setAnalyticsListing(ad)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs"
@@ -134,14 +126,13 @@ const MyAds: React.FC = () => {
                       <button
                         onClick={() => setPromotingListing(ad)}
                         className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs shadow-lg shadow-purple-900/40"
-                        title="Apply for monthly Ad Promotion (1 Month+)"
                       >
                         <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
-                        <span>Apply Ad Promotion</span>
+                        <span>Promote</span>
                       </button>
 
                       <button
-                        onClick={() => markAsSold(ad.id)}
+                        onClick={() => setSoldPromptListing(ad)}
                         className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-semibold rounded-xl text-xs"
                       >
                         <CheckCircle className="w-3.5 h-3.5" />
@@ -153,7 +144,6 @@ const MyAds: React.FC = () => {
                   <button
                     onClick={() => deleteListing(ad.id)}
                     className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
-                    title="Delete Ad"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -175,9 +165,14 @@ const MyAds: React.FC = () => {
         isOpen={!!promotingListing}
         onClose={() => setPromotingListing(null)}
         listing={promotingListing}
-        onPromoteSuccess={(listingId, durationMonths, planName) => {
-          promoteListing(listingId, durationMonths, planName);
-        }}
+        onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)}
+      />
+
+      <SoldConfirmationModal
+        isOpen={!!soldPromptListing}
+        onClose={() => setSoldPromptListing(null)}
+        listingTitle={soldPromptListing?.title || ''}
+        onConfirm={() => soldPromptListing && markAsSold(soldPromptListing.id)}
       />
 
       <AdAnalyticsModal
