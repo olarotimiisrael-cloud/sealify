@@ -10,6 +10,8 @@ import MyAds from "./pages/MyAds";
 import SellerProfile from "./pages/SellerProfile";
 import NotFound from "./pages/NotFound";
 import FAQ from "./pages/FAQ";
+import HelpCenter from "./pages/HelpCenter";
+import Contact from "./pages/Contact";
 
 const App = () => (
   <SealifyProvider>
@@ -24,6 +26,8 @@ const App = () => (
         <Route path="/saved" element={<SavedAds />} />
         <Route path="/my-ads" element={<MyAds />} />
         <Route path="/faq" element={<FAQ />} />
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

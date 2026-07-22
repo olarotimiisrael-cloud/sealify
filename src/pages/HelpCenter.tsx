@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { Bell, ShieldCheck, Info, BookOpen, People, Phone, Calendar } from 'lucide-react';
+import { ShieldCheck, Info, BookOpen, People, Phone, Clock } from 'lucide-react';
+import { toast } from 'sonner';
 
-const FAQ: React.FC = () => {
-  const { isAuthenticated } = useSealify();
-
+const HelpCenter: React.FC = () => {
+  const { user, isAuthenticated } = useSealify();
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -26,39 +26,31 @@ const FAQ: React.FC = () => {
               <span>Help Center</span>
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-              Frequently Asked Questions
+              Get Help & Support
             </h1>
             <p className="text-slate-400 text-sm">
-              Find answers to common questions about buying and selling on Sealify
+              Answers to common questions and ways to contact our support team
             </p>
           </div>
 
           <div className="space-y-6">
-            {/* General Questions */}
-            <h2 className="font-bold text-xl text-white">General Questions</h2>
+            <h2 className="font-bold text-xl text-white">Getting Started</h2>
             <div className="space-y-3">
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <Info className="w-5 h-5 text-emerald-400 mr-2" />
+                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2" />
                 <p className="text-slate-300">
-                  <strong>What is Sealify?</strong> Sealify is a local classifieds marketplace connecting buyers and sellers in Ogbomoso and surrounding areas.
+                  <strong>How do I create an account?</strong> Click <span className="text-emerald-400 hover:underline">Login / Sign Up</span> in the top right corner and follow the registration steps.
                 </p>
               </div>
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <Info className="w-5 h-5 text-emerald-400 mr-2" />
+                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2" />
                 <p className="text-slate-300">
-                  <strong>Is Sealify free to use?</strong> Yes! Listing items and browsing is completely free. We may introduce premium features in the future.
-                </p>
-              </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <Info className="w-5 h-5 text-emerald-400 mr-2" />
-                <p className="text-slate-300">
-                  <strong>Do I need to verify my identity?</strong> Basic accounts don't require verification, but verified sellers gain trust indicators and better visibility.
+                  <strong>What fees does Sealify charge?</strong> Listing items and browsing are completely free. We may introduce premium features in the future.
                 </p>
               </div>
             </div>
 
-            {/* Transaction Questions */}
-            <h2 className="font-bold text-xl text-white">Transaction Questions</h2>
+            <h2 className="font-bold text-xl text-white">Buying & Selling</h2>
             <div className="space-y-3">
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
                 <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2" />
@@ -72,15 +64,8 @@ const FAQ: React.FC = () => {
                   <strong>What if I receive a counterfeit item?</strong> Report the listing immediately using the <span className="text-emerald-400 hover:underline">Report Listing</span> button. Our safety team will investigate within 24 hours.
                 </p>
               </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2" />
-                <p className="text-slate-300">
-                  <strong>Can I negotiate prices?</strong> Yes! Use the <span className="text-emerald-400 hover:underline">Make an Offer</span> feature to send price proposals to sellers.
-                </p>
-              </div>
             </div>
 
-            {/* Safety & Security */}
             <h2 className="font-bold text-xl text-white">Safety & Security</h2>
             <div className="space-y-3">
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
@@ -95,15 +80,8 @@ const FAQ: React.FC = () => {
                   <strong>How do I report suspicious activity?</strong> Use the <span className="text-emerald-400 hover:underline">Report Listing</span> button on any ad. Our safety team will review all reports promptly.
                 </p>
               </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2" />
-                <p className="text-slate-300">
-                  <strong>Is my personal information protected?</strong> Yes. We never share your contact details with other users without your permission.
-                </p>
-              </div>
             </div>
 
-            {/* Support & Contact */}
             <h2 className="font-bold text-xl text-white">Support & Contact</h2>
             <div className="space-y-3">
               <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
@@ -114,22 +92,21 @@ const FAQ: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
-                <Mail className="w-5 h-5 text-emerald-400" />
+                <BookOpen className="w-5 h-5 text-emerald-400" />
                 <div>
                   <p className="font-bold text-white">Email Us:</strong> support@sealify.ng</p>
                   <p className="text-slate-400">Response time: within 24 hours</p>
                 </div>
               </div>
-                <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
-                  <BookOpen className="w-5 h-5 text-emerald-400" />
-                  <div>
-                    <p className="font-bold text-white">Visit Our Office:</strong> 123 Main Street, Ogbomoso</p>
-                    <p className="text-slate-400">Open: Mon-Fri 8AM-6PM</p>
-                  </div>
+              <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
+                <Clock className="w-5 h-5 text-emerald-400" />
+                <div>
+                  <p className="font-bold text-white">Live Chat:</strong> Available 24/7</p>
+                  <p className="text-slate-400">Click <span className="text-emerald-400 hover:underline">Inbox</span> to start a conversation</p>
                 </div>
+              </div>
             </div>
 
-            {/* Premium Features */}
             <h2 className="font-bold text-xl text-white">Premium Features (Coming Soon)</h2>
             <div className="space-y-2">
               <div className="flex items-start gap-2 bg-slate-950 p-3 rounded-xl">
@@ -157,8 +134,8 @@ const FAQ: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center gap-2">
             <Info className="w-5 h-5 text-emerald-400" />
-            <Link to="/help-center" className="text-slate-400 hover:text-emerald-400 transition-colors">
-              Help Center
+            <Link to="/faq" className="text-slate-400 hover:text-emerald-400 transition-colors">
+              Frequently Asked Questions
             </Link>
           </div>
           <div className="flex items-center gap-2">
@@ -174,4 +151,4 @@ const FAQ: React.FC = () => {
   );
 };
 
-export default FAQ;
+export default HelpCenter;

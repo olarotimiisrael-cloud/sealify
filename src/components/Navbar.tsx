@@ -21,7 +21,10 @@ import {
   HelpCircle,
   Scale,
   Bell,
-  Info
+  Info,
+  Mail,
+  Phone,
+  BookOpen
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -197,6 +200,24 @@ const Navbar: React.FC = () => {
             >
               <Info className="w-5 h-5" />
               <span className="hidden sm:inline text-slate-300">FAQ</span>
+            </Link>
+
+            <Link
+              to="/help-center"
+              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Help Center"
+            >
+              <BookOpen className="w-5 h-5" />
+              <span className="hidden sm:inline text-slate-300">Help</span>
+            </Link>
+
+            <Link
+              to="/contact"
+              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
+              title="Contact Support"
+            >
+              <Mail className="w-5 h-5" />
+              <span className="hidden sm:inline text-slate-300">Contact</span>
             </Link>
 
             <Link
