@@ -4,28 +4,33 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { UserProfile, VerificationBadgeType } from '../types/sealify';
+import { UserProfile, VerificationBadgeType, Listing } from '../types/sealify';
 import { 
   Shield, Package, Activity, Layers, RefreshCw, LayoutGrid, Edit3, Trash2,
   Users, MousePointer2, Globe, Clock, Terminal, CheckCircle2, AlertCircle,
-  Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X
+  Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X, Tag, Eye
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    isAdmin, categories, addCategory, deleteCategory, analytics, listings, allUsers, updateUser, deleteUser, t 
+    isAdmin, categories, addCategory, deleteCategory, analytics, listings, allUsers, updateUser, deleteUser, deleteListing, t 
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'maintenance'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'listings' | 'categories'>('analytics');
   const [userSearch, setUserSearch] = useState('');
+  const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
-  const [newCatName, setNewCatName] = useState('');
 
   const filteredUsers = allUsers.filter(u => 
     u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || 
     u.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  const filteredAds = listings.filter(l => 
+    l.title.toLowerCase().includes(adSearch.toLowerCase()) || 
+    l.sellerName.toLowerCase().includes(adSearch.toLowerCase())
   );
 
   const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
@@ -35,6 +40,15 @@ export const AdminDashboard: React.FC = () => {
     });
     toast.success(`Badge updated to ${type.toUpperCase()}`);
     setEditingUser(null);
+  };
+
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
   };
 
   if (!isAdmin) {
@@ -67,15 +81,15 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
             <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
             <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
+            <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>LISTINGS</button>
             <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
-            <button onClick={() => setActiveTab('maintenance')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'maintenance' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>MAINTENANCE</button>
           </div>
         </div>
 
-        {/* Tab Content: Users Management (The requested feature) */}
+        {/* Tab Content: Users Management */}
         {activeTab === 'users' && (
           <div className="space-y-6">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center gap-3">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center gap-3 shadow-xl">
               <Search className="w-5 h-5 text-slate-500" />
               <input 
                 type="text" 
@@ -149,7 +163,86 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Analytics & Stats Tab */}
+        {/* Tab Content: Listings Management */}
+        {activeTab === 'listings' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center gap-3 shadow-xl">
+              <Search className="w-5 h-5 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search listings by title or seller..." 
+                value={adSearch}
+                onChange={(e) => setAdSearch(e.target.value)}
+                className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none"
+              />
+              <span className="text-[10px] font-black text-slate-500 uppercase px-3 py-1 bg-slate-950 rounded-lg">{filteredAds.length} active ads</span>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-950 border-b border-slate-800">
+                    <tr>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Classified Ad</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Seller / Vendor</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Metrics</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {filteredAds.map((ad) => (
+                      <tr key={ad.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <img src={ad.images[0]} className="w-12 h-10 rounded-lg object-cover border border-slate-700" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-white truncate">{ad.title}</p>
+                              <p className="text-[10px] text-emerald-400 font-black">{formatNGN(ad.price)} • {ad.category}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-300">{ad.sellerName}</span>
+                            {ad.sellerVerified && <VerifiedBadge type={ad.sellerVerificationType || 'individual'} />}
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{ad.location}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-400" /><span className="font-bold">{ad.viewsCount}</span></div>
+                            {ad.featured && <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[9px] font-black uppercase border border-amber-500/20">Featured</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link 
+                              to={`/listing/${ad.id}`}
+                              className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl transition-all"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                            <button 
+                              onClick={() => {
+                                deleteListing(ad.id);
+                                toast.info(`Ad "${ad.title}" removed by admin`);
+                              }}
+                              className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
         {activeTab === 'analytics' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
@@ -201,6 +294,23 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Categories Tab (Simplified) */}
+        {activeTab === 'categories' && (
+          <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center space-y-4">
+             <LayoutGrid className="w-12 h-12 text-slate-600 mx-auto" />
+             <h3 className="text-lg font-bold text-white">Marketplace Department Control</h3>
+             <p className="text-xs text-slate-500 max-w-sm mx-auto">Manage the visible categories and sub-categories across the Sealify infrastructure.</p>
+             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {categories.map(cat => (
+                  <div key={cat.id} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col items-center gap-2">
+                    <span className="text-[10px] font-black uppercase text-white">{cat.name}</span>
+                    <button onClick={() => deleteCategory(cat.id)} className="p-1 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
+                ))}
+             </div>
           </div>
         )}
 

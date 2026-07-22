@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Listing, Condition } from '../types/sealify';
-import { X, Edit3, Check } from 'lucide-react';
+import { X, Edit3, Check, Video, FileVideo } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface EditListingModalProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
   const [location, setLocation] = useState('');
   const [condition, setCondition] = useState<Condition>('Like New');
   const [description, setDescription] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
 
   useEffect(() => {
     if (listing) {
@@ -35,6 +37,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
       setLocation(listing.location);
       setCondition(listing.condition);
       setDescription(listing.description);
+      setVideoUrl(listing.videoUrl || '');
     }
   }, [listing]);
 
@@ -42,12 +45,20 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Strict compulsory field validation
+    if (!title.trim() || !price || !location.trim() || !description.trim()) {
+      toast.error('All fields except video are compulsory. Please fill title, price, location and description.');
+      return;
+    }
+
     onSave(listing.id, {
       title,
       price: Number(price) || listing.price,
       location,
       condition,
       description,
+      videoUrl: videoUrl || undefined
     });
     onClose();
   };
@@ -69,7 +80,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Ad Title</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Ad Title *</label>
             <input
               type="text"
               required
@@ -81,7 +92,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN)</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN) *</label>
               <input
                 type="number"
                 required
@@ -92,7 +103,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Condition</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Condition *</label>
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value as Condition)}
@@ -106,24 +117,38 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Location</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Location *</label>
             <input
               type="text"
               required
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-800 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Description</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Description *</label>
             <textarea
               rows={4}
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="space-y-1 pt-2 border-t border-slate-800">
+            <label className="text-[10px] font-bold text-purple-400 uppercase tracking-wider flex items-center gap-1">
+              <Video className="w-3 h-3" />
+              <span>Product Video URL (Optional)</span>
+            </label>
+            <input
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
             />
           </div>
 

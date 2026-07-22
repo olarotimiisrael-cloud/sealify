@@ -30,7 +30,9 @@ import {
   QrCode,
   Shield,
   Maximize2,
-  X
+  X,
+  Play,
+  Video
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -48,6 +50,7 @@ const ListingDetail: React.FC = () => {
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
+  const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
   useEffect(() => {
     if (listing?.id) {
@@ -165,28 +168,38 @@ const ListingDetail: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3 relative group">
-              <div
-                onClick={() => setIsLightboxOpen(true)}
-                className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center cursor-pointer"
-              >
-                <img
-                  src={listing.images[activeImageIndex]}
-                  alt={listing.title}
-                  className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                />
+              <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
+                {viewMode === 'video' && listing.videoUrl ? (
+                  <video 
+                    src={listing.videoUrl} 
+                    className="w-full h-full bg-black object-contain" 
+                    controls 
+                    autoPlay 
+                  />
+                ) : (
+                  <div
+                    onClick={() => setIsLightboxOpen(true)}
+                    className="w-full h-full cursor-pointer relative"
+                  >
+                    <img
+                      src={listing.images[activeImageIndex]}
+                      alt={listing.title}
+                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setIsLightboxOpen(true);
+                      }}
+                      className="absolute top-3 right-3 p-2 bg-slate-950/80 text-white rounded-xl backdrop-blur-md opacity-80 hover:opacity-100 transition-opacity"
+                      title="View Fullscreen Photo"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
 
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setIsLightboxOpen(true);
-                  }}
-                  className="absolute top-3 right-3 p-2 bg-slate-950/80 text-white rounded-xl backdrop-blur-md opacity-80 hover:opacity-100 transition-opacity"
-                  title="View Fullscreen Photo"
-                >
-                  <Maximize2 className="w-4 h-4" />
-                </button>
-
-                {listing.images.length > 1 && (
+                {viewMode === 'image' && listing.images.length > 1 && (
                   <>
                     <button
                       onClick={(e) => {
@@ -210,21 +223,37 @@ const ListingDetail: React.FC = () => {
                 )}
               </div>
 
-              {listing.images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {listing.images.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setActiveImageIndex(idx)}
-                      className={`w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                        activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
-                      }`}
-                    >
-                      <img src={img} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
+              <div className="flex gap-2 overflow-x-auto pb-1 items-center">
+                {/* Image Thumbnails */}
+                {listing.images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setViewMode('image');
+                      setActiveImageIndex(idx);
+                    }}
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                      viewMode === 'image' && activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
+                    }`}
+                  >
+                    <img src={img} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+
+                {/* Video Thumbnail (if exists) */}
+                {listing.videoUrl && (
+                  <button
+                    onClick={() => setViewMode('video')}
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all ${
+                      viewMode === 'video' ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
+                    }`}
+                  >
+                    <Video className="w-6 h-6 text-purple-400" />
+                    <div className="absolute inset-0 bg-purple-500/10"></div>
+                    <span className="absolute bottom-1 right-1 text-[8px] font-black text-white bg-purple-600 px-1 rounded">VIDEO</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
@@ -316,7 +345,6 @@ const ListingDetail: React.FC = () => {
                 </Link>
               </div>
 
-              {/* Enhanced Trust Score Visualization */}
               <TrustScore 
                 score={98} 
                 responseTime="< 2 hours" 
