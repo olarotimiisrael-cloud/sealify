@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VerificationModalProps {
@@ -7,7 +7,7 @@ interface VerificationModalProps {
   onClose: () => void;
   sellerName: string;
   onSubmitRequest?: (req: {
-    applicantType: 'individual' | 'business';
+    applicantType: 'individual' | 'business' | 'premium';
     docType: string;
     docNumber: string;
     businessName?: string;
@@ -20,7 +20,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   sellerName,
   onSubmitRequest,
 }) => {
-  const [applicantType, setApplicantType] = useState<'individual' | 'business'>('individual');
+  const [applicantType, setApplicantType] = useState<'individual' | 'business' | 'premium'>('individual');
   const [docType, setDocType] = useState<string>('Government Issued ID / Passport');
   const [docNumber, setDocNumber] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
@@ -43,7 +43,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
       });
     }
 
-    toast.success(`🎉 ${applicantType === 'business' ? 'Registered Business' : 'Individual ID'} verification request submitted to Admin!`);
+    toast.success(`🎉 Verification request for ${applicantType.toUpperCase()} badge submitted to Admin!`);
     setTimeout(() => {
       setIsSubmitted(false);
       setStep(1);
@@ -73,26 +73,26 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               </p>
             </div>
 
-            {/* Selection of Applicant Type: Individual vs Business */}
+            {/* Selection of Applicant Badge Tier */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Verification Type</label>
-              <div className="grid grid-cols-2 gap-3">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Badge Type</label>
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setApplicantType('individual');
                     setDocType('Government Issued ID / Passport');
                   }}
-                  className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col items-start gap-1.5 ${
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
                     applicantType === 'individual'
                       ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-2 ring-emerald-500/30'
                       : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-4 h-4" />
                   <div>
-                    <p className="font-bold text-xs text-white">Individual Seller</p>
-                    <p className="text-[10px] text-slate-400">NIN, Voter ID, Driver's License</p>
+                    <p className="font-bold text-xs text-white">Individual</p>
+                    <p className="text-[9px] text-slate-400">NIN / ID</p>
                   </div>
                 </button>
 
@@ -102,16 +102,35 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                     setApplicantType('business');
                     setDocType('CAC Business Certificate');
                   }}
-                  className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col items-start gap-1.5 ${
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
                     applicantType === 'business'
                       ? 'border-amber-500 bg-amber-500/10 text-amber-400 ring-2 ring-amber-500/30'
                       : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
                   }`}
                 >
-                  <Building2 className="w-5 h-5" />
+                  <Building2 className="w-4 h-4" />
                   <div>
-                    <p className="font-bold text-xs text-white">Registered Business</p>
-                    <p className="text-[10px] text-slate-400">CAC Certificate / Business Name</p>
+                    <p className="font-bold text-xs text-white">Business</p>
+                    <p className="text-[9px] text-slate-400">CAC Cert</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApplicantType('premium');
+                    setDocType('Paid Ad Promotion License');
+                  }}
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
+                    applicantType === 'premium'
+                      ? 'border-purple-500 bg-purple-500/10 text-purple-300 ring-2 ring-purple-500/30'
+                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Crown className="w-4 h-4 text-amber-300" />
+                  <div>
+                    <p className="font-bold text-xs text-white">Premium</p>
+                    <p className="text-[9px] text-slate-400">Paid Ad</p>
                   </div>
                 </button>
               </div>
@@ -131,7 +150,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
                     />
                   </div>
-                ) : (
+                ) : applicantType === 'individual' ? (
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document Type</label>
                     <select
@@ -144,6 +163,10 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                       <option value="Driver's License">Driver's License</option>
                       <option value="Voter's Card">Voter's Card</option>
                     </select>
+                  </div>
+                ) : (
+                  <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl text-xs text-purple-200">
+                    👑 <strong>Premium Verified Status</strong> is granted automatically when you purchase an ad promotion or upon admin approval.
                   </div>
                 )}
 
@@ -164,7 +187,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                 <div className="border-2 border-dashed border-slate-800 rounded-2xl p-5 text-center space-y-2 bg-slate-950/50 hover:border-emerald-500/50 transition-colors">
                   <Upload className="w-7 h-7 text-emerald-400 mx-auto" />
                   <p className="text-xs font-bold text-slate-200">
-                    Upload {applicantType === 'business' ? 'CAC Certificate / Business Doc' : 'Front Photo of Government ID'}
+                    Upload {applicantType === 'business' ? 'CAC Certificate' : 'Photo of ID'}
                   </p>
                   <p className="text-[10px] text-slate-500">JPG, PNG or PDF (Max 10MB)</p>
                 </div>
@@ -173,7 +196,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                   type="button"
                   onClick={() => {
                     if (!docNumber) {
-                      toast.error('Please enter registration or document identification number');
+                      toast.error('Please enter identification number');
                       return;
                     }
                     if (applicantType === 'business' && !businessName) {
@@ -233,15 +256,11 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
         ) : (
           <div className="py-10 text-center space-y-4">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
-              <Sparkles className="w-8 h-8" />
+              <ShieldCheck className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-white">Verification Sent to Admin</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Sealify administrators will review your document and assign your{' '}
-              <strong className="text-emerald-400">
-                {applicantType === 'business' ? 'Verified Business Badge' : 'Verified Individual Badge'}
-              </strong>{' '}
-              shortly.
+              Sealify administrators will review your document and assign your requested badge shortly.
             </p>
           </div>
         )}

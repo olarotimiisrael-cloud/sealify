@@ -17,13 +17,13 @@ CREATE TABLE IF NOT EXISTS public.users (
   phone_number TEXT,
   avatar_url TEXT,
   verified BOOLEAN DEFAULT false,
-  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'none')),
+  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'premium', 'none')),
   business_name TEXT,
   location TEXT DEFAULT 'Ogbomoso, Oyo State',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Listings Table (Prices stored in Nigerian Naira - NGN)
+-- 2. Listings Table (Prices stored in Nigerian Naira - NGN with top ad promotion duration fields)
 CREATE TABLE IF NOT EXISTS public.listings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   seller_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS public.listings (
   location TEXT NOT NULL DEFAULT 'Ogbomoso, Nigeria',
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'sold')),
   featured BOOLEAN DEFAULT false,
+  promotion_plan_name TEXT,
+  promotion_duration_months INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -49,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.listing_images (
 CREATE TABLE IF NOT EXISTS public.verification_requests (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  applicant_type TEXT CHECK (applicant_type IN ('individual', 'business')),
+  applicant_type TEXT CHECK (applicant_type IN ('individual', 'business', 'premium')),
   doc_type TEXT NOT NULL,
   doc_number TEXT NOT NULL,
   business_name TEXT,
@@ -115,7 +117,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <p className="text-xs text-slate-400 my-3">
-          Copy and run this migration in your Supabase SQL Editor to set up `users`, `listings`, `verification_requests`, and `messages` tables with individual vs business verification support and RLS policies.
+          Copy and run this migration in your Supabase SQL Editor to set up tables supporting all 3 badge types (Individual, Business, Premium) and Top Ad promotion durations.
         </p>
 
         <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-300 leading-relaxed">
@@ -123,7 +125,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <div className="pt-4 mt-2 border-t border-slate-800 flex justify-between items-center">
-          <span className="text-xs text-slate-500">Sealify Core Tables & Verification Security</span>
+          <span className="text-xs text-slate-500">Sealify Core Database Migration</span>
           <button
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-colors shadow"
