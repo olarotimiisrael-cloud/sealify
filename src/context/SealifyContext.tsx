@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
+import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
 
 export interface AppNotification {
@@ -38,7 +39,6 @@ interface SealifyContextType {
   logout: () => void;
   listings: Listing[];
   allUsers: UserProfile[];
-  addUser: (newUser: Omit<UserProfile, 'id' | 'memberSince'> & { password?: string }) => void;
   updateUser: (id: string, updatedData: Partial<UserProfile>) => void;
   deleteUser: (id: string) => void;
   savedListingIds: string[];
@@ -55,7 +55,7 @@ interface SealifyContextType {
   toggleCompareListing: (id: string) => void;
   isInCompare: (id: string) => boolean;
   clearCompare: () => void;
-  createListing: (data: any) => void;
+  createListing: (data: Partial<Listing>) => void;
   updateListing: (id: string, updatedData: Partial<Listing>) => void;
   deleteListing: (id: string) => void;
   markAsSold: (id: string) => void;
@@ -91,6 +91,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const saved = localStorage.getItem('sealify_all_users');
+    return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -111,12 +116,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     visitors: 124,
-    activeAds: 50,
+    activeAds: MOCK_LISTINGS.length,
     totalChats: 89,
     sessionsPerMinute: [12, 19, 15, 24, 18, 30, 22, 25, 28, 34],
   });
 
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<Listing[]>(() => {
+    const saved = localStorage.getItem('sealify_listings');
+    return saved ? JSON.parse(saved) : MOCK_LISTINGS;
+  });
+
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
@@ -124,26 +133,42 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
+  useEffect(() => {
+    localStorage.setItem('sealify_all_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_listings', JSON.stringify(listings));
+  }, [listings]);
+
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
   }, [language]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnalytics(prev => ({
-        ...prev,
-        visitors: prev.visitors + (Math.random() > 0.5 ? 1 : -1),
-        sessionsPerMinute: [...prev.sessionsPerMinute.slice(1), Math.floor(Math.random() * 20) + 15]
-      }));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
   const login = (email: string, role: any) => {
-    const newUser: UserProfile = { id: 'usr_' + Date.now(), email, fullName: email.split('@')[0], phoneNumber: '', avatarUrl: '', role, verified: false, memberSince: 'Just now', location: 'Ogbomoso' };
-    setUser(newUser);
-    localStorage.setItem('sealify_user', JSON.stringify(newUser));
-    toast.success(`Welcome back!`);
+    const existing = allUsers.find(u => u.email === email);
+    if (existing) {
+      setUser(existing);
+      localStorage.setItem('sealify_user', JSON.stringify(existing));
+      toast.success(`Welcome back, ${existing.fullName}!`);
+    } else {
+      const newUser: UserProfile = { 
+        id: 'usr_' + Date.now(), 
+        email, 
+        fullName: email.split('@')[0], 
+        phoneNumber: '', 
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100', 
+        role, 
+        verified: false, 
+        verificationType: 'none',
+        memberSince: 'Just now', 
+        location: 'Ogbomoso' 
+      };
+      setAllUsers(prev => [...prev, newUser]);
+      setUser(newUser);
+      localStorage.setItem('sealify_user', JSON.stringify(newUser));
+      toast.success(`Account created successfully!`);
+    }
   };
 
   const adminLogin = (email: string, pass: string) => {
@@ -160,9 +185,44 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('sealify_user');
   };
 
-  const addCategory = (cat: any) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]);
-  const deleteCategory = (id: string) => setCategories(categories.filter(c => c.id !== id));
-  const updateCategory = (id: string, name: string) => setCategories(categories.map(c => c.id === id ? { ...c, name } : c));
+  const updateUser = (id: string, updatedData: Partial<UserProfile>) => {
+    setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
+    if (user?.id === id) {
+      setUser(prev => prev ? { ...prev, ...updatedData } : null);
+    }
+    toast.success('User record updated');
+  };
+
+  const deleteUser = (id: string) => {
+    setAllUsers(prev => prev.filter(u => u.id !== id));
+    toast.success('User removed from system');
+  };
+
+  const createListing = (data: any) => {
+    if (!user) return;
+    const newListing: Listing = {
+      ...data,
+      id: 'lst_' + Date.now(),
+      sellerId: user.id,
+      sellerName: user.fullName,
+      sellerAvatar: user.avatarUrl,
+      sellerPhone: user.phoneNumber || '+234 000 000 0000',
+      sellerVerified: user.verified,
+      sellerVerificationType: user.verificationType,
+      status: 'active',
+      viewsCount: 0,
+      createdAt: 'Just now'
+    };
+    setListings(prev => [newListing, ...prev]);
+    toast.success('Your ad is now live!');
+  };
+
+  const deleteListing = (id: string) => setListings(prev => prev.filter(l => l.id !== id));
+  const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
+  const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+  const promoteListing = (id: string, months: number, plan: string) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: months } : l));
+  };
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -186,22 +246,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return [...prev, id];
     });
   };
-  const isInCompare = (id: string) => compareListingIds.includes(id);
-  const clearCompare = () => setCompareListingIds([]);
 
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
       language, setLanguage, t,
-      categories, addCategory, deleteCategory, updateCategory,
+      categories, addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
+      deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 
+      updateCategory: (id, name) => setCategories(categories.map(c => c.id === id ? { ...c, name } : c)),
       analytics, login, adminLogin, logout,
-      listings, allUsers: [], addUser: () => {}, updateUser: () => {}, deleteUser: () => {},
+      listings, allUsers, updateUser, deleteUser,
       savedListingIds, recentlyViewedIds, addRecentlyViewed, toggleSaveListing, isSaved,
       filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
       activeCategory: filters.category,
       setActiveCategory: (cat) => setFilters(prev => ({ ...prev, category: cat })),
-      compareListingIds, toggleCompareListing, isInCompare, clearCompare,
-      createListing: () => {}, updateListing: () => {}, deleteListing: () => {}, markAsSold: () => {}, promoteListing: () => {},
+      compareListingIds, toggleCompareListing, isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
+      createListing, updateListing, deleteListing, markAsSold, promoteListing,
       conversations, sendMessage: () => {},
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification
     }}>

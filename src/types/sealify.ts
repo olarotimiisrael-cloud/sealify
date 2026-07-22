@@ -44,6 +44,7 @@ export interface Listing {
   location: string;
   status: 'active' | 'sold';
   images: string[];
+  videoUrl?: string; // Optional short video
   createdAt: string;
   viewsCount: number;
   featured?: boolean;

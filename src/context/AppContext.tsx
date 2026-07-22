@@ -34,7 +34,7 @@ const initialFilter: SearchFilter = {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(MOCK_USER);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(MOCK_USER as any);
   const [listings, setListings] = useState<Listing[]>(() => {
     const saved = localStorage.getItem('sealify_listings');
     return saved ? JSON.parse(saved) : MOCK_LISTINGS;
@@ -125,8 +125,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       content,
       read: false,
       created_at: new Date().toISOString(),
-      sender_name: currentUser.full_name,
-      sender_avatar: currentUser.avatar_url,
+      sender_name: currentUser.fullName,
+      sender_avatar: currentUser.avatarUrl,
     };
 
     setMessages((prev) => [...prev, newMsg]);

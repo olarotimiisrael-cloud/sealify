@@ -1,10 +1,10 @@
 export interface UserProfile {
   id: string;
-  full_name: string;
+  fullName: string;
   email?: string;
   phone_number?: string;
-  avatar_url?: string;
-  role: 'buyer' | 'seller' | 'both';
+  avatarUrl?: string;
+  role: 'buyer' | 'seller' | 'both' | 'admin';
   location: string;
   verified?: boolean;
   member_since?: string;
