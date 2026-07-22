@@ -23,13 +23,16 @@ import {
   Bell,
   Info,
   Mail,
-  BookOpen
+  BookOpen,
+  Settings as SettingsIcon,
+  Shield
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const { 
     user, 
     isAuthenticated, 
+    isAdmin,
     logout, 
     savedListingIds, 
     conversations, 
@@ -86,13 +89,23 @@ const Navbar: React.FC = () => {
             <span>Sealify Safety Protocol — Read Buyer & Seller Tips</span>
           </button>
 
-          <button 
-            onClick={() => setIsSqlModalOpen(true)}
-            className="flex items-center gap-1 hover:underline text-emerald-100 font-semibold cursor-pointer"
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>View DB Schema</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <Link 
+              to="/admin/login" 
+              className="flex items-center gap-1 hover:underline text-amber-200 font-extrabold cursor-pointer"
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Admin Portal</span>
+            </Link>
+
+            <button 
+              onClick={() => setIsSqlModalOpen(true)}
+              className="flex items-center gap-1 hover:underline text-emerald-100 font-semibold cursor-pointer"
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>View DB Schema</span>
+            </button>
+          </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -195,33 +208,6 @@ const Navbar: React.FC = () => {
             </Link>
 
             <Link
-              to="/faq"
-              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
-              title="FAQ"
-            >
-              <Info className="w-5 h-5" />
-              <span className="hidden sm:inline text-slate-300">FAQ</span>
-            </Link>
-
-            <Link
-              to="/help-center"
-              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
-              title="Help Center"
-            >
-              <BookOpen className="w-5 h-5" />
-              <span className="hidden sm:inline text-slate-300">Help</span>
-            </Link>
-
-            <Link
-              to="/contact"
-              className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
-              title="Contact Support"
-            >
-              <Mail className="w-5 h-5" />
-              <span className="hidden sm:inline text-slate-300">Contact</span>
-            </Link>
-
-            <Link
               to="/messages"
               className="relative p-2 hover:bg-slate-800 rounded-lg text-slate-300 hover:text-white transition-colors"
               title="Messages"
@@ -234,8 +220,18 @@ const Navbar: React.FC = () => {
               )}
             </Link>
 
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-extrabold text-xs px-3 py-1.5 rounded-xl hover:bg-rose-500/20 transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                <span>ADMIN PANEL</span>
+              </Link>
+            )}
+
             {isAuthenticated ? (
-              <div className="flex items-center gap-3 border-l border-slate-800 pl-3">
+              <div className="flex items-center gap-2 border-l border-slate-800 pl-3">
                 <Link
                   to="/my-ads"
                   className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-lg text-sm text-slate-200"
@@ -249,6 +245,14 @@ const Navbar: React.FC = () => {
                     <p className="font-semibold text-xs leading-none">{user?.fullName}</p>
                     <p className="text-[10px] text-emerald-400 font-medium capitalize">{user?.role}</p>
                   </div>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition-colors"
+                  title="Account Settings"
+                >
+                  <SettingsIcon className="w-4 h-4" />
                 </Link>
 
                 <button
@@ -300,6 +304,15 @@ const Navbar: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-sm">
+              <Link
+                to="/admin/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-2 p-2 bg-slate-800 rounded-lg text-amber-400 font-bold"
+              >
+                <Shield className="w-4 h-4" />
+                <span>Admin Login</span>
+              </Link>
+
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -310,35 +323,33 @@ const Navbar: React.FC = () => {
                 <Scale className="w-4 h-4 text-emerald-400" />
                 <span>Compare Matrix ({compareListingIds.length})</span>
               </button>
-
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsAlertsModalOpen(true);
-                }}
-                className="flex items-center gap-2 p-2 bg-slate-800 rounded-lg text-slate-200"
-              >
-                <Bell className="w-4 h-4 text-emerald-400" />
-                <span>Saved Alerts</span>
-              </button>
             </div>
 
             {isAuthenticated ? (
               <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl">
                 <Link
-                  to="/my-ads"
+                  to={isAdmin ? '/admin' : '/my-ads'}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-2"
                 >
                   <img src={user?.avatarUrl} className="w-8 h-8 rounded-full border border-emerald-400" />
                   <div>
                     <p className="font-bold text-sm">{user?.fullName}</p>
-                    <p className="text-xs text-emerald-400">My Listings & Profile</p>
+                    <p className="text-xs text-emerald-400">{isAdmin ? 'Admin Panel' : 'My Listings & Profile'}</p>
                   </div>
                 </Link>
-                <button onClick={logout} className="text-xs text-red-400 font-semibold">
-                  Logout
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/settings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-xs text-slate-300 font-semibold"
+                  >
+                    Settings
+                  </Link>
+                  <button onClick={logout} className="text-xs text-red-400 font-semibold">
+                    Logout
+                  </button>
+                </div>
               </div>
             ) : (
               <button

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { X, ShieldCheck, Mail, Lock, UserCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound } from 'lucide-react';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -9,6 +10,7 @@ interface AuthModalProps {
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { login } = useSealify();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
   const [email, setEmail] = useState('');
@@ -21,6 +23,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (!email) return;
     login(email, role);
     onClose();
+  };
+
+  const handleGoToAdminLogin = () => {
+    onClose();
+    navigate('/admin/login');
   };
 
   return (
@@ -141,7 +148,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           </button>
         </form>
 
-        <div className="mt-4 text-center">
+        <div className="mt-4 pt-3 border-t border-slate-800 text-center space-y-2">
+          <button
+            type="button"
+            onClick={handleGoToAdminLogin}
+            className="text-xs font-bold text-amber-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Administrator Portal Access</span>
+          </button>
+
           <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             Protected by Supabase Authentication Security

@@ -16,10 +16,11 @@ export interface UserProfile {
   fullName: string;
   phoneNumber: string;
   avatarUrl: string;
-  role: 'buyer' | 'seller';
+  role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
   memberSince: string;
   location: string;
+  password?: string;
 }
 
 export interface Listing {

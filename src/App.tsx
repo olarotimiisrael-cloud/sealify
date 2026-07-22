@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import FAQ from "./pages/FAQ";
 import HelpCenter from "./pages/HelpCenter";
 import Contact from "./pages/Contact";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 
 const App = () => (
   <SealifyProvider>
@@ -30,6 +32,8 @@ const App = () => (
         <Route path="/faq" element={<FAQ />} />
         <Route path="/help-center" element={<HelpCenter />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

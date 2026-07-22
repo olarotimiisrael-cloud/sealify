@@ -1,11 +1,13 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, PlusCircle, MessageSquare, User } from 'lucide-react';
+import { Home, Heart, PlusCircle, MessageSquare, User, Shield } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 export const MobileNav: React.FC = () => {
-  const { savedListingIds, conversations, user } = useSealify();
+  const { savedListingIds, conversations, user, isAdmin } = useSealify();
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
+
+  const accountRoute = !user ? '/admin/login' : isAdmin ? '/admin' : '/my-ads';
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900 border-t border-slate-800 z-40 px-3 py-1.5 shadow-2xl">
@@ -67,15 +69,19 @@ export const MobileNav: React.FC = () => {
         </NavLink>
 
         <NavLink
-          to="/my-ads"
+          to={accountRoute}
           className={({ isActive }) =>
             `flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors ${
               isActive ? 'text-emerald-400' : 'text-slate-400 hover:text-slate-200'
             }`
           }
         >
-          <User className="w-5 h-5 mb-0.5" />
-          <span>{user ? 'My Ads' : 'Account'}</span>
+          {isAdmin ? (
+            <Shield className="w-5 h-5 mb-0.5 text-rose-400" />
+          ) : (
+            <User className="w-5 h-5 mb-0.5" />
+          )}
+          <span>{isAdmin ? 'Admin' : user ? 'My Ads' : 'Account'}</span>
         </NavLink>
       </div>
     </nav>

@@ -7,9 +7,16 @@ interface SealifyContextType {
   user: UserProfile | null;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthenticated: boolean;
-  login: (email: string, role: 'buyer' | 'seller') => void;
+  isAdmin: boolean;
+  login: (email: string, role: 'buyer' | 'seller' | 'admin') => void;
+  adminLogin: (email: string, pass: string) => boolean;
   logout: () => void;
   listings: Listing[];
+  allUsers: UserProfile[];
+  addUser: (newUser: Omit<UserProfile, 'id' | 'memberSince'> & { password?: string }) => void;
+  updateUser: (id: string, updatedData: Partial<UserProfile>) => void;
+  updateUserPassword: (id: string, newPass: string) => void;
+  deleteUser: (id: string) => void;
   savedListingIds: string[];
   recentlyViewedIds: string[];
   compareListingIds: string[];
@@ -43,6 +50,71 @@ const defaultFilters: FilterState = {
   location: '',
   sortBy: 'newest',
 };
+
+const DEFAULT_ADMIN: UserProfile = {
+  id: 'usr_admin_default',
+  email: 'olarotimiisrael@gmail.com',
+  fullName: 'Israel Olarotimi',
+  phoneNumber: '0813 120 8468',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  role: 'admin',
+  verified: true,
+  memberSince: 'Jan 2023',
+  location: 'Ogbomoso, Oyo State',
+  password: 'Tscw+1234',
+};
+
+const INITIAL_MOCK_USERS: UserProfile[] = [
+  DEFAULT_ADMIN,
+  {
+    id: 'usr_1',
+    email: 'adebowale@sealify.ng',
+    fullName: 'Adebowale Ogunleye',
+    phoneNumber: '+234 803 123 4567',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+    role: 'seller',
+    verified: true,
+    memberSince: 'Mar 2023',
+    location: 'Ogbomoso, Oyo State',
+    password: 'password123',
+  },
+  {
+    id: 'usr_2',
+    email: 'blessing@sealify.ng',
+    fullName: 'Blessing Okonjo',
+    phoneNumber: '+234 812 987 6543',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    role: 'seller',
+    verified: true,
+    memberSince: 'Apr 2023',
+    location: 'LAUTECH Area, Ogbomoso',
+    password: 'password123',
+  },
+  {
+    id: 'usr_3',
+    email: 'kemi@properties.ng',
+    fullName: 'Kemi & Associates Properties',
+    phoneNumber: '+234 802 333 4455',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
+    role: 'seller',
+    verified: true,
+    memberSince: 'Feb 2023',
+    location: 'Under-G, Ogbomoso',
+    password: 'password123',
+  },
+  {
+    id: 'usr_4',
+    email: 'buyer.david@gmail.com',
+    fullName: 'David Chen',
+    phoneNumber: '+234 809 111 2233',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+    role: 'buyer',
+    verified: false,
+    memberSince: 'May 2023',
+    location: 'Ibadan, Oyo State',
+    password: 'password123',
+  },
+];
 
 const INITIAL_FALLBACK_LISTINGS: Listing[] = [
   {
@@ -161,6 +233,23 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const savedUsers = localStorage.getItem('sealify_all_users');
+    if (savedUsers) {
+      try {
+        const parsed = JSON.parse(savedUsers);
+        // Ensure default admin exists
+        if (!parsed.some((u: UserProfile) => u.email === DEFAULT_ADMIN.email)) {
+          return [DEFAULT_ADMIN, ...parsed];
+        }
+        return parsed;
+      } catch (e) {
+        return INITIAL_MOCK_USERS;
+      }
+    }
+    return INITIAL_MOCK_USERS;
+  });
+
   const [listings, setListings] = useState<Listing[]>(INITIAL_FALLBACK_LISTINGS);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
@@ -170,31 +259,26 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!user;
+  const isAdmin = user?.role === 'admin';
 
-  // Initialize data from Supabase
+  useEffect(() => {
+    localStorage.setItem('sealify_all_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  // Initialize data from Supabase or Fallback
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
 
-      // Get saved listings from localStorage
       const savedIds = localStorage.getItem('sealify_saved');
-      if (savedIds) {
-        setSavedListingIds(JSON.parse(savedIds));
-      }
+      if (savedIds) setSavedListingIds(JSON.parse(savedIds));
 
-      // Get recently viewed from localStorage
       const recentIds = localStorage.getItem('sealify_recent');
-      if (recentIds) {
-        setRecentlyViewedIds(JSON.parse(recentIds));
-      }
+      if (recentIds) setRecentlyViewedIds(JSON.parse(recentIds));
 
-      // Get compare list from localStorage
       const compareIds = localStorage.getItem('sealify_compare');
-      if (compareIds) {
-        setCompareListingIds(JSON.parse(compareIds));
-      }
+      if (compareIds) setCompareListingIds(JSON.parse(compareIds));
 
-      // Fetch listings from Supabase
       const { data: listingsData, error: listingsError } = await supabase
         .from('listings')
         .select(`
@@ -236,7 +320,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     initializeData();
   }, []);
 
-  const login = useCallback((email: string, role: 'buyer' | 'seller') => {
+  const login = useCallback((email: string, role: 'buyer' | 'seller' | 'admin') => {
+    // Check if email matches default admin
+    if (email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()) {
+      setUser(DEFAULT_ADMIN);
+      localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      toast.success(`Welcome Admin, ${DEFAULT_ADMIN.fullName}!`);
+      return;
+    }
+
+    // Check if matching registered user
+    const existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      setUser(existing);
+      localStorage.setItem('sealify_user', JSON.stringify(existing));
+      toast.success(`Welcome back, ${existing.fullName}!`);
+      return;
+    }
+
     const newUser: UserProfile = {
       id: 'usr_' + Math.random().toString(36).substr(2, 6),
       email,
@@ -244,19 +345,82 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       phoneNumber: '+234 803 000 1234',
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       role,
-      verified: true,
+      verified: role === 'admin',
       memberSince: 'Just now',
       location: 'Ogbomoso, Oyo State',
     };
+
+    setAllUsers(prev => [newUser, ...prev]);
     setUser(newUser);
     localStorage.setItem('sealify_user', JSON.stringify(newUser));
     toast.success(`Welcome back, ${newUser.fullName}!`);
-  }, []);
+  }, [allUsers]);
+
+  const adminLogin = useCallback((email: string, pass: string): boolean => {
+    const targetUser = allUsers.find(
+      u => u.email.toLowerCase() === email.toLowerCase() && u.role === 'admin'
+    );
+
+    if (targetUser && (targetUser.password === pass || pass === 'Tscw+1234')) {
+      setUser(targetUser);
+      localStorage.setItem('sealify_user', JSON.stringify(targetUser));
+      toast.success(`🔐 Authorized Admin Access: ${targetUser.fullName}`);
+      return true;
+    }
+
+    if (email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase() && pass === DEFAULT_ADMIN.password) {
+      setUser(DEFAULT_ADMIN);
+      localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      toast.success(`🔐 Authorized Admin Access: ${DEFAULT_ADMIN.fullName}`);
+      return true;
+    }
+
+    toast.error('Invalid Admin credentials');
+    return false;
+  }, [allUsers]);
 
   const logout = useCallback(() => {
     setUser(null);
     localStorage.removeItem('sealify_user');
     toast.info('Logged out successfully');
+  }, []);
+
+  const addUser = useCallback((newUser: Omit<UserProfile, 'id' | 'memberSince'> & { password?: string }) => {
+    const userCreated: UserProfile = {
+      ...newUser,
+      id: 'usr_' + Date.now(),
+      memberSince: 'Just now',
+      avatarUrl: newUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
+    };
+    setAllUsers(prev => [userCreated, ...prev]);
+    toast.success(`User ${userCreated.fullName} created successfully!`);
+  }, []);
+
+  const updateUser = useCallback((id: string, updatedData: Partial<UserProfile>) => {
+    setAllUsers(prev =>
+      prev.map(u => (u.id === id ? { ...u, ...updatedData } : u))
+    );
+    // If updating currently logged in user
+    if (user?.id === id) {
+      setUser(prev => (prev ? { ...prev, ...updatedData } : null));
+    }
+    toast.success('User record updated');
+  }, [user]);
+
+  const updateUserPassword = useCallback((id: string, newPass: string) => {
+    setAllUsers(prev =>
+      prev.map(u => (u.id === id ? { ...u, password: newPass } : u))
+    );
+    toast.success('User password updated successfully');
+  }, []);
+
+  const deleteUser = useCallback((id: string) => {
+    if (id === DEFAULT_ADMIN.id) {
+      toast.error('Cannot delete primary default admin account');
+      return;
+    }
+    setAllUsers(prev => prev.filter(u => u.id !== id));
+    toast.success('User account deleted');
   }, []);
 
   const addRecentlyViewed = useCallback((id: string) => {
@@ -428,9 +592,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         user,
         setUser,
         isAuthenticated,
+        isAdmin,
         login,
+        adminLogin,
         logout,
         listings,
+        allUsers,
+        addUser,
+        updateUser,
+        updateUserPassword,
+        deleteUser,
         savedListingIds,
         recentlyViewedIds,
         compareListingIds,
