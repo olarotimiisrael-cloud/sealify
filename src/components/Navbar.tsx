@@ -48,21 +48,21 @@ const Navbar: React.FC = () => {
     { code: 'yo', label: 'Yoruba' },
     { code: 'pg', label: 'Pidgin' },
     { code: 'ha', label: 'Hausa' },
-    { code: 'ha', label: 'French' },
-    { code: 'ha', label: 'Chinese' },
+    { code: 'fr', label: 'French' },
+    { code: 'zh', label: 'Chinese' },
   ];
 
   return (
     <>
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
-          <Link to="/" className="flex items-center gap-3 shrink-0">
-            <img src="/logo.png" className="w-10 h-10 object-contain rounded-xl border border-slate-800" />
-            <div className="flex flex-col">
-              <span className="text-xl font-black tracking-tight leading-none">Sealify</span>
-              <p className="text-[9px] text-emerald-400 uppercase tracking-widest font-extrabold mt-0.5">{t('trusted_marketplace')}</p>
-            </div>
+          <Link to="/" className="flex items-center shrink-0">
+            <img 
+              src="/logo.png" 
+              alt="Sealify Logo" 
+              className="h-10 sm:h-12 w-auto object-contain" 
+            />
           </Link>
 
           <div className="hidden lg:flex items-center gap-2">
