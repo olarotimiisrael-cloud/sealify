@@ -3,14 +3,27 @@ import { useSealify } from '../context/SealifyContext';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
-import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell } from 'lucide-react';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell, Camera, Image, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
+const SAMPLE_AVATARS = [
+  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
+];
+
 const Settings: React.FC = () => {
-  const { user, setUser } = useSealify();
+  const { user, setUser, updateUser } = useSealify();
   const [editingProfile, setEditingProfile] = useState(false);
+  const [fullName, setFullName] = useState(user?.fullName || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
+  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
+
   const [emailNewListings, setEmailNewListings] = useState(true);
   const [emailFavoriteAlerts, setEmailFavoriteAlerts] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -33,16 +46,15 @@ const Settings: React.FC = () => {
   }
 
   const handleSave = () => {
-    if (!user) return;
-    const updatedUser = {
-      ...user,
+    const avatarToSave = customAvatarUrl.trim() || selectedAvatar;
+    updateUser(user.id, {
+      fullName,
       email: newEmail,
       phoneNumber: newPhone,
-    };
-    localStorage.setItem('sealify_user', JSON.stringify(updatedUser));
-    setUser(updatedUser);
+      avatarUrl: avatarToSave,
+    });
     setEditingProfile(false);
-    toast.success('Profile and notification preferences updated!');
+    toast.success('Profile photo & account details updated successfully!');
   };
 
   const handleConfirmDelete = () => {
@@ -56,80 +68,139 @@ const Settings: React.FC = () => {
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-800">
-            <div className="flex items-center gap-3">
-              <img
-                src={user.avatarUrl}
-                alt={user.fullName}
-                className="w-12 h-12 rounded-2xl object-cover border-2 border-emerald-500"
-              />
+          <div className="flex flex-col sm:flex-row items-center justify-between pb-6 border-b border-slate-800 gap-4">
+            <div className="flex items-center gap-4 text-center sm:text-left">
+              <div className="relative group">
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName}
+                  className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                />
+                <button
+                  onClick={() => setEditingProfile(true)}
+                  className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-500 text-slate-950 rounded-xl shadow font-bold hover:scale-110 transition-transform"
+                  title="Upload profile photo"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
               <div className="flex flex-col">
-                <h1 className="text-xl font-bold text-white">{user.fullName}</h1>
-                <p className="text-slate-400 text-xs">Verified Marketplace User</p>
+                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                  <h1 className="text-xl font-bold text-white">{user.fullName}</h1>
+                  {user.verified && (
+                    <VerifiedBadge type={user.verificationType || 'individual'} showText />
+                  )}
+                </div>
+                <p className="text-slate-400 text-xs mt-0.5">{user.email} • {user.phoneNumber}</p>
+                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1">
+                  Role: {user.role} {user.role === 'admin' ? '(Administrator)' : ''}
+                </span>
               </div>
             </div>
+
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm"
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
             >
-              <Edit3 className="w-4 h-4" />
+              <Edit3 className="w-4 h-4 text-emerald-400" />
+              <span>{editingProfile ? 'Cancel Editing' : 'Edit Profile & Photo'}</span>
             </button>
           </div>
+
+          {/* Profile Photo Upload / Edit Section */}
+          {editingProfile && (
+            <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider">
+                <Camera className="w-4 h-4" />
+                <span>Upload & Update Profile Photo</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-bold text-slate-300">Choose Preset Avatar</label>
+                <div className="flex gap-3 overflow-x-auto pb-1">
+                  {SAMPLE_AVATARS.map((imgUrl, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        setSelectedAvatar(imgUrl);
+                        setCustomAvatarUrl('');
+                      }}
+                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-transform ${
+                        selectedAvatar === imgUrl && !customAvatarUrl
+                          ? 'border-emerald-500 scale-105 ring-2 ring-emerald-500/30'
+                          : 'border-slate-800 opacity-60'
+                      }`}
+                    >
+                      <img src={imgUrl} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Or Paste Custom Photo Image URL</label>
+                <div className="relative">
+                  <Image className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                  <input
+                    type="url"
+                    value={customAvatarUrl}
+                    onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Full Name</label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSave}
+                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow flex items-center justify-center gap-1.5 mt-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save Profile Photo & Changes</span>
+              </button>
+            </div>
+          )}
 
           <div className="space-y-4">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Information</h3>
 
             <div className="space-y-3">
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase">Email Address</h4>
-                    <p className="text-sm text-slate-300 mt-0.5">{user.email}</p>
-                  </div>
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase">Email Address</h4>
+                  <p className="text-sm text-slate-300 mt-0.5">{user.email}</p>
                 </div>
-                {editingProfile && (
-                  <div className="pt-2 flex items-center gap-2">
-                    <input
-                      type="email"
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                      placeholder="New email address"
-                    />
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors"
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
               </div>
 
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="text-xs font-bold text-white uppercase">Phone Number</h4>
-                    <p className="text-sm text-slate-300 mt-0.5">{user.phoneNumber}</p>
-                  </div>
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase">Phone Number</h4>
+                  <p className="text-sm text-slate-300 mt-0.5">{user.phoneNumber}</p>
                 </div>
-                {editingProfile && (
-                  <div className="pt-2 flex items-center gap-2">
-                    <input
-                      type="tel"
-                      value={newPhone}
-                      onChange={(e) => setNewPhone(e.target.value)}
-                      className="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                      placeholder="New phone number"
-                    />
-                    <button
-                      onClick={handleSave}
-                      className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-xs transition-colors"
-                    >
-                      Save
-                    </button>
-                  </div>
-                )}
               </div>
 
               {/* Email Update Preferences */}
@@ -179,7 +250,7 @@ const Settings: React.FC = () => {
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase">Account Status</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Active & Verified since 2023</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Active & Verified since {user.memberSince || '2023'}</p>
                 </div>
                 <Calendar className="w-5 h-5 text-slate-500" />
               </div>

@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, FileText, Lock, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   sellerName: string;
+  onSubmitRequest?: (req: {
+    applicantType: 'individual' | 'business';
+    docType: string;
+    docNumber: string;
+    businessName?: string;
+  }) => void;
 }
 
 export const VerificationModal: React.FC<VerificationModalProps> = ({
   isOpen,
   onClose,
   sellerName,
+  onSubmitRequest,
 }) => {
-  const [step, setStep] = useState<number>(1);
-  const [idType, setIdType] = useState<string>('Government Issued ID / Passport');
-  const [idNumber, setIdNumber] = useState<string>('');
+  const [applicantType, setApplicantType] = useState<'individual' | 'business'>('individual');
+  const [docType, setDocType] = useState<string>('Government Issued ID / Passport');
+  const [docNumber, setDocNumber] = useState<string>('');
+  const [businessName, setBusinessName] = useState<string>('');
   const [phoneOtp, setPhoneOtp] = useState<string>('');
+  const [step, setStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
   if (!isOpen) return null;
@@ -24,7 +33,17 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitted(true);
-    toast.success('🎉 Identity verification request submitted!');
+
+    if (onSubmitRequest) {
+      onSubmitRequest({
+        applicantType,
+        docType: applicantType === 'business' ? 'CAC Certificate / Tax Registration' : docType,
+        docNumber,
+        businessName,
+      });
+    }
+
+    toast.success(`🎉 ${applicantType === 'business' ? 'Registered Business' : 'Individual ID'} verification request submitted to Admin!`);
     setTimeout(() => {
       setIsSubmitted(false);
       setStep(1);
@@ -48,61 +67,117 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h2 className="text-2xl font-black text-white">Get Verified Seller Badge</h2>
+              <h2 className="text-2xl font-black text-white">Apply for Verified Badge</h2>
               <p className="text-xs text-slate-400">
-                Gain up to <strong className="text-emerald-400">3x more buyer inquiries</strong> with a verified trust badge
+                Gain up to <strong className="text-emerald-400">5x more buyer trust</strong> with an admin-reviewed badge
               </p>
             </div>
 
-            {/* Progress Bar */}
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 bg-slate-950 p-2.5 rounded-2xl border border-slate-800">
-              <span className={step >= 1 ? 'text-emerald-400 flex items-center gap-1' : ''}>
-                <CheckCircle2 className="w-3.5 h-3.5" /> 1. Document ID
-              </span>
-              <span className="text-slate-700">•</span>
-              <span className={step >= 2 ? 'text-emerald-400 flex items-center gap-1' : ''}>
-                <Smartphone className="w-3.5 h-3.5" /> 2. Phone OTP
-              </span>
+            {/* Selection of Applicant Type: Individual vs Business */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Verification Type</label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApplicantType('individual');
+                    setDocType('Government Issued ID / Passport');
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col items-start gap-1.5 ${
+                    applicantType === 'individual'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-2 ring-emerald-500/30'
+                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <User className="w-5 h-5" />
+                  <div>
+                    <p className="font-bold text-xs text-white">Individual Seller</p>
+                    <p className="text-[10px] text-slate-400">NIN, Voter ID, Driver's License</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setApplicantType('business');
+                    setDocType('CAC Business Certificate');
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col items-start gap-1.5 ${
+                    applicantType === 'business'
+                      ? 'border-amber-500 bg-amber-500/10 text-amber-400 ring-2 ring-amber-500/30'
+                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Building2 className="w-5 h-5" />
+                  <div>
+                    <p className="font-bold text-xs text-white">Registered Business</p>
+                    <p className="text-[10px] text-slate-400">CAC Certificate / Business Name</p>
+                  </div>
+                </button>
+              </div>
             </div>
 
             {step === 1 ? (
               <div className="space-y-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document Type</label>
-                  <select
-                    value={idType}
-                    onChange={(e) => setIdType(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Government Issued ID / Passport">Government Issued ID / Passport</option>
-                    <option value="Driver's License">Driver's License</option>
-                    <option value="Business Registration / Tax Certificate">Business Registration / Tax Certificate</option>
-                  </select>
-                </div>
+                {applicantType === 'business' ? (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Registered Business Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g. Ogbomoso Tech & Solar Hub Ltd"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document Type</label>
+                    <select
+                      value={docType}
+                      onChange={(e) => setDocType(e.target.value)}
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="Government Issued ID / Passport">Government Issued ID / Passport</option>
+                      <option value="National Identification Number (NIN)">National Identification Number (NIN)</option>
+                      <option value="Driver's License">Driver's License</option>
+                      <option value="Voter's Card">Voter's Card</option>
+                    </select>
+                  </div>
+                )}
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document Identification Number</label>
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                    {applicantType === 'business' ? 'CAC Registration Number (RC/BN)' : 'Document ID Number'} *
+                  </label>
                   <input
                     type="text"
                     required
-                    value={idNumber}
-                    onChange={(e) => setIdNumber(e.target.value)}
-                    placeholder="e.g. ID-9840219482"
+                    value={docNumber}
+                    onChange={(e) => setDocNumber(e.target.value)}
+                    placeholder={applicantType === 'business' ? 'e.g. RC-88492019' : 'e.g. NIN-9840219482'}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
-                <div className="border-2 border-dashed border-slate-800 rounded-2xl p-6 text-center space-y-2 bg-slate-950/50 hover:border-emerald-500/50 transition-colors">
-                  <Upload className="w-8 h-8 text-emerald-400 mx-auto" />
-                  <p className="text-xs font-bold text-slate-200">Upload Front Photo of ID Document</p>
-                  <p className="text-[10px] text-slate-500">Supports JPG, PNG or PDF (Max 10MB)</p>
+                <div className="border-2 border-dashed border-slate-800 rounded-2xl p-5 text-center space-y-2 bg-slate-950/50 hover:border-emerald-500/50 transition-colors">
+                  <Upload className="w-7 h-7 text-emerald-400 mx-auto" />
+                  <p className="text-xs font-bold text-slate-200">
+                    Upload {applicantType === 'business' ? 'CAC Certificate / Business Doc' : 'Front Photo of Government ID'}
+                  </p>
+                  <p className="text-[10px] text-slate-500">JPG, PNG or PDF (Max 10MB)</p>
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    if (!idNumber) {
-                      toast.error('Please enter document identification number');
+                    if (!docNumber) {
+                      toast.error('Please enter registration or document identification number');
+                      return;
+                    }
+                    if (applicantType === 'business' && !businessName) {
+                      toast.error('Please enter your business name');
                       return;
                     }
                     setStep(2);
@@ -116,11 +191,11 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               <div className="space-y-4">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-1">
                   <p className="text-slate-400">SMS Verification code sent to your registered phone number</p>
-                  <p className="font-extrabold text-emerald-400">+1 (555) ***-2831</p>
+                  <p className="font-extrabold text-emerald-400">+234 803 *** 1234</p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">6-Digit OTP Code</label>
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">6-Digit SMS Code</label>
                   <input
                     type="text"
                     required
@@ -144,7 +219,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                     type="submit"
                     className="flex-[2] py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
                   >
-                    Submit Verification Request
+                    Submit Request to Admin
                   </button>
                 </div>
               </div>
@@ -160,9 +235,13 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
               <Sparkles className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-black text-white">Verification Under Review</h3>
+            <h3 className="text-xl font-black text-white">Verification Sent to Admin</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Our Trust & Safety moderators will verify your uploaded document within 24 hours.
+              Sealify administrators will review your document and assign your{' '}
+              <strong className="text-emerald-400">
+                {applicantType === 'business' ? 'Verified Business Badge' : 'Verified Individual Badge'}
+              </strong>{' '}
+              shortly.
             </p>
           </div>
         )}

@@ -5,7 +5,8 @@ import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
 import ReviewModal from '../components/ReviewModal';
 import MobileNav from '../components/MobileNav';
-import { ShieldCheck, MapPin, Calendar, Phone, ArrowLeft, Package, Star } from 'lucide-react';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { MapPin, Calendar, Phone, ArrowLeft, Package, Star } from 'lucide-react';
 
 interface ReviewItem {
   id: string;
@@ -17,16 +18,18 @@ interface ReviewItem {
 
 export const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { listings } = useSealify();
+  const { listings, allUsers } = useSealify();
 
+  const sellerUser = allUsers.find((u) => u.id === id);
   const sellerListings = listings.filter((l) => l.sellerId === id);
   const sampleListing = sellerListings[0] || listings[0];
 
-  const sellerName = sampleListing?.sellerName || 'Verified Seller';
-  const sellerAvatar = sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
-  const sellerVerified = sampleListing?.sellerVerified ?? true;
-  const sellerLocation = sampleListing?.location || 'Ogbomoso, Nigeria';
-  const sellerPhone = sampleListing?.sellerPhone || '+234 800 000 0000';
+  const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Verified Seller';
+  const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
+  const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
+  const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
+  const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Nigeria';
+  const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 800 000 0000';
 
   const [reviews, setReviews] = useState<ReviewItem[]>([
     {
@@ -54,15 +57,6 @@ export const SellerProfile: React.FC = () => {
     reviews.reduce((acc, r) => acc + r.rating, 0) / (reviews.length || 1)
   ).toFixed(1);
 
-  const formatNGN = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
@@ -84,14 +78,16 @@ export const SellerProfile: React.FC = () => {
               className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-lg"
             />
             <div className="space-y-1">
-              <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                 <h1 className="text-2xl font-black text-white">{sellerName}</h1>
                 {sellerVerified && (
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                  <VerifiedBadge type={sellerVerificationType} showText />
                 )}
               </div>
               <div className="flex items-center justify-center sm:justify-start gap-2">
-                <span className="text-xs font-semibold text-emerald-400">Verified Marketplace Seller</span>
+                <span className="text-xs font-semibold text-emerald-400">
+                  {sellerVerificationType === 'business' ? 'Verified Business Vendor' : 'Verified Marketplace Seller'}
+                </span>
                 <span className="text-slate-600">•</span>
                 <div className="flex items-center text-amber-400 text-xs font-bold gap-1">
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
@@ -105,7 +101,7 @@ export const SellerProfile: React.FC = () => {
                 </span>
                 <span className="flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                  Member since 2023
+                  Member since {sellerUser?.memberSince || '2023'}
                 </span>
               </div>
             </div>

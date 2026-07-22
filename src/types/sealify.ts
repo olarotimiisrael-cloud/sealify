@@ -10,6 +10,8 @@ export type Category =
 
 export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
 
+export type VerificationBadgeType = 'individual' | 'business' | 'none';
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -18,6 +20,8 @@ export interface UserProfile {
   avatarUrl: string;
   role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
+  verificationType?: VerificationBadgeType;
+  businessName?: string;
   memberSince: string;
   location: string;
   password?: string;
@@ -30,6 +34,7 @@ export interface Listing {
   sellerPhone: string;
   sellerAvatar: string;
   sellerVerified: boolean;
+  sellerVerificationType?: VerificationBadgeType;
   title: string;
   description: string;
   price: number;

@@ -6,6 +6,7 @@ import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3, Award, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -33,25 +34,38 @@ const MyAds: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <img src={user?.avatarUrl} className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500" />
+            <img src={user?.avatarUrl} className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md" />
             <div>
               <div className="flex items-center gap-2 justify-center sm:justify-start">
                 <h1 className="text-xl font-extrabold text-white">{user?.fullName}</h1>
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                {user?.verified ? (
+                  <VerifiedBadge type={user.verificationType || 'individual'} showText />
+                ) : (
+                  <span className="text-[10px] bg-slate-800 text-slate-400 font-bold px-2 py-0.5 rounded-full">
+                    Unverified
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400">{user?.email} • {user?.phoneNumber}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+            <Link
+              to="/settings"
+              className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700"
+            >
+              Update Profile Photo
+            </Link>
+
             <button
               onClick={() => setIsVerificationOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700"
             >
               <Award className="w-4 h-4" />
-              <span>Get Verified Badge</span>
+              <span>Apply for Verified Badge</span>
             </button>
 
             <Link

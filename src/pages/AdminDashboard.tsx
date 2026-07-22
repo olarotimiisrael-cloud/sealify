@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
-import { UserProfile, Listing } from '../types/sealify';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { UserProfile, Listing, VerificationBadgeType } from '../types/sealify';
 import { 
   Users, 
   ShieldCheck, 
@@ -20,7 +21,9 @@ import {
   XCircle,
   Flame,
   AlertTriangle,
-  FileText
+  FileText,
+  Building2,
+  Camera
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,6 +34,8 @@ interface VerificationRequest {
   userEmail: string;
   docType: string;
   docNumber: string;
+  applicantType: 'individual' | 'business';
+  businessName?: string;
   submittedAt: string;
   status: 'pending' | 'approved' | 'rejected';
 }
@@ -71,8 +76,10 @@ export const AdminDashboard: React.FC = () => {
       userId: 'usr_2',
       userName: 'Blessing Okonjo',
       userEmail: 'blessing@sealify.ng',
-      docType: 'Government Issued ID / Passport',
-      docNumber: 'NG-ID-88492019',
+      docType: 'CAC Business Certificate',
+      docNumber: 'RC-88492019',
+      applicantType: 'business',
+      businessName: 'Blessing Electronics & Accessories Enterprise',
       submittedAt: '1 hour ago',
       status: 'pending',
     },
@@ -83,6 +90,7 @@ export const AdminDashboard: React.FC = () => {
       userEmail: 'buyer.david@gmail.com',
       docType: "Driver's License",
       docNumber: 'DL-OYO-993821',
+      applicantType: 'individual',
       submittedAt: '3 hours ago',
       status: 'pending',
     },
@@ -115,13 +123,16 @@ export const AdminDashboard: React.FC = () => {
   const [newLocation, setNewLocation] = useState('Ogbomoso, Oyo State');
   const [newPassword, setNewPassword] = useState('Sealify2025!');
   const [newVerified, setNewVerified] = useState(true);
+  const [newVerificationType, setNewVerificationType] = useState<VerificationBadgeType>('individual');
 
   const [editFullName, setEditFullName] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editRole, setEditRole] = useState<'buyer' | 'seller' | 'admin'>('buyer');
   const [editLocation, setEditLocation] = useState('');
   const [editVerified, setEditVerified] = useState(false);
+  const [editVerificationType, setEditVerificationType] = useState<VerificationBadgeType>('individual');
 
   const [updatedPassValue, setUpdatedPassValue] = useState('');
 
@@ -171,6 +182,7 @@ export const AdminDashboard: React.FC = () => {
       phoneNumber: newPhone || '+234 800 000 0000',
       role: newRole,
       verified: newVerified,
+      verificationType: newVerified ? newVerificationType : 'none',
       location: newLocation,
       password: newPassword,
       avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
@@ -187,9 +199,11 @@ export const AdminDashboard: React.FC = () => {
     setEditFullName(u.fullName);
     setEditEmail(u.email);
     setEditPhone(u.phoneNumber);
+    setEditAvatarUrl(u.avatarUrl);
     setEditRole(u.role);
     setEditLocation(u.location);
     setEditVerified(u.verified);
+    setEditVerificationType(u.verificationType || 'individual');
   };
 
   const handleSaveEditUser = (e: React.FormEvent) => {
@@ -200,9 +214,11 @@ export const AdminDashboard: React.FC = () => {
       fullName: editFullName,
       email: editEmail,
       phoneNumber: editPhone,
+      avatarUrl: editAvatarUrl,
       role: editRole,
       location: editLocation,
       verified: editVerified,
+      verificationType: editVerified ? editVerificationType : 'none',
     });
 
     setEditingUser(null);
@@ -217,12 +233,20 @@ export const AdminDashboard: React.FC = () => {
     setUpdatedPassValue('');
   };
 
-  const handleApproveVerification = (req: VerificationRequest) => {
-    updateUser(req.userId, { verified: true });
+  const handleApproveVerification = (req: VerificationRequest, assignedType: 'individual' | 'business') => {
+    updateUser(req.userId, { 
+      verified: true, 
+      verificationType: assignedType,
+      businessName: req.businessName 
+    });
+
     setVerificationRequests((prev) =>
       prev.map((v) => (v.id === req.id ? { ...v, status: 'approved' as const } : v))
     );
-    toast.success(`Approved verified seller status for ${req.userName}!`);
+
+    toast.success(
+      `Approved as ${assignedType === 'business' ? 'VERIFIED BUSINESS' : 'VERIFIED INDIVIDUAL'} for ${req.userName}!`
+    );
   };
 
   const handleRejectVerification = (reqId: string) => {
@@ -255,9 +279,11 @@ export const AdminDashboard: React.FC = () => {
         {/* Header Stats Banner */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4 text-center md:text-left">
-            <div className="p-3.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
-              <ShieldCheck className="w-8 h-8" />
-            </div>
+            <img
+              src={user?.avatarUrl}
+              alt={user?.fullName}
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+            />
             <div>
               <div className="flex items-center gap-2 justify-center md:justify-start">
                 <h1 className="text-2xl font-black text-white">Sealify Admin Control Dashboard</h1>
@@ -293,15 +319,17 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Vendors</p>
-            <p className="text-2xl font-black text-emerald-400">
-              {allUsers.filter((u) => u.verified).length}
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Businesses</p>
+            <p className="text-2xl font-black text-amber-400">
+              {allUsers.filter((u) => u.verified && u.verificationType === 'business').length}
             </p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Active Ad Listings</p>
-            <p className="text-2xl font-black text-teal-400">{listings.length}</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Individuals</p>
+            <p className="text-2xl font-black text-emerald-400">
+              {allUsers.filter((u) => u.verified && u.verificationType !== 'business').length}
+            </p>
           </div>
         </div>
 
@@ -403,10 +431,10 @@ export const AdminDashboard: React.FC = () => {
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-800">
                     <tr>
-                      <th className="py-3.5 px-4">User Details</th>
+                      <th className="py-3.5 px-4">User Photo & Details</th>
                       <th className="py-3.5 px-4">Role</th>
                       <th className="py-3.5 px-4">Phone / Location</th>
-                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4">Verification Status</th>
                       <th className="py-3.5 px-4 text-right">Admin Actions</th>
                     </tr>
                   </thead>
@@ -419,7 +447,7 @@ export const AdminDashboard: React.FC = () => {
                             <img
                               src={u.avatarUrl}
                               alt={u.fullName}
-                              className="w-9 h-9 rounded-xl object-cover border border-slate-700"
+                              className="w-10 h-10 rounded-xl object-cover border border-slate-700 shadow-sm"
                             />
                             <div>
                               <p className="font-bold text-white text-xs">{u.fullName}</p>
@@ -449,9 +477,7 @@ export const AdminDashboard: React.FC = () => {
 
                         <td className="py-3.5 px-4">
                           {u.verified ? (
-                            <span className="text-emerald-400 font-bold flex items-center gap-1 text-[11px]">
-                              <ShieldCheck className="w-3.5 h-3.5" /> Verified
-                            </span>
+                            <VerifiedBadge type={u.verificationType || 'individual'} showText />
                           ) : (
                             <span className="text-slate-500 text-[11px]">Unverified</span>
                           )}
@@ -462,7 +488,7 @@ export const AdminDashboard: React.FC = () => {
                             <button
                               onClick={() => handleStartEdit(u)}
                               className="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg"
-                              title="Edit User Record"
+                              title="Edit User Record & Avatar"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
                             </button>
@@ -500,9 +526,9 @@ export const AdminDashboard: React.FC = () => {
         {activeTab === 'verifications' && (
           <div className="space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-              <h3 className="font-bold text-base text-white">Pending ID Verification Requests</h3>
+              <h3 className="font-bold text-base text-white">Pending Verification Submissions</h3>
               {verificationRequests.length === 0 ? (
-                <p className="text-xs text-slate-500">No pending seller verification requests.</p>
+                <p className="text-xs text-slate-500">No pending verification requests in queue.</p>
               ) : (
                 <div className="space-y-3">
                   {verificationRequests.map((req) => (
@@ -514,28 +540,57 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-sm text-white">{req.userName}</h4>
                           <span className="text-[10px] text-slate-400">({req.userEmail})</span>
+                          <span
+                            className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border ${
+                              req.applicantType === 'business'
+                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
+                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                            }`}
+                          >
+                            Requested: {req.applicantType}
+                          </span>
                         </div>
-                        <p className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                          <FileText className="w-3.5 h-3.5" /> {req.docType}: <strong className="text-white">{req.docNumber}</strong>
+
+                        {req.businessName && (
+                          <p className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                            <Building2 className="w-3.5 h-3.5" /> Company: {req.businessName}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-slate-300 font-semibold flex items-center gap-1">
+                          <FileText className="w-3.5 h-3.5 text-emerald-400" /> {req.docType}:{' '}
+                          <strong className="text-white font-mono">{req.docNumber}</strong>
                         </p>
+
                         <p className="text-[10px] text-slate-500">Submitted {req.submittedAt}</p>
                       </div>
 
                       {req.status === 'pending' ? (
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <button
-                            onClick={() => handleApproveVerification(req)}
-                            className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow"
+                            onClick={() => handleApproveVerification(req, 'business')}
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow"
+                            title="Assign Verified Business Badge"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
-                            <span>Approve & Grant Badge</span>
+                            <Building2 className="w-3.5 h-3.5" />
+                            <span>Assign Business Badge</span>
                           </button>
+
+                          <button
+                            onClick={() => handleApproveVerification(req, 'individual')}
+                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow"
+                            title="Assign Verified Individual Badge"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>Assign Individual Badge</span>
+                          </button>
+
                           <button
                             onClick={() => handleRejectVerification(req.id)}
-                            className="px-3.5 py-2 bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold rounded-xl text-xs flex items-center gap-1"
+                            className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-300 hover:text-red-400 font-bold rounded-xl text-xs"
+                            title="Reject Request"
                           >
                             <XCircle className="w-4 h-4" />
-                            <span>Reject</span>
                           </button>
                         </div>
                       ) : (
@@ -736,13 +791,15 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Location</label>
-                  <input
-                    type="text"
-                    value={newLocation}
-                    onChange={(e) => setNewLocation(e.target.value)}
+                  <label className="font-bold text-slate-300">Verification Badge Type</label>
+                  <select
+                    value={newVerificationType}
+                    onChange={(e) => setNewVerificationType(e.target.value as VerificationBadgeType)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
-                  />
+                  >
+                    <option value="individual">Verified Individual Badge</option>
+                    <option value="business">Verified Business Badge</option>
+                  </select>
                 </div>
               </div>
 
@@ -755,7 +812,7 @@ export const AdminDashboard: React.FC = () => {
                   className="accent-emerald-500"
                 />
                 <label htmlFor="chkVerified" className="text-slate-300 font-semibold cursor-pointer">
-                  Mark as Verified Seller Badge
+                  Mark Account as Verified
                 </label>
               </div>
 
@@ -787,6 +844,17 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveEditUser} className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Profile Photo Image URL</label>
+                <input
+                  type="text"
+                  required
+                  value={editAvatarUrl}
+                  onChange={(e) => setEditAvatarUrl(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                />
+              </div>
+
               <div className="space-y-1">
                 <label className="font-bold text-slate-300">Full Name</label>
                 <input
@@ -836,13 +904,15 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Location</label>
-                  <input
-                    type="text"
-                    value={editLocation}
-                    onChange={(e) => setEditLocation(e.target.value)}
+                  <label className="font-bold text-slate-300">Verification Badge Type</label>
+                  <select
+                    value={editVerificationType}
+                    onChange={(e) => setEditVerificationType(e.target.value as VerificationBadgeType)}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"
-                  />
+                  >
+                    <option value="individual">Verified Individual</option>
+                    <option value="business">Verified Business</option>
+                  </select>
                 </div>
               </div>
 
@@ -855,7 +925,7 @@ export const AdminDashboard: React.FC = () => {
                   className="accent-emerald-500"
                 />
                 <label htmlFor="chkEditVerified" className="text-slate-300 font-semibold cursor-pointer">
-                  Verified Trust Badge Active
+                  Verified Badge Active
                 </label>
               </div>
 
