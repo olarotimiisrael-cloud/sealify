@@ -23,7 +23,9 @@ import {
   AlertTriangle,
   FileText,
   Building2,
-  Camera
+  Crown,
+  Sparkles,
+  DollarSign
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -62,10 +64,11 @@ export const AdminDashboard: React.FC = () => {
     deleteUser, 
     listings, 
     deleteListing,
-    updateListing
+    updateListing,
+    promoteListing
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'users' | 'verifications' | 'listings' | 'reports'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'verifications' | 'promotions' | 'listings' | 'reports'>('users');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'buyer' | 'seller' | 'admin'>('all');
 
@@ -222,6 +225,7 @@ export const AdminDashboard: React.FC = () => {
     });
 
     setEditingUser(null);
+    toast.success(`User updated & assigned ${editVerificationType.toUpperCase()} badge!`);
   };
 
   const handleSavePassword = (e: React.FormEvent) => {
@@ -233,7 +237,7 @@ export const AdminDashboard: React.FC = () => {
     setUpdatedPassValue('');
   };
 
-  const handleApproveVerification = (req: VerificationRequest, assignedType: 'individual' | 'business') => {
+  const handleApproveVerification = (req: VerificationRequest, assignedType: VerificationBadgeType) => {
     updateUser(req.userId, { 
       verified: true, 
       verificationType: assignedType,
@@ -245,8 +249,13 @@ export const AdminDashboard: React.FC = () => {
     );
 
     toast.success(
-      `Approved as ${assignedType === 'business' ? 'VERIFIED BUSINESS' : 'VERIFIED INDIVIDUAL'} for ${req.userName}!`
+      `Approved badge [${assignedType.toUpperCase()}] for ${req.userName}!`
     );
+  };
+
+  const handleAdminGrantPromotion = (listingId: string, durationMonths: number) => {
+    promoteListing(listingId, durationMonths, `Admin ${durationMonths} Mo Paid Promotion`);
+    toast.success(`🎉 Promotional campaign activated for listing for ${durationMonths} month(s)!`);
   };
 
   const handleRejectVerification = (reqId: string) => {
@@ -254,11 +263,6 @@ export const AdminDashboard: React.FC = () => {
       prev.map((v) => (v.id === reqId ? { ...v, status: 'rejected' as const } : v))
     );
     toast.info('Verification request rejected');
-  };
-
-  const handleToggleFeaturedAd = (ad: Listing) => {
-    updateListing(ad.id, { featured: !ad.featured });
-    toast.success(ad.featured ? 'Removed Top Ad badge' : 'Promoted to TOP AD featured listing!');
   };
 
   const handleResolveReport = (repId: string) => {
@@ -306,30 +310,33 @@ export const AdminDashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Overview Stats Grid */}
+        {/* Overview Stats Grid with 3 Badges Count */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Total User Records</p>
-            <p className="text-2xl font-black text-white">{allUsers.length}</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Premium Verified Badge</p>
+            <p className="text-2xl font-black text-purple-400 flex items-center gap-1">
+              <Crown className="w-5 h-5 text-amber-300" />
+              {allUsers.filter((u) => u.verified && u.verificationType === 'premium').length}
+            </p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending ID Approvals</p>
-            <p className="text-2xl font-black text-amber-400">{pendingVerificationCount}</p>
-          </div>
-
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Businesses</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Business Badge</p>
             <p className="text-2xl font-black text-amber-400">
               {allUsers.filter((u) => u.verified && u.verificationType === 'business').length}
             </p>
           </div>
 
           <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Individuals</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Verified Individual Badge</p>
             <p className="text-2xl font-black text-emerald-400">
-              {allUsers.filter((u) => u.verified && u.verificationType !== 'business').length}
+              {allUsers.filter((u) => u.verified && u.verificationType === 'individual').length}
             </p>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Total Active Ads</p>
+            <p className="text-2xl font-black text-white">{listings.length}</p>
           </div>
         </div>
 
@@ -345,6 +352,18 @@ export const AdminDashboard: React.FC = () => {
           >
             <Users className="w-4 h-4" />
             <span>User Records ({allUsers.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('promotions')}
+            className={`pb-3 px-4 font-bold text-xs flex items-center gap-2 border-b-2 shrink-0 transition-all ${
+              activeTab === 'promotions'
+                ? 'border-purple-500 text-purple-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-300" />
+            <span>Ad Promotions & Paid Campaigns</span>
           </button>
 
           <button
@@ -431,10 +450,10 @@ export const AdminDashboard: React.FC = () => {
                 <table className="w-full text-left text-xs text-slate-300">
                   <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-extrabold tracking-wider border-b border-slate-800">
                     <tr>
-                      <th className="py-3.5 px-4">User Photo & Details</th>
+                      <th className="py-3.5 px-4">User Details</th>
                       <th className="py-3.5 px-4">Role</th>
                       <th className="py-3.5 px-4">Phone / Location</th>
-                      <th className="py-3.5 px-4">Verification Status</th>
+                      <th className="py-3.5 px-4">Assigned Badge</th>
                       <th className="py-3.5 px-4 text-right">Admin Actions</th>
                     </tr>
                   </thead>
@@ -488,7 +507,7 @@ export const AdminDashboard: React.FC = () => {
                             <button
                               onClick={() => handleStartEdit(u)}
                               className="p-1.5 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg"
-                              title="Edit User Record & Avatar"
+                              title="Edit Record & Assign Badges"
                             >
                               <Edit3 className="w-3.5 h-3.5 text-emerald-400" />
                             </button>
@@ -522,7 +541,78 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 2: Vendor Verification Queue */}
+        {/* Tab 2: Admin Ad Promotions & Paid Campaigns */}
+        {activeTab === 'promotions' && (
+          <div className="space-y-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-300" /> Run & Grant Paid Ad Promotions for Listed Items
+                  </h3>
+                  <p className="text-xs text-slate-400">Admin can manually run 1-12 Month promotional campaigns for premium users on any item</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                {listings.map((ad) => (
+                  <div
+                    key={ad.id}
+                    className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between space-y-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <img src={ad.images[0]} className="w-16 h-16 rounded-xl object-cover shrink-0" />
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <h4 className="font-bold text-xs text-white truncate">{ad.title}</h4>
+                          {ad.featured && (
+                            <span className="text-[9px] font-black bg-purple-600 text-white px-2 py-0.5 rounded flex items-center gap-0.5">
+                              <Crown className="w-3 h-3 text-amber-300" /> PROMOTED
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-black text-emerald-400">₦{ad.price.toLocaleString()}</p>
+                        <p className="text-[10px] text-slate-400">Seller: <strong className="text-slate-200">{ad.sellerName}</strong></p>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-slate-400">Grant Duration:</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => handleAdminGrantPromotion(ad.id, 1)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-lg text-[10px]"
+                        >
+                          1 Month
+                        </button>
+                        <button
+                          onClick={() => handleAdminGrantPromotion(ad.id, 3)}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold rounded-lg text-[10px]"
+                        >
+                          3 Months
+                        </button>
+                        <button
+                          onClick={() => handleAdminGrantPromotion(ad.id, 6)}
+                          className="px-2.5 py-1 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-lg text-[10px]"
+                        >
+                          6 Months
+                        </button>
+                        <button
+                          onClick={() => handleAdminGrantPromotion(ad.id, 12)}
+                          className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg text-[10px]"
+                        >
+                          1 Year
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 3: Verification Queue with 3 Badge Grant Choices */}
         {activeTab === 'verifications' && (
           <div className="space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
@@ -540,15 +630,6 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <h4 className="font-bold text-sm text-white">{req.userName}</h4>
                           <span className="text-[10px] text-slate-400">({req.userEmail})</span>
-                          <span
-                            className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border ${
-                              req.applicantType === 'business'
-                                ? 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            }`}
-                          >
-                            Requested: {req.applicantType}
-                          </span>
                         </div>
 
                         {req.businessName && (
@@ -568,12 +649,21 @@ export const AdminDashboard: React.FC = () => {
                       {req.status === 'pending' ? (
                         <div className="flex flex-wrap items-center gap-2">
                           <button
+                            onClick={() => handleApproveVerification(req, 'premium')}
+                            className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs flex items-center gap-1 shadow"
+                            title="Assign Premium Verified Badge"
+                          >
+                            <Crown className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Grant Premium Badge</span>
+                          </button>
+
+                          <button
                             onClick={() => handleApproveVerification(req, 'business')}
                             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow"
                             title="Assign Verified Business Badge"
                           >
                             <Building2 className="w-3.5 h-3.5" />
-                            <span>Assign Business Badge</span>
+                            <span>Business Badge</span>
                           </button>
 
                           <button
@@ -582,7 +672,7 @@ export const AdminDashboard: React.FC = () => {
                             title="Assign Verified Individual Badge"
                           >
                             <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>Assign Individual Badge</span>
+                            <span>Individual Badge</span>
                           </button>
 
                           <button
@@ -594,13 +684,7 @@ export const AdminDashboard: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <span
-                          className={`text-xs font-black uppercase px-3 py-1 rounded-full ${
-                            req.status === 'approved'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
-                          }`}
-                        >
+                        <span className="text-xs font-black uppercase px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                           {req.status}
                         </span>
                       )}
@@ -612,7 +696,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 3: Moderate Ad Listings */}
+        {/* Tab 4: Moderate Ad Listings */}
         {activeTab === 'listings' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {listings.map((ad) => (
@@ -641,18 +725,6 @@ export const AdminDashboard: React.FC = () => {
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
-                    onClick={() => handleToggleFeaturedAd(ad)}
-                    className={`p-2 rounded-xl text-xs font-bold border transition-colors ${
-                      ad.featured
-                        ? 'bg-amber-500/20 border-amber-500 text-amber-400'
-                        : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
-                    }`}
-                    title="Toggle TOP AD Promotion"
-                  >
-                    <Flame className="w-4 h-4" />
-                  </button>
-
-                  <button
                     onClick={() => deleteListing(ad.id)}
                     className="p-2.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl"
                     title="Remove Listing"
@@ -665,7 +737,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 4: Safety Reports */}
+        {/* Tab 5: Safety Reports */}
         {activeTab === 'reports' && (
           <div className="space-y-4">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
@@ -791,7 +863,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Verification Badge Type</label>
+                  <label className="font-bold text-slate-300">Assign Badge Type</label>
                   <select
                     value={newVerificationType}
                     onChange={(e) => setNewVerificationType(e.target.value as VerificationBadgeType)}
@@ -799,6 +871,7 @@ export const AdminDashboard: React.FC = () => {
                   >
                     <option value="individual">Verified Individual Badge</option>
                     <option value="business">Verified Business Badge</option>
+                    <option value="premium">👑 Premium Paid Verified Badge</option>
                   </select>
                 </div>
               </div>
@@ -827,7 +900,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Edit User */}
+      {/* Modal: Edit User & Grant Badge */}
       {editingUser && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100 space-y-4">
@@ -840,7 +913,7 @@ export const AdminDashboard: React.FC = () => {
 
             <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-lg">
               <Edit3 className="w-5 h-5" />
-              <span>Modify User Record: {editingUser.fullName}</span>
+              <span>Modify User & Assign Verified Badge</span>
             </div>
 
             <form onSubmit={handleSaveEditUser} className="space-y-3 text-xs">
@@ -904,14 +977,16 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Verification Badge Type</label>
+                  <label className="font-bold text-slate-300">Assign Verified Badge</label>
                   <select
                     value={editVerificationType}
                     onChange={(e) => setEditVerificationType(e.target.value as VerificationBadgeType)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
                   >
-                    <option value="individual">Verified Individual</option>
-                    <option value="business">Verified Business</option>
+                    <option value="individual">Verified Individual Badge</option>
+                    <option value="business">Verified Business Badge</option>
+                    <option value="premium">👑 Premium Paid Verified Badge</option>
+                    <option value="none">No Badge (Unverified)</option>
                   </select>
                 </div>
               </div>
@@ -925,7 +1000,7 @@ export const AdminDashboard: React.FC = () => {
                   className="accent-emerald-500"
                 />
                 <label htmlFor="chkEditVerified" className="text-slate-300 font-semibold cursor-pointer">
-                  Verified Badge Active
+                  Activate Verification Badge on Account
                 </label>
               </div>
 
@@ -933,7 +1008,7 @@ export const AdminDashboard: React.FC = () => {
                 type="submit"
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-colors mt-2"
               >
-                Save Changes to Record
+                Save Changes & Grant Badge
               </button>
             </form>
           </div>

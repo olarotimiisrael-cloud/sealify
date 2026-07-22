@@ -8,11 +8,11 @@ import VerificationModal from '../components/VerificationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
-import { Trash2, CheckCircle, PlusCircle, ShieldCheck, Zap, Edit3, Award, BarChart2 } from 'lucide-react';
+import { Trash2, CheckCircle, PlusCircle, Edit3, Award, BarChart2, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const MyAds: React.FC = () => {
-  const { user, listings, deleteListing, markAsSold, updateListing } = useSealify();
+  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing } = useSealify();
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
@@ -65,7 +65,7 @@ const MyAds: React.FC = () => {
               className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700"
             >
               <Award className="w-4 h-4" />
-              <span>Apply for Verified Badge</span>
+              <span>Apply for Verification</span>
             </button>
 
             <Link
@@ -79,7 +79,10 @@ const MyAds: React.FC = () => {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-lg font-bold text-white">Your Classified Ads ({myAds.length})</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-white">Your Classified Ads ({myAds.length})</h2>
+            <p className="text-xs text-slate-400">Click <strong className="text-purple-400">Apply Ad Promotion</strong> on any item to get TOP AD boost & Premium badge</p>
+          </div>
 
           <div className="space-y-3">
             {myAds.map((ad) => (
@@ -90,7 +93,15 @@ const MyAds: React.FC = () => {
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                   <img src={ad.images[0]} className="w-16 h-16 rounded-xl object-cover shrink-0" />
                   <div>
-                    <h3 className="font-bold text-sm text-white">{ad.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-sm text-white">{ad.title}</h3>
+                      {ad.featured && (
+                        <span className="text-[9px] font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded uppercase flex items-center gap-1 shadow">
+                          <Crown className="w-3 h-3 text-amber-300 fill-amber-300" />
+                          <span>{ad.promotionPlanName || 'TOP AD'}</span>
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs font-semibold text-emerald-400">{formatNGN(ad.price)}</p>
                     <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-md uppercase mt-1 ${
                       ad.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
@@ -100,7 +111,7 @@ const MyAds: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-800">
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-0 pt-2 sm:pt-0 border-slate-800 flex-wrap">
                   <button
                     onClick={() => setAnalyticsListing(ad)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs"
@@ -122,11 +133,11 @@ const MyAds: React.FC = () => {
 
                       <button
                         onClick={() => setPromotingListing(ad)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 font-bold rounded-xl text-xs"
-                        title="Promote Ad to TOP AD"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black rounded-xl text-xs shadow-lg shadow-purple-900/40"
+                        title="Apply for monthly Ad Promotion (1 Month+)"
                       >
-                        <Zap className="w-3.5 h-3.5" />
-                        <span>Promote</span>
+                        <Crown className="w-3.5 h-3.5 text-amber-300 fill-amber-300" />
+                        <span>Apply Ad Promotion</span>
                       </button>
 
                       <button
@@ -163,7 +174,10 @@ const MyAds: React.FC = () => {
       <PromoteModal
         isOpen={!!promotingListing}
         onClose={() => setPromotingListing(null)}
-        listingTitle={promotingListing?.title || 'Listing'}
+        listing={promotingListing}
+        onPromoteSuccess={(listingId, durationMonths, planName) => {
+          promoteListing(listingId, durationMonths, planName);
+        }}
       />
 
       <AdAnalyticsModal

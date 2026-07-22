@@ -43,6 +43,7 @@ interface SealifyContextType {
   updateListing: (id: string, updatedData: Partial<Listing>) => void;
   deleteListing: (id: string) => void;
   markAsSold: (id: string) => void;
+  promoteListing: (id: string, durationMonths: number, planName: string) => void;
   conversations: Conversation[];
   sendMessage: (listingId: string, receiverId: string, content: string) => void;
   getConversationByListing: (listingId: string) => Conversation | undefined;
@@ -74,7 +75,7 @@ const DEFAULT_ADMIN: UserProfile = {
   avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
   role: 'admin',
   verified: true,
-  verificationType: 'business',
+  verificationType: 'premium',
   businessName: 'Sealify Marketplace Admin HQ',
   memberSince: 'Jan 2023',
   location: 'Ogbomoso, Oyo State',
@@ -135,7 +136,9 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     ],
     createdAt: '2 hours ago',
     viewsCount: 245,
-    featured: true
+    featured: true,
+    promotionPlanName: '3 Months Top Ad',
+    promotionDurationMonths: 3,
   },
   {
     id: 'lst_102',
@@ -166,7 +169,7 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     sellerPhone: '+234 802 333 4455',
     sellerAvatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
     sellerVerified: true,
-    sellerVerificationType: 'business',
+    sellerVerificationType: 'premium',
     title: 'Newly Built 2 Bedroom Flat Self-Contain Apartment',
     description: 'Modern 2-bedroom apartment with ensuite bathrooms, POP ceiling, water heater, paved compound, secure gate, and prepaid meter near LAUTECH Under-G.',
     price: 450000,
@@ -180,7 +183,9 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     ],
     createdAt: '1 day ago',
     viewsCount: 310,
-    featured: true
+    featured: true,
+    promotionPlanName: '6 Months Premium Top Ad',
+    promotionDurationMonths: 6,
   }
 ];
 
@@ -349,10 +354,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       email,
       fullName: email.split('@')[0].replace('.', ' '),
       phoneNumber: '+234 803 000 1234',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80',
       role,
       verified: role === 'admin',
-      verificationType: role === 'admin' ? 'business' : 'none',
+      verificationType: role === 'admin' ? 'premium' : 'none',
       memberSince: 'Just now',
       location: 'Ogbomoso, Oyo State',
     };
@@ -427,7 +432,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
     }
 
-    // Synchronize user profile updates (avatar & verified status badge) to all active listings
     setListings(prevListings =>
       prevListings.map(item => {
         if (item.sellerId === id) {
@@ -593,6 +597,40 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Listing marked as sold!');
   }, []);
 
+  const promoteListing = useCallback((id: string, durationMonths: number, planName: string) => {
+    const targetListing = listings.find((l) => l.id === id);
+
+    setListings((prev) =>
+      prev.map((l) => {
+        if (l.id === id) {
+          return {
+            ...l,
+            featured: true,
+            promotionPlanName: planName,
+            promotionDurationMonths: durationMonths,
+            sellerVerified: true,
+            sellerVerificationType: 'premium',
+          };
+        }
+        return l;
+      })
+    );
+
+    if (targetListing?.sellerId) {
+      updateUser(targetListing.sellerId, {
+        verified: true,
+        verificationType: 'premium',
+      });
+    }
+
+    addNotification({
+      type: 'system',
+      title: '👑 Ad Promoted & Premium Badge Granted!',
+      description: `"${targetListing?.title || 'Listing'}" has been boosted to TOP AD for ${durationMonths} month(s) with Premium Verification status!`,
+      linkUrl: `/listing/${id}`,
+    });
+  }, [listings, updateUser, addNotification]);
+
   const sendMessage = useCallback(async (listingId: string, receiverId: string, content: string) => {
     const sender = user || {
       id: 'usr_me',
@@ -686,6 +724,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         updateListing,
         deleteListing,
         markAsSold,
+        promoteListing,
         conversations,
         sendMessage,
         getConversationByListing,

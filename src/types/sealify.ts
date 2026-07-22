@@ -10,7 +10,7 @@ export type Category =
 
 export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
 
-export type VerificationBadgeType = 'individual' | 'business' | 'none';
+export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'none';
 
 export interface UserProfile {
   id: string;
@@ -47,6 +47,9 @@ export interface Listing {
   createdAt: string;
   viewsCount: number;
   featured?: boolean;
+  promotionDurationMonths?: number;
+  promotionExpiryDate?: string;
+  promotionPlanName?: string;
 }
 
 export interface Message {
