@@ -14,16 +14,12 @@ import {
   MessageSquare, 
   User as UserIcon, 
   LogOut, 
-  Database,
   Search,
   Menu,
   X,
   HelpCircle,
   Scale,
   Bell,
-  Info,
-  Mail,
-  BookOpen,
   Settings as SettingsIcon,
   Shield
 } from 'lucide-react';
@@ -80,34 +76,6 @@ const Navbar: React.FC = () => {
   return (
     <>
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-md">
-        <div className="bg-emerald-600 text-xs py-1 px-4 text-center font-medium flex justify-between items-center max-w-7xl mx-auto">
-          <button 
-            onClick={() => setIsSafetyModalOpen(true)}
-            className="flex items-center gap-1 hover:underline text-white font-semibold cursor-pointer"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Sealify Safety Protocol — Read Buyer & Seller Tips</span>
-          </button>
-
-          <div className="flex items-center gap-3">
-            <Link 
-              to="/admin/login" 
-              className="flex items-center gap-1 hover:underline text-amber-200 font-extrabold cursor-pointer"
-            >
-              <Shield className="w-3.5 h-3.5" />
-              <span>Admin Portal</span>
-            </Link>
-
-            <button 
-              onClick={() => setIsSqlModalOpen(true)}
-              className="flex items-center gap-1 hover:underline text-emerald-100 font-semibold cursor-pointer"
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>View DB Schema</span>
-            </button>
-          </div>
-        </div>
-
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-2.5 group shrink-0">
             <img
@@ -118,7 +86,6 @@ const Navbar: React.FC = () => {
             <div>
               <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1">
                 Sealify
-                <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
               </span>
               <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold -mt-1">Verified Classifieds</p>
             </div>
