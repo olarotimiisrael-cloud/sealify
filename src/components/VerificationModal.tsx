@@ -1,49 +1,60 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Crown } from 'lucide-react';
+import { useSealify } from '../context/SealifyContext';
 import { toast } from 'sonner';
 
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   sellerName: string;
-  onSubmitRequest?: (req: {
-    applicantType: 'individual' | 'business' | 'premium';
-    docType: string;
-    docNumber: string;
-    businessName?: string;
-  }) => void;
 }
 
 export const VerificationModal: React.FC<VerificationModalProps> = ({
   isOpen,
   onClose,
   sellerName,
-  onSubmitRequest,
 }) => {
+  const { user, submitVerificationRequest } = useSealify();
   const [applicantType, setApplicantType] = useState<'individual' | 'business' | 'premium'>('individual');
   const [docType, setDocType] = useState<string>('Government Issued ID / Passport');
   const [docNumber, setDocNumber] = useState<string>('');
   const [businessName, setBusinessName] = useState<string>('');
-  const [phoneOtp, setPhoneOtp] = useState<string>('');
+  const [idDoc, setIdDoc] = useState<string | null>(null);
   const [step, setStep] = useState<number>(1);
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || !user) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setIdDoc(event.target?.result as string);
+        toast.success('Document uploaded');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-
-    if (onSubmitRequest) {
-      onSubmitRequest({
-        applicantType,
-        docType: applicantType === 'business' ? 'CAC Certificate / Tax Registration' : docType,
-        docNumber,
-        businessName,
-      });
+    if (!idDoc) {
+      toast.error('Please upload your identification document');
+      return;
     }
 
-    toast.success(`🎉 Verification request for ${applicantType.toUpperCase()} badge submitted to Admin!`);
+    submitVerificationRequest({
+      userId: user.id,
+      userName: user.fullName,
+      userEmail: user.email,
+      type: applicantType,
+      docType: applicantType === 'business' ? 'CAC Certificate / Tax Registration' : docType,
+      docNumber,
+      docUrl: idDoc,
+    });
+
+    setIsSubmitted(true);
     setTimeout(() => {
       setIsSubmitted(false);
       setStep(1);
@@ -73,16 +84,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               </p>
             </div>
 
-            {/* Selection of Applicant Badge Tier */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Badge Type</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setApplicantType('individual');
-                    setDocType('Government Issued ID / Passport');
-                  }}
+                  onClick={() => setApplicantType('individual')}
                   className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
                     applicantType === 'individual'
                       ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-2 ring-emerald-500/30'
@@ -90,18 +97,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                   }`}
                 >
                   <User className="w-4 h-4" />
-                  <div>
-                    <p className="font-bold text-xs text-white">Individual</p>
-                    <p className="text-[9px] text-slate-400">NIN / ID</p>
-                  </div>
+                  <p className="font-bold text-xs text-white">Individual</p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setApplicantType('business');
-                    setDocType('CAC Business Certificate');
-                  }}
+                  onClick={() => setApplicantType('business')}
                   className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
                     applicantType === 'business'
                       ? 'border-amber-500 bg-amber-500/10 text-amber-400 ring-2 ring-amber-500/30'
@@ -109,18 +110,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                   }`}
                 >
                   <Building2 className="w-4 h-4" />
-                  <div>
-                    <p className="font-bold text-xs text-white">Business</p>
-                    <p className="text-[9px] text-slate-400">CAC Cert</p>
-                  </div>
+                  <p className="font-bold text-xs text-white">Business</p>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => {
-                    setApplicantType('premium');
-                    setDocType('Paid Ad Promotion License');
-                  }}
+                  onClick={() => setApplicantType('premium')}
                   className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
                     applicantType === 'premium'
                       ? 'border-purple-500 bg-purple-500/10 text-purple-300 ring-2 ring-purple-500/30'
@@ -128,139 +123,63 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                   }`}
                 >
                   <Crown className="w-4 h-4 text-amber-300" />
-                  <div>
-                    <p className="font-bold text-xs text-white">Premium</p>
-                    <p className="text-[9px] text-slate-400">Paid Ad</p>
-                  </div>
+                  <p className="font-bold text-xs text-white">Premium</p>
                 </button>
               </div>
             </div>
 
-            {step === 1 ? (
-              <div className="space-y-4">
-                {applicantType === 'business' ? (
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Registered Business Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      placeholder="e.g. Ogbomoso Tech & Solar Hub Ltd"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-amber-500"
-                    />
-                  </div>
-                ) : applicantType === 'individual' ? (
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document Type</label>
-                    <select
-                      value={docType}
-                      onChange={(e) => setDocType(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                    >
-                      <option value="Government Issued ID / Passport">Government Issued ID / Passport</option>
-                      <option value="National Identification Number (NIN)">National Identification Number (NIN)</option>
-                      <option value="Driver's License">Driver's License</option>
-                      <option value="Voter's Card">Voter's Card</option>
-                    </select>
-                  </div>
-                ) : (
-                  <div className="p-3 bg-purple-500/10 border border-purple-500/30 rounded-2xl text-xs text-purple-200">
-                    👑 <strong>Premium Verified Status</strong> is granted automatically when you purchase an ad promotion or upon admin approval.
-                  </div>
-                )}
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document ID Number *</label>
+                <input
+                  type="text"
+                  required
+                  value={docNumber}
+                  onChange={(e) => setDocNumber(e.target.value)}
+                  placeholder="e.g. NIN-9840219482"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                    {applicantType === 'business' ? 'CAC Registration Number (RC/BN)' : 'Document ID Number'} *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={docNumber}
-                    onChange={(e) => setDocNumber(e.target.value)}
-                    placeholder={applicantType === 'business' ? 'e.g. RC-88492019' : 'e.g. NIN-9840219482'}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="border-2 border-dashed border-slate-800 rounded-2xl p-5 text-center space-y-2 bg-slate-950/50 hover:border-emerald-500/50 transition-colors">
-                  <Upload className="w-7 h-7 text-emerald-400 mx-auto" />
-                  <p className="text-xs font-bold text-slate-200">
-                    Upload {applicantType === 'business' ? 'CAC Certificate' : 'Photo of ID'}
-                  </p>
-                  <p className="text-[10px] text-slate-500">JPG, PNG or PDF (Max 10MB)</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!docNumber) {
-                      toast.error('Please enter identification number');
-                      return;
-                    }
-                    if (applicantType === 'business' && !businessName) {
-                      toast.error('Please enter your business name');
-                      return;
-                    }
-                    setStep(2);
-                  }}
-                  className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Upload ID Document (JPG/PNG) *</label>
+                <input type="file" onChange={handleFileUpload} accept="image/*" className="hidden" id="ver-file-input" />
+                <label
+                  htmlFor="ver-file-input"
+                  className={`w-full py-8 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 cursor-pointer ${
+                    idDoc ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
+                  }`}
                 >
-                  Continue to Phone Verification
-                </button>
+                  {idDoc ? (
+                    <>
+                      <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                      <span className="text-[10px] font-bold text-emerald-400 uppercase">Document Attached</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-8 h-8 text-slate-600" />
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Click to upload identity document</span>
+                    </>
+                  )}
+                </label>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-1">
-                  <p className="text-slate-400">SMS Verification code sent to your registered phone number</p>
-                  <p className="font-extrabold text-emerald-400">+234 803 *** 1234</p>
-                </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">6-Digit SMS Code</label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    value={phoneOtp}
-                    onChange={(e) => setPhoneOtp(e.target.value)}
-                    placeholder="123456"
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-center text-lg font-black text-white tracking-widest focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="flex-1 py-3 bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-[2] py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
-                  >
-                    Submit Request to Admin
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="text-[10px] text-slate-500 flex items-center justify-center gap-1">
-              <Lock className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Encrypted with 256-bit SSL Security Protection</span>
+              <button
+                type="submit"
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
+              >
+                Submit Verification Request
+              </button>
             </div>
           </form>
         ) : (
           <div className="py-10 text-center space-y-4">
-            <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
+            <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
               <ShieldCheck className="w-8 h-8" />
             </div>
             <h3 className="text-xl font-black text-white">Verification Sent to Admin</h3>
-            <p className="text-xs text-slate-400 max-w-xs mx-auto">
-              Sealify administrators will review your document and assign your requested badge shortly.
+            <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
+              Sealify administrators will review your documents within 24-48 hours. You will receive an email once your badge is issued.
             </p>
           </div>
         )}

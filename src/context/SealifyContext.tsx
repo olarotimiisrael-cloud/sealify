@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
 
 export interface AppNotification {
   id: string;
-  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system' | 'recommendation' | 'payment' | 'security';
+  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system' | 'recommendation' | 'payment' | 'security' | 'verification';
   title: string;
   description: string;
   time: string;
@@ -70,6 +70,9 @@ interface SealifyContextType {
   passwordRequests: PasswordChangeRequest[];
   submitPasswordRequest: (req: Omit<PasswordChangeRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPasswordRequest: (id: string, status: 'approved' | 'declined') => void;
+  verificationRequests: VerificationRequest[];
+  submitVerificationRequest: (req: Omit<VerificationRequest, 'id' | 'status' | 'createdAt'>) => void;
+  processVerificationRequest: (id: string, status: 'approved' | 'rejected') => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -104,6 +107,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>(() => {
+    const saved = localStorage.getItem('sealify_verification_requests');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -123,10 +131,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [analytics, setAnalytics] = useState<AnalyticsData>({
-    visitors: 124,
+    visitors: 148,
     activeAds: MOCK_LISTINGS.length,
-    totalChats: 89,
-    sessionsPerMinute: [12, 19, 15, 24, 18, 30, 22, 25, 28, 34],
+    totalChats: 92,
+    sessionsPerMinute: [15, 22, 18, 28, 24, 35, 26, 30, 32, 40],
   });
 
   const [listings, setListings] = useState<Listing[]>(() => {
@@ -151,7 +159,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
-  }, [passwordRequests]);
+    localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
+  }, [passwordRequests, verificationRequests]);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
@@ -231,8 +240,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteListing = (id: string) => setListings(prev => prev.filter(l => l.id !== id));
   const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+  
   const promoteListing = (id: string, months: number, plan: string) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: months } : l));
+    // If the user isn't premium yet, ad promotion automatically grants premium badge
+    if (user && user.verificationType !== 'premium') {
+      updateUser(user.id, { verified: true, verificationType: 'premium' });
+    }
   };
 
   const addNotification = useCallback((notif: any) => {
@@ -276,12 +290,38 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (status === 'approved') {
       updateUser(req.userId, { password: req.newPassword });
-      toast.success(`Email sent to ${req.userEmail}: Password change approved by Sealify officials.`);
+      toast.success(`Email sent to ${req.userEmail}: Password change approved.`);
     } else {
-      toast.error(`Email sent to ${req.userEmail}: Password change request declined by Sealify officials.`);
+      toast.error(`Email sent to ${req.userEmail}: Password reset declined.`);
     }
 
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
+  // Verification Logic
+  const submitVerificationRequest = (req: any) => {
+    const newReq: VerificationRequest = {
+      ...req,
+      id: 'ver_' + Date.now(),
+      status: 'pending',
+      createdAt: new Date().toLocaleString()
+    };
+    setVerificationRequests(prev => [newReq, ...prev]);
+    toast.success(`${req.type.toUpperCase()} Verification submitted to Admin!`);
+  };
+
+  const processVerificationRequest = (id: string, status: 'approved' | 'rejected') => {
+    const req = verificationRequests.find(r => r.id === id);
+    if (!req) return;
+
+    if (status === 'approved') {
+      updateUser(req.userId, { verified: true, verificationType: req.type });
+      toast.success(`User ${req.userName} is now ${req.type.toUpperCase()} Verified!`);
+    } else {
+      toast.error(`Verification request for ${req.userName} rejected.`);
+    }
+
+    setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   return (
@@ -301,7 +341,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createListing, updateListing, deleteListing, markAsSold, promoteListing,
       conversations, sendMessage: () => {},
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
-      passwordRequests, submitPasswordRequest, processPasswordRequest
+      passwordRequests, submitPasswordRequest, processPasswordRequest,
+      verificationRequests, submitVerificationRequest, processVerificationRequest
     }}>
       {children}
     </SealifyContext.Provider>

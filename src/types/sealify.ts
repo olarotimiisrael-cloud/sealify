@@ -27,6 +27,19 @@ export interface UserProfile {
   password?: string;
 }
 
+export interface VerificationRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  type: VerificationBadgeType;
+  docType: string;
+  docNumber: string;
+  docUrl: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
 export interface PasswordChangeRequest {
   id: string;
   userId: string;
@@ -62,7 +75,6 @@ export interface Listing {
   viewsCount: number;
   featured?: boolean;
   promotionDurationMonths?: number;
-  promotionExpiryDate?: string;
   promotionPlanName?: string;
 }
 
