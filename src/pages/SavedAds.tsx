@@ -14,25 +14,25 @@ const SavedAds: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6">
         <div className="flex items-center gap-2">
           <Heart className="w-6 h-6 text-red-500 fill-red-500" />
-          <h1 className="text-2xl font-black text-white">Saved Advertisements</h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white">Saved Advertisements</h1>
           <span className="text-xs bg-slate-800 text-slate-400 font-semibold px-2.5 py-0.5 rounded-full">
             {savedListings.length}
           </span>
         </div>
 
         {savedListings.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
             {savedListings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>
         ) : (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center max-w-md mx-auto my-12 space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 sm:p-12 text-center max-w-md mx-auto my-12 space-y-4">
             <Heart className="w-12 h-12 text-slate-600 mx-auto" />
-            <h3 className="text-lg font-bold text-white">No saved ads yet</h3>
+            <h3 className="text-base sm:text-lg font-bold text-white">No saved ads yet</h3>
             <p className="text-xs text-slate-400">
               Bookmark items while browsing to keep track of prices and seller contact details.
             </p>

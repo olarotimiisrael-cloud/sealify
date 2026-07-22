@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import { Category, Condition } from '../types/sealify';
-import { X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, Sparkles } from 'lucide-react';
+import { X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORIES: Category[] = [
@@ -112,28 +112,28 @@ const PostAd: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
       <Navbar />
 
-      <main className="max-w-3xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+      <main className="max-w-3xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6">
         <div className="text-center space-y-1">
-          <h1 className="text-3xl font-black text-white">Post a New Classified Ad</h1>
+          <h1 className="text-2xl sm:text-3xl font-black text-white">Post a New Classified Ad</h1>
           <p className="text-xs text-slate-400">Reach thousands of active buyers in Ogbomoso & across Nigeria</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-8 space-y-6 shadow-2xl">
           {/* Photo Upload Section */}
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Product Photos ({images.length})</label>
-              <span className="text-[10px] text-slate-500">First photo will be main card cover</span>
+              <span className="text-[10px] text-slate-500">First photo will be cover</span>
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3">
               {images.map((img, idx) => (
-                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-700 group">
+                <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-700 group bg-slate-950">
                   <img src={img} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => handleRemoveImage(idx)}
-                    className="absolute top-1.5 right-1.5 p-1 bg-slate-950/80 text-red-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1.5 right-1.5 p-1 bg-slate-950/80 text-red-400 rounded-lg opacity-90 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove photo"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ const PostAd: React.FC = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-2xl border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 flex flex-col items-center justify-center p-3 text-center gap-1 text-emerald-400 transition-colors"
+                className="aspect-square rounded-2xl border-2 border-dashed border-emerald-500/50 hover:border-emerald-400 bg-emerald-500/5 hover:bg-emerald-500/10 flex flex-col items-center justify-center p-2 sm:p-3 text-center gap-1 text-emerald-400 transition-colors"
               >
                 <Upload className="w-5 h-5" />
                 <span className="text-[10px] font-extrabold">Upload Photo</span>
@@ -167,7 +167,7 @@ const PostAd: React.FC = () => {
               <button
                 type="button"
                 onClick={handleAddSampleImage}
-                className="aspect-square rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 bg-slate-950/50 flex flex-col items-center justify-center p-3 text-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
+                className="aspect-square rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 bg-slate-950/50 flex flex-col items-center justify-center p-2 sm:p-3 text-center gap-1 text-slate-400 hover:text-slate-200 transition-colors"
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-[10px] font-bold">Add Sample</span>
@@ -181,7 +181,7 @@ const PostAd: React.FC = () => {
                   type="url"
                   value={customImageUrl}
                   onChange={(e) => setCustomImageUrl(e.target.value)}
-                  placeholder="Or paste web image link (https://...)"
+                  placeholder="Or paste image web link (https://...)"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -203,7 +203,7 @@ const PostAd: React.FC = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Toyota Camry 2020 XSE or iPhone 15 Pro Max"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -213,7 +213,7 @@ const PostAd: React.FC = () => {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as Category)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
               >
                 {CATEGORIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -226,7 +226,7 @@ const PostAd: React.FC = () => {
               <select
                 value={condition}
                 onChange={(e) => setCondition(e.target.value as Condition)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
               >
                 {CONDITIONS.map((c) => (
                   <option key={c} value={c}>{c}</option>
@@ -244,7 +244,7 @@ const PostAd: React.FC = () => {
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 placeholder="0"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
 
@@ -256,7 +256,7 @@ const PostAd: React.FC = () => {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Ogbomoso, Oyo State"
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
           </div>
@@ -269,14 +269,14 @@ const PostAd: React.FC = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Describe your item key features, reason for selling, inclusions, warranty status, etc."
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3.5 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
           {/* Optional TOP AD Promotion Boost Toggle */}
           <div
             onClick={() => setFeaturedBoost(!featuredBoost)}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+            className={`p-3.5 sm:p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
               featuredBoost
                 ? 'border-amber-500 bg-amber-500/10 text-white ring-2 ring-amber-500/30'
                 : 'border-slate-800 bg-slate-950/60 hover:bg-slate-800/40 text-slate-300'
@@ -307,7 +307,7 @@ const PostAd: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-base shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-sm sm:text-base shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
           >
             <ShieldCheck className="w-5 h-5" />
             <span>Publish Classified Ad</span>
