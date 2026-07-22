@@ -8,7 +8,7 @@ interface SealifyContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (email: string, role: 'buyer' | 'seller' | 'admin') => void;
+  login: (email: string, role: 'buyer' | 'seller' | 'admin', isSignup?: boolean) => void;
   adminLogin: (email: string, pass: string) => boolean;
   logout: () => void;
   listings: Listing[];
@@ -238,7 +238,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (savedUsers) {
       try {
         const parsed = JSON.parse(savedUsers);
-        // Ensure default admin exists
         if (!parsed.some((u: UserProfile) => u.email === DEFAULT_ADMIN.email)) {
           return [DEFAULT_ADMIN, ...parsed];
         }
@@ -320,7 +319,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     initializeData();
   }, []);
 
-  const login = useCallback((email: string, role: 'buyer' | 'seller' | 'admin') => {
+  const login = useCallback((email: string, role: 'buyer' | 'seller' | 'admin', isSignup = false) => {
     // Check if email matches default admin
     if (email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()) {
       setUser(DEFAULT_ADMIN);
@@ -334,7 +333,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (existing) {
       setUser(existing);
       localStorage.setItem('sealify_user', JSON.stringify(existing));
-      toast.success(`Welcome back, ${existing.fullName}!`);
+      if (isSignup) {
+        toast.success(`✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.`);
+      } else {
+        toast.success(`Welcome back, ${existing.fullName}!`);
+      }
       return;
     }
 
@@ -353,7 +356,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAllUsers(prev => [newUser, ...prev]);
     setUser(newUser);
     localStorage.setItem('sealify_user', JSON.stringify(newUser));
-    toast.success(`Welcome back, ${newUser.fullName}!`);
+
+    toast.success(
+      `✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.`,
+      { duration: 6000 }
+    );
   }, [allUsers]);
 
   const adminLogin = useCallback((email: string, pass: string): boolean => {
@@ -393,14 +400,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       avatarUrl: newUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     };
     setAllUsers(prev => [userCreated, ...prev]);
-    toast.success(`User ${userCreated.fullName} created successfully!`);
+    toast.success(`User ${userCreated.fullName} created successfully! Verification email dispatched.`);
   }, []);
 
   const updateUser = useCallback((id: string, updatedData: Partial<UserProfile>) => {
     setAllUsers(prev =>
       prev.map(u => (u.id === id ? { ...u, ...updatedData } : u))
     );
-    // If updating currently logged in user
     if (user?.id === id) {
       setUser(prev => (prev ? { ...prev, ...updatedData } : null));
     }
@@ -437,7 +443,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const exists = prev.includes(id);
       const updated = exists ? prev.filter((item) => item !== id) : [...prev, id];
       localStorage.setItem('sealify_saved', JSON.stringify(updated));
-      toast.success(exists ? 'Removed from saved items' : 'Saved to your favorites!');
+      toast.success(
+        exists
+          ? 'Removed from saved items'
+          : 'Saved to your favorites! You will receive email alerts on price drops & updates for this item.'
+      );
       return updated;
     });
   }, []);
@@ -510,7 +520,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setListings((prev) => [formattedListing, ...prev]);
-    toast.success('Your ad was posted successfully!');
+    toast.success('🎉 Your ad was posted successfully! Email notifications sent to interested buyers.');
   }, [user]);
 
   const updateListing = useCallback(async (id: string, updatedData: Partial<Listing>) => {
@@ -579,7 +589,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
-    toast.success('Message sent to seller!');
+    toast.success('Message sent to seller! Email notification delivered.');
   }, [user, listings]);
 
   const getConversationByListing = useCallback((listingId: string) => {

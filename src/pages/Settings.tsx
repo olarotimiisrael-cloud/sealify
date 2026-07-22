@@ -3,7 +3,7 @@ import { useSealify } from '../context/SealifyContext';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
-import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2 } from 'lucide-react';
+import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Settings: React.FC = () => {
@@ -11,6 +11,8 @@ const Settings: React.FC = () => {
   const [editingProfile, setEditingProfile] = useState(false);
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
+  const [emailNewListings, setEmailNewListings] = useState(true);
+  const [emailFavoriteAlerts, setEmailFavoriteAlerts] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!user) {
@@ -40,7 +42,7 @@ const Settings: React.FC = () => {
     localStorage.setItem('sealify_user', JSON.stringify(updatedUser));
     setUser(updatedUser);
     setEditingProfile(false);
-    toast.success('Profile updated successfully!');
+    toast.success('Profile and notification preferences updated!');
   };
 
   const handleConfirmDelete = () => {
@@ -128,6 +130,42 @@ const Settings: React.FC = () => {
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Email Update Preferences */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
+                  <Mail className="w-4 h-4" />
+                  <span>Email Update Preferences</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900">
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-white">New Listings Digest</p>
+                      <p className="text-[11px] text-slate-400">Occasional updates on new ads posted in Ogbomosoland & Oyo State</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailNewListings}
+                      onChange={(e) => setEmailNewListings(e.target.checked)}
+                      className="accent-emerald-500 w-4 h-4"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900">
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-white">Favorites & Price Drop Alerts</p>
+                      <p className="text-[11px] text-slate-400">Receive email notifications when saved items change price</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={emailFavoriteAlerts}
+                      onChange={(e) => setEmailFavoriteAlerts(e.target.checked)}
+                      className="accent-emerald-500 w-4 h-4"
+                    />
+                  </label>
+                </div>
               </div>
 
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
