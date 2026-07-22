@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Heart, MapPin, Eye, Scale, TrendingDown, Flame } from 'lucide-react';
+import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -30,8 +30,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     ? Math.round(((listing.originalPrice! - listing.price) / listing.originalPrice!) * 100)
     : 0;
 
-  // Demand logic
-  const isHighDemand = listing.viewsCount > 150;
+  // AI-inspired Deal Rating (Simulated logic)
+  const isGreatDeal = listing.price < 500000 && (listing.viewsCount > 100 || hasPriceDrop);
 
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
@@ -42,14 +42,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             TOP AD
           </span>
         )}
-        {isHighDemand && !listing.featured && (
-          <span className="bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
-            <Flame className="w-2.5 h-2.5 fill-current" /> HIGH DEMAND
+        {isGreatDeal && (
+          <span className="bg-emerald-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <Tag className="w-2.5 h-2.5 fill-current" /> GREAT DEAL
           </span>
         )}
-        {hasPriceDrop && (
-          <span className="bg-emerald-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-0.5">
-            <TrendingDown className="w-2.5 h-2.5" /> -{discountPercent}%
+        {listing.viewsCount > 200 && !listing.featured && (
+          <span className="bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <Flame className="w-2.5 h-2.5 fill-current" /> HOT
           </span>
         )}
       </div>
@@ -112,11 +112,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
         <div className="p-3 sm:p-4 space-y-1.5">
           <div className="flex justify-between items-baseline gap-1">
-            <div className="flex items-baseline gap-1">
-              <span className="text-base sm:text-lg font-black text-emerald-400 tracking-tight">
-                {formattedPrice}
-              </span>
-            </div>
+            <span className="text-base sm:text-lg font-black text-emerald-400 tracking-tight">
+              {formattedPrice}
+            </span>
             <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded uppercase shrink-0">
               {listing.category}
             </span>
@@ -132,6 +130,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             <span className="text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
               {listing.condition}
             </span>
+            {hasPriceDrop && (
+              <span className="text-[10px] font-black text-emerald-400 flex items-center gap-0.5">
+                <TrendingDown className="w-3 h-3" /> -{discountPercent}%
+              </span>
+            )}
           </div>
         </div>
       </div>

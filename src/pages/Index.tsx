@@ -12,6 +12,7 @@ import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
+import LiveActivityToast from '../components/LiveActivityToast';
 import { CompareModal } from '../components/CompareModal';
 import { 
   SlidersHorizontal, 
@@ -34,7 +35,9 @@ import {
   Scale,
   Smartphone,
   Eye,
-  Building
+  Building,
+  Activity,
+  Award
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
@@ -81,6 +84,7 @@ const Index: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
       <Navbar />
       <CategoryBar />
+      <LiveActivityToast />
 
       {/* Hero Showcase */}
       <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-6 sm:py-8 px-3 sm:px-4 relative overflow-hidden">
@@ -182,6 +186,40 @@ const Index: React.FC = () => {
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-8 sm:space-y-12">
         <CategoryGrid />
         
+        {/* Local Market Pulse: Live Stats */}
+        <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
+          <div className="absolute -left-12 -top-12 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
+          
+          <div className="flex items-center gap-4 text-center sm:text-left">
+            <div className="p-4 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20 shadow-inner">
+              <Activity className="w-8 h-8 animate-pulse" />
+            </div>
+            <div>
+              <h2 className="text-xl font-black text-white">Ogbomosoland Market Pulse</h2>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-0.5">Live trading statistics across Oyo State</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-10 w-full sm:w-auto">
+            <div className="text-center sm:text-left">
+              <p className="text-2xl font-black text-white">1.4k+</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Ads Active</p>
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-2xl font-black text-emerald-400">420</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Verified Sellers</p>
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-2xl font-black text-teal-400">85%</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Success Rate</p>
+            </div>
+            <div className="text-center sm:text-left">
+              <p className="text-2xl font-black text-blue-400">12</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase">Safe Zones</p>
+            </div>
+          </div>
+        </section>
+
         {/* AI Monitoring: Personalized Recommendations Section */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
