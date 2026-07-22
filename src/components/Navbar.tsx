@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
+import MagicSearch from './MagicSearch';
 import { SupportedLanguage } from '@/translations/languages';
 import { 
   PlusCircle, 
@@ -18,7 +19,9 @@ import {
   Settings as SettingsIcon,
   Shield,
   Globe,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles,
+  Command
 } from 'lucide-react';
 
 const Navbar: React.FC = () => {
@@ -38,10 +41,23 @@ const Navbar: React.FC = () => {
   } = useSealify();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
 
   const unreadNotifications = notifications.filter((n) => !n.read).length;
+
+  // Shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsMagicSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const languages: { code: SupportedLanguage, label: string }[] = [
     { code: 'en', label: 'UK English' },
@@ -66,6 +82,26 @@ const Navbar: React.FC = () => {
               />
             </div>
           </Link>
+
+          {/* Magic Search Trigger */}
+          <div className="hidden md:flex flex-1 max-w-md">
+            <button 
+              onClick={() => setIsMagicSearchOpen(true)}
+              className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-950 border border-slate-800 hover:border-emerald-500/50 rounded-2xl text-slate-400 transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-emerald-400" />
+                <span className="text-xs font-bold">{t('search_placeholder')}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-800 rounded-md border border-slate-700 text-[10px] font-black group-hover:text-emerald-400 transition-colors">
+                  <Command className="w-2.5 h-2.5" />
+                  <span>K</span>
+                </div>
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500/40 group-hover:text-emerald-400 group-hover:animate-pulse transition-all" />
+              </div>
+            </button>
+          </div>
 
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/safety" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-2">
@@ -135,6 +171,9 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
+            <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
+              <Search className="w-6 h-6" />
+            </button>
             <Link to="/notifications" className="relative p-2 text-slate-300">
               <Bell className="w-6 h-6" />
               {unreadNotifications > 0 && (
@@ -166,6 +205,7 @@ const Navbar: React.FC = () => {
       </header>
 
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
     </>
   );
 };
