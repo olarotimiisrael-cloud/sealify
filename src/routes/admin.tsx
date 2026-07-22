@@ -3,13 +3,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
 
+interface Profile {
+  id: string;
+  full_name: string | null;
+  location: string | null;
+}
+
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
 function AdminPage() {
   const { isAdmin, loading } = useAdmin();
-  const [profiles, setProfiles] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -18,9 +24,9 @@ function AdminPage() {
   }, [isAdmin]);
 
   const fetchProfiles = async () => {
-    const { data, error } = await supabase.from("profiles").select("*");
+    const { data, error } = await supabase.from("profiles").select("id, full_name, location");
     if (!error && data) {
-      setProfiles(data);
+      setProfiles(data as Profile[]);
     }
   };
 
