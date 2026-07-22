@@ -35,7 +35,8 @@ const Navbar: React.FC = () => {
     filters, 
     setFilters, 
     listings,
-    compareListingIds
+    compareListingIds,
+    notifications
   } = useSealify();
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -49,6 +50,7 @@ const Navbar: React.FC = () => {
 
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + c.messages.length, 0);
+  const unreadNotifications = notifications.filter((n) => !n.read).length;
 
   const liveSearchResults = filters.searchQuery.trim()
     ? listings.filter((l) =>
@@ -135,9 +137,11 @@ const Navbar: React.FC = () => {
               title="Notifications"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
-                2
-              </span>
+              {unreadNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                  {unreadNotifications}
+                </span>
+              )}
             </button>
 
             <button

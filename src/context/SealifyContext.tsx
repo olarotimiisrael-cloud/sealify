@@ -3,6 +3,16 @@ import { Listing, UserProfile, FilterState, Category, Conversation, Message } fr
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface AppNotification {
+  id: string;
+  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system';
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  linkUrl?: string;
+}
+
 interface SealifyContextType {
   user: UserProfile | null;
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
@@ -38,6 +48,11 @@ interface SealifyContextType {
   getConversationByListing: (listingId: string) => Conversation | undefined;
   activeCategory: Category | 'All';
   setActiveCategory: (cat: Category | 'All') => void;
+  notifications: AppNotification[];
+  markNotificationRead: (id: string) => void;
+  markAllNotificationsRead: () => void;
+  clearNotification: (id: string) => void;
+  addNotification: (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => void;
   loading: boolean;
 }
 
@@ -88,30 +103,6 @@ const INITIAL_MOCK_USERS: UserProfile[] = [
     verified: true,
     memberSince: 'Apr 2023',
     location: 'LAUTECH Area, Ogbomoso',
-    password: 'password123',
-  },
-  {
-    id: 'usr_3',
-    email: 'kemi@properties.ng',
-    fullName: 'Kemi & Associates Properties',
-    phoneNumber: '+234 802 333 4455',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
-    role: 'seller',
-    verified: true,
-    memberSince: 'Feb 2023',
-    location: 'Under-G, Ogbomoso',
-    password: 'password123',
-  },
-  {
-    id: 'usr_4',
-    email: 'buyer.david@gmail.com',
-    fullName: 'David Chen',
-    phoneNumber: '+234 809 111 2233',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    role: 'buyer',
-    verified: false,
-    memberSince: 'May 2023',
-    location: 'Ibadan, Oyo State',
     password: 'password123',
   },
 ];
@@ -182,47 +173,28 @@ const INITIAL_FALLBACK_LISTINGS: Listing[] = [
     createdAt: '1 day ago',
     viewsCount: 310,
     featured: true
-  },
-  {
-    id: 'lst_104',
-    sellerId: 'usr_4',
-    sellerName: 'Tunde Electronics Hub',
-    sellerPhone: '+234 814 555 6677',
-    sellerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-    sellerVerified: true,
-    title: 'Apple MacBook Pro 16" M2 Pro 16GB RAM / 512GB SSD',
-    description: 'Space Gray MacBook Pro M2 Pro 12-core CPU 19-core GPU. Excellent battery condition, clean keyboard and screen, ideal for software engineering and video editing.',
-    price: 1850000,
-    category: 'Electronics',
-    condition: 'Like New',
-    location: 'Ibadan, Oyo State',
-    status: 'active',
-    images: [
-      'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80'
-    ],
-    createdAt: '2 days ago',
-    viewsCount: 164
-  },
-  {
-    id: 'lst_105',
-    sellerId: 'usr_5',
-    sellerName: 'Chief Salawu',
-    sellerPhone: '+234 805 777 8899',
-    sellerAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
-    sellerVerified: true,
-    title: '2 Plot Commercial Land along Ogbomoso-Ilorin Expressway',
-    description: 'Dry land with registered survey plan and C of O in process. Perfect for filling station, hotel, or warehouse development directly facing expressway.',
-    price: 12000000,
-    category: 'Real Estate',
-    condition: 'Brand New',
-    location: 'Ilorin Road, Ogbomoso',
-    status: 'active',
-    images: [
-      'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=80'
-    ],
-    createdAt: '3 days ago',
-    viewsCount: 412
   }
+];
+
+const INITIAL_NOTIFS: AppNotification[] = [
+  {
+    id: 'notif_1',
+    type: 'price_drop',
+    title: 'Price Drop Alert! - Toyota Camry 2018',
+    description: 'The price on "Toyota Camry 2018 XSE" dropped to ₦18,500,000 in Ogbomoso!',
+    time: '15 mins ago',
+    read: false,
+    linkUrl: '/listing/lst_101',
+  },
+  {
+    id: 'notif_2',
+    type: 'system',
+    title: 'Welcome to Sealify Ogbomoso! 🎉',
+    description: 'Welcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.',
+    time: '1 hour ago',
+    read: false,
+    linkUrl: '/help-center',
+  },
 ];
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
@@ -255,6 +227,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFS);
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = !!user;
@@ -264,7 +237,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_all_users', JSON.stringify(allUsers));
   }, [allUsers]);
 
-  // Initialize data from Supabase or Fallback
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
@@ -319,8 +291,31 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     initializeData();
   }, []);
 
+  const addNotification = useCallback((notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
+    const newNotif: AppNotification = {
+      ...notif,
+      id: 'notif_' + Date.now(),
+      time: 'Just now',
+      read: false,
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  }, []);
+
+  const markNotificationRead = useCallback((id: string) => {
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, read: true } : n))
+    );
+  }, []);
+
+  const markAllNotificationsRead = useCallback(() => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, []);
+
+  const clearNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+  }, []);
+
   const login = useCallback((email: string, role: 'buyer' | 'seller' | 'admin', isSignup = false) => {
-    // Check if email matches default admin
     if (email.toLowerCase() === DEFAULT_ADMIN.email.toLowerCase()) {
       setUser(DEFAULT_ADMIN);
       localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
@@ -328,7 +323,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return;
     }
 
-    // Check if matching registered user
     const existing = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
     if (existing) {
       setUser(existing);
@@ -357,11 +351,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setUser(newUser);
     localStorage.setItem('sealify_user', JSON.stringify(newUser));
 
+    addNotification({
+      type: 'system',
+      title: 'Welcome to Sealify!',
+      description: 'Greetings from Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.',
+      linkUrl: '/help-center',
+    });
+
     toast.success(
       `✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.`,
       { duration: 6000 }
     );
-  }, [allUsers]);
+  }, [allUsers, addNotification]);
 
   const adminLogin = useCallback((email: string, pass: string): boolean => {
     const targetUser = allUsers.find(
@@ -439,10 +440,21 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const toggleSaveListing = useCallback((id: string) => {
+    const listing = listings.find((l) => l.id === id);
     setSavedListingIds((prev) => {
       const exists = prev.includes(id);
       const updated = exists ? prev.filter((item) => item !== id) : [...prev, id];
       localStorage.setItem('sealify_saved', JSON.stringify(updated));
+
+      if (!exists && listing) {
+        addNotification({
+          type: 'price_drop',
+          title: `Saved "${listing.title}"`,
+          description: `You will receive email notifications on price drops and seller updates for ${listing.title}.`,
+          linkUrl: `/listing/${listing.id}`,
+        });
+      }
+
       toast.success(
         exists
           ? 'Removed from saved items'
@@ -450,7 +462,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
       return updated;
     });
-  }, []);
+  }, [listings, addNotification]);
 
   const isSaved = useCallback((id: string) => savedListingIds.includes(id), [savedListingIds]);
 
@@ -520,8 +532,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setListings((prev) => [formattedListing, ...prev]);
+
+    addNotification({
+      type: 'system',
+      title: 'Ad Live on Marketplace',
+      description: `Your ad "${formattedListing.title}" is now published and visible to buyers across Ogbomoso & Oyo State.`,
+      linkUrl: `/listing/${formattedListing.id}`,
+    });
+
     toast.success('🎉 Your ad was posted successfully! Email notifications sent to interested buyers.');
-  }, [user]);
+  }, [user, addNotification]);
 
   const updateListing = useCallback(async (id: string, updatedData: Partial<Listing>) => {
     setListings((prev) =>
@@ -589,8 +609,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
+    addNotification({
+      type: 'message',
+      title: 'New Message Sent',
+      description: `Sent message for "${listing?.title || 'Item'}" to seller.`,
+      linkUrl: '/messages',
+    });
+
     toast.success('Message sent to seller! Email notification delivered.');
-  }, [user, listings]);
+  }, [user, listings, addNotification]);
 
   const getConversationByListing = useCallback((listingId: string) => {
     return conversations.find((c) => c.listingId === listingId);
@@ -633,6 +660,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         getConversationByListing,
         activeCategory: filters.category,
         setActiveCategory,
+        notifications,
+        markNotificationRead,
+        markAllNotificationsRead,
+        clearNotification,
+        addNotification,
         loading,
       }}
     >

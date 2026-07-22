@@ -1,73 +1,17 @@
-import React, { useState } from 'react';
-import { X, Bell, TrendingDown, MessageSquare, Tag, Sparkles, Check, Trash2 } from 'lucide-react';
+import React from 'react';
+import { X, Bell, TrendingDown, MessageSquare, Tag, Sparkles, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSealify, AppNotification } from '../context/SealifyContext';
 
 interface NotificationCenterProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export interface AppNotification {
-  id: string;
-  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system';
-  title: string;
-  description: string;
-  time: string;
-  read: boolean;
-  linkUrl?: string;
-}
-
-export const INITIAL_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'notif_1',
-    type: 'price_drop',
-    title: 'Price Drop Alert! - Tesla Model 3',
-    description: 'The price on "2021 Tesla Model 3 Long Range" dropped from ₦31,000,000 to ₦28,500,000 (-8% off)!',
-    time: '15 mins ago',
-    read: false,
-    linkUrl: '/listing/lst_101',
-  },
-  {
-    id: 'notif_2',
-    type: 'message',
-    title: 'New Chat Lead from David Chen',
-    description: 'David Chen replied: "Is ₦1,550,000 okay if I pick it up today?" for MacBook Pro 16".',
-    time: '1 hour ago',
-    read: false,
-    linkUrl: '/messages',
-  },
-  {
-    id: 'notif_3',
-    type: 'alert_match',
-    title: 'Search Alert Match: "Sony Camera"',
-    description: '1 new listing matching your search alert "Sony Alpha A7 IV" was posted in Abeokuta.',
-    time: '3 hours ago',
-    read: true,
-    linkUrl: '/listing/lst_104',
-  },
-  {
-    id: 'notif_4',
-    type: 'system',
-    title: 'Ad Milestone Reached! 🎉',
-    description: 'Your ad "Authentic Vintage Leather Jacket" passed 50+ view impressions on Sealify.',
-    time: '1 day ago',
-    read: true,
-    linkUrl: '/my-ads',
-  },
-];
-
 export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, onClose }) => {
-  const [notifications, setNotifications] = useState<AppNotification[]>(INITIAL_NOTIFICATIONS);
+  const { notifications, markAllNotificationsRead, clearNotification, markNotificationRead } = useSealify();
 
   if (!isOpen) return null;
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  };
-
-  const clearNotification = (id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
 
   const getIcon = (type: AppNotification['type']) => {
     switch (type) {
@@ -104,7 +48,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
               <button
-                onClick={markAllAsRead}
+                onClick={markAllNotificationsRead}
                 className="text-xs text-emerald-400 hover:underline font-semibold"
               >
                 Mark Read
@@ -127,7 +71,8 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
             notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`p-4 rounded-2xl border transition-colors flex items-start gap-3 relative group ${
+                onClick={() => markNotificationRead(notif.id)}
+                className={`p-4 rounded-2xl border transition-colors flex items-start gap-3 relative group cursor-pointer ${
                   notif.read
                     ? 'bg-slate-950/60 border-slate-800/80 text-slate-400'
                     : 'bg-slate-800/80 border-emerald-500/30 text-slate-100 shadow-md'
@@ -157,7 +102,10 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
                 </div>
 
                 <button
-                  onClick={() => clearNotification(notif.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearNotification(notif.id);
+                  }}
                   className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 text-slate-500 hover:text-red-400 rounded-lg transition-opacity absolute top-3 right-3"
                   title="Remove notification"
                 >
