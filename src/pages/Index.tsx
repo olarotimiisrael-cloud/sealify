@@ -239,10 +239,12 @@ const Index: React.FC = () => {
 
       <footer className="bg-slate-900 border-t border-slate-800 py-8 px-4 text-slate-400 text-xs mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 font-black text-xs">
-              S
-            </div>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo.png"
+              alt="Sealify Logo"
+              className="w-6 h-6 object-contain rounded-md"
+            />
             <span className="font-bold text-slate-200">Sealify Classifieds</span>
             <span>© {new Date().getFullYear()}</span>
           </div>

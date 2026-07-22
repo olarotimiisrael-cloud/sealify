@@ -35,9 +35,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
         {/* Modal Header */}
         <div className="text-center space-y-2 mb-6">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 mx-auto flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg">
-            S
-          </div>
+          <img
+            src="/logo.png"
+            alt="Sealify Logo"
+            className="w-14 h-14 object-contain mx-auto rounded-2xl shadow-lg"
+          />
           <h2 className="text-2xl font-black text-white tracking-tight">
             {tab === 'login' ? 'Welcome Back to Sealify' : 'Create Sealify Account'}
           </h2>

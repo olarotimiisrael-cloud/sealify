@@ -23,7 +23,6 @@ import {
   Bell,
   Info,
   Mail,
-  Phone,
   BookOpen
 } from 'lucide-react';
 
@@ -97,10 +96,12 @@ const Navbar: React.FC = () => {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-2 group shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg group-hover:scale-105 transition-transform">
-              S
-            </div>
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+            <img
+              src="/logo.png"
+              alt="Sealify Logo"
+              className="w-10 h-10 object-contain rounded-xl group-hover:scale-105 transition-transform"
+            />
             <div>
               <span className="text-xl font-bold tracking-tight text-white flex items-center gap-1">
                 Sealify
