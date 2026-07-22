@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Heart, PlusCircle, MessageSquare, User, Info, Mail, Phone } from 'lucide-react';
+import { Home, Heart, PlusCircle, MessageSquare, User, Info, Mail, Phone, BookOpen } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 export const MobileNav: React.FC = () => {
