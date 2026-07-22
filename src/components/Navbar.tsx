@@ -55,14 +55,16 @@ const Navbar: React.FC = () => {
   return (
     <>
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
           
           <Link to="/" className="flex items-center shrink-0">
-            <img 
-              src="/logo.png" 
-              alt="Sealify Logo" 
-              className="h-10 sm:h-12 w-auto object-contain" 
-            />
+            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700/50">
+              <img 
+                src="/logo.png" 
+                alt="Sealify Logo" 
+                className="h-8 sm:h-10 w-auto object-contain" 
+              />
+            </div>
           </Link>
 
           <div className="hidden lg:flex items-center gap-2">
@@ -147,7 +149,7 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Menu (Condensed) */}
+        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-2">

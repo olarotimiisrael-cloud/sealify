@@ -114,12 +114,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
         ) : (
           <>
             {/* Header */}
-            <div className="text-center space-y-2 mb-5">
-              <img
-                src="/logo.png"
-                alt="Sealify Logo"
-                className="h-16 w-auto object-contain mx-auto"
-              />
+            <div className="text-center space-y-3 mb-5">
+              <div className="inline-block bg-white p-2 rounded-2xl shadow-sm border border-slate-700/50">
+                <img
+                  src="/logo.png"
+                  alt="Sealify Logo"
+                  className="h-12 w-auto object-contain mx-auto"
+                />
+              </div>
               <h2 className="text-2xl font-black text-white tracking-tight">
                 Sealify Account Access
               </h2>
