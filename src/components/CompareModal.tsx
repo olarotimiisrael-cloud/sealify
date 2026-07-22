@@ -81,7 +81,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
                         {item.category}
                       </span>
                       <h3 className="font-bold text-sm text-white mt-1 line-clamp-2">{item.title}</h3>
-                      <p className="text-2xl font-black text-emerald-400 mt-1">${item.price.toLocaleString()}</p>
+                      <p className="text-2xl font-black text-emerald-400 mt-1">₦{item.price.toLocaleString()}</p>
                     </div>
 
                     {/* Comparison rows */}
