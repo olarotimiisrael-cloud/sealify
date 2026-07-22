@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { Navbar } from '@/components/Navbar';
-import { MobileNav } from '@/components/MobileNav';
+import Navbar from '@/components/Navbar';
+import MobileNav from '@/components/MobileNav';
 import { MessageSquare, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 

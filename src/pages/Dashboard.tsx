@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '@/context/AppContext';
-import { Navbar } from '@/components/Navbar';
-import { MobileNav } from '@/components/MobileNav';
+import Navbar from '@/components/Navbar';
+import MobileNav from '@/components/MobileNav';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Plus, Trash2, CheckCircle, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';

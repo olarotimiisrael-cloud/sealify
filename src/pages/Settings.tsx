@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell, Camera, Image, Check } from 'lucide-react';
+import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell, Camera, Image, Check, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SAMPLE_AVATARS = [
@@ -17,6 +17,8 @@ const SAMPLE_AVATARS = [
 
 const Settings: React.FC = () => {
   const { user, setUser, updateUser } = useSealify();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [editingProfile, setEditingProfile] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
@@ -44,6 +46,22 @@ const Settings: React.FC = () => {
       </div>
     );
   }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const dataUrl = event.target.result as string;
+        setSelectedAvatar(dataUrl);
+        setCustomAvatarUrl('');
+        toast.success('New profile picture loaded! Click "Save Profile Photo & Changes" to apply.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = () => {
     const avatarToSave = customAvatarUrl.trim() || selectedAvatar;
@@ -116,8 +134,28 @@ const Settings: React.FC = () => {
                 <span>Upload & Update Profile Photo</span>
               </div>
 
+              {/* Direct Image File Upload Button */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-300">Choose Preset Avatar</label>
+                <label className="font-bold text-slate-300 block">Upload Image from Device</label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Choose Photo from Device / Gallery</span>
+                </button>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <label className="font-bold text-slate-300">Or Choose Preset Avatar</label>
                 <div className="flex gap-3 overflow-x-auto pb-1">
                   {SAMPLE_AVATARS.map((imgUrl, idx) => (
                     <button

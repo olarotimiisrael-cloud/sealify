@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { Navbar } from '@/components/Navbar';
-import { MobileNav } from '@/components/MobileNav';
+import Navbar from '@/components/Navbar';
+import MobileNav from '@/components/MobileNav';
 import { ChatModal } from '@/components/ChatModal';
 import {
   MapPin,

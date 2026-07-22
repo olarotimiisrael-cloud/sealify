@@ -126,16 +126,23 @@ const Index: React.FC = () => {
 
             {/* Right Column: Hero Banner */}
             <div className="lg:col-span-7">
-              <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl group bg-slate-900">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl group bg-slate-900 aspect-video sm:aspect-[16/9] flex items-center justify-center">
                 <img
                   src="/og-image.png"
                   alt="Sealify - Nigeria's Trusted Local Marketplace"
-                  className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    // Fallback in case og-image fails to render
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1556742049-0a670f4a4591?w=1200&auto=format&fit=crop&q=80";
+                  }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none flex items-end p-4">
-                  <p className="text-xs font-bold text-slate-200 backdrop-blur-md bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                    🎉 Proudly connecting buyers and sellers in Ogbomosoland, Oyo State & Nigeria
-                  </p>
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent pointer-events-none flex items-end p-4 sm:p-6">
+                  <div className="backdrop-blur-md bg-slate-950/70 p-3 sm:p-4 rounded-2xl border border-slate-800/80 w-full">
+                    <p className="text-xs sm:text-sm font-extrabold text-emerald-400 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 shrink-0" />
+                      <span>Proudly connecting buyers and sellers in Ogbomosoland, Oyo State & Nigeria</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
