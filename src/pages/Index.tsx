@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import CategoryBar from '../components/CategoryBar';
+import { CategoryGrid } from '../components/CategoryGrid';
 import ListingCard from '../components/ListingCard';
 import FeaturedAdSection from '../components/FeaturedAdSection';
 import FilterDrawer from '../components/FilterDrawer';
@@ -139,7 +140,7 @@ const Index: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Redesigned Beautiful Showcase Hub */}
+            {/* Right Column: Redesigned Showcase Hub */}
             <div className="lg:col-span-7 flex flex-col justify-center">
               <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -238,6 +239,9 @@ const Index: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6 sm:space-y-8">
+        {/* Category Grid Section */}
+        <CategoryGrid />
+
         {/* Promoted TOP ADS Section */}
         <FeaturedAdSection listings={listings} />
 
