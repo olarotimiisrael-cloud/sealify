@@ -11,6 +11,7 @@ import SavedAlertsModal from '../components/SavedAlertsModal';
 import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import Footer from '../components/Footer';
 import { CompareModal } from '../components/CompareModal';
 import { 
   SlidersHorizontal, 
@@ -30,7 +31,10 @@ import {
   CheckCircle2,
   Lock,
   Lightbulb,
-  Scale
+  Scale,
+  Smartphone,
+  Eye,
+  Building
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
@@ -175,7 +179,7 @@ const Index: React.FC = () => {
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6 sm:space-y-8">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-8 sm:space-y-12">
         <CategoryGrid />
         
         {/* AI Monitoring: Personalized Recommendations Section */}
@@ -195,6 +199,46 @@ const Index: React.FC = () => {
         </section>
 
         <FeaturedAdSection listings={listings} />
+
+        {/* How it Works Section */}
+        <section className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-10 space-y-8">
+          <div className="text-center space-y-2">
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">Trading on Sealify is easy</h2>
+            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">3 Steps to Success</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center space-y-4 group">
+              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                <Smartphone className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-white">1. Post Your Ad</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">Upload clear photos and set your price. It takes less than 2 minutes to go live.</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-4 group">
+              <div className="w-16 h-16 bg-teal-500/10 text-teal-400 rounded-2xl flex items-center justify-center mx-auto border border-teal-500/20 group-hover:scale-110 transition-transform">
+                <MessageSquare className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-white">2. Chat with Buyers</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">Respond to inquiries directly via in-app chat or phone. Review buyer profiles.</p>
+              </div>
+            </div>
+
+            <div className="text-center space-y-4 group">
+              <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/20 group-hover:scale-110 transition-transform">
+                <Building className="w-8 h-8" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="font-bold text-sm text-white">3. Meet and Seal</h4>
+                <p className="text-xs text-slate-400 leading-relaxed">Meet at a verified Safe Exchange Zone, inspect the item, and get paid instantly.</p>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {recentlyViewedListings.length > 0 && (
           <div className="space-y-3">
@@ -256,6 +300,8 @@ const Index: React.FC = () => {
       <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
       <SavedAlertsModal isOpen={isSavedAlertsOpen} onClose={() => setIsSavedAlertsOpen(false)} />
       <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
+      
+      <Footer />
       <MobileNav />
     </div>
   );

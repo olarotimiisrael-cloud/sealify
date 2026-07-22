@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Heart, MapPin, Eye, Scale, TrendingDown } from 'lucide-react';
+import { Heart, MapPin, Eye, Scale, TrendingDown, Flame } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -30,6 +30,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     ? Math.round(((listing.originalPrice! - listing.price) / listing.originalPrice!) * 100)
     : 0;
 
+  // Demand logic
+  const isHighDemand = listing.viewsCount > 150;
+
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
       {/* Badges Top Left */}
@@ -37,6 +40,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         {listing.featured && (
           <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md">
             TOP AD
+          </span>
+        )}
+        {isHighDemand && !listing.featured && (
+          <span className="bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <Flame className="w-2.5 h-2.5 fill-current" /> HIGH DEMAND
           </span>
         )}
         {hasPriceDrop && (
@@ -108,11 +116,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
               <span className="text-base sm:text-lg font-black text-emerald-400 tracking-tight">
                 {formattedPrice}
               </span>
-              {hasPriceDrop && (
-                <span className="text-[10px] text-slate-500 line-through font-semibold hidden sm:inline">
-                  {formatNGN(listing.originalPrice!)}
-                </span>
-              )}
             </div>
             <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded uppercase shrink-0">
               {listing.category}
