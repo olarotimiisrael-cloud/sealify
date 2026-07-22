@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload } from 'lucide-react';
+import { PasswordChangeModal } from '../components/PasswordChangeModal';
+import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, KeyRound, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SAMPLE_AVATARS = [
@@ -20,6 +21,7 @@ const Settings: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingProfile, setEditingProfile] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
@@ -139,7 +141,6 @@ const Settings: React.FC = () => {
                 <span>Upload & Update Profile Photo</span>
               </div>
 
-              {/* Direct File Picker */}
               <div className="space-y-2">
                 <label className="font-bold text-slate-300 block">Select Photo from Device Gallery</label>
                 <input
@@ -157,46 +158,6 @@ const Settings: React.FC = () => {
                   <Upload className="w-4 h-4" />
                   <span>Choose Image File from Computer / Mobile</span>
                 </button>
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <label className="font-bold text-slate-300">Or Select Avatar Preset</label>
-                <div className="flex gap-3 overflow-x-auto pb-1">
-                  {SAMPLE_AVATARS.map((imgUrl, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => {
-                        setSelectedAvatar(imgUrl);
-                        setCustomAvatarUrl('');
-                      }}
-                      className={`relative w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-transform ${
-                        selectedAvatar === imgUrl && !customAvatarUrl
-                          ? 'border-emerald-500 scale-105 ring-2 ring-emerald-500/30'
-                          : 'border-slate-800 opacity-60'
-                      }`}
-                    >
-                      <img src={imgUrl} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="font-bold text-slate-300">Or Paste Image Web Link</label>
-                <div className="relative">
-                  <Image className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="url"
-                    value={customAvatarUrl}
-                    onChange={(e) => {
-                      setCustomAvatarUrl(e.target.value);
-                      if (e.target.value) setSelectedAvatar(e.target.value);
-                    }}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -232,57 +193,23 @@ const Settings: React.FC = () => {
           )}
 
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Information</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Information & Security</h3>
 
             <div className="space-y-3">
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Email Address</h4>
-                  <p className="text-sm text-slate-300 mt-0.5">{user.email}</p>
+                  <h4 className="text-xs font-bold text-white uppercase flex items-center gap-2">
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" /> Account Password
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">Control your authentication security</p>
                 </div>
-              </div>
-
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Phone Number</h4>
-                  <p className="text-sm text-slate-300 mt-0.5">{user.phoneNumber}</p>
-                </div>
-              </div>
-
-              {/* Email Update Preferences */}
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider">
-                  <Mail className="w-4 h-4" />
-                  <span>Email Update Preferences</span>
-                </div>
-
-                <div className="space-y-2 text-xs">
-                  <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900">
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-white">New Listings Digest</p>
-                      <p className="text-[11px] text-slate-400">Occasional updates on new ads posted in Ogbomosoland & Oyo State</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailNewListings}
-                      onChange={(e) => setEmailNewListings(e.target.checked)}
-                      className="accent-emerald-500 w-4 h-4"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between cursor-pointer p-2 rounded-xl hover:bg-slate-900">
-                    <div className="space-y-0.5">
-                      <p className="font-bold text-white">Favorites & Price Drop Alerts</p>
-                      <p className="text-[11px] text-slate-400">Receive email notifications when saved items change price</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={emailFavoriteAlerts}
-                      onChange={(e) => setEmailFavoriteAlerts(e.target.checked)}
-                      className="accent-emerald-500 w-4 h-4"
-                    />
-                  </label>
-                </div>
+                <button
+                  onClick={() => setIsPasswordModalOpen(true)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition-all"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Request Reset</span>
+                </button>
               </div>
 
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
@@ -340,6 +267,10 @@ const Settings: React.FC = () => {
         )}
       </main>
 
+      <PasswordChangeModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
       <MobileNav />
     </div>
   );

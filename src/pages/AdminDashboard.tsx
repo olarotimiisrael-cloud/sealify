@@ -4,24 +4,27 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { UserProfile, VerificationBadgeType, Listing } from '../types/sealify';
+import { UserProfile, VerificationBadgeType, Listing, PasswordChangeRequest } from '../types/sealify';
 import { 
   Shield, Package, Activity, Layers, RefreshCw, LayoutGrid, Edit3, Trash2,
   Users, MousePointer2, Globe, Clock, Terminal, CheckCircle2, AlertCircle,
-  Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X, Tag, Eye
+  Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X, Tag, Eye,
+  KeyRound, Lock, FileText, ExternalLink
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    isAdmin, categories, addCategory, deleteCategory, analytics, listings, allUsers, updateUser, deleteUser, deleteListing, t 
+    isAdmin, categories, addCategory, deleteCategory, analytics, listings, allUsers, updateUser, deleteUser, deleteListing, t,
+    passwordRequests, processPasswordRequest
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'listings' | 'categories'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'listings' | 'security'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [viewingRequest, setViewingRequest] = useState<PasswordChangeRequest | null>(null);
 
   const filteredUsers = allUsers.filter(u => 
     u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || 
@@ -32,6 +35,8 @@ export const AdminDashboard: React.FC = () => {
     l.title.toLowerCase().includes(adSearch.toLowerCase()) || 
     l.sellerName.toLowerCase().includes(adSearch.toLowerCase())
   );
+
+  const pendingRequests = passwordRequests.filter(r => r.status === 'pending');
 
   const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
     updateUser(userId, { 
@@ -67,24 +72,98 @@ export const AdminDashboard: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <div className="flex flex-col md:flex-row items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl gap-4 shadow-xl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black">{t('system_terminal')}</h1>
-              <p className="text-xs text-slate-400">Live monitoring & infrastructure management</p>
+              <h1 className="text-2xl font-black">Security Terminal</h1>
+              <p className="text-xs text-slate-400">Monitoring {listings.length} ads & {allUsers.length} active nodes</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
             <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
             <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
-            <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>LISTINGS</button>
-            <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
+            <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS</button>
+            <button onClick={() => setActiveTab('security')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'security' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+              SECURITY
+              {pendingRequests.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Tab Content: Security Password Requests */}
+        {activeTab === 'security' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black">Password Reset Requests</h2>
+                <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{pendingRequests.length} pending verification</p>
+              </div>
+            </div>
+
+            {passwordRequests.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-12 text-center text-slate-500 text-xs">
+                No password change requests found in the system log.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {passwordRequests.map((req) => (
+                  <div key={req.id} className={`bg-slate-900 border p-5 rounded-3xl space-y-4 shadow-xl transition-all ${
+                    req.status === 'pending' ? 'border-amber-500/30' : 
+                    req.status === 'approved' ? 'border-emerald-500/20' : 'border-red-500/20'
+                  }`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <img src={req.idDocumentUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800 hover:scale-150 transition-transform cursor-zoom-in" />
+                        <div>
+                          <h4 className="font-bold text-sm text-white">{req.userName}</h4>
+                          <p className="text-[10px] text-slate-500">{req.userEmail}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                        req.status === 'pending' ? 'bg-amber-500 text-slate-950' : 
+                        req.status === 'approved' ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+                      }`}>
+                        {req.status}
+                      </span>
+                    </div>
+
+                    <div className="bg-slate-950/50 border border-slate-800 p-3 rounded-2xl text-xs space-y-2">
+                      <p className="flex justify-between"><span className="text-slate-500">NIN Verified:</span> <span className="font-mono text-emerald-400 font-bold">{req.nin}</span></p>
+                      <p className="flex justify-between"><span className="text-slate-500">Reason:</span> <span className="text-slate-300 font-medium">{req.reason}</span></p>
+                      <p className="flex justify-between"><span className="text-slate-500">New Pass:</span> <span className="text-slate-300 font-mono">••••••••</span></p>
+                    </div>
+
+                    {req.status === 'pending' && (
+                      <div className="grid grid-cols-2 gap-2 pt-2">
+                        <button
+                          onClick={() => processPasswordRequest(req.id, 'declined')}
+                          className="py-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold rounded-xl text-[10px] transition-all"
+                        >
+                          DECLINE REQUEST
+                        </button>
+                        <button
+                          onClick={() => processPasswordRequest(req.id, 'approved')}
+                          className="py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-[10px] shadow-lg transition-all"
+                        >
+                          APPROVE RESET
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tab Content: Users Management */}
         {activeTab === 'users' && (
@@ -294,23 +373,6 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Categories Tab (Simplified) */}
-        {activeTab === 'categories' && (
-          <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] text-center space-y-4">
-             <LayoutGrid className="w-12 h-12 text-slate-600 mx-auto" />
-             <h3 className="text-lg font-bold text-white">Marketplace Department Control</h3>
-             <p className="text-xs text-slate-500 max-w-sm mx-auto">Manage the visible categories and sub-categories across the Sealify infrastructure.</p>
-             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {categories.map(cat => (
-                  <div key={cat.id} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-black uppercase text-white">{cat.name}</span>
-                    <button onClick={() => deleteCategory(cat.id)} className="p-1 hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
-                  </div>
-                ))}
-             </div>
           </div>
         )}
 

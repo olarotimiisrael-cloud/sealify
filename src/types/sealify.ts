@@ -27,6 +27,19 @@ export interface UserProfile {
   password?: string;
 }
 
+export interface PasswordChangeRequest {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  nin: string;
+  idDocumentUrl: string;
+  newPassword: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'declined';
+  createdAt: string;
+}
+
 export interface Listing {
   id: string;
   sellerId: string;
@@ -44,7 +57,7 @@ export interface Listing {
   location: string;
   status: 'active' | 'sold';
   images: string[];
-  videoUrl?: string; // Optional short video
+  videoUrl?: string;
   createdAt: string;
   viewsCount: number;
   featured?: boolean;

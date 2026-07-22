@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
 
 export interface AppNotification {
   id: string;
-  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system' | 'recommendation' | 'payment';
+  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system' | 'recommendation' | 'payment' | 'security';
   title: string;
   description: string;
   time: string;
@@ -67,6 +67,9 @@ interface SealifyContextType {
   markAllNotificationsRead: () => void;
   clearNotification: (id: string) => void;
   addNotification: (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => void;
+  passwordRequests: PasswordChangeRequest[];
+  submitPasswordRequest: (req: Omit<PasswordChangeRequest, 'id' | 'status' | 'createdAt'>) => void;
+  processPasswordRequest: (id: string, status: 'approved' | 'declined') => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -94,6 +97,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
     return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+  });
+
+  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>(() => {
+    const saved = localStorage.getItem('sealify_password_requests');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
@@ -140,6 +148,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_listings', JSON.stringify(listings));
   }, [listings]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
+  }, [passwordRequests]);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
@@ -190,7 +202,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (user?.id === id) {
       setUser(prev => prev ? { ...prev, ...updatedData } : null);
     }
-    toast.success('User record updated');
   };
 
   const deleteUser = (id: string) => {
@@ -247,6 +258,32 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
+  // Password Change Logic
+  const submitPasswordRequest = (req: any) => {
+    const newReq: PasswordChangeRequest = {
+      ...req,
+      id: 'pwr_' + Date.now(),
+      status: 'pending',
+      createdAt: new Date().toLocaleString()
+    };
+    setPasswordRequests(prev => [newReq, ...prev]);
+    toast.success('Password change request submitted to Admin for verification.');
+  };
+
+  const processPasswordRequest = (id: string, status: 'approved' | 'declined') => {
+    const req = passwordRequests.find(r => r.id === id);
+    if (!req) return;
+
+    if (status === 'approved') {
+      updateUser(req.userId, { password: req.newPassword });
+      toast.success(`Email sent to ${req.userEmail}: Password change approved by Sealify officials.`);
+    } else {
+      toast.error(`Email sent to ${req.userEmail}: Password change request declined by Sealify officials.`);
+    }
+
+    setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
@@ -263,7 +300,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       compareListingIds, toggleCompareListing, isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
       createListing, updateListing, deleteListing, markAsSold, promoteListing,
       conversations, sendMessage: () => {},
-      notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification
+      notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
+      passwordRequests, submitPasswordRequest, processPasswordRequest
     }}>
       {children}
     </SealifyContext.Provider>
