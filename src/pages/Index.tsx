@@ -11,6 +11,7 @@ import SavedAlertsModal from '../components/SavedAlertsModal';
 import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import { CompareModal } from '../components/CompareModal';
 import { 
   SlidersHorizontal, 
   Search, 
@@ -28,16 +29,18 @@ import {
   TrendingUp,
   CheckCircle2,
   Lock,
-  Lightbulb
+  Lightbulb,
+  Scale
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
 const Index: React.FC = () => {
-  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, t } = useSealify();
+  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, compareListingIds, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
   const [isSavedAlertsOpen, setIsSavedAlertsOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
 
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
@@ -238,9 +241,21 @@ const Index: React.FC = () => {
         )}
       </main>
 
+      {/* Floating Compare Action Trigger */}
+      {compareListingIds.length > 0 && (
+        <button
+          onClick={() => setIsCompareOpen(true)}
+          className="fixed bottom-20 right-6 z-50 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-3.5 rounded-2xl flex items-center gap-2 shadow-2xl shadow-emerald-500/40 animate-in fade-in slide-in-from-bottom-10"
+        >
+          <Scale className="w-5 h-5" />
+          <span>Compare Items ({compareListingIds.length})</span>
+        </button>
+      )}
+
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       <SafetyTipsModal isOpen={isSafetyTipsOpen} onClose={() => setIsSafetyTipsOpen(false)} />
       <SavedAlertsModal isOpen={isSavedAlertsOpen} onClose={() => setIsSavedAlertsOpen(false)} />
+      <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
       <MobileNav />
     </div>
   );
