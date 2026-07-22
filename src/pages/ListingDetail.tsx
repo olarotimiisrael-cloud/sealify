@@ -118,7 +118,7 @@ const ListingDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-8">
@@ -395,6 +395,25 @@ const ListingDetail: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Sticky Bottom Action Bar for Mobile Screens */}
+      <div className="md:hidden fixed bottom-14 left-0 right-0 z-30 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 p-2.5 px-4 flex items-center gap-2 shadow-2xl">
+        <button
+          onClick={() => setShowPhone(!showPhone)}
+          className="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700"
+        >
+          <Phone className="w-4 h-4 text-emerald-400" />
+          <span className="truncate">{showPhone ? listing.sellerPhone : 'Call Seller'}</span>
+        </button>
+
+        <button
+          onClick={handleStartChat}
+          className="flex-[1.5] py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
+        >
+          <MessageSquare className="w-4 h-4" />
+          <span>Chat Seller</span>
+        </button>
+      </div>
 
       {/* Lightbox Fullscreen Photo Modal */}
       {isLightboxOpen && (
