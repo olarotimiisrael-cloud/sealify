@@ -1,6 +1,7 @@
 import React from 'react';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
 import { Link } from 'react-router-dom';
-import { useSealify } from '../context/SealifyContext';
 import { 
   ShieldCheck, 
   Info, 
@@ -12,138 +13,48 @@ import {
 } from 'lucide-react';
 
 const HelpCenter: React.FC = () => {
-  const { isAuthenticated } = useSealify();
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl">
+      <Navbar />
+
+      <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
-              <Info className="w-4 h-4" />
-              <span>Help Center</span>
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3.5 py-1 rounded-full">
+              <BookOpen className="w-4 h-4" />
+              <span>Support Guide</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight">
-              Get Help & Support
+            <h1 className="text-3xl font-black text-white tracking-tight">
+              Sealify Knowledge Base
             </h1>
-            <p className="text-slate-400 text-sm">
-              Answers to common questions and ways to contact our support team
+            <p className="text-slate-400 text-xs sm:text-sm">
+              Learn how to buy, sell, and navigate the marketplace safely
             </p>
           </div>
 
-          <div className="space-y-6 mt-6">
-            <h2 className="font-bold text-xl text-white">Getting Started</h2>
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>How do I create an account?</strong> Click <span className="text-emerald-400 hover:underline">Login / Sign Up</span> in the top right corner and follow the registration steps.
-                </p>
-              </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>What fees does Sealify charge?</strong> Listing items and browsing are completely free. We may introduce premium features in the future.
-                </p>
-              </div>
-            </div>
-
-            <h2 className="font-bold text-xl text-white">Buying & Selling</h2>
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>How do I make a payment?</strong> All payments are conducted directly between buyers and sellers. We recommend meeting in person and using cash or secure payment methods.
-                </p>
-              </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>What if I receive a counterfeit item?</strong> Report the listing immediately using the <span className="text-emerald-400 hover:underline">Report Listing</span> button. Our safety team will investigate within 24 hours.
-                </p>
-              </div>
-            </div>
-
-            <h2 className="font-bold text-xl text-white">Safety & Security</h2>
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>Where are safe meetup locations?</strong> Use our <span className="text-emerald-400 hover:underline">Safe Meetup Zones</span> feature to find police stations, libraries, and shopping centers with CCTV coverage.
-                </p>
-              </div>
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 mr-2 inline-block" />
-                <p className="text-slate-300 inline">
-                  <strong>How do I report suspicious activity?</strong> Use the <span className="text-emerald-400 hover:underline">Report Listing</span> button on any ad. Our safety team will review all reports promptly.
-                </p>
-              </div>
-            </div>
-
-            <h2 className="font-bold text-xl text-white">Support & Contact</h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
-                <Phone className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="font-bold text-white"><strong>Phone Support:</strong> +234 800 000 0000</p>
-                  <p className="text-slate-400">Available Mon-Fri 9AM-5PM</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
-                <BookOpen className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="font-bold text-white"><strong>Email Us:</strong> support@sealify.ng</p>
-                  <p className="text-slate-400">Response time: within 24 hours</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 bg-slate-950 p-3 rounded-xl">
-                <Clock className="w-5 h-5 text-emerald-400" />
-                <div>
-                  <p className="font-bold text-white"><strong>Live Chat:</strong> Available 24/7</p>
-                  <p className="text-slate-400">Click <span className="text-emerald-400 hover:underline">Inbox</span> to start a conversation</p>
-                </div>
-              </div>
-            </div>
-
-            <h2 className="font-bold text-xl text-white">Premium Features (Coming Soon)</h2>
-            <div className="space-y-2">
-              <div className="flex items-start gap-2 bg-slate-950 p-3 rounded-xl">
-                <Sparkles className="w-4 h-4 text-emerald-400 mr-2 mt-1" />
-                <div>
-                  <p className="font-bold text-slate-300">Featured Listings</p>
-                  <p className="text-slate-400">Boost visibility with top placement in search results</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-2 bg-slate-950 p-3 rounded-xl">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 mr-2 mt-1" />
-                <div>
-                  <p className="font-bold text-slate-300">Advanced Analytics</p>
-                  <p className="text-slate-400">Detailed performance metrics for your ads</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-slate-800 pt-4 text-center">
-              <p className="text-slate-400">&copy; {new Date().getFullYear()} Sealify Classifieds. All rights reserved.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Info className="w-5 h-5 text-emerald-400" />
-            <Link to="/faq" className="text-slate-400 hover:text-emerald-400 transition-colors">
-              Frequently Asked Questions
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <Link
+              to="/faq"
+              className="p-5 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-colors space-y-2 group"
+            >
+              <Info className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <h3 className="font-bold text-sm text-white">Frequently Asked Questions</h3>
+              <p className="text-xs text-slate-400">Quick answers on accounts, postings, and safety rules.</p>
             </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Phone className="w-5 h-5 text-emerald-400" />
-            <Link to="/contact" className="text-slate-400 hover:text-emerald-400 transition-colors">
-              Contact Support
+
+            <Link
+              to="/contact"
+              className="p-5 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-colors space-y-2 group"
+            >
+              <Phone className="w-6 h-6 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <h3 className="font-bold text-sm text-white">Contact Customer Support</h3>
+              <p className="text-xs text-slate-400">Reach our 24/7 help desk for account or dispute assistance.</p>
             </Link>
           </div>
         </div>
       </main>
+
+      <MobileNav />
     </div>
   );
 };
