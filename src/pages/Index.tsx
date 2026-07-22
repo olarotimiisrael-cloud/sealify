@@ -18,10 +18,13 @@ import {
   History,
   LayoutGrid,
   Map,
-  Bell
+  Bell,
+  CheckCircle2,
+  MapPin,
+  Users
 } from 'lucide-react';
 
-const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing'];
+const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
 const Index: React.FC = () => {
   const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
@@ -68,58 +71,80 @@ const Index: React.FC = () => {
       <Navbar />
       <CategoryBar />
 
-      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/60 py-8 px-4 relative overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3 text-center md:text-left max-w-xl">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Fastest Local Classifieds in Ogbomoso</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
-              Buy & Sell Anything <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-                Safely & Instantly.
-              </span>
-            </h1>
-            <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-              Sealify connects verified buyers and sellers nearby. Discover cars, phones, homes, and everyday items with guaranteed fraud protection.
-            </p>
+      {/* Hero Showcase with Official Sealify Promotional Banner */}
+      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-8 px-4 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto space-y-6">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+            
+            {/* Left Column: Value Prop */}
+            <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3.5 py-1.5 rounded-full">
+                <MapPin className="w-3.5 h-3.5" />
+                <span>Ogbomosoland, Oyo State & Across Nigeria</span>
+              </div>
 
-            <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-1.5">
-              <span className="text-[11px] font-bold text-slate-500">Popular:</span>
-              {POPULAR_SEARCHES.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => setFilters((prev) => ({ ...prev, searchQuery: tag }))}
-                  className="text-[11px] font-semibold text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 px-2.5 py-0.5 rounded-lg transition-colors"
-                >
-                  #{tag}
-                </button>
-              ))}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                Nigeria's Trusted <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
+                  Local Marketplace
+                </span>
+              </h1>
+
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+                Buy. Sell. Connect. Everything you need in one place — from luxury vehicles and real estate to phones, fashion, and agriculture.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2.5 pt-1 text-left">
+                <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl flex items-center gap-2.5">
+                  <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">Trusted & Secure</p>
+                    <p className="text-[10px] text-slate-400">Verified Vendors</p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/80 border border-slate-800 p-3 rounded-2xl flex items-center gap-2.5">
+                  <Zap className="w-5 h-5 text-amber-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">Fast & Easy</p>
+                    <p className="text-[10px] text-slate-400">Smooth Experience</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center justify-center lg:justify-start gap-1.5">
+                <span className="text-[11px] font-bold text-slate-500">Trending:</span>
+                {POPULAR_SEARCHES.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setFilters((prev) => ({ ...prev, searchQuery: tag }))}
+                    className="text-[11px] font-semibold text-slate-300 hover:text-emerald-400 bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 px-2.5 py-0.5 rounded-lg transition-colors"
+                  >
+                    #{tag}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Right Column: Featured Banner Graphic */}
+            <div className="lg:col-span-7">
+              <div className="relative rounded-3xl overflow-hidden border-2 border-emerald-500/40 shadow-2xl group bg-slate-900">
+                <img
+                  src="/og-image.png"
+                  alt="Sealify - Nigeria's Trusted Local Marketplace"
+                  className="w-full h-auto object-cover group-hover:scale-102 transition-transform duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none flex items-end p-4">
+                  <p className="text-xs font-bold text-slate-200 backdrop-blur-md bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800">
+                    🎉 Proudly connecting buyers and sellers in Ogbomosoland, Oyo State & Nigeria
+                  </p>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-lg font-black text-white">100%</p>
-                <p className="text-[11px] text-slate-400 font-medium">Verified Sellers</p>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 shadow">
-              <div className="p-2.5 rounded-xl bg-teal-500/10 text-teal-400">
-                <TrendingUp className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-lg font-black text-white">2.4k+</p>
-                <p className="text-[11px] text-slate-400 font-medium">Active Ads</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 
