@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
-import { Flame, ShieldCheck, MapPin, Eye, Heart, ArrowRight } from 'lucide-react';
+import VerifiedBadge from './VerifiedBadge';
+import { Flame, MapPin, Eye, Heart, ArrowRight } from 'lucide-react';
 
 interface FeaturedAdSectionProps {
   listings: Listing[];
@@ -109,7 +110,7 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
                     <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
                     <span className="truncate">{item.location}</span>
                     {item.sellerVerified && (
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 ml-auto" title="Verified Seller" />
+                      <VerifiedBadge type={item.sellerVerificationType || 'individual'} className="ml-auto shrink-0" />
                     )}
                   </div>
                 </div>

@@ -10,9 +10,9 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import FinancingCalculator from '../components/FinancingCalculator';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { 
   MapPin, 
-  ShieldCheck, 
   Phone, 
   MessageSquare, 
   Heart, 
@@ -308,13 +308,12 @@ const ListingDetail: React.FC = () => {
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
                   />
                   <div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
                       {listing.sellerVerified && (
-                        <ShieldCheck className="w-4 h-4 text-emerald-400" title="Verified Seller" />
+                        <VerifiedBadge type={listing.sellerVerificationType || 'individual'} showText />
                       )}
                     </div>
-                    <p className="text-xs text-emerald-400 font-medium">Verified Vendor</p>
                     <p className="text-[11px] text-slate-500">Member since 2023</p>
                   </div>
                 </div>

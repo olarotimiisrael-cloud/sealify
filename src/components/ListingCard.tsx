@@ -2,7 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
-import { Heart, MapPin, ShieldCheck, Eye, Scale, TrendingDown } from 'lucide-react';
+import VerifiedBadge from './VerifiedBadge';
+import { Heart, MapPin, Eye, Scale, TrendingDown } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -138,7 +139,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
         <div className="flex items-center gap-1 shrink-0">
           {listing.sellerVerified && (
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" title="Verified Seller" />
+            <VerifiedBadge type={listing.sellerVerificationType || 'individual'} />
           )}
           <span className="text-[10px] text-slate-500">{listing.createdAt}</span>
         </div>
