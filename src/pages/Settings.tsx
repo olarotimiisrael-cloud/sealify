@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { User, ShieldCheck, Calendar, Phone, Edit3, Trash2, Mail, Bell, Camera, Image, Check, Upload } from 'lucide-react';
+import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SAMPLE_AVATARS = [
@@ -16,7 +16,7 @@ const SAMPLE_AVATARS = [
 ];
 
 const Settings: React.FC = () => {
-  const { user, setUser, updateUser } = useSealify();
+  const { user, updateUser } = useSealify();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editingProfile, setEditingProfile] = useState(false);
@@ -51,13 +51,18 @@ const Settings: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size is too large (max 5MB)');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
         const dataUrl = event.target.result as string;
         setSelectedAvatar(dataUrl);
         setCustomAvatarUrl('');
-        toast.success('New profile picture loaded! Click "Save Profile Photo & Changes" to apply.');
+        toast.success('Photo loaded successfully! Click "Save Profile Photo & Changes" to complete.');
       }
     };
     reader.readAsDataURL(file);
@@ -72,7 +77,7 @@ const Settings: React.FC = () => {
       avatarUrl: avatarToSave,
     });
     setEditingProfile(false);
-    toast.success('Profile photo & account details updated successfully!');
+    toast.success('🎉 Profile photo and account settings updated!');
   };
 
   const handleConfirmDelete = () => {
@@ -90,22 +95,22 @@ const Settings: React.FC = () => {
             <div className="flex items-center gap-4 text-center sm:text-left">
               <div className="relative group">
                 <img
-                  src={user.avatarUrl}
+                  src={selectedAvatar || user.avatarUrl}
                   alt={user.fullName}
-                  className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
                 />
                 <button
                   onClick={() => setEditingProfile(true)}
-                  className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-500 text-slate-950 rounded-xl shadow font-bold hover:scale-110 transition-transform"
+                  className="absolute -bottom-1 -right-1 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow font-black hover:scale-110 transition-transform"
                   title="Upload profile photo"
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Camera className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="flex flex-col">
                 <div className="flex items-center gap-2 justify-center sm:justify-start">
-                  <h1 className="text-xl font-bold text-white">{user.fullName}</h1>
+                  <h1 className="text-xl sm:text-2xl font-black text-white">{user.fullName}</h1>
                   {user.verified && (
                     <VerifiedBadge type={user.verificationType || 'individual'} showText />
                   )}
@@ -119,24 +124,24 @@ const Settings: React.FC = () => {
 
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
             >
               <Edit3 className="w-4 h-4 text-emerald-400" />
-              <span>{editingProfile ? 'Cancel Editing' : 'Edit Profile & Photo'}</span>
+              <span>{editingProfile ? 'Cancel Editing' : 'Edit Photo & Details'}</span>
             </button>
           </div>
 
           {/* Profile Photo Upload / Edit Section */}
           {editingProfile && (
-            <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs">
+            <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs animate-in fade-in duration-200">
               <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider">
                 <Camera className="w-4 h-4" />
                 <span>Upload & Update Profile Photo</span>
               </div>
 
-              {/* Direct Image File Upload Button */}
+              {/* Direct File Picker */}
               <div className="space-y-2">
-                <label className="font-bold text-slate-300 block">Upload Image from Device</label>
+                <label className="font-bold text-slate-300 block">Select Photo from Device Gallery</label>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -147,15 +152,15 @@ const Settings: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Choose Photo from Device / Gallery</span>
+                  <span>Choose Image File from Computer / Mobile</span>
                 </button>
               </div>
 
               <div className="space-y-2 pt-2">
-                <label className="font-bold text-slate-300">Or Choose Preset Avatar</label>
+                <label className="font-bold text-slate-300">Or Select Avatar Preset</label>
                 <div className="flex gap-3 overflow-x-auto pb-1">
                   {SAMPLE_AVATARS.map((imgUrl, idx) => (
                     <button
@@ -178,13 +183,16 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="font-bold text-slate-300">Or Paste Custom Photo Image URL</label>
+                <label className="font-bold text-slate-300">Or Paste Image Web Link</label>
                 <div className="relative">
                   <Image className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                   <input
                     type="url"
                     value={customAvatarUrl}
-                    onChange={(e) => setCustomAvatarUrl(e.target.value)}
+                    onChange={(e) => {
+                      setCustomAvatarUrl(e.target.value);
+                      if (e.target.value) setSelectedAvatar(e.target.value);
+                    }}
                     placeholder="https://images.unsplash.com/..."
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
@@ -215,7 +223,7 @@ const Settings: React.FC = () => {
 
               <button
                 onClick={handleSave}
-                className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow flex items-center justify-center gap-1.5 mt-2"
+                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-1.5 mt-2"
               >
                 <Check className="w-4 h-4" />
                 <span>Save Profile Photo & Changes</span>
@@ -279,8 +287,8 @@ const Settings: React.FC = () => {
 
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Two-Factor Authentication</h4>
-                  <p className="text-xs text-emerald-400 font-semibold mt-0.5">Enabled via SMS & Email</p>
+                  <h4 className="text-xs font-bold text-white uppercase">Two-Factor Security</h4>
+                  <p className="text-xs text-emerald-400 font-semibold mt-0.5">Active protection via SMS & Email</p>
                 </div>
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
               </div>
@@ -311,7 +319,7 @@ const Settings: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl max-w-md w-full text-center space-y-4">
               <h3 className="text-lg font-bold text-white">Confirm Account Deletion</h3>
               <p className="text-xs text-slate-400">
-                Are you sure you want to delete your account? All your active listings and saved messages will be permanently removed.
+                Are you sure you want to delete your account? All active listings and messages will be permanently removed.
               </p>
               <div className="flex gap-2 pt-2">
                 <button

@@ -198,7 +198,7 @@ const INITIAL_NOTIFS: AppNotification[] = [
     id: 'notif_2',
     type: 'system',
     title: 'Welcome to Sealify Ogbomoso! 🎉',
-    description: 'Welcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.',
+    description: 'Welcome to Sealify — Trusted marketplace in Ogbomosoland, Oyo State and across Nigeria.',
     time: '1 hour ago',
     read: false,
     linkUrl: '/help-center',
@@ -337,7 +337,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUser(existing);
       localStorage.setItem('sealify_user', JSON.stringify(existing));
       if (isSignup) {
-        toast.success(`✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.`);
+        toast.success(`✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted marketplace in Ogbomosoland and Nigeria.`);
       } else {
         toast.success(`Welcome back, ${existing.fullName}!`);
       }
@@ -364,13 +364,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addNotification({
       type: 'system',
       title: 'Welcome to Sealify!',
-      description: 'Greetings from Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.',
+      description: 'Greetings from Sealify — Trusted marketplace in Ogbomosoland, Oyo State and beyond.',
       linkUrl: '/help-center',
     });
 
     toast.success(
-      `✉️ Verification Email sent to ${email}!\nWelcome to Sealify — Trusted and largest marketplace in Ogbomosoland. We serve Ogbomosoland, Oyo State and beyond.`,
-      { duration: 6000 }
+      `✉️ Verification Email sent to ${email}!\nWelcome to Sealify marketplace.`,
+      { duration: 5000 }
     );
   }, [allUsers, addNotification]);
 
@@ -411,7 +411,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       avatarUrl: newUser.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150',
     };
     setAllUsers(prev => [userCreated, ...prev]);
-    toast.success(`User ${userCreated.fullName} created successfully! Verification email dispatched.`);
+    toast.success(`User ${userCreated.fullName} created successfully!`);
   }, []);
 
   const updateUser = useCallback((id: string, updatedData: Partial<UserProfile>) => {
@@ -443,8 +443,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return item;
       })
     );
-
-    toast.success('User profile & active ad badges synchronized!');
   }, [user]);
 
   const updateUserPassword = useCallback((id: string, newPass: string) => {
@@ -483,15 +481,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addNotification({
           type: 'price_drop',
           title: `Saved "${listing.title}"`,
-          description: `You will receive email notifications on price drops and seller updates for ${listing.title}.`,
+          description: `You will receive updates and price alerts for ${listing.title}.`,
           linkUrl: `/listing/${listing.id}`,
         });
       }
 
       toast.success(
-        exists
-          ? 'Removed from saved items'
-          : 'Saved to your favorites! You will receive email alerts on price drops & updates for this item.'
+        exists ? 'Removed from saved items' : 'Saved to your favorites!'
       );
       return updated;
     });
@@ -571,11 +567,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addNotification({
       type: 'system',
       title: 'Ad Live on Marketplace',
-      description: `Your ad "${formattedListing.title}" is now published and visible to buyers across Ogbomoso & Oyo State.`,
+      description: `Your ad "${formattedListing.title}" is now live and visible to buyers!`,
       linkUrl: `/listing/${formattedListing.id}`,
     });
 
-    toast.success('🎉 Your ad was posted successfully! Email notifications sent to interested buyers.');
+    toast.success('🎉 Your classified ad was published successfully!');
   }, [user, addNotification]);
 
   const updateListing = useCallback(async (id: string, updatedData: Partial<Listing>) => {
@@ -651,7 +647,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       linkUrl: '/messages',
     });
 
-    toast.success('Message sent to seller! Email notification delivered.');
+    toast.success('Message sent to seller!');
   }, [user, listings, addNotification]);
 
   const getConversationByListing = useCallback((listingId: string) => {

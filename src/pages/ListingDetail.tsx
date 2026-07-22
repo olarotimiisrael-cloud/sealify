@@ -7,7 +7,6 @@ import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SafeMeetupModal from '../components/SafeMeetupModal';
-import FinancingCalculator from '../components/FinancingCalculator';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -87,8 +86,6 @@ const ListingDetail: React.FC = () => {
 
   const formattedPrice = formatNGN(listing.price);
 
-  const isEligibleForFinancing = ['Vehicles', 'Real Estate', 'Electronics'].includes(listing.category) || listing.price >= 200000;
-
   const handleStartChat = () => {
     if (!isAuthenticated) {
       setIsAuthOpen(true);
@@ -121,14 +118,14 @@ const ListingDetail: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-8">
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
         <div className="flex items-center justify-between">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Listings</span>
+            <span>Back to Marketplace</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -171,7 +168,7 @@ const ListingDetail: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3 relative group">
               <div
@@ -237,13 +234,13 @@ const ListingDetail: React.FC = () => {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800">
+              <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800 flex-wrap sm:flex-nowrap">
                 <div>
                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
                     {listing.category}
                   </span>
                   <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
-                  <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
+                  <div className="flex items-center gap-4 text-xs text-slate-400 mt-2 flex-wrap">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-3.5 h-3.5 text-slate-500" />
                       {listing.location}
@@ -259,7 +256,7 @@ const ListingDetail: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
+                <div className="text-left sm:text-right shrink-0">
                   <p className="text-3xl font-black text-emerald-400">{formattedPrice}</p>
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
                 </div>
@@ -290,10 +287,6 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {isEligibleForFinancing && (
-              <FinancingCalculator itemPrice={listing.price} category={listing.category} />
-            )}
           </div>
 
           <div className="space-y-6">
