@@ -92,7 +92,7 @@ const Navbar: React.FC = () => {
                 Sealify
               </span>
               <p className="text-[10px] text-emerald-400 uppercase tracking-widest font-extrabold mt-0.5">
-                Nigeria's Jiji
+                Trusted Marketplace
               </p>
             </div>
           </Link>
