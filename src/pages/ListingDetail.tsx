@@ -9,6 +9,7 @@ import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SafeMeetupModal from '../components/SafeMeetupModal';
 import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
+import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -35,7 +36,8 @@ import {
   Maximize2,
   Video,
   Share2,
-  Truck
+  Truck,
+  CheckSquare
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -52,6 +54,7 @@ const ListingDetail: React.FC = () => {
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
@@ -150,6 +153,15 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
+  const handleSendInspectionReport = (reportMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, reportMsg);
+    navigate('/messages');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
       <SEO 
@@ -161,7 +173,7 @@ const ListingDetail: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
@@ -170,7 +182,16 @@ const ListingDetail: React.FC = () => {
             <span>Back to Marketplace</span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsInspectionOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-purple-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              title="Interactive Inspection Checklist"
+            >
+              <CheckSquare className="w-4 h-4" />
+              <span className="hidden sm:inline">Testing Checklist</span>
+            </button>
+
             <button
               onClick={() => setIsDeliveryOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold"
@@ -531,6 +552,13 @@ const ListingDetail: React.FC = () => {
         itemTitle={listing.title}
         itemLocation={listing.location}
         onSendEstimateToChat={handleSendDeliveryEstimate}
+      />
+      <InspectionChecklistModal
+        isOpen={isInspectionOpen}
+        onClose={() => setIsInspectionOpen(false)}
+        category={listing.category}
+        itemTitle={listing.title}
+        onSendChecklistToChat={handleSendInspectionReport}
       />
       <LightboxModal
         isOpen={isLightboxOpen}

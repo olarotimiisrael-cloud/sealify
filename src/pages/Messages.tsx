@@ -5,8 +5,9 @@ import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
+import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare } from 'lucide-react';
 import { toast } from 'sonner';
 
 const QUICK_REPLIES = [
@@ -25,11 +26,13 @@ const Messages: React.FC = () => {
   // Modals inside chat
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
+  const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
+  const activeListing = listings.find((l) => l.id === activeConv?.listingId);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +75,11 @@ const Messages: React.FC = () => {
   const handleSendOffer = (offerPrice: number, offerMsg: string) => {
     if (!activeConv) return;
     sendMessage(activeConv.listingId, activeConv.otherUser.id, offerMsg);
+  };
+
+  const handleSendInspectionReport = (reportMsg: string) => {
+    if (!activeConv) return;
+    sendMessage(activeConv.listingId, activeConv.otherUser.id, reportMsg);
   };
 
   if (!isAuthenticated) {
@@ -154,7 +162,15 @@ const Messages: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => setIsInspectionOpen(true)}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-purple-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <CheckSquare className="w-3.5 h-3.5" />
+                    <span>Inspection Checklist</span>
+                  </button>
+
                   <button
                     onClick={() => setIsMeetupOpen(true)}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-teal-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
@@ -179,6 +195,7 @@ const Messages: React.FC = () => {
                   const isMe = m.senderId === user?.id;
                   const isLocationMsg = m.content.includes('PROPOSED SAFE MEETUP LOCATION');
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
+                  const isInspectionMsg = m.content.includes('IN-PERSON INSPECTION REPORT');
                   const isAudioMsg = m.content.includes('Voice Note');
 
                   return (
@@ -191,6 +208,8 @@ const Messages: React.FC = () => {
                             ? 'bg-teal-950/80 border border-teal-500/40 text-teal-200 rounded-bl-none'
                             : isOfferMsg
                             ? 'bg-amber-950/80 border border-amber-500/40 text-amber-200 rounded-bl-none'
+                            : isInspectionMsg
+                            ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : isAudioMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
@@ -236,7 +255,7 @@ const Messages: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={handleVoiceNote}
+                  onClick={() => setIsRecordingVoice(!isRecordingVoice)}
                   className={`p-2.5 rounded-xl border transition-colors ${
                     isRecordingVoice
                       ? 'bg-rose-500 text-white border-rose-400 animate-pulse'
@@ -285,6 +304,14 @@ const Messages: React.FC = () => {
         listingTitle={activeConv?.listingTitle || ''}
         originalPrice={activeConv?.listingPrice || 0}
         onSendOffer={handleSendOffer}
+      />
+
+      <InspectionChecklistModal
+        isOpen={isInspectionOpen}
+        onClose={() => setIsInspectionOpen(false)}
+        category={activeListing?.category || 'Electronics'}
+        itemTitle={activeConv?.listingTitle || 'Item'}
+        onSendChecklistToChat={handleSendInspectionReport}
       />
 
       <MobileNav />
