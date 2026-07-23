@@ -10,7 +10,8 @@ import {
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
   KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload,
-  AlertTriangle, LogOut, Megaphone, Bell, Radio, ShieldAlert
+  AlertTriangle, LogOut, Megaphone, Bell, Radio, ShieldAlert,
+  Download, FileSpreadsheet, Terminal, Clock, Server
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -21,16 +22,16 @@ export const AdminDashboard: React.FC = () => {
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest,
     announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
-    reports, processReport
+    reports, processReport, auditLogs
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments' | 'broadcasts' | 'reports'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments' | 'broadcasts' | 'reports' | 'audit'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
-  // New Announcement Broadcast State
+  // Announcement State
   const [annTitle, setAnnTitle] = useState('');
   const [annMessage, setAnnMessage] = useState('');
   const [annType, setAnnType] = useState<'info' | 'warning' | 'success' | 'alert'>('info');
@@ -112,6 +113,55 @@ export const AdminDashboard: React.FC = () => {
     toast.success('Category updated');
   };
 
+  // CSV Export functions
+  const exportUsersCSV = () => {
+    const headers = ['ID', 'Full Name', 'Email', 'Role', 'Verified', 'Location', 'Member Since'];
+    const rows = allUsers.map(u => [
+      u.id,
+      `"${u.fullName.replace(/"/g, '""')}"`,
+      u.email,
+      u.role,
+      u.verified ? 'Yes' : 'No',
+      `"${u.location.replace(/"/g, '""')}"`,
+      u.memberSince
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `sealify_users_export_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('User records exported to CSV!');
+  };
+
+  const exportAdsCSV = () => {
+    const headers = ['ID', 'Title', 'Category', 'Price (NGN)', 'Seller', 'Location', 'Views', 'Status', 'Featured'];
+    const rows = listings.map(l => [
+      l.id,
+      `"${l.title.replace(/"/g, '""')}"`,
+      l.category,
+      l.price,
+      `"${l.sellerName.replace(/"/g, '""')}"`,
+      `"${l.location.replace(/"/g, '""')}"`,
+      l.viewsCount,
+      l.status,
+      l.featured ? 'Yes' : 'No'
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `sealify_classified_ads_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Classified ads exported to CSV!');
+  };
+
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -157,29 +207,45 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {user && (
-            <div className="flex items-center gap-3">
-              <img 
-                src={user?.avatarUrl} 
-                className="w-10 h-10 rounded-full border border-emerald-500" 
-                alt={user?.fullName}
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
-                }}
-              />
-              <div className="text-left">
-                <p className="text-xs font-bold text-white">{user?.fullName}</p>
-                <span className="text-[10px] text-emerald-400 font-extrabold uppercase">Administrator</span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportUsersCSV}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              title="Export registered users to CSV"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Users CSV</span>
+            </button>
+
+            <button
+              onClick={exportAdsCSV}
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              title="Export all ads to CSV"
+            >
+              <Download className="w-4 h-4 text-blue-400" />
+              <span>Ads CSV</span>
+            </button>
+
+            {user && (
+              <div className="flex items-center gap-3 ml-2 border-l border-slate-800 pl-3">
+                <img 
+                  src={user?.avatarUrl} 
+                  className="w-9 h-9 rounded-full border border-emerald-500" 
+                  alt={user?.fullName}
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  }}
+                />
+                <button
+                  onClick={logout}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={logout}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors ml-2"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -220,7 +286,80 @@ export const AdminDashboard: React.FC = () => {
               </span>
             )}
           </button>
+          <button onClick={() => setActiveTab('audit')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative flex items-center gap-1 ${activeTab === 'audit' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+            <Terminal className="w-3.5 h-3.5" />
+            <span>LOGS & EXPORTS</span>
+          </button>
         </div>
+
+        {/* Tab Content: System Audit Logs & Data Exports */}
+        {activeTab === 'audit' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                    <Terminal className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-black text-white">System Security & Audit Logs</h2>
+                    <p className="text-xs text-slate-400">Track key platform events and administrator operations</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportUsersCSV}
+                    className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold rounded-xl shadow flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Users CSV</span>
+                  </button>
+                  <button
+                    onClick={exportAdsCSV}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-xl shadow flex items-center gap-1.5"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Ads CSV</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-4 max-h-[500px] overflow-y-auto space-y-2 font-mono text-xs">
+                {auditLogs.length === 0 ? (
+                  <p className="text-slate-500 text-center py-8">No security logs generated yet.</p>
+                ) : (
+                  auditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="p-3 bg-slate-900/60 border border-slate-800/80 rounded-xl flex items-start justify-between gap-3 hover:border-slate-700 transition-colors"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
+                            log.type === 'security' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' :
+                            log.type === 'verification' ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' :
+                            log.type === 'broadcast' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                            'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          }`}>
+                            {log.type}
+                          </span>
+                          <span className="font-bold text-white truncate">{log.action}</span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] leading-relaxed">{log.details}</p>
+                      </div>
+
+                      <span className="text-[10px] text-slate-500 shrink-0 font-mono flex items-center gap-1">
+                        <Clock className="w-3 h-3 text-slate-600" />
+                        {log.createdAt}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab Content: Reports & Moderation Queue */}
         {activeTab === 'reports' && (

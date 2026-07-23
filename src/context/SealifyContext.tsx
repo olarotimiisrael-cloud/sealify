@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -92,6 +92,8 @@ interface SealifyContextType {
   reports: AdReport[];
   submitReport: (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => void;
   processReport: (id: string, action: 'dismiss' | 'resolve_delete_ad') => void;
+  auditLogs: AuditLog[];
+  addAuditLog: (action: string, details: string, type: AuditLog['type']) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -129,6 +131,23 @@ const INITIAL_REPORTS: AdReport[] = [
     details: 'Seller listed NGN 4,500,000 in title but said NGN 5,200,000 in message.',
     status: 'pending',
     createdAt: '1 hour ago',
+  },
+];
+
+const INITIAL_AUDITS: AuditLog[] = [
+  {
+    id: 'aud_1',
+    action: 'Administrator Session Authenticated',
+    details: 'Israel Olarotimi accessed Admin Command Terminal from Ogbomoso IP',
+    type: 'security',
+    createdAt: 'Today 09:15 AM',
+  },
+  {
+    id: 'aud_2',
+    action: 'System Broadcast Published',
+    details: 'Published "Safe Exchange Zones Update" banner across feed',
+    type: 'broadcast',
+    createdAt: 'Today 10:30 AM',
   },
 ];
 
@@ -205,6 +224,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : INITIAL_REPORTS;
   });
 
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
+    const saved = localStorage.getItem('sealify_audit_logs');
+    return saved ? JSON.parse(saved) : INITIAL_AUDITS;
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -267,10 +291,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [reports]);
 
   useEffect(() => {
+    localStorage.setItem('sealify_audit_logs', JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
+  useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
     localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
   }, [passwordRequests, verificationRequests, promotionPaymentRequests]);
+
+  const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
+    const log: AuditLog = {
+      id: 'aud_' + Date.now(),
+      action,
+      details,
+      type,
+      createdAt: 'Just now'
+    };
+    setAuditLogs(prev => [log, ...prev]);
+  }, []);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
@@ -281,6 +320,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (existing) {
       setUser(existing);
       localStorage.setItem('sealify_user', JSON.stringify(existing));
+      addAuditLog('User Login', `${existing.fullName} (${existing.email}) logged in`, 'user');
       toast.success(`Welcome back, ${existing.fullName}!`);
     } else {
       const newUser: UserProfile = { 
@@ -298,6 +338,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAllUsers(prev => [...prev, newUser]);
       setUser(newUser);
       localStorage.setItem('sealify_user', JSON.stringify(newUser));
+      addAuditLog('New Registration', `Registered account for ${email}`, 'user');
       toast.success(`Account created successfully!`);
     }
   };
@@ -306,6 +347,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password) {
       setUser(DEFAULT_ADMIN);
       localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      addAuditLog('Admin Authenticated', `Administrator logged in`, 'security');
       toast.success('Authenticated as Administrator');
       return true;
     }
@@ -314,6 +356,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const logout = () => {
+    if (user) {
+      addAuditLog('User Logout', `${user.fullName} logged out`, 'user');
+    }
     setUser(null);
     localStorage.removeItem('sealify_user');
   };
@@ -323,10 +368,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (user?.id === id) {
       setUser(prev => prev ? { ...prev, ...updatedData } : null);
     }
+    addAuditLog('User Record Updated', `Updated fields for user ID: ${id}`, 'user');
   };
 
   const deleteUser = (id: string) => {
+    const target = allUsers.find(u => u.id === id);
     setAllUsers(prev => prev.filter(u => u.id !== id));
+    addAuditLog('User Deleted', `Removed account ${target?.fullName || id}`, 'security');
     toast.success('User removed from system');
   };
 
@@ -346,11 +394,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now'
     };
     setListings(prev => [newListing, ...prev]);
+    addAuditLog('New Listing Posted', `Published "${newListing.title}" by ${user.fullName}`, 'ad');
     toast.success('Your ad is now live!');
   };
 
   const deleteListing = (id: string) => {
+    const target = listings.find(l => l.id === id);
     setListings(prev => prev.filter(l => l.id !== id));
+    addAuditLog('Listing Deleted', `Removed ad "${target?.title || id}"`, 'ad');
     toast.success('Ad listing deleted');
   };
 
@@ -362,6 +413,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (user && user.verificationType !== 'premium') {
       updateUser(user.id, { verified: true, verificationType: 'premium' });
     }
+    addAuditLog('Listing Promoted', `Promoted ad ID: ${id} with ${plan}`, 'ad');
   };
 
   const sendMessage = (listingId: string, receiverId: string, content: string) => {
@@ -455,6 +507,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now'
     };
     setReports(prev => [newReport, ...prev]);
+    addAuditLog('Ad Reported', `Report logged for "${rep.listingTitle}": ${rep.reason}`, 'security');
     toast.success('Report submitted to Sealify Trust & Safety moderators');
   };
 
@@ -465,9 +518,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (action === 'resolve_delete_ad') {
       deleteListing(rep.listingId);
       setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'resolved' } : r));
+      addAuditLog('Report Action: Deleted Ad', `Deleted offending ad "${rep.listingTitle}"`, 'security');
       toast.success(`Offending ad "${rep.listingTitle}" deleted and report marked as resolved.`);
     } else {
       setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'dismissed' } : r));
+      addAuditLog('Report Dismissed', `Dismissed flag for "${rep.listingTitle}"`, 'security');
       toast.info('Report dismissed.');
     }
   };
@@ -481,6 +536,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPasswordRequests(prev => [newReq, ...prev]);
+    addAuditLog('Password Reset Request', `Requested password reset with NIN for ${req.userEmail}`, 'security');
     toast.success('Password change request submitted to Admin.');
   };
 
@@ -490,8 +546,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (status === 'approved') {
       updateUser(req.userId, { password: req.newPassword });
+      addAuditLog('Password Reset Approved', `Approved password update for ${req.userEmail}`, 'security');
       toast.success(`Password reset for ${req.userEmail} approved!`);
     } else {
+      addAuditLog('Password Reset Declined', `Declined password update for ${req.userEmail}`, 'security');
       toast.error(`Password reset for ${req.userEmail} declined.`);
     }
 
@@ -507,6 +565,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setVerificationRequests(prev => [newReq, ...prev]);
+    addAuditLog('Verification Request', `Submitted ${req.type} badge application for ${req.userName}`, 'verification');
     toast.success(`${req.type.toUpperCase()} Verification request submitted!`);
   };
 
@@ -516,8 +575,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (status === 'approved') {
       updateUser(req.userId, { verified: true, verificationType: req.type });
+      addAuditLog('Badge Issued', `Granted ${req.type.toUpperCase()} badge to ${req.userName}`, 'verification');
       toast.success(`User ${req.userName} is now ${req.type.toUpperCase()} Verified!`);
     } else {
+      addAuditLog('Verification Rejected', `Rejected ${req.type} badge for ${req.userName}`, 'verification');
       toast.error(`Verification request for ${req.userName} rejected.`);
     }
 
@@ -533,6 +594,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPromotionPaymentRequests(prev => [newReq, ...prev]);
+    addAuditLog('Promotion Payment Proof Uploaded', `Submitted payment proof for listing ID: ${req.listingId}`, 'ad');
     toast.success('Promotion payment submitted for admin review.');
   };
 
@@ -560,6 +622,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             } 
           : l
       ));
+      addAuditLog('Promotion Approved', `Verified payment and boosted listing ID: ${req.listingId}`, 'ad');
       toast.success(`Promotion payment approved for ${req.durationMonths} month(s).`);
     } else {
       setListings(prev => prev.map(l => 
@@ -581,6 +644,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now'
     };
     setAnnouncements(prev => [newAnn, ...prev]);
+    addAuditLog('System Broadcast Created', `Published announcement banner "${ann.title}"`, 'broadcast');
     toast.success('System Announcement published live!');
   };
 
@@ -615,7 +679,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       verificationRequests, submitVerificationRequest, processVerificationRequest,
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
-      reports, submitReport, processReport
+      reports, submitReport, processReport,
+      auditLogs, addAuditLog
     }}>
       {children}
     </SealifyContext.Provider>

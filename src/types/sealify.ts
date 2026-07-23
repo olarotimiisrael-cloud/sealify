@@ -78,6 +78,14 @@ export interface AdReport {
   createdAt: string;
 }
 
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification';
+  createdAt: string;
+}
+
 export interface Listing {
   id: string;
   sellerId: string;
