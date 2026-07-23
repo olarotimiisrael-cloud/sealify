@@ -1,5 +1,4 @@
 import React from 'react';
-import { CATEGORIES } from '@/data/mockData';
 import { useSealify } from '../context/SealifyContext';
 import { Category } from '../types/sealify';
 import { 
@@ -28,13 +27,13 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 };
 
 export const CategoryGrid: React.FC = () => {
-  const { activeCategory, setActiveCategory } = useSealify();
+  const { activeCategory, setActiveCategory, categories, listings } = useSealify();
 
   return (
-    <section className="py-4">
+    <section className="py-2">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-white tracking-tight">Browse Categories</h2>
+          <h2 className="text-xl font-black text-white tracking-tight">Browse Categories</h2>
           <p className="text-xs text-slate-400">Discover verified items and local services in Ogbomoso & across Nigeria</p>
         </div>
         {activeCategory !== 'All' && (
@@ -47,10 +46,11 @@ export const CategoryGrid: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 sm:gap-4">
-        {CATEGORIES.map((cat) => {
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+        {categories.map((cat) => {
           const IconComponent = iconMap[cat.iconName] || LayoutGrid;
           const isSelected = activeCategory === cat.name;
+          const matchingCount = listings.filter((l) => l.category === cat.name).length;
 
           return (
             <button
@@ -63,15 +63,15 @@ export const CategoryGrid: React.FC = () => {
               }`}
             >
               <div
-                className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2.5 transition-transform group-hover:scale-110 shadow-md ${
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center mb-2 transition-transform group-hover:scale-110 shadow-md ${
                   isSelected ? 'bg-slate-950/20 text-slate-950' : `${cat.color} text-white`
                 }`}
               >
                 <IconComponent className="w-5 h-5" />
               </div>
               <span className="text-xs font-bold line-clamp-1 leading-snug">{cat.name}</span>
-              <span className={`text-[10px] mt-1 font-semibold ${isSelected ? 'text-slate-950' : 'text-slate-400'}`}>
-                {cat.count}+ ads
+              <span className={`text-[10px] mt-0.5 font-semibold ${isSelected ? 'text-slate-950' : 'text-slate-400'}`}>
+                {matchingCount > 0 ? `${matchingCount}+ ads` : 'Explore'}
               </span>
             </button>
           );
