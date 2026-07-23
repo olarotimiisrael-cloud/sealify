@@ -35,6 +35,8 @@ interface SealifyContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  adminPin: string;
+  updateAdminPin: (newPin: string) => void;
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
   t: (key: string) => string;
@@ -110,7 +112,7 @@ const DEFAULT_ADMIN: UserProfile = {
   password: 'Tscw+1234',
 };
 
-const DEFAULT_ADMIN_PIN = '984021';
+const DEFAULT_ADMIN_PIN = '336699';
 
 const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
   {
@@ -187,6 +189,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<UserProfile | null>(() => {
     const savedUser = localStorage.getItem('sealify_user');
     return savedUser ? JSON.parse(savedUser) : null;
+  });
+
+  const [adminPin, setAdminPin] = useState<string>(() => {
+    return localStorage.getItem('sealify_admin_pin') || DEFAULT_ADMIN_PIN;
   });
 
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
@@ -295,6 +301,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
   }, [passwordRequests, verificationRequests, promotionPaymentRequests]);
 
+  const updateAdminPin = useCallback((newPin: string) => {
+    setAdminPin(newPin);
+    localStorage.setItem('sealify_admin_pin', newPin);
+    toast.success(`Admin Security PIN updated successfully!`);
+  }, []);
+
   const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
     const log: AuditLog = {
       id: 'aud_' + Date.now(),
@@ -356,7 +368,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const adminLogin = (email: string, pass: string, pin?: string) => {
     const isEmailValid = email.trim().toLowerCase() === DEFAULT_ADMIN.email.toLowerCase();
     const isPassValid = pass === DEFAULT_ADMIN.password;
-    const isPinValid = !pin || pin === DEFAULT_ADMIN_PIN;
+    const isPinValid = !pin || pin === adminPin;
 
     if (isEmailValid && isPassValid && isPinValid) {
       setUser(DEFAULT_ADMIN);
@@ -676,6 +688,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
+      adminPin, updateAdminPin,
       language, setLanguage, t,
       categories, addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
       deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 

@@ -13,7 +13,7 @@ import {
   Database, Plus, Sparkles, Upload, AlertTriangle, LogOut, Megaphone, 
   Bell, Radio, ShieldAlert, Download, FileSpreadsheet, Terminal, 
   Clock, Server, DollarSign, Image, User, Users, FileText, CheckCircle2,
-  AlertOctagon, Gavel, Filter, ArrowUpRight
+  AlertOctagon, Gavel, Filter, ArrowUpRight, Key
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -24,13 +24,16 @@ export const AdminDashboard: React.FC = () => {
     listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest, announcements, addAnnouncement, 
-    toggleAnnouncement, deleteAnnouncement, reports, processReport, auditLogs, analytics
+    toggleAnnouncement, deleteAnnouncement, reports, processReport, auditLogs, analytics,
+    adminPin, updateAdminPin
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'moderation' | 'audit'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [newPinInput, setNewPinInput] = useState('');
 
   // New Category State
   const [newCatName, setNewCatName] = useState('');
@@ -74,6 +77,17 @@ export const AdminDashboard: React.FC = () => {
     toast.success('Global broadcast published live to header banner!');
   };
 
+  const handleUpdatePin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPinInput || newPinInput.trim().length < 4) {
+      toast.error('Please enter a valid PIN (at least 4-6 digits)');
+      return;
+    }
+    updateAdminPin(newPinInput.trim());
+    setIsPinModalOpen(false);
+    setNewPinInput('');
+  };
+
   const formatNGN = (amount: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(amount);
 
   if (!isAdmin) return (
@@ -102,7 +116,15 @@ export const AdminDashboard: React.FC = () => {
               <p className="text-xs text-slate-400">Total System Control • Encrypted Administrative Access</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 relative z-10">
+          <div className="flex items-center gap-2 relative z-10 flex-wrap">
+            <button 
+              onClick={() => setIsPinModalOpen(true)} 
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-rose-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+            >
+              <Key className="w-4 h-4" />
+              <span>CHANGE PIN</span>
+            </button>
+
             <button 
               onClick={() => setIsSqlModalOpen(true)} 
               className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
@@ -110,6 +132,7 @@ export const AdminDashboard: React.FC = () => {
               <Database className="w-4 h-4" />
               <span>SQL SCHEMA</span>
             </button>
+
             <button 
               onClick={logout} 
               className="p-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/30"
@@ -607,6 +630,51 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* Change Security PIN Modal */}
+      {isPinModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100">
+            <button
+              onClick={() => setIsPinModalOpen(false)}
+              className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <form onSubmit={handleUpdatePin} className="space-y-4">
+              <div className="text-center space-y-1">
+                <div className="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30">
+                  <Key className="w-6 h-6" />
+                </div>
+                <h3 className="font-extrabold text-xl text-white">Update Admin Security PIN</h3>
+                <p className="text-xs text-slate-400">Current PIN: <span className="font-mono text-emerald-400 font-bold">{adminPin}</span></p>
+              </div>
+
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">New Master Security PIN *</label>
+                <input
+                  type="password"
+                  required
+                  maxLength={6}
+                  value={newPinInput}
+                  onChange={(e) => setNewPinInput(e.target.value)}
+                  placeholder="Enter new 6-digit PIN"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono tracking-widest text-white focus:outline-none focus:border-rose-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save New Master Security PIN</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <AdminEditUserModal 
         user={editingUser} 
