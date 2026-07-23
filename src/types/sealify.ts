@@ -21,6 +21,7 @@ export interface UserProfile {
   fullName: string;
   phoneNumber: string;
   avatarUrl: string;
+  storeBannerUrl?: string;
   role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
   verificationType?: VerificationBadgeType;

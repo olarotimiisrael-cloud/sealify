@@ -9,7 +9,7 @@ import SEO from '../components/SEO';
 import { 
   ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, 
   KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap, Building2, MapPin, Sparkles,
-  Phone, AlertTriangle
+  Phone, AlertTriangle, Layout
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,9 +21,17 @@ const SAMPLE_AVATARS = [
   'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
 ];
 
+const SAMPLE_BANNERS = [
+  'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&auto=format&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&auto=format&fit=crop&q=80',
+];
+
 const Settings: React.FC = () => {
-  const { user, updateUser } = useSealify();
+  const { user, updateUser, isAdmin } = useSealify();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const [editingProfile, setEditingProfile] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -33,6 +41,7 @@ const Settings: React.FC = () => {
   const [location, setLocation] = useState(user?.location || 'Ogbomoso, Oyo State');
   const [businessName, setBusinessName] = useState(user?.businessName || '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
+  const [selectedBanner, setSelectedBanner] = useState(user?.storeBannerUrl || SAMPLE_BANNERS[0]);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -57,21 +66,39 @@ const Settings: React.FC = () => {
     );
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size is too large (max 5MB)');
+      toast.error('Avatar image size is too large (max 5MB)');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        const dataUrl = event.target.result as string;
-        setSelectedAvatar(dataUrl);
-        toast.success('Photo loaded! Click "Save Profile & Branding" to confirm.');
+        setSelectedAvatar(event.target.result as string);
+        toast.success('Avatar photo loaded! Click "Save Profile & Branding" to confirm.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error('Storefront cover photo is too large (max 8MB)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setSelectedBanner(event.target.result as string);
+        toast.success('Storefront cover banner loaded!');
       }
     };
     reader.readAsDataURL(file);
@@ -85,9 +112,10 @@ const Settings: React.FC = () => {
       location,
       businessName: businessName.trim() || undefined,
       avatarUrl: selectedAvatar,
+      storeBannerUrl: selectedBanner,
     });
     setEditingProfile(false);
-    toast.success('🎉 Profile photo, location and store branding updated!');
+    toast.success('🎉 Profile photo, storefront cover banner, and location updated successfully!');
   };
 
   const handleStatusUpdate = (role: 'buyer' | 'seller' | 'admin') => {
@@ -109,32 +137,59 @@ const Settings: React.FC = () => {
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between pb-6 border-b border-slate-800 gap-4">
-            <div className="flex items-center gap-4 text-center sm:text-left">
+        
+        {/* Storefront Cover Preview Banner */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+          <div className="h-44 sm:h-52 w-full bg-slate-950 relative overflow-hidden">
+            <img
+              src={selectedBanner || user.storeBannerUrl || SAMPLE_BANNERS[0]}
+              alt="Store Cover Banner"
+              className="w-full h-full object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+            
+            <button
+              onClick={() => {
+                setEditingProfile(true);
+                setTimeout(() => bannerInputRef.current?.click(), 100);
+              }}
+              className="absolute top-4 right-4 p-2 bg-slate-950/80 backdrop-blur-md text-emerald-400 hover:text-white rounded-xl border border-slate-800 text-xs font-bold flex items-center gap-1.5 shadow"
+            >
+              <Layout className="w-3.5 h-3.5" />
+              <span>Change Cover Photo</span>
+            </button>
+          </div>
+
+          <div className="p-6 -mt-16 sm:-mt-20 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 text-center sm:text-left">
               <div className="relative group">
                 <img
                   src={selectedAvatar || user.avatarUrl}
                   alt={user.fullName}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
                   onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                     e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
                   }}
                 />
                 <button
                   onClick={() => setEditingProfile(true)}
-                  className="absolute -bottom-1 -right-1 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow font-black hover:scale-110 transition-transform"
+                  className="absolute bottom-1 right-1 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow font-black hover:scale-110 transition-transform"
                   title="Upload profile photo"
                 >
                   <Camera className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="flex flex-col">
+              <div className="flex flex-col mb-1">
                 <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                  <h1 className="text-xl sm:text-2xl font-black text-white">{user.fullName}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white">{user.fullName}</h1>
                   {user.verified && (
                     <VerifiedBadge type={user.verificationType || 'individual'} showText />
+                  )}
+                  {isAdmin && (
+                    <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-md">
+                      ADMINISTRATOR
+                    </span>
                   )}
                 </div>
                 {user.businessName && (
@@ -144,72 +199,72 @@ const Settings: React.FC = () => {
                   </p>
                 )}
                 <p className="text-slate-400 text-xs mt-0.5">{user.email} • {user.phoneNumber || 'No phone set'}</p>
-                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1 flex items-center justify-center sm:justify-start gap-1">
-                  <UserCheck className="w-3 h-3" />
-                  Currently: {user.role === 'admin' ? 'Administrator' : user.role}
-                </span>
               </div>
             </div>
 
             <button
               onClick={() => setEditingProfile(!editingProfile)}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
+              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 shadow"
             >
               <Edit3 className="w-4 h-4 text-emerald-400" />
-              <span>{editingProfile ? 'Cancel Editing' : 'Edit Photo & Details'}</span>
+              <span>{editingProfile ? 'Cancel Editing' : 'Edit Profile & Cover'}</span>
             </button>
           </div>
+        </div>
 
-          {/* Trading Intent / Role Switcher */}
-          <div className="p-5 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-4">
-             <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest">
-                <Zap className="w-4 h-4" />
-                <span>Trading Visibility & Intent</span>
-             </div>
-             
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button
-                  onClick={() => handleStatusUpdate('buyer')}
-                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-                    user.role === 'buyer' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
-                  }`}
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  <span className="text-[10px]">Currently Buying</span>
-                </button>
+        {/* Trading Visibility & Intent Switcher */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+           <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest">
+              <Zap className="w-4 h-4" />
+              <span>Trading Visibility & Intent</span>
+           </div>
+           
+           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                onClick={() => handleStatusUpdate('buyer')}
+                className={`p-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                  user.role === 'buyer' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                }`}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span className="text-xs">Currently Buying</span>
+              </button>
 
-                <button
-                  onClick={() => handleStatusUpdate('seller')}
-                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-                    user.role === 'seller' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
-                  }`}
-                >
-                  <Store className="w-5 h-5" />
-                  <span className="text-[10px]">Currently Selling</span>
-                </button>
+              <button
+                onClick={() => handleStatusUpdate('seller')}
+                className={`p-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                  user.role === 'seller' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                }`}
+              >
+                <Store className="w-5 h-5" />
+                <span className="text-xs">Currently Selling</span>
+              </button>
 
-                <button
-                  onClick={() => handleStatusUpdate('admin')}
-                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
-                    user.role === 'admin' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
-                  }`}
-                >
-                  <ShieldCheck className="w-5 h-5" />
-                  <span className="text-[10px]">Seamless (Both)</span>
-                </button>
-             </div>
-          </div>
+              <button
+                onClick={() => handleStatusUpdate('admin')}
+                className={`p-3.5 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                  user.role === 'admin' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                }`}
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span className="text-xs">Seamless (Both)</span>
+              </button>
+           </div>
+        </div>
 
-          {editingProfile && (
-            <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs animate-in fade-in duration-200">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider">
-                <Camera className="w-4 h-4" />
-                <span>Store Branding & Profile Details</span>
-              </div>
+        {/* Profile Editing Form Box */}
+        {editingProfile && (
+          <div className="bg-slate-900 border border-emerald-500/30 p-6 rounded-3xl space-y-6 text-xs shadow-2xl animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-wider text-sm">
+              <Camera className="w-5 h-5" />
+              <span>Storefront Branding & Profile Photos</span>
+            </div>
 
-              {/* Avatar Preset Choice */}
-              <div className="space-y-2">
-                <label className="font-bold text-slate-300 block">Choose Avatar Preset</label>
+            {/* Avatar & Cover Banner Choice */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Profile Avatar Options */}
+              <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <label className="font-bold text-slate-200 block">Profile Avatar Photo</label>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                   {SAMPLE_AVATARS.map((avUrl, i) => (
                     <button
@@ -224,128 +279,153 @@ const Settings: React.FC = () => {
                     </button>
                   ))}
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="font-bold text-slate-300 block">Or Upload Photo from Device</label>
                 <input
                   type="file"
                   ref={fileInputRef}
-                  onChange={handleFileUpload}
+                  onChange={handleAvatarUpload}
                   accept="image/*"
                   className="hidden"
                 />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-850 text-emerald-400 border border-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-850 text-emerald-400 border border-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Choose Image File (JPG/PNG)</span>
+                  <span>Upload Custom Profile Photo</span>
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Full Name *</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
+              {/* Cover Banner Options */}
+              <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                <label className="font-bold text-slate-200 block">Storefront Cover Banner (Optional)</label>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {SAMPLE_BANNERS.map((bannerUrl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedBanner(bannerUrl)}
+                      className={`w-16 h-10 rounded-xl overflow-hidden border-2 transition-transform shrink-0 ${
+                        selectedBanner === bannerUrl ? 'border-emerald-500 scale-110 ring-2 ring-emerald-500/30' : 'border-slate-800 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={bannerUrl} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+                <input
+                  type="file"
+                  ref={bannerInputRef}
+                  onChange={handleBannerUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-850 text-teal-400 border border-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Image className="w-4 h-4" />
+                  <span>Upload Cover Banner Photo</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Full Name *</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Business / Storefront Name</label>
-                  <input
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. Ogunleye Tech Store"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Phone Number</label>
+                <input
+                  type="tel"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Primary Location Area</label>
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="Ogbomoso, Oyo State"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Business / Storefront Name</label>
+                <input
+                  type="text"
+                  value={businessName}
+                  onChange={(e) => setBusinessName(e.target.value)}
+                  placeholder="e.g. Ogunleye Tech Store"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
               </div>
 
+              <div className="space-y-1">
+                <label className="font-bold text-slate-300">Primary Location Area</label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Ogbomoso, Oyo State"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSave}
+              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-1.5"
+            >
+              <Check className="w-4 h-4" />
+              <span>Save Profile & Storefront Branding</span>
+            </button>
+          </div>
+        )}
+
+        {/* Security & Password Reset Section */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Security & Credentials</h3>
+
+          <div className="space-y-3">
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-white uppercase flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" /> Password Security
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">Request NIN-verified password update</p>
+              </div>
               <button
-                onClick={handleSave}
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-1.5 mt-2"
+                onClick={() => setIsPasswordModalOpen(true)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition-all"
               >
-                <Check className="w-4 h-4" />
-                <span>Save Profile & Storefront Branding</span>
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Request Reset</span>
               </button>
             </div>
-          )}
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Security & Credentials</h3>
-
-            <div className="space-y-3">
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase flex items-center gap-2">
-                    <Lock className="w-3.5 h-3.5 text-emerald-400" /> Password Security
-                  </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Request NIN-verified password update</p>
-                </div>
-                <button
-                  onClick={() => setIsPasswordModalOpen(true)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center gap-2 border border-slate-700 transition-all"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>Request Reset</span>
-                </button>
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+              <div>
+                <h4 className="text-xs font-bold text-white uppercase">Two-Factor Security</h4>
+                <p className="text-xs text-emerald-400 font-semibold mt-0.5">Active protection via SMS & Email</p>
               </div>
+              <ShieldCheck className="w-5 h-5 text-emerald-400" />
+            </div>
 
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Two-Factor Security</h4>
-                  <p className="text-xs text-emerald-400 font-semibold mt-0.5">Active protection via SMS & Email</p>
-                </div>
-                <ShieldCheck className="w-5 h-5 text-emerald-400" />
-              </div>
-
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Account Status</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Active member since {user.memberSince || '2023'}</p>
-                </div>
-                <Calendar className="w-5 h-5 text-slate-500" />
-              </div>
-
-              <div className="pt-4 border-t border-slate-800">
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-2 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete Account & Erase Personal Data</span>
-                </button>
-              </div>
+            <div className="pt-4 border-t border-slate-800">
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-2 text-xs font-bold text-rose-400 hover:text-rose-300 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete Account & Erase Personal Data</span>
+              </button>
             </div>
           </div>
         </div>

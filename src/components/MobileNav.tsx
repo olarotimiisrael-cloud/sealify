@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Heart, PlusCircle, MessageSquare, User, Shield } from 'lucide-react';
+import { Home, Heart, PlusCircle, MessageSquare, Shield, User } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 
@@ -82,11 +82,20 @@ export const MobileNav: React.FC = () => {
             )}
           </NavLink>
 
+          {/* Prominent Profile Avatar Button */}
           <button
             onClick={handleAccountClick}
             className="flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors text-slate-400 hover:text-slate-200"
           >
-            {isAdmin ? (
+            {user?.avatarUrl ? (
+              <div className="relative mb-0.5">
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName}
+                  className="w-5 h-5 rounded-full object-cover border border-emerald-500"
+                />
+              </div>
+            ) : isAdmin ? (
               <Shield className="w-5 h-5 mb-0.5 text-rose-400" />
             ) : (
               <User className="w-5 h-5 mb-0.5" />

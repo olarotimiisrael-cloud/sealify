@@ -53,8 +53,9 @@ const SellerProfile: React.FC = () => {
   const sampleListing = sellerListings[0] || listings[0];
 
   const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Verified Seller';
-  const businessName = sellerUser?.businessName || sampleListing?.title ? `${sellerName}'s Store` : 'Local Merchant';
+  const businessName = sellerUser?.businessName || (sampleListing?.title ? `${sellerName}'s Store` : 'Local Merchant');
   const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
+  const sellerBanner = sellerUser?.storeBannerUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
   const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
@@ -154,18 +155,28 @@ const SellerProfile: React.FC = () => {
           <span>Back to Marketplace</span>
         </Link>
 
-        {/* Profile Header Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+        {/* Profile Banner & Header Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+          {/* Custom Store Cover Photo */}
+          <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden">
+            <img
+              src={sellerBanner}
+              alt="Storefront Cover"
+              className="w-full h-full object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+          </div>
+
+          <div className="p-6 sm:p-8 -mt-16 sm:-mt-20 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
               <img
                 src={sellerAvatar}
                 alt={sellerName}
-                className="w-24 h-24 rounded-2xl object-cover border-2 border-emerald-500 shadow-lg"
+                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
               />
-              <div className="space-y-1">
+              <div className="space-y-1 mb-1">
                 <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                  <h1 className="text-2xl font-black text-white tracking-tight">{sellerName}</h1>
+                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{sellerName}</h1>
                   {sellerVerified && (
                     <VerifiedBadge type={sellerVerificationType} showText />
                   )}
@@ -187,12 +198,6 @@ const SellerProfile: React.FC = () => {
                     <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     Member since {memberSince}
                   </span>
-                  {sellerUser?.role && (
-                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-black uppercase text-[10px] flex items-center gap-1">
-                      <UserCheck className="w-3 h-3" />
-                      Currently {sellerUser.role === 'admin' ? 'Seamless' : sellerUser.role}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -239,13 +244,13 @@ const SellerProfile: React.FC = () => {
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex items-center gap-2 border-t border-slate-800/80 pt-4 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-2 border-t border-slate-800/80 p-4 bg-slate-950/60 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('listings')}
               className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'listings'
                   ? 'bg-emerald-500 text-slate-950 shadow'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+                  : 'bg-slate-900 text-slate-400 hover:text-white'
               }`}
             >
               <Package className="w-4 h-4" />
@@ -257,7 +262,7 @@ const SellerProfile: React.FC = () => {
               className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'overview'
                   ? 'bg-emerald-500 text-slate-950 shadow'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+                  : 'bg-slate-900 text-slate-400 hover:text-white'
               }`}
             >
               <Award className="w-4 h-4" />
@@ -269,7 +274,7 @@ const SellerProfile: React.FC = () => {
               className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'reviews'
                   ? 'bg-emerald-500 text-slate-950 shadow'
-                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+                  : 'bg-slate-900 text-slate-400 hover:text-white'
               }`}
             >
               <Star className="w-4 h-4" />
@@ -325,7 +330,6 @@ const SellerProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Merchant Operating Guidelines */}
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
               <h3 className="font-extrabold text-sm text-white uppercase tracking-wider flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-emerald-400" />
