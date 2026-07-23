@@ -16,7 +16,7 @@ import {
   CheckCircle2, History, Zap, Camera, KeyRound, UserCheck,
   ShieldQuestion, BarChart3, Radio, Clock, AlertTriangle, 
   Wallet, FileText, Check, X, ShieldX, ToggleLeft, ToggleRight,
-  ShieldCheck, Award
+  ShieldCheck, Award, Brain, BarChart
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,10 +30,11 @@ export const AdminDashboard: React.FC = () => {
     auditLogs, analytics, exportDatabaseBackup, broadcastMassNotification,
     disputeCases, processDisputeCase, intrusionLogs,
     systemConfig, updateSystemConfig, siteSettings, updateSiteSettings,
-    adminPin, updateAdminPin
+    adminPin, updateAdminPin, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
+    reports, processReport
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser' | 'disputes'>('analytics');
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [userSearch, setUserSearch] = useState('');
@@ -43,10 +44,11 @@ export const AdminDashboard: React.FC = () => {
   const [newPin, setNewPin] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Broadcast state
+  // Broadcast & Announcement state
   const [bcTitle, setBcTitle] = useState('');
   const [bcMsg, setBcMsg] = useState('');
   const [bcTarget, setBcTarget] = useState<'all' | 'seller' | 'buyer'>('all');
+  const [newCatName, setNewCatName] = useState('');
 
   if (!isAdmin || !user) return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 text-center font-mono">
@@ -63,6 +65,7 @@ export const AdminDashboard: React.FC = () => {
   const pendingPasswords = passwordRequests.filter(r => r.status === 'pending');
   const activeDisputes = disputeCases.filter(c => c.status !== 'resolved');
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
+  const pendingReports = reports.filter(r => r.status === 'pending');
 
   const handleUpdatePin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +96,7 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     if (!bcTitle.trim() || !bcMsg.trim()) return;
     broadcastMassNotification(bcTitle, bcMsg, bcTarget);
+    addAnnouncement({ title: bcTitle, message: bcMsg, type: 'info', active: true });
     setBcTitle(''); setBcMsg('');
   };
 
@@ -152,6 +156,7 @@ export const AdminDashboard: React.FC = () => {
             { id: 'listings', label: 'Ad Inventory', icon: Package },
             { id: 'requests', label: 'Action Queue', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length },
             { id: 'finance', label: 'Treasury', icon: Wallet, badge: pendingPromoPay.length },
+            { id: 'disputes', label: 'Dispute Center', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400' },
             { id: 'categories', label: 'Market Grid', icon: Layout },
             { id: 'security', label: 'Threat Logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500' },
             { id: 'logs', label: 'Audit Trail', icon: History },
@@ -261,269 +266,6 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Tab: Requests / Action Queue */}
-          {activeTab === 'requests' && (
-            <div className="space-y-6 animate-in fade-in duration-500">
-              <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
-                <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><BadgeCheck className="w-5 h-5 text-emerald-400" /> Identity & Security Queue</h3>
-                
-                <div className="space-y-4">
-                  {pendingVerifications.length === 0 && pendingPasswords.length === 0 ? (
-                    <div className="py-20 text-center space-y-3 opacity-30">
-                      <CheckCircle2 className="w-12 h-12 mx-auto" />
-                      <p className="text-[10px] font-black uppercase tracking-widest">Queue Clear: All citizen nodes verified</p>
-                    </div>
-                  ) : (
-                    <>
-                      {pendingVerifications.map(req => (
-                        <div key={req.id} className="p-5 bg-slate-950 border border-slate-800 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 group hover:border-emerald-500/30 transition-all">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0"><Award className="w-6 h-6" /></div>
-                            <div className="min-w-0">
-                              <h4 className="font-black text-white text-sm uppercase tracking-tight">Badge Request: {req.type}</h4>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase">{req.userName} • {req.userEmail}</p>
-                              <p className="text-[9px] text-slate-600 font-mono mt-0.5">DOC: {req.docType} (#{req.docNumber})</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                             <a href={req.docUrl} target="_blank" rel="noreferrer" className="p-2.5 bg-slate-900 text-blue-400 rounded-xl border border-slate-800 hover:bg-slate-800"><Eye className="w-4 h-4" /></a>
-                             <button onClick={() => processVerificationRequest(req.id, 'approved')} className="px-4 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase">Approve</button>
-                             <button onClick={() => processVerificationRequest(req.id, 'rejected')} className="px-4 py-2 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase">Reject</button>
-                          </div>
-                        </div>
-                      ))}
-                      {pendingPasswords.map(req => (
-                        <div key={req.id} className="p-5 bg-slate-950 border border-rose-500/20 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 group hover:border-rose-500/40 transition-all">
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-12 h-12 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400 shrink-0"><KeyRound className="w-6 h-6" /></div>
-                            <div className="min-w-0">
-                              <h4 className="font-black text-white text-sm uppercase tracking-tight">Secure Reset Request</h4>
-                              <p className="text-[10px] text-slate-500 font-bold uppercase">{req.userName} • NIN: {req.nin}</p>
-                              <p className="text-[9px] text-rose-400 font-bold mt-0.5 uppercase tracking-tighter">REASON: {req.reason}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                             <a href={req.id_document_url} target="_blank" rel="noreferrer" className="p-2.5 bg-slate-900 text-blue-400 rounded-xl border border-slate-800 hover:bg-slate-800"><Eye className="w-4 h-4" /></a>
-                             <button onClick={() => processPasswordRequest(req.id, 'approved')} className="px-4 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase">Auth Reset</button>
-                             <button onClick={() => processPasswordRequest(req.id, 'declined')} className="px-4 py-2 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase">Decline</button>
-                          </div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Tab: Finance / Treasury */}
-          {activeTab === 'finance' && (
-             <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pending Revenue</p>
-                      <p className="text-3xl font-black text-white">₦{pendingPromoPay.reduce((a,b)=>a+b.amount, 0).toLocaleString()}</p>
-                      <span className="text-[9px] font-bold text-amber-400 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">{pendingPromoPay.length} proof uploads</span>
-                   </div>
-                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verified Revenue</p>
-                      <p className="text-3xl font-black text-emerald-400">₦284,500</p>
-                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">Cycle: Oct-Nov</span>
-                   </div>
-                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Conversion Rate</p>
-                      <p className="text-3xl font-black text-blue-400">8.4%</p>
-                      <span className="text-[9px] font-bold text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">Ad Promotion Opt-in</span>
-                   </div>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
-                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Wallet className="w-5 h-5 text-emerald-400" /> Payment Verification Desk</h3>
-                   <div className="space-y-4">
-                      {pendingPromoPay.length === 0 ? (
-                        <div className="py-12 text-center opacity-30 italic text-[10px] uppercase font-black tracking-widest">No pending transactions found in ledger</div>
-                      ) : (
-                        pendingPromoPay.map(pay => (
-                          <div key={pay.id} className="p-5 bg-slate-950 border border-slate-800 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 group">
-                             <div className="flex items-center gap-4 min-w-0">
-                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"><DollarSign className="w-6 h-6" /></div>
-                                <div className="min-w-0">
-                                   <h4 className="font-black text-white text-sm uppercase">₦{pay.amount.toLocaleString()} - {pay.planName}</h4>
-                                   <p className="text-[9px] text-slate-500 font-mono">LISTING_UID: {pay.listingId}</p>
-                                   <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-tighter">METHOD: {pay.paymentMethod.toUpperCase()}</p>
-                                </div>
-                             </div>
-                             <div className="flex items-center gap-2">
-                                {pay.paymentProofUrl && (
-                                   <a href={pay.paymentProofUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-black text-blue-400 hover:bg-slate-800 transition-colors uppercase">View Receipt</a>
-                                )}
-                                <button onClick={() => processPromotionPaymentRequest(pay.id, 'approved')} className="p-2 bg-emerald-500 text-slate-950 rounded-xl hover:scale-105 transition-transform"><Check className="w-4.5 h-4.5" /></button>
-                                <button onClick={() => processPromotionPaymentRequest(pay.id, 'rejected')} className="p-2 bg-rose-600 text-white rounded-xl hover:scale-105 transition-transform"><X className="w-4.5 h-4.5" /></button>
-                             </div>
-                          </div>
-                        ))
-                      )}
-                   </div>
-                </div>
-             </div>
-          )}
-
-          {/* Tab: Settings / Global Config */}
-          {activeTab === 'settings' && (
-             <div className="space-y-6 animate-in fade-in duration-500">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                   <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 space-y-6">
-                      <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><SettingsIcon className="w-5 h-5 text-emerald-400" /> Platform Infrastructure</h3>
-                      <div className="space-y-5">
-                         {[
-                           { key: 'maintenanceMode', label: 'Global Maintenance Mode', desc: 'Deny access to all non-admin routes', icon: ShieldX },
-                           { key: 'autoApproveAds', label: 'Autonomous Ad Approval', desc: 'Bypass manual moderator review for new posts', icon: Zap },
-                           { key: 'requireIdForPosting', label: 'Mandatory Identity Verification', desc: 'Require Verified ID badge to post items', icon: BadgeCheck },
-                           { key: 'aiSpamFilter', label: 'AI Forensic Spam Filtering', desc: 'Enable neural network analysis for ad descriptions', icon: Brain }
-                         ].map(cfg => (
-                           <div key={cfg.key} className="flex items-center justify-between gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800/50">
-                              <div className="flex items-center gap-3 min-w-0">
-                                 <cfg.icon className={`w-5 h-5 shrink-0 ${(systemConfig as any)[cfg.key] ? 'text-emerald-400' : 'text-slate-600'}`} />
-                                 <div className="min-w-0">
-                                    <p className="text-[11px] font-black text-white uppercase tracking-tight">{cfg.label}</p>
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase truncate">{cfg.desc}</p>
-                                 </div>
-                              </div>
-                              <button onClick={() => updateSystemConfig({ [cfg.key]: !(systemConfig as any)[cfg.key] })} className="shrink-0 transition-transform active:scale-90">
-                                 {(systemConfig as any)[cfg.key] ? <ToggleRight className="w-10 h-10 text-emerald-500" /> : <ToggleLeft className="w-10 h-10 text-slate-800" />}
-                              </button>
-                           </div>
-                         ))}
-                      </div>
-                   </div>
-
-                   <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 space-y-6">
-                      <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Megaphone className="w-5 h-5 text-blue-400" /> Emergency Broadcast Node</h3>
-                      <form onSubmit={handleSendBroadcast} className="space-y-4">
-                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Transmission Subject</label>
-                            <input type="text" value={bcTitle} onChange={e => setBcTitle(e.target.value)} required placeholder="e.g. System Upgrade Notification" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500" />
-                         </div>
-                         <div className="space-y-1.5">
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Message Payload (Raw Text)</label>
-                            <textarea rows={3} value={bcMsg} onChange={e => setBcMsg(e.target.value)} required placeholder="Relay critical instructions to the fleet..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
-                         </div>
-                         <button type="submit" className="w-full py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
-                            <Radio className="w-4 h-4" /> Execute Broadcast
-                         </button>
-                      </form>
-                      <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-[10px] text-slate-500 font-bold leading-relaxed">
-                        <span className="text-blue-400 mr-1">NOTICE:</span> Broadcasts are pushed instantly to all logged-in client nodes and recorded in the Forensic Audit Log. Use with extreme caution.
-                      </div>
-                   </div>
-                </div>
-             </div>
-          )}
-
-          {/* Tab: Users */}
-          {activeTab === 'users' && (
-             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Users className="w-5 h-5 text-emerald-400" /> Account Federation Management</h3>
-                   <div className="relative w-full sm:w-80">
-                      <Search className="w-4.5 h-4.5 text-slate-500 absolute left-4 top-3" />
-                      <input 
-                        type="text" 
-                        placeholder="Filter by name, UID, or email..." 
-                        value={userSearch}
-                        onChange={e => setUserSearch(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-700" 
-                      />
-                   </div>
-                </div>
-
-                <div className="overflow-x-auto no-scrollbar">
-                   <table className="w-full text-xs text-left">
-                      <thead>
-                         <tr className="text-slate-600 font-black uppercase tracking-[0.2em] border-b border-slate-800">
-                            <th className="px-5 py-4">Node / Identity</th>
-                            <th className="px-5 py-4">Auth Level</th>
-                            <th className="px-5 py-4">Status</th>
-                            <th className="px-5 py-4 text-right">Actions</th>
-                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/40">
-                         {allUsers.filter(u => u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
-                            <tr key={u.id} className="hover:bg-slate-950/40 transition-colors group">
-                               <td className="px-5 py-5">
-                                  <div className="flex items-center gap-4">
-                                     <img src={u.avatarUrl} className="w-10 h-10 rounded-[1rem] object-cover border border-slate-800 group-hover:border-emerald-500/40 transition-colors" />
-                                     <div>
-                                        <p className="font-bold text-white text-sm">{u.fullName}</p>
-                                        <p className="text-[10px] text-slate-500 font-mono">{u.email}</p>
-                                     </div>
-                                  </div>
-                               </td>
-                               <td className="px-5 py-5">
-                                  <div className="flex flex-col items-start gap-1">
-                                     <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">{u.role}</span>
-                                     {u.verified && <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest ml-1">{u.verificationType} Badge</p>}
-                                  </div>
-                               </td>
-                               <td className="px-5 py-5">
-                                  <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${u.status === 'active' || !u.status ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' : 'text-rose-500 border-rose-500/20 bg-rose-500/5'}`}>{u.status || 'active'}</span>
-                               </td>
-                               <td className="px-5 py-5 text-right">
-                                  <div className="flex items-center justify-end gap-2.5">
-                                     <button onClick={() => setEditingUser(u)} className="p-2.5 bg-slate-900 text-blue-400 rounded-xl border border-slate-800 hover:bg-slate-800 transition-all"><Edit3 className="w-4 h-4" /></button>
-                                     {u.id !== user.id && <button onClick={() => deleteUser(u.id)} className="p-2.5 bg-slate-900 text-rose-500 rounded-xl border border-slate-800 hover:bg-rose-500/10 transition-all"><Trash2 className="w-4 h-4" /></button>}
-                                  </div>
-                               </td>
-                            </tr>
-                         ))}
-                      </tbody>
-                   </table>
-                </div>
-             </div>
-          )}
-
-          {/* Other tab sections: categories, logs, security, superuser, listings */}
-          {activeTab === 'listings' && (
-             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Package className="w-5 h-5 text-emerald-400" /> Marketplace Item Control</h3>
-                   <div className="relative w-full sm:w-80">
-                      <Search className="w-4.5 h-4.5 text-slate-500 absolute left-4 top-3" />
-                      <input 
-                        type="text" 
-                        placeholder="Search inventory..." 
-                        value={listingSearch}
-                        onChange={e => setListingSearch(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-700" 
-                      />
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   {listings.filter(l => l.title.toLowerCase().includes(listingSearch.toLowerCase())).map(l => (
-                      <div key={l.id} className="p-5 bg-slate-950 border border-slate-800 rounded-[1.5rem] flex items-center justify-between gap-4 group hover:border-emerald-500/30 transition-all">
-                         <div className="flex items-center gap-4 min-w-0">
-                            <img src={l.images[0]} className="w-16 h-16 rounded-xl object-cover border border-slate-800 group-hover:scale-105 transition-transform" />
-                            <div className="min-w-0 space-y-1">
-                               <h4 className="font-bold text-white text-sm truncate">{l.title}</h4>
-                               <p className="text-[11px] text-emerald-400 font-black">₦{l.price.toLocaleString()}</p>
-                               <div className="flex items-center gap-2 text-[9px] text-slate-500 uppercase font-black">
-                                  <span className="truncate">{l.sellerName}</span>
-                                  <span className="w-1 h-1 rounded-full bg-slate-800"></span>
-                                  <span>{l.location.split(',')[0]}</span>
-                               </div>
-                            </div>
-                         </div>
-                         <div className="flex items-center gap-2 shrink-0">
-                            <button onClick={() => updateListing(l.id, { featured: !l.featured })} className={`p-2.5 rounded-xl border transition-all ${l.featured ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-lg shadow-amber-900/10' : 'bg-slate-900 text-slate-600 border-slate-800 hover:text-white'}`}><Zap className="w-4 h-4 fill-current" /></button>
-                            <button onClick={() => deleteListing(l.id)} className="p-2.5 bg-slate-900 text-rose-500 rounded-xl border border-slate-800 hover:bg-rose-500/10 transition-all"><Trash2 className="w-4 h-4" /></button>
-                         </div>
-                      </div>
-                   ))}
-                </div>
-             </div>
-          )}
-
           {/* Tab: Superuser / Profile & PIN */}
           {activeTab === 'superuser' && (
             <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -609,49 +351,179 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Categories Tab */}
-          {activeTab === 'categories' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6 animate-in fade-in duration-300">
-               <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Layout className="w-5 h-5 text-emerald-400" /> Market Grid Architecture</h3>
-               
-               <form onSubmit={(e) => { e.preventDefault(); addCategory({ name: newCatName, color: 'bg-emerald-500', iconName: 'LayoutGrid' }); setNewCatName(''); }} className="flex gap-2">
-                  <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Node Name..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500" />
-                  <button type="submit" className="px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase shadow-lg hover:bg-emerald-400 transition-all">Add Category</button>
-               </form>
+          {/* Tab: Users */}
+          {activeTab === 'users' && (
+             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Users className="w-5 h-5 text-emerald-400" /> Account Federation Management</h3>
+                   <div className="relative w-full sm:w-80">
+                      <Search className="w-4.5 h-4.5 text-slate-500 absolute left-4 top-3" />
+                      <input 
+                        type="text" 
+                        placeholder="Filter by name, UID, or email..." 
+                        value={userSearch}
+                        onChange={e => setUserSearch(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-700" 
+                      />
+                   </div>
+                </div>
 
-               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {categories.map(cat => (
-                    <div key={cat.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between group">
-                       <div className="flex items-center gap-3">
-                          <div className={`w-8 h-8 rounded-lg ${cat.color} flex items-center justify-center text-white`}><Zap className="w-4 h-4" /></div>
-                          <span className="text-[11px] font-bold text-white uppercase">{cat.name}</span>
-                       </div>
-                       <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-slate-600 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                    </div>
-                  ))}
-               </div>
-            </div>
+                <div className="overflow-x-auto no-scrollbar">
+                   <table className="w-full text-xs text-left">
+                      <thead>
+                         <tr className="text-slate-600 font-black uppercase tracking-[0.2em] border-b border-slate-800">
+                            <th className="px-5 py-4">Node / Identity</th>
+                            <th className="px-5 py-4">Auth Level</th>
+                            <th className="px-5 py-4">Status</th>
+                            <th className="px-5 py-4 text-right">Actions</th>
+                         </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/40">
+                         {allUsers.filter(u => u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase())).map(u => (
+                            <tr key={u.id} className="hover:bg-slate-950/40 transition-colors group">
+                               <td className="px-5 py-5">
+                                  <div className="flex items-center gap-4">
+                                     <img src={u.avatarUrl} className="w-10 h-10 rounded-[1rem] object-cover border border-slate-800 group-hover:border-emerald-500/40 transition-colors" />
+                                     <div>
+                                        <p className="font-bold text-white text-sm">{u.fullName}</p>
+                                        <p className="text-[10px] text-slate-500 font-mono">{u.email}</p>
+                                     </div>
+                                  </div>
+                               </td>
+                               <td className="px-5 py-5">
+                                  <div className="flex flex-col items-start gap-1">
+                                     <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/5 px-2 py-1 rounded-lg border border-emerald-500/10">{u.role}</span>
+                                     {u.verified && <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest ml-1">{u.verificationType} Badge</p>}
+                                  </div>
+                               </td>
+                               <td className="px-5 py-5">
+                                  <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-lg border ${u.status === 'active' || !u.status ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' : 'text-rose-500 border-rose-500/20 bg-rose-500/5'}`}>{u.status || 'active'}</span>
+                               </td>
+                               <td className="px-5 py-5 text-right">
+                                  <div className="flex items-center justify-end gap-2.5">
+                                     <button onClick={() => setEditingUser(u)} className="p-2.5 bg-slate-900 text-blue-400 rounded-xl border border-slate-800 hover:bg-slate-800 transition-all"><Edit3 className="w-4 h-4" /></button>
+                                     {u.id !== user.id && <button onClick={() => deleteUser(u.id)} className="p-2.5 bg-slate-900 text-rose-500 rounded-xl border border-slate-800 hover:bg-rose-500/10 transition-all"><Trash2 className="w-4 h-4" /></button>}
+                                  </div>
+                               </td>
+                            </tr>
+                         ))}
+                      </tbody>
+                   </table>
+                </div>
+             </div>
           )}
 
-          {/* Audit Logs Tab */}
-          {activeTab === 'logs' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
-               <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><History className="w-5 h-5 text-emerald-400" /> Master Forensic Ledger</h3>
-               <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
-                  {auditLogs.map(log => (
-                    <div key={log.id} className="p-3.5 bg-slate-950 border border-slate-800/60 rounded-xl flex gap-3 text-[10px]">
-                       <span className="text-slate-600 font-mono shrink-0">[{log.createdAt}]</span>
-                       <div className="flex-1">
-                          <span className={`font-black uppercase mr-2 ${log.type === 'security' ? 'text-rose-400' : 'text-emerald-400'}`}>{log.action}:</span>
-                          <span className="text-slate-300">{log.details}</span>
-                       </div>
-                    </div>
-                  ))}
-               </div>
-            </div>
+          {/* Tab: Finance / Treasury */}
+          {activeTab === 'finance' && (
+             <div className="space-y-6 animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pending Revenue</p>
+                      <p className="text-3xl font-black text-white">₦{pendingPromoPay.reduce((a,b)=>a+b.amount, 0).toLocaleString()}</p>
+                      <span className="text-[9px] font-bold text-amber-400 bg-amber-500/5 px-2 py-0.5 rounded border border-amber-500/10">{pendingPromoPay.length} proof uploads</span>
+                   </div>
+                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Verified Revenue</p>
+                      <p className="text-3xl font-black text-emerald-400">₦284,500</p>
+                      <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">Cycle: Oct-Nov</span>
+                   </div>
+                   <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-2">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Conversion Rate</p>
+                      <p className="text-3xl font-black text-blue-400">8.4%</p>
+                      <span className="text-[9px] font-bold text-blue-400 bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">Ad Promotion Opt-in</span>
+                   </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Wallet className="w-5 h-5 text-emerald-400" /> Payment Verification Desk</h3>
+                   <div className="space-y-4">
+                      {pendingPromoPay.length === 0 ? (
+                        <div className="py-12 text-center opacity-30 italic text-[10px] uppercase font-black tracking-widest">No pending transactions found in ledger</div>
+                      ) : (
+                        pendingPromoPay.map(pay => (
+                          <div key={pay.id} className="p-5 bg-slate-950 border border-slate-800 rounded-[1.5rem] flex flex-col sm:flex-row items-center justify-between gap-4 group">
+                             <div className="flex items-center gap-4 min-w-0">
+                                <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 shrink-0"><DollarSign className="w-6 h-6" /></div>
+                                <div className="min-w-0">
+                                   <h4 className="font-black text-white text-sm uppercase">₦{pay.amount.toLocaleString()} - {pay.planName}</h4>
+                                   <p className="text-[9px] text-slate-500 font-mono">LISTING_UID: {pay.listingId}</p>
+                                   <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-tighter">METHOD: {pay.paymentMethod.toUpperCase()}</p>
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-2">
+                                {pay.paymentProofUrl && (
+                                   <a href={pay.paymentProofUrl} target="_blank" rel="noreferrer" className="px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-black text-blue-400 hover:bg-slate-800 transition-colors uppercase">View Receipt</a>
+                                )}
+                                <button onClick={() => processPromotionPaymentRequest(pay.id, 'approved')} className="p-2 bg-emerald-500 text-slate-950 rounded-xl hover:scale-105 transition-transform"><Check className="w-4.5 h-4.5" /></button>
+                                <button onClick={() => processPromotionPaymentRequest(pay.id, 'rejected')} className="p-2 bg-rose-600 text-white rounded-xl hover:scale-105 transition-transform"><X className="w-4.5 h-4.5" /></button>
+                             </div>
+                          </div>
+                        ))
+                      )}
+                   </div>
+                </div>
+             </div>
           )}
 
-          {/* Threat Logs Tab */}
+          {/* Tab: Disputes & Reports */}
+          {activeTab === 'disputes' && (
+             <div className="space-y-6 animate-in fade-in duration-500">
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Gavel className="w-5 h-5 text-rose-400" /> Arbitration & Moderation Hub</h3>
+                   
+                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Trade Disputes ({activeDisputes.length})</p>
+                         {activeDisputes.length === 0 ? (
+                            <div className="p-12 text-center bg-slate-950 rounded-3xl border border-slate-800 opacity-30 text-[10px] font-black uppercase">Neutral Ground: Zero active disputes</div>
+                         ) : (
+                            activeDisputes.map(c => (
+                               <div key={c.id} className="p-5 bg-slate-950 border border-rose-500/20 rounded-2xl space-y-3">
+                                  <div className="flex justify-between items-start">
+                                     <div>
+                                        <p className="text-[10px] font-mono text-emerald-400">{c.id}</p>
+                                        <h4 className="font-bold text-white text-xs mt-0.5">{c.itemTitle}</h4>
+                                     </div>
+                                     <span className="text-[8px] font-black bg-rose-600 text-white px-1.5 py-0.5 rounded">{c.status.toUpperCase()}</span>
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 italic">"{c.reason}"</p>
+                                  <div className="flex gap-2 pt-2 border-t border-slate-900">
+                                     <button onClick={() => processDisputeCase(c.id, 'in_review')} className="flex-1 py-2 bg-slate-900 border border-slate-800 text-[9px] font-black uppercase text-amber-400 rounded-lg">Review</button>
+                                     <button onClick={() => processDisputeCase(c.id, 'resolved')} className="flex-1 py-2 bg-emerald-500 text-slate-950 text-[9px] font-black uppercase rounded-lg">Resolve</button>
+                                  </div>
+                               </div>
+                            ))
+                         )}
+                      </div>
+
+                      <div className="space-y-4">
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Item Safety Reports ({pendingReports.length})</p>
+                         {pendingReports.length === 0 ? (
+                            <div className="p-12 text-center bg-slate-950 rounded-3xl border border-slate-800 opacity-30 text-[10px] font-black uppercase">Perimeter Clear: Zero flagged items</div>
+                         ) : (
+                            pendingReports.map(rep => (
+                               <div key={rep.id} className="p-5 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                                  <div className="flex justify-between items-start gap-3">
+                                     <div className="min-w-0">
+                                        <h4 className="font-bold text-white text-xs truncate">{rep.listingTitle}</h4>
+                                        <p className="text-[9px] text-rose-400 font-bold uppercase mt-0.5">{rep.reason}</p>
+                                     </div>
+                                     <button onClick={() => deleteListing(rep.listingId)} className="p-2 bg-rose-600 text-white rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                  <div className="flex gap-2">
+                                     <button onClick={() => processReport(rep.id, 'dismiss')} className="flex-1 py-2 bg-slate-900 border border-slate-800 text-[9px] font-black uppercase text-slate-400 rounded-lg">Dismiss</button>
+                                     <Link to={`/listing/${rep.listingId}`} className="flex-1 py-2 bg-slate-800 text-white text-[9px] font-black uppercase text-center rounded-lg">Inspect Ad</Link>
+                                  </div>
+                               </div>
+                            ))
+                         )}
+                      </div>
+                   </div>
+                </div>
+             </div>
+          )}
+
+          {/* Tab: Security / Threat Logs */}
           {activeTab === 'security' && (
              <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
                 <div className="flex items-center justify-between">
@@ -689,6 +561,142 @@ export const AdminDashboard: React.FC = () => {
              </div>
           )}
 
+          {/* Tab: Settings / Global Config */}
+          {activeTab === 'settings' && (
+             <div className="space-y-6 animate-in fade-in duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                   <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 space-y-6">
+                      <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><SettingsIcon className="w-5 h-5 text-emerald-400" /> Platform Infrastructure</h3>
+                      <div className="space-y-5">
+                         {[
+                           { key: 'maintenanceMode', label: 'Global Maintenance Mode', desc: 'Deny access to all non-admin routes', icon: ShieldX },
+                           { key: 'autoApproveAds', label: 'Autonomous Ad Approval', desc: 'Bypass manual moderator review for new posts', icon: Zap },
+                           { key: 'requireIdForPosting', label: 'Mandatory Identity Verification', desc: 'Require Verified ID badge to post items', icon: BadgeCheck },
+                           { key: 'aiSpamFilter', label: 'AI Forensic Spam Filtering', desc: 'Enable neural network analysis for ad descriptions', icon: Brain }
+                         ].map(cfg => (
+                           <div key={cfg.key} className="flex items-center justify-between gap-4 p-4 bg-slate-950 rounded-2xl border border-slate-800/50">
+                              <div className="flex items-center gap-3 min-w-0">
+                                 <cfg.icon className={`w-5 h-5 shrink-0 ${(systemConfig as any)[cfg.key] ? 'text-emerald-400' : 'text-slate-600'}`} />
+                                 <div className="min-w-0">
+                                    <p className="text-[11px] font-black text-white uppercase tracking-tight">{cfg.label}</p>
+                                    <p className="text-[9px] text-slate-500 font-bold uppercase truncate">{cfg.desc}</p>
+                                 </div>
+                              </div>
+                              <button onClick={() => updateSystemConfig({ [cfg.key]: !(systemConfig as any)[cfg.key] })} className="shrink-0 transition-transform active:scale-90">
+                                 {(systemConfig as any)[cfg.key] ? <ToggleRight className="w-10 h-10 text-emerald-500" /> : <ToggleLeft className="w-10 h-10 text-slate-800" />}
+                              </button>
+                           </div>
+                         ))}
+                      </div>
+                   </div>
+
+                   <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 space-y-6">
+                      <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Megaphone className="w-5 h-5 text-blue-400" /> Emergency Broadcast Node</h3>
+                      <form onSubmit={handleSendBroadcast} className="space-y-4">
+                         <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Transmission Subject</label>
+                            <input type="text" value={bcTitle} onChange={e => setBcTitle(e.target.value)} required placeholder="e.g. System Upgrade Notification" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500" />
+                         </div>
+                         <div className="space-y-1.5">
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Message Payload (Raw Text)</label>
+                            <textarea rows={3} value={bcMsg} onChange={e => setBcMsg(e.target.value)} required placeholder="Relay critical instructions to the fleet..." className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-200 focus:outline-none focus:border-blue-500" />
+                         </div>
+                         <button type="submit" className="w-full py-4 bg-blue-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest shadow-xl shadow-blue-900/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-2">
+                            <Radio className="w-4 h-4" /> Execute Broadcast
+                         </button>
+                      </form>
+                      <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-[10px] text-slate-500 font-bold leading-relaxed">
+                        <span className="text-blue-400 mr-1">NOTICE:</span> Broadcasts are pushed instantly to all logged-in client nodes and recorded in the Forensic Audit Log. Use with extreme caution.
+                      </div>
+                   </div>
+                </div>
+             </div>
+          )}
+
+          {/* Tab: Marketplace Categories */}
+          {activeTab === 'categories' && (
+             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6 animate-in fade-in duration-300">
+                <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Layout className="w-5 h-5 text-emerald-400" /> Market Grid Architecture</h3>
+                
+                <form onSubmit={(e) => { e.preventDefault(); if(!newCatName) return; addCategory({ name: newCatName, color: 'bg-emerald-500', iconName: 'LayoutGrid', count: 0 }); setNewCatName(''); }} className="flex gap-2">
+                   <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="Node Name (e.g. Industrial Equipment)..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-bold" />
+                   <button type="submit" className="px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase shadow-lg hover:bg-emerald-400 transition-all">Add Node</button>
+                </form>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                   {categories.map(cat => (
+                     <div key={cat.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between group">
+                        <div className="flex items-center gap-3">
+                           <div className={`w-8 h-8 rounded-lg ${cat.color} flex items-center justify-center text-white`}><Zap className="w-4 h-4" /></div>
+                           <span className="text-[11px] font-bold text-white uppercase">{cat.name}</span>
+                        </div>
+                        <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-slate-600 hover:text-rose-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                     </div>
+                   ))}
+                </div>
+             </div>
+          )}
+
+          {/* Tab: Audit Logs */}
+          {activeTab === 'logs' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
+               <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><History className="w-5 h-5 text-emerald-400" /> Master Forensic Ledger</h3>
+               <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1 no-scrollbar">
+                  {auditLogs.map(log => (
+                    <div key={log.id} className="p-3.5 bg-slate-950 border border-slate-800/60 rounded-xl flex gap-3 text-[10px]">
+                       <span className="text-slate-600 font-mono shrink-0">[{log.createdAt}]</span>
+                       <div className="flex-1">
+                          <span className={`font-black uppercase mr-2 ${log.type === 'security' ? 'text-rose-400' : 'text-emerald-400'}`}>{log.action}:</span>
+                          <span className="text-slate-300">{log.details}</span>
+                       </div>
+                    </div>
+                  ))}
+               </div>
+            </div>
+          )}
+
+          {/* Tab: Listings Inventory */}
+          {activeTab === 'listings' && (
+             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 animate-in fade-in duration-300">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                   <h3 className="font-black text-white text-sm uppercase tracking-[0.2em] flex items-center gap-3"><Package className="w-5 h-5 text-emerald-400" /> Marketplace Item Control</h3>
+                   <div className="relative w-full sm:w-80">
+                      <Search className="w-4.5 h-4.5 text-slate-500 absolute left-4 top-3" />
+                      <input 
+                        type="text" 
+                        placeholder="Search inventory..." 
+                        value={listingSearch}
+                        onChange={e => setListingSearch(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 placeholder:text-slate-700" 
+                      />
+                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {listings.filter(l => l.title.toLowerCase().includes(listingSearch.toLowerCase())).map(l => (
+                      <div key={l.id} className="p-5 bg-slate-950 border border-slate-800 rounded-[1.5rem] flex items-center justify-between gap-4 group hover:border-emerald-500/30 transition-all">
+                         <div className="flex items-center gap-4 min-w-0">
+                            <img src={l.images[0]} className="w-16 h-16 rounded-xl object-cover border border-slate-800 group-hover:scale-105 transition-transform" />
+                            <div className="min-w-0 space-y-1">
+                               <h4 className="font-bold text-white text-sm truncate">{l.title}</h4>
+                               <p className="text-[11px] text-emerald-400 font-black">₦{l.price.toLocaleString()}</p>
+                               <div className="flex items-center gap-2 text-[9px] text-slate-500 uppercase font-black">
+                                  <span className="truncate">{l.sellerName}</span>
+                                  <span className="w-1 h-1 rounded-full bg-slate-800"></span>
+                                  <span>{l.location.split(',')[0]}</span>
+                               </div>
+                            </div>
+                         </div>
+                         <div className="flex items-center gap-2 shrink-0">
+                            <button onClick={() => updateListing(l.id, { featured: !l.featured })} className={`p-2.5 rounded-xl border transition-all ${l.featured ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-lg shadow-amber-900/10' : 'bg-slate-900 text-slate-600 border-slate-800 hover:text-white'}`} title="Toggle Top Ad Boost"><Zap className="w-4 h-4 fill-current" /></button>
+                            <button onClick={() => deleteListing(l.id)} className="p-2.5 bg-slate-900 text-rose-500 rounded-xl border border-slate-800 hover:bg-rose-500/10 transition-all"><Trash2 className="w-4 h-4" /></button>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             </div>
+          )}
+
         </div>
       </main>
 
@@ -698,8 +706,5 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
-
-// Sub-component for Icon display
-const Brain = ({ className }: { className?: string }) => <Cpu className={className} />;
 
 export default AdminDashboard;
