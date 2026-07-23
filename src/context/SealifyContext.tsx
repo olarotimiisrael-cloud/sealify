@@ -233,8 +233,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [categories, setCategories] = useState(() => {
     const saved = localStorage.getItem('sealify_categories');
     return saved ? JSON.parse(saved) : [
-      { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 120, color: 'bg-blue-500' },
-      { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 340, color: 'bg-purple-500' },
+      { id: 'cat_1', name: 'Vehicles', iconName: 'Car', count: 120, color: 'bg-blue-500' },
+      { id: 'cat_2', name: 'Electronics', iconName: 'Smartphone', count: 340, color: 'bg-purple-500' },
+      { id: 'cat_3', name: 'Real Estate', iconName: 'Home', count: 85, color: 'bg-teal-500' },
+      { id: 'cat_4', name: 'Fashion', iconName: 'Shirt', count: 210, color: 'bg-pink-500' },
     ];
   });
 
@@ -264,6 +266,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_listings', JSON.stringify(listings));
   }, [listings]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_categories', JSON.stringify(categories));
+  }, [categories]);
 
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
@@ -306,7 +312,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const processDisputeCase = useCallback((id: string, status: 'pending' | 'in_review' | 'resolved') => {
     setDisputeCases(prev => prev.map(c => c.id === id ? { ...c, status } : c));
     toast.success(`Dispute updated to ${status}`);
-  }, []);
+    addAuditLog('Dispute Updated', `Status of #${id} set to ${status}`, 'dispute');
+  }, [addAuditLog]);
 
   const exportDatabaseBackup = useCallback(() => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify({ allUsers, listings }));
@@ -335,7 +342,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       status: 'flagged'
     };
     setIntrusionLogs(prev => [intrusion, ...prev]);
-  }, []);
+    addAuditLog('Security Alert', `Intrusion detection log created for ${email}`, 'intrusion');
+  }, [addAuditLog]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -344,7 +352,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const broadcastMassNotification = useCallback((title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => {
     addNotification({ type: 'system', title: `📢 ${title}`, description: message });
     toast.success(`Broadcast sent!`);
-  }, [addNotification]);
+    addAuditLog('Mass Broadcast', `Notification "${title}" sent to ${targetRole}`, 'broadcast');
+  }, [addNotification, addAuditLog]);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en'][key] || key;
@@ -369,6 +378,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password && (!pin || pin === adminPin)) {
       setUser(DEFAULT_ADMIN);
       localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      addAuditLog('Admin Login', `Root session initialized for ${email}`, 'security');
       return true;
     }
     return false;
@@ -382,6 +392,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateUser = (id: string, updatedData: Partial<UserProfile>) => {
     setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
     if (user?.id === id) setUser(prev => prev ? { ...prev, ...updatedData } : null);
+    addAuditLog('User Update', `Modified record for UID: ${id}`, 'user');
   };
 
   const deleteUser = (id: string) => setAllUsers(prev => prev.filter(u => u.id !== id));
@@ -392,11 +403,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...data, id: 'lst_' + Date.now(), sellerId: user.id, sellerName: user.fullName, sellerAvatar: user.avatarUrl, sellerPhone: user.phoneNumber || '+234 813 120 8468', sellerVerified: user.verified, status: 'active', viewsCount: 0, createdAt: 'Just now'
     };
     setListings(prev => [newListing, ...prev]);
+    addAuditLog('Ad Posted', `User ${user.fullName} created "${data.title}"`, 'ad');
   };
 
   const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
 
-  const deleteListing = (id: string) => setListings(prev => prev.filter(l => l.id !== id));
+  const deleteListing = (id: string) => {
+    setListings(prev => prev.filter(l => l.id !== id));
+    addAuditLog('Ad Deleted', `Listing ID ${id} removed from global inventory`, 'ad');
+  };
 
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
   
@@ -464,7 +479,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
       adminPin, updateAdminPin, systemConfig, updateSystemConfig, siteSettings, updateSiteSettings, exportDatabaseBackup,
       language, setLanguage, t,
-      categories, addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
+      categories, 
+      addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
       deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(categories.map(c => c.id === id ? { ...c, name } : c)),
       analytics, login, adminLogin, logout,
