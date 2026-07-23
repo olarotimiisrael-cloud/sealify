@@ -540,7 +540,7 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => processPromotionPaymentRequest(req.id, 'declined')} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => processPromotionPaymentRequest(req.id, 'rejected')} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                             <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="p-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all"><Check className="w-4 h-4" /></button>
                           </div>
                         </td>
@@ -583,7 +583,7 @@ export const AdminDashboard: React.FC = () => {
                     <Area type="monotone" dataKey="v" stroke="#10b981" strokeWidth={3} fillOpacity={0.1} fill="#10b981" />
                   </AreaChart>
                 </ResponsiveContainer>
-              }
+              </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
@@ -596,7 +596,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="w-8 h-4 bg-emerald-500 rounded-full"></div>
                 </div>
-              }
+              </div>
             </div>
           </div>
         )}
@@ -610,8 +610,8 @@ export const AdminDashboard: React.FC = () => {
                   <Zap className="w-5 h-5 text-amber-400" />
                   Active Promotions ({promotedAds.length})
                 </h3>
-              </div
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {promotedAds.map(ad => (
                   <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>

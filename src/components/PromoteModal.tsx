@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   X, 
   Zap, 
@@ -51,6 +51,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
   const [selectedMonths, setSelectedMonths] = useState<number>(1);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'ussd' | 'paystack' | 'opay'>('card');
   const [step, setStep] = useState<'plan' | 'payment' | 'processing'>('plan');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Payment form states
   const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
@@ -88,7 +89,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
       }
       // Submit payment proof request
       submitPromotionPaymentRequest({
-        userId: listing.sellerId, // we need the user id; we don't have it here, but we can get from context? We'll need to pass user id via listing or context.
+        userId: listing.sellerId,
         listingId: listing.id,
         amount: totalPriceNGN,
         paymentMethod: 'opay',
@@ -98,10 +99,6 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
       });
       // Simulate admin processing delay
       setTimeout(() => {
-        // In real app, admin would approve; we'll auto-approve for demo? Or we can leave pending.
-        // For now, we'll auto-approve after a short delay to simulate.
-        // But better to leave pending and let admin approve.
-        // We'll just show a message that it's submitted.
         toast.success('Payment proof submitted. Awaiting admin verification.');
         setStep('plan');
         onClose();
@@ -223,7 +220,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
               <span>Proceed to Multiple Payment Gateway ({formatNGN(totalPriceNGN)})</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          }
+          </div>
         ) : (
           /* Payment Step */
           <form onSubmit={handleExecutePayment} className="space-y-5">
@@ -242,7 +239,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
             </div>
 
             {/* Multiple Payment Options Tabs */}
-            <div className="grid grid-cols-4 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+            <div className="grid grid-cols-5 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('card')}
@@ -393,7 +390,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                 </div>
                 <div className="space-y-1">
                   <label className="font-bold text-slate-300 uppercase">Upload Payment Proof (JPG/PNG) *</label>
-                  <input type="file" accept="image/*" onChange={(e) => {
+                  <input type="file" ref={fileInputRef} accept="image/*" onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       const reader = new FileReader();
@@ -406,7 +403,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                   }} className="hidden" />
                   <button
                     type="button"
-                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    onClick={() => fileInputRef.current?.click()}
                     className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 ${
                       paymentProof ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
                     }`}

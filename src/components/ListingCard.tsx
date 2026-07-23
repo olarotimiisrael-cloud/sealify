@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag } from 'lucide-react';
+import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag, Calendar } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
