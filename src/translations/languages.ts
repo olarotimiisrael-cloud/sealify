@@ -33,7 +33,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Sign Out",
     welcome: "Welcome back",
     search_btn: "Search",
-    all_categories: "All Categories"
+    all_categories: "All Categories",
+    safe_escrow: "Safe Escrow"
   },
   'en-GB': {
     home: "Home",
@@ -50,7 +51,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     language: "Language",
     analytics: "Analytics",
     visitors: "Live Visitors",
-    total_ads: "Total Ads",
+    total_ads: "Total Adverts",
     sold_confirm: "Confirm this item is sold?",
     sold_confirm_desc: "Once confirmed, we will notify interested buyers.",
     my_ads: "My Adverts",
@@ -67,7 +68,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Sign Out",
     welcome: "Welcome back",
     search_btn: "Search",
-    all_categories: "All Categories"
+    all_categories: "All Categories",
+    safe_escrow: "Safe Escrow"
   },
   yo: {
     home: "Ile",
@@ -101,7 +103,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Jade",
     welcome: "Kaabo pada",
     search_btn: "Wa",
-    all_categories: "Gbogbo Ẹka"
+    all_categories: "Gbogbo Ẹka",
+    safe_escrow: "Aabo Escrow"
   },
   ru: {
     home: "Главная",
@@ -135,7 +138,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Выйти",
     welcome: "С возвращением",
     search_btn: "Поиск",
-    all_categories: "Все категории"
+    all_categories: "Все категории",
+    safe_escrow: "Безопасная сделка"
   },
   pg: {
     home: "Home",
@@ -169,7 +173,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Log out",
     welcome: "Welcome back",
     search_btn: "Search",
-    all_categories: "All Categories"
+    all_categories: "All Categories",
+    safe_escrow: "Safe Keep Money"
   },
   ha: {
     home: "Gida",
@@ -203,7 +208,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Fita",
     welcome: "Barka da dawowa",
     search_btn: "Nema",
-    all_categories: "Duk Rukunoni"
+    all_categories: "Duk Rukunoni",
+    safe_escrow: "Amintaccen Escrow"
   },
   fr: {
     home: "Accueil",
@@ -237,7 +243,8 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "Déconnexion",
     welcome: "Bienvenue",
     search_btn: "Rechercher",
-    all_categories: "Toutes les catégories"
+    all_categories: "Toutes les catégories",
+    safe_escrow: "Escrow Sécurisé"
   },
   zh: {
     home: "首页",
@@ -271,6 +278,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     logout: "登出",
     welcome: "欢迎回来",
     search_btn: "搜索",
-    all_categories: "所有类别"
+    all_categories: "所有类别",
+    safe_escrow: "安全托管"
   }
 };

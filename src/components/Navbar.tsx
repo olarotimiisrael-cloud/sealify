@@ -78,7 +78,7 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
           <Link to="/" className="flex items-center shrink-0">
-            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700">
+            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700 flex items-center gap-2">
               <img 
                 src={siteSettings.logoUrl} 
                 alt={siteSettings.siteName} 
@@ -111,7 +111,7 @@ const Navbar: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-teal-400 hover:text-teal-300 transition-colors mr-1 bg-teal-500/10 rounded-xl border border-teal-500/20"
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Safe Escrow</span>
+              <span>{t('safe_escrow')}</span>
             </button>
 
             <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
@@ -134,7 +134,7 @@ const Navbar: React.FC = () => {
               </button>
 
               {showLangMenu && (
-                <div className="absolute top-full mt-2 right-0 w-40 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full mt-2 right-0 w-44 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100 grid grid-cols-1 gap-1">
                   {languages.map((lang) => (
                     <button
                       key={lang.code}
@@ -148,7 +148,7 @@ const Navbar: React.FC = () => {
               )}
             </div>
 
-            <Link to="/notifications" className="relative p-2.5 hover:bg-slate-800 rounded-xl text-slate-300">
+            <Link to="/notifications" className="relative p-2.5 hover:bg-slate-800 rounded-xl text-slate-300" title={t('notifications')}>
               <Bell className="w-5 h-5" />
               {unreadNotifications > 0 && (
                 <span className="absolute top-1 right-1 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
@@ -157,12 +157,8 @@ const Navbar: React.FC = () => {
               )}
             </Link>
 
-            <Link to="/messages" className="p-2.5 hover:bg-slate-800 rounded-xl text-slate-300">
+            <Link to="/messages" className="p-2.5 hover:bg-slate-800 rounded-xl text-slate-300" title={t('inbox')}>
               <MessageSquare className="w-5 h-5" />
-            </Link>
-
-            <Link to="/saved" className="p-2.5 hover:bg-slate-800 rounded-xl text-slate-300">
-              <Heart className="w-5 h-5" />
             </Link>
 
             {isAuthenticated ? (
@@ -185,7 +181,7 @@ const Navbar: React.FC = () => {
 
                 {showUserDropdown && (
                   <div className="absolute top-full mt-2 right-0 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
-                    <Link to={`/seller/${user?.id}`} onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
+                    <Link to="/my-ads" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <Store className="w-4 h-4 text-emerald-400" />
                       <span>{t('my_ads')}</span>
                     </Link>
@@ -230,10 +226,9 @@ const Navbar: React.FC = () => {
 
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
-             {/* Mobile language picker */}
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {languages.map(l => (
-                  <button key={l.code} onClick={() => setLanguage(l.code)} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 ${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
+                  <button key={l.code} onClick={() => { setLanguage(l.code); setIsMobileMenuOpen(false); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 ${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
                     {l.label}
                   </button>
                 ))}

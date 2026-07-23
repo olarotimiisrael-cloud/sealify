@@ -18,7 +18,7 @@ export const SEO: React.FC<SEOProps> = ({
 }) => {
   const { siteSettings } = useSealify();
 
-  const finalTitle = title || siteSettings.siteName;
+  const finalTitle = title ? `${title} | ${siteSettings.siteName}` : siteSettings.siteName;
   const finalDescription = description || siteSettings.siteDescription;
   const finalImage = image || siteSettings.ogImage;
 
@@ -35,7 +35,7 @@ export const SEO: React.FC<SEOProps> = ({
       element.setAttribute('content', content);
     };
 
-    // Primary Meta
+    // Primary Metadata
     setMetaTag('name', 'description', finalDescription);
 
     // Open Graph / Facebook / WhatsApp
@@ -51,7 +51,7 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag('name', 'twitter:title', finalTitle);
     setMetaTag('name', 'twitter:description', finalDescription);
     setMetaTag('name', 'twitter:image', finalImage);
-  }, [finalTitle, finalDescription, finalImage, url, type, siteSettings.siteName]);
+  }, [finalTitle, finalDescription, finalImage, url, type, siteSettings.siteName, siteSettings.siteDescription]);
 
   return null;
 };
