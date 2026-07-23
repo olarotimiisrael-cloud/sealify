@@ -7,6 +7,7 @@ import { CategoryGrid } from '../components/CategoryGrid';
 import ListingCard from '../components/ListingCard';
 import FeaturedAdSection from '../components/FeaturedAdSection';
 import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
+import PromotedSpotlightBanner from '../components/PromotedSpotlightBanner';
 import FilterDrawer from '../components/FilterDrawer';
 import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
@@ -176,6 +177,7 @@ export const Index: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-12">
+        <PromotedSpotlightBanner listings={listings} />
         <CategoryGrid />
         <NeighborhoodFilter />
         <FeaturedVendorsSection />
