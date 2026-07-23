@@ -6,7 +6,7 @@ interface PriceHistoryProps {
 }
 
 export const PriceHistoryChart: React.FC<PriceHistoryProps> = ({ currentPrice }) => {
-  // Simulate price history data
+  // Simulate price history data for similar items in the Ogbomoso area
   const data = [
     { name: '3m ago', price: currentPrice * 1.15 },
     { name: '2m ago', price: currentPrice * 1.08 },

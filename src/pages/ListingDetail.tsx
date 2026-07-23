@@ -100,6 +100,7 @@ const ListingDetail: React.FC = () => {
     );
   }
 
+  // AI Market Comparison Logic
   const categoryAds = listings.filter(l => l.category === listing.category);
   const avgPrice = categoryAds.reduce((acc, l) => acc + l.price, 0) / (categoryAds.length || 1);
   const isBelowAvg = listing.price < avgPrice;
@@ -251,7 +252,7 @@ const ListingDetail: React.FC = () => {
               className={`p-2 border rounded-xl transition-colors ${
                 saved
                   ? 'bg-red-500/20 border-red-500 text-red-400'
-                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
+                  : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
               }`}
             >
               <Heart className={`w-4 h-4 ${saved ? 'fill-red-500' : ''}`} />
@@ -377,24 +378,7 @@ const ListingDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Dynamic Technical Specifications Section */}
-              {specsList.length > 0 && (
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
-                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-emerald-400" />
-                    Key Specifications & Attributes
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {specsList.map(([key, value]) => (
-                      <div key={key} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-0.5">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">{key}</span>
-                        <strong className="text-xs text-white font-extrabold block truncate">{value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
+              {/* Specs and Market Comparison Badge */}
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className={`p-2.5 rounded-xl border ${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
@@ -413,6 +397,23 @@ const ListingDetail: React.FC = () => {
                   <p className="text-sm font-black text-white">{formatNGN(avgPrice)}</p>
                 </div>
               </div>
+
+              {specsList.length > 0 && (
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    Key Specifications
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {specsList.map(([key, value]) => (
+                      <div key={key} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-0.5">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">{key}</span>
+                        <strong className="text-xs text-white font-extrabold block truncate">{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>

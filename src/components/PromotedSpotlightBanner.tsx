@@ -3,14 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Crown, Sparkles, MapPin, Eye, ArrowRight, ChevronLeft, ChevronRight, MessageSquare, ShieldCheck, Tag } from 'lucide-react';
+import { Crown, Sparkles, MapPin, Eye, ArrowRight, ChevronLeft, ChevronRight, MessageSquare, Tag } from 'lucide-react';
 
 interface PromotedSpotlightBannerProps {
   listings: Listing[];
 }
 
 export const PromotedSpotlightBanner: React.FC<PromotedSpotlightBannerProps> = ({ listings }) => {
-  const { toggleSaveListing, isSaved, sendMessage, isAuthenticated } = useSealify();
+  const { sendMessage, isAuthenticated } = useSealify();
   const navigate = useNavigate();
 
   // Filter for active promoted/featured listings
