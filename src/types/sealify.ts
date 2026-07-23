@@ -15,6 +15,15 @@ export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'non
 
 export type UserStatus = 'active' | 'suspended' | 'banned' | 'restricted';
 
+export interface SiteSettings {
+  logoUrl: string;
+  siteName: string;
+  siteDescription: string;
+  ogImage: string;
+  contactEmail: string;
+  contactPhone: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -29,7 +38,6 @@ export interface UserProfile {
   memberSince: string;
   location: string;
   password?: string;
-  // Moderation fields
   status?: UserStatus;
   restrictionReason?: string;
   appealStatus?: 'none' | 'pending' | 'resolved';
