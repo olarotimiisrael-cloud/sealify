@@ -11,6 +11,7 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -66,6 +67,7 @@ const ListingDetail: React.FC = () => {
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [showReferralWelcome, setShowReferralWelcome] = useState(isFromFlyer);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
@@ -216,6 +218,15 @@ const ListingDetail: React.FC = () => {
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
+              onClick={() => setIsFlyerOpen(true)}
+              className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              title="Generate Status Flyer"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">WhatsApp Flyer</span>
+            </button>
+
+            <button
               onClick={() => setIsInspectionOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-purple-400 hover:text-white flex items-center gap-1 text-xs font-bold"
               title="Interactive Inspection Checklist"
@@ -225,30 +236,12 @@ const ListingDetail: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setIsDeliveryOpen(true)}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="Estimate Delivery / Shipping Cost"
-            >
-              <Truck className="w-4 h-4" />
-              <span className="hidden sm:inline">Delivery Fee</span>
-            </button>
-
-            <button
               onClick={() => setIsMeetupOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-teal-400 hover:text-white flex items-center gap-1 text-xs font-bold"
               title="Find Safe Meetup Spot"
             >
               <Shield className="w-4 h-4" />
               <span className="hidden sm:inline">Safe Exchange Zone</span>
-            </button>
-
-            <button
-              onClick={() => setIsQrOpen(true)}
-              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="Share & QR Link Preview"
-            >
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Share Ad</span>
             </button>
 
             <button
@@ -428,15 +421,6 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Safety Tips for Buyers</h3>
-              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
-                <li>Meet the seller in a public, well-lit area.</li>
-                <li>Inspect the product thoroughly before making payment.</li>
-                <li>Avoid wire transfers or paying advance deposits.</li>
-              </ul>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -449,9 +433,6 @@ const ListingDetail: React.FC = () => {
                     src={listing.sellerAvatar}
                     alt={listing.sellerName}
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
-                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
-                    }}
                   />
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -466,7 +447,7 @@ const ListingDetail: React.FC = () => {
 
                 <Link
                   to={`/seller/${listing.sellerId}`}
-                  className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white"
+                  className="p-2 bg-slate-800 hover:bg-slate-750 rounded-xl text-slate-300 hover:text-white"
                   title="View Seller Profile"
                 >
                   <ExternalLink className="w-4 h-4" />
@@ -518,27 +499,6 @@ const ListingDetail: React.FC = () => {
                   </button>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-                  <ShieldAlert className="w-4 h-4" />
-                  <span>Safety Guidelines</span>
-                </div>
-
-                <Link
-                  to="/safety"
-                  className="text-[11px] font-bold text-emerald-400 hover:underline"
-                >
-                  Full Safety Guide →
-                </Link>
-              </div>
-              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
-                <li>Always meet in well-lit, public spaces like coffee shops, mall lobbies, or official police station exchange zones.</li>
-                <li>Avoid secluded areas or private residences when meeting a seller or buyer for the first time.</li>
-                <li>Bring a friend or family member with you whenever possible.</li>
-              </ul>
             </div>
           </div>
         </div>
@@ -605,6 +565,20 @@ const ListingDetail: React.FC = () => {
         onIndexChange={setActiveImageIndex}
         title={listing.title}
       />
+      {listing && (
+        <StorefrontFlycardModal
+          isOpen={isFlyerOpen}
+          onClose={() => setIsFlyerOpen(false)}
+          title={listing.title}
+          price={listing.price}
+          location={listing.location}
+          image={listing.images[0]}
+          sellerName={listing.sellerName}
+          sellerPhone={listing.sellerPhone}
+          verificationType={listing.sellerVerificationType}
+          itemUrl={window.location.pathname}
+        />
+      )}
       <MobileNav />
     </div>
   );
