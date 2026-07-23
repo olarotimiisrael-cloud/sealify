@@ -45,6 +45,20 @@ export interface Review {
   createdAt: string;
 }
 
+export interface BuyerRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  category: Category;
+  maxBudget: number;
+  location: string;
+  description: string;
+  createdAt: string;
+  responsesCount: number;
+}
+
 export interface UserProfile {
   id: string;
   email: string;

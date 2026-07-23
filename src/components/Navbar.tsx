@@ -25,7 +25,8 @@ import {
   Store,
   ChevronDown,
   Shield,
-  TrendingUp
+  TrendingUp,
+  HelpCircle
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -102,6 +103,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
+              <HelpCircle className="w-3.5 h-3.5" />
+              <span>Item Requests</span>
+            </Link>
+
             <Link to="/market-insights" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors mr-1 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>Price Index</span>
@@ -234,6 +240,9 @@ const Navbar: React.FC = () => {
                   </button>
                 ))}
              </div>
+            <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
+              Item Requests
+            </Link>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
               {t('post_free_ad').toUpperCase()}
             </Link>

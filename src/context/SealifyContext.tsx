@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -130,6 +130,9 @@ interface SealifyContextType {
   deleteSearchAlert: (id: string) => void;
   reviews: Review[];
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
+  buyerRequests: BuyerRequest[];
+  createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void;
+  deleteBuyerRequest: (id: string) => void;
 }
 
 const DEFAULT_ADMIN_PIN = '336699';
@@ -202,6 +205,38 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         rating: 5,
         comment: 'Very polite seller! Inspected the item at Ogbomoso Police HQ safe zone. Smooth transaction.',
         createdAt: '3 days ago'
+      }
+    ];
+  });
+
+  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>(() => {
+    const saved = localStorage.getItem('sealify_buyer_requests');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'req_1',
+        userId: 'usr_buyer_1',
+        userName: 'Sola Adebayo',
+        userAvatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100',
+        title: 'Looking for 3.5kVA Elepaq Soundproof Generator',
+        category: 'Utility & Energy',
+        maxBudget: 120000,
+        location: 'Under G Area, Ogbomoso',
+        description: 'Need a clean working generator with low hours for my apartment. Willing to inspect at Takie Square or LAUTECH gate.',
+        createdAt: '2 hours ago',
+        responsesCount: 3
+      },
+      {
+        id: 'req_2',
+        userId: 'usr_buyer_2',
+        userName: 'Aisha Bello',
+        userAvatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100',
+        title: 'URGENT: Need 2-Bedroom Apartment / Self-Contain',
+        category: 'Real Estate',
+        maxBudget: 250000,
+        location: 'LAUTECH Main Gate / Adenike',
+        description: 'Looking for a clean self-contain with personal prepaid meter and running water. Ready to pay instantly upon physical inspection.',
+        createdAt: '1 day ago',
+        responsesCount: 5
       }
     ];
   });
@@ -330,7 +365,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_search_alerts', JSON.stringify(searchAlerts));
     localStorage.setItem('sealify_system_config', JSON.stringify(systemConfig));
     localStorage.setItem('sealify_site_settings', JSON.stringify(siteSettings));
-  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts, systemConfig, siteSettings]);
+    localStorage.setItem('sealify_buyer_requests', JSON.stringify(buyerRequests));
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts, systemConfig, siteSettings, buyerRequests]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -354,6 +390,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const addReview = useCallback((rev: Omit<Review, 'id' | 'createdAt'>) => {
     const newReview: Review = { ...rev, id: 'rev_' + Date.now(), createdAt: 'Just now' };
     setReviews(prev => [newReview, ...prev]);
+  }, []);
+
+  const createBuyerRequest = useCallback((req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => {
+    const newReq: BuyerRequest = {
+      ...req,
+      id: 'req_' + Date.now(),
+      createdAt: 'Just now',
+      responsesCount: 0,
+    };
+    setBuyerRequests(prev => [newReq, ...prev]);
+    toast.success('Your item request was posted to the board!');
+  }, []);
+
+  const deleteBuyerRequest = useCallback((id: string) => {
+    setBuyerRequests(prev => prev.filter(r => r.id !== id));
+    toast.success('Request deleted.');
   }, []);
 
   const updateAdminPin = useCallback((newPin: string) => {
@@ -722,7 +774,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       recentDeals, sealDeal,
       intrusionLogs, recordIntrusion,
       searchAlerts, saveSearchAlert, deleteSearchAlert,
-      reviews, addReview
+      reviews, addReview,
+      buyerRequests, createBuyerRequest, deleteBuyerRequest
     }}>
       {children}
     </SealifyContext.Provider>

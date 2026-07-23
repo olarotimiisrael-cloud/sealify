@@ -21,6 +21,7 @@ import SafetyCenter from "./pages/SafetyCenter";
 import VendorsPage from "./pages/VendorsPage";
 import DisputeResolution from "./pages/DisputeResolution";
 import MarketInsights from "./pages/MarketInsights";
+import BuyerRequests from "./pages/BuyerRequests";
 
 const App = () => (
   <SealifyProvider>
@@ -46,6 +47,7 @@ const App = () => (
         <Route path="/safety" element={<SafetyCenter />} />
         <Route path="/dispute" element={<DisputeResolution />} />
         <Route path="/market-insights" element={<MarketInsights />} />
+        <Route path="/requests" element={<BuyerRequests />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
