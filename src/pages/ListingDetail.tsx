@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import SEO from '../components/SEO';
@@ -40,15 +40,22 @@ import {
   CheckSquare,
   TrendingDown,
   TrendingUp,
-  Info
+  Info,
+  Zap,
+  CheckCircle2,
+  X
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed } = useSealify();
+  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed, addAuditLog } = useSealify();
   
   const listing = listings.find((l) => l.id === id);
+  const isFromFlyer = searchParams.get('ref') === 'flyer';
+  
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -59,14 +66,20 @@ const ListingDetail: React.FC = () => {
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [showReferralWelcome, setShowReferralWelcome] = useState(isFromFlyer);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
   useEffect(() => {
     if (listing?.id) {
       addRecentlyViewed(listing.id);
+      
+      // Track Viral Traffic for Analytics
+      if (isFromFlyer) {
+        addAuditLog('Viral View', `Item "${listing.title}" viewed via social flyer referral`, 'ad');
+      }
     }
-  }, [listing?.id]);
+  }, [listing?.id, isFromFlyer]);
 
   if (!listing) {
     return (
@@ -109,8 +122,8 @@ const ListingDetail: React.FC = () => {
 
   const cleanPhone = listing.sellerPhone.replace(/[^0-9]/g, '');
   const formattedWhatsappPhone = cleanPhone.startsWith('0') ? `234${cleanPhone.slice(1)}` : cleanPhone;
-  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=\${encodeURIComponent(
-    \`Hello \${listing.sellerName}, I am interested in your item on Sealify: "\${listing.title}" (\${formattedPrice}). Is it still available?\`
+  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
+    `Hello ${listing.sellerName}, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice}). Is it still available?`
   )}`;
 
   const handleStartChat = () => {
@@ -132,7 +145,7 @@ const ListingDetail: React.FC = () => {
   };
 
   const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
-    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n\${spotName}\n\${spotAddress}`;
+    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
     if (!isAuthenticated) {
       setIsAuthOpen(true);
       return;
@@ -162,14 +175,36 @@ const ListingDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
       <SEO 
-        title={`\${listing.title} — \${formattedPrice} | Sealify Nigeria`} 
-        description={`\${listing.description.substring(0, 160)}... Available in \${listing.location}.`}
+        title={`${listing.title} — ${formattedPrice} | Sealify Nigeria`} 
+        description={`${listing.description.substring(0, 160)}... Available in ${listing.location}.`}
         image={listing.images[0]}
         url={window.location.href}
       />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
+        
+        {/* Social Referral Welcome Banner */}
+        {showReferralWelcome && (
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500 shadow-xl shadow-emerald-500/5">
+             <div className="flex items-center gap-3.5 text-center sm:text-left">
+                <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30 shrink-0">
+                   <Zap className="w-5 h-5 fill-emerald-400" />
+                </div>
+                <div>
+                   <h2 className="text-base font-black text-white">Welcome! You discovered this item via Social Share</h2>
+                   <p className="text-[11px] text-slate-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5 uppercase tracking-widest font-black">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      Sealify Secure Protocol Active
+                   </p>
+                </div>
+             </div>
+             <div className="flex items-center gap-3">
+                <button onClick={() => setShowReferralWelcome(false)} className="p-2 text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
+             </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between flex-wrap gap-2">
           <Link
             to="/"
@@ -218,13 +253,13 @@ const ListingDetail: React.FC = () => {
 
             <button
               onClick={() => toggleSaveListing(listing.id)}
-              className={`p-2 border rounded-xl transition-colors \${
+              className={`p-2 border rounded-xl transition-colors ${
                 saved
                   ? 'bg-red-500/20 border-red-500 text-red-400'
                   : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
               }`}
             >
-              <Heart className={`w-4 h-4 \${saved ? 'fill-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 ${saved ? 'fill-red-500' : ''}`} />
             </button>
           </div>
         </div>
@@ -295,7 +330,7 @@ const ListingDetail: React.FC = () => {
                       setViewMode('image');
                       setActiveImageIndex(idx);
                     }}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all \${
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
                       viewMode === 'image' && activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
                     }`}
                   >
@@ -306,7 +341,7 @@ const ListingDetail: React.FC = () => {
                 {listing.videoUrl && (
                   <button
                     onClick={() => setViewMode('video')}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all \${
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all ${
                       viewMode === 'video' ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
                     }`}
                   >
@@ -347,10 +382,9 @@ const ListingDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Market Comparison Card */}
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl border \${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                  <div className={`p-2.5 rounded-xl border ${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
                     {isBelowAvg ? <TrendingDown className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
                   </div>
                   <div>
@@ -431,7 +465,7 @@ const ListingDetail: React.FC = () => {
                 </div>
 
                 <Link
-                  to={`/seller/\${listing.sellerId}`}
+                  to={`/seller/${listing.sellerId}`}
                   className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white"
                   title="View Seller Profile"
                 >

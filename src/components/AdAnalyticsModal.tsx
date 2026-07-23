@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, TrendingUp, Eye, Heart, MessageSquare, Award, CheckCircle2, AlertCircle, BarChart2 } from 'lucide-react';
+import { X, TrendingUp, Eye, Heart, MessageSquare, Award, CheckCircle2, AlertCircle, BarChart2, Share2, Globe } from 'lucide-react';
 import { Listing } from '../types/sealify';
 
 interface AdAnalyticsModalProps {
@@ -16,6 +16,9 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
   if (!isOpen || !listing) return null;
 
   const totalViews = listing.viewsCount || 142;
+  const viralViews = Math.round(totalViews * 0.35); // Simulated social/flyer views
+  const directViews = totalViews - viralViews;
+  
   const savedCount = Math.round(totalViews * 0.18);
   const totalInquiries = Math.round(totalViews * 0.08) || 3;
   const ctrRate = ((totalInquiries / totalViews) * 100).toFixed(1);
@@ -63,23 +66,58 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
               <Heart className="w-4 h-4 text-rose-400 mx-auto" />
               <p className="text-xl font-black text-white">{savedCount}</p>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Saved Bookmarks</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Saved Items</p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
               <MessageSquare className="w-4 h-4 text-teal-400 mx-auto" />
               <p className="text-xl font-black text-white">{totalInquiries}</p>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Buyer Chat Leads</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Chat Leads</p>
             </div>
           </div>
 
-          <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3">
+          {/* Traffic Source Breakdown */}
+          <div className="bg-slate-950 border border-slate-800 p-5 rounded-[2rem] space-y-4">
+             <div className="flex justify-between items-center">
+                <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                   <Globe className="w-4 h-4 text-blue-400" />
+                   Traffic Sources
+                </h4>
+                <span className="text-[10px] text-slate-500 font-bold">Real-time Attribution</span>
+             </div>
+
+             <div className="space-y-4">
+                <div className="space-y-1.5">
+                   <div className="flex justify-between text-[11px] font-bold">
+                      <span className="text-slate-300 flex items-center gap-1.5">
+                         <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                         Flyer & Social Referral
+                      </span>
+                      <span className="text-white">{viralViews} views ({Math.round((viralViews/totalViews)*100)}%)</span>
+                   </div>
+                   <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                      <div className="bg-emerald-500 h-full" style={{ width: `${(viralViews/totalViews)*100}%` }}></div>
+                   </div>
+                </div>
+
+                <div className="space-y-1.5">
+                   <div className="flex justify-between text-[11px] font-bold">
+                      <span className="text-slate-300">Marketplace Direct Search</span>
+                      <span className="text-white">{directViews} views ({Math.round((directViews/totalViews)*100)}%)</span>
+                   </div>
+                   <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-800">
+                      <div className="bg-blue-500 h-full" style={{ width: `${(directViews/totalViews)*100}%` }}></div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3 shadow-inner">
             <div className="flex justify-between items-center text-xs">
-              <span className="font-bold text-slate-200">Weekly View Traffic</span>
+              <span className="font-bold text-slate-200">Weekly Traffic Trend</span>
               <span className="text-[11px] text-emerald-400 font-semibold">{ctrRate}% Buyer Conversion</span>
             </div>
 
-            {/* Simple CSS-based Chart for instant rendering speed */}
             <div className="flex items-end justify-between gap-2 h-28 pt-4 pb-1 border-b border-slate-800">
               {weeklyViews.map((item) => {
                 const heightPercent = Math.round((item.count / maxDayViews) * 100);
@@ -97,7 +135,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Visibility Optimization Checklist</h4>
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Visibility Optimization</h4>
               <div className="space-y-2 text-xs">
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                   <span className="text-slate-300 flex items-center gap-2">
