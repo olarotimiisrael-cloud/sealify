@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
+import AdminEditUserModal from '../components/AdminEditUserModal';
 import { UserProfile, VerificationBadgeType, Listing } from '../types/sealify';
 import { 
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
@@ -73,21 +74,6 @@ export const AdminDashboard: React.FC = () => {
     });
     setAnnTitle('');
     setAnnMessage('');
-  };
-
-  const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
-    updateUser(userId, { 
-      verificationType: type, 
-      verified: type !== 'none' 
-    });
-    toast.success(`Badge updated to ${type.toUpperCase()}`);
-    setEditingUser(null);
-  };
-
-  const handleToggleRole = (u: UserProfile) => {
-    const nextRole = u.role === 'admin' ? 'seller' : u.role === 'seller' ? 'buyer' : 'admin';
-    updateUser(u.id, { role: nextRole });
-    toast.info(`${u.fullName}'s role changed to ${nextRole.toUpperCase()}`);
   };
 
   const handleAddCategory = (e: React.FormEvent) => {
@@ -765,21 +751,16 @@ export const AdminDashboard: React.FC = () => {
                             <button
                               onClick={() => setEditingUser(u)}
                               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-[10px] border border-slate-700 transition-all flex items-center gap-1"
+                              title="Modify all user record fields"
                             >
-                              <Award className="w-3 h-3" />
-                              <span>Badge</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleToggleRole(u)}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-[10px] border border-slate-700 transition-all"
-                            >
-                              Role: {u.role.toUpperCase()}
+                              <Edit3 className="w-3 h-3" />
+                              <span>Edit Record</span>
                             </button>
 
                             <button
                               onClick={() => deleteUser(u.id)}
                               className="p-1.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
+                              title="Delete user"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1069,38 +1050,13 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Badge Alignment Modal */}
+        {/* Full User Record Editing Modal */}
         {editingUser && (
-          <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl relative space-y-6">
-              <button onClick={() => setEditingUser(null)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl"><X className="w-4 h-4" /></button>
-              
-              <div className="text-center space-y-2">
-                <img src={editingUser.avatarUrl} className="w-20 h-20 rounded-3xl mx-auto border-2 border-emerald-500 mb-2" />
-                <h3 className="text-xl font-black text-white">{editingUser.fullName}</h3>
-                <p className="text-xs text-slate-400">Align Verified Badge Status for this user</p>
-              </div>
-
-              <div className="space-y-3">
-                <button onClick={() => handleUpdateBadge(editingUser.id, 'none')} className="w-full p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between group hover:border-slate-600">
-                  <div className="text-left"><p className="font-bold text-white">Remove Badge</p><p className="text-[10px] text-slate-500">Reset to unverified status</p></div>
-                  <X className="w-5 h-5 text-slate-600 group-hover:text-red-400" />
-                </button>
-                <button onClick={() => handleUpdateBadge(editingUser.id, 'individual')} className="w-full p-4 bg-slate-950 border border-emerald-500/20 rounded-2xl flex items-center justify-between group hover:border-emerald-500/50">
-                  <div className="text-left"><p className="font-bold text-emerald-400">Verified ID</p><p className="text-[10px] text-slate-500">Individual identity verified</p></div>
-                  <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                </button>
-                <button onClick={() => handleUpdateBadge(editingUser.id, 'business')} className="w-full p-4 bg-slate-950 border border-amber-500/20 rounded-2xl flex items-center justify-between group hover:border-amber-500/50">
-                  <div className="text-left"><p className="font-bold text-amber-400">Verified Business</p><p className="text-[10px] text-slate-500">Registered commercial entity</p></div>
-                  <Award className="w-5 h-5 text-amber-400" />
-                </button>
-                <button onClick={() => handleUpdateBadge(editingUser.id, 'premium')} className="w-full p-4 bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-2xl flex items-center justify-between group hover:border-purple-400">
-                  <div className="text-left"><p className="font-bold text-purple-300">Premium Partner</p><p className="text-[10px] text-slate-400">Paid advertiser / Trusted VIP</p></div>
-                  <Check className="w-5 h-5 text-purple-400" />
-                </button>
-              </div>
-            </div>
-          </div>
+          <AdminEditUserModal
+            user={editingUser}
+            onClose={() => setEditingUser(null)}
+            onSave={(id, updated) => updateUser(id, updated)}
+          />
         )}
       </main>
 
