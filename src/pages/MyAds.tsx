@@ -8,6 +8,7 @@ import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
 import SoldConfirmationModal from '../components/SoldConfirmationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
+import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
@@ -25,19 +26,23 @@ import {
   AlertOctagon,
   Gavel,
   ShieldAlert,
-  Send
+  Send,
+  FileText
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser } = useSealify();
+  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, sendMessage } = useSealify();
+  const navigate = useNavigate();
+
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [soldPromptListing, setSoldPromptListing] = useState<Listing | null>(null);
+  const [receiptListing, setReceiptListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
@@ -59,6 +64,18 @@ const MyAds: React.FC = () => {
     toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
   };
 
+  const handleConfirmMarkSold = (ad: Listing) => {
+    markAsSold(ad.id);
+    setReceiptListing(ad);
+  };
+
+  const handleSendReceiptToChat = (receiptMsg: string) => {
+    if (receiptListing) {
+      sendMessage(receiptListing.id, 'usr_1', receiptMsg);
+      navigate('/messages');
+    }
+  };
+
   const handleAppeal = () => {
     if (user?.id) {
        updateUser(user.id, { appealStatus: 'pending' });
@@ -78,7 +95,7 @@ const MyAds: React.FC = () => {
   const isRestricted = user?.status && user.status !== 'active';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
         title="My Ads & Inventory — Sealify Nigeria"
         description="Manage your active listings, view performance analytics, apply for verified vendor badges, and bump ads on Sealify."
@@ -315,6 +332,16 @@ const MyAds: React.FC = () => {
                     <span>Stats</span>
                   </button>
 
+                  {ad.status === 'sold' && (
+                    <button
+                      onClick={() => setReceiptListing(ad)}
+                      className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Receipt</span>
+                    </button>
+                  )}
+
                   {ad.status === 'active' && !isRestricted && (
                     <>
                       <button
@@ -366,8 +393,9 @@ const MyAds: React.FC = () => {
 
       <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
-      <SoldConfirmationModal isOpen={!!soldPromptListing} onClose={() => setSoldPromptListing(null)} listingTitle={soldPromptListing?.title || ''} onConfirm={() => soldPromptListing && markAsSold(soldPromptListing.id)} />
+      <SoldConfirmationModal isOpen={!!soldPromptListing} onClose={() => setSoldPromptListing(null)} listingTitle={soldPromptListing?.title || ''} onConfirm={() => soldPromptListing && handleConfirmMarkSold(soldPromptListing)} />
       <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
+      <TransactionReceiptModal isOpen={!!receiptListing} onClose={() => setReceiptListing(null)} listing={receiptListing} onSendToChat={handleSendReceiptToChat} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} sellerName={user?.fullName || 'Seller'} />
       <MobileNav />
     </div>
