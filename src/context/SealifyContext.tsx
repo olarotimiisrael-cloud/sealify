@@ -96,6 +96,7 @@ interface SealifyContextType {
   markAllNotificationsRead: () => void;
   clearNotification: (id: string) => void;
   addNotification: (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => void;
+  broadcastMassNotification: (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => void;
   passwordRequests: PasswordChangeRequest[];
   submitPasswordRequest: (req: Omit<PasswordChangeRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPasswordRequest: (id: string, status: 'approved' | 'declined') => void;
@@ -427,13 +428,32 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIntrusionLogs(prev => [intrusion, ...prev]);
     addAuditLog('Critical: Admin Intrusion Attempt', `Unauthorized access attempt on ${email}. Device fingerprint captured.`, 'intrusion');
     
-    // Virtual dispatch to admin email
     console.warn('SECURITY DISPATCH SENT TO ADMIN EMAIL:', intrusion);
   }, [addAuditLog]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
   }, []);
+
+  const broadcastMassNotification = useCallback((title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => {
+    const targets = targetRole === 'all' 
+      ? allUsers 
+      : allUsers.filter(u => u.role === targetRole || u.role === 'admin');
+
+    const newNotif: AppNotification = {
+      id: 'notif_' + Date.now(),
+      type: 'system',
+      title: `📢 ${title}`,
+      description: message,
+      time: 'Just now',
+      read: false,
+      linkUrl: '/',
+    };
+
+    setNotifications(prev => [newNotif, ...prev]);
+    addAuditLog('Mass Push Broadcast', `Dispatched broadcast "${title}" to ${targets.length} members (${targetRole})`, 'broadcast');
+    toast.success(`Mass push broadcast sent to ${targets.length} users (${targetRole.toUpperCase()})!`);
+  }, [allUsers, addAuditLog]);
 
   const dispatchSecurityWelcome = useCallback((userName: string, userEmail: string, phone: string) => {
     toast.info(`Security Dispatch: Login details sent to ${userEmail} and ${phone || 'SMS'}`);
@@ -835,6 +855,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createListing, updateListing, deleteListing, markAsSold, promoteListing,
       conversations, sendMessage,
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
+      broadcastMassNotification,
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,

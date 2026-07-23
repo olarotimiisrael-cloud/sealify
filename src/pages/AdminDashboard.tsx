@@ -14,7 +14,7 @@ import {
   Bell, Radio, ShieldAlert, Download, FileSpreadsheet, Terminal, 
   Clock, Server, DollarSign, Image, User, Users, FileText, CheckCircle2,
   AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, Cpu, Globe,
-  Sliders, Lock, Unlock, ToggleLeft, ToggleRight
+  Sliders, Lock, Unlock, ToggleLeft, ToggleRight, Send
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -26,7 +26,8 @@ export const AdminDashboard: React.FC = () => {
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest, announcements, addAnnouncement, 
     toggleAnnouncement, deleteAnnouncement, reports, processReport, auditLogs, analytics,
-    adminPin, updateAdminPin, intrusionLogs, systemConfig, updateSystemConfig, exportDatabaseBackup
+    adminPin, updateAdminPin, intrusionLogs, systemConfig, updateSystemConfig, exportDatabaseBackup,
+    broadcastMassNotification
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'moderation' | 'settings' | 'audit' | 'intrusions'>('analytics');
@@ -45,6 +46,11 @@ export const AdminDashboard: React.FC = () => {
   const [annTitle, setAnnTitle] = useState('');
   const [annMessage, setAnnMessage] = useState('');
   const [annType, setAnnType] = useState<'info' | 'warning' | 'success' | 'alert'>('info');
+
+  // Mass Push Broadcast State
+  const [pushTitle, setPushTitle] = useState('');
+  const [pushMessage, setPushMessage] = useState('');
+  const [pushRole, setPushRole] = useState<'all' | 'seller' | 'buyer'>('all');
 
   const filteredUsers = allUsers.filter(u => u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || u.email.toLowerCase().includes(userSearch.toLowerCase()));
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
@@ -76,6 +82,17 @@ export const AdminDashboard: React.FC = () => {
     setAnnTitle('');
     setAnnMessage('');
     toast.success('Global broadcast published live to header banner!');
+  };
+
+  const handleSendMassPush = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pushTitle.trim() || !pushMessage.trim()) {
+      toast.error('Please enter push title and message');
+      return;
+    }
+    broadcastMassNotification(pushTitle.trim(), pushMessage.trim(), pushRole);
+    setPushTitle('');
+    setPushMessage('');
   };
 
   const handleUpdatePin = (e: React.FormEvent) => {
@@ -601,10 +618,66 @@ export const AdminDashboard: React.FC = () => {
         {/* 7. BROADCASTS TAB */}
         {activeTab === 'broadcasts' && (
           <div className="space-y-6">
+            {/* Direct Mass User Push Notification Dispatch */}
+            <form onSubmit={handleSendMassPush} className="bg-slate-900 border border-purple-500/30 p-6 rounded-3xl space-y-4 shadow-xl">
+              <div className="flex items-center gap-2 text-purple-400 font-black text-sm uppercase tracking-wider">
+                <Bell className="w-5 h-5" />
+                <span>Dispatch Mass Push Notification to Inboxes</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase">Push Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={pushTitle}
+                    onChange={(e) => setPushTitle(e.target.value)}
+                    placeholder="e.g. Price Drop Alert on All Electronics!"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-400 uppercase">Target User Group</label>
+                  <select
+                    value={pushRole}
+                    onChange={(e) => setPushRole(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 capitalize"
+                  >
+                    <option value="all">All Members ({allUsers.length})</option>
+                    <option value="seller">Sellers Only ({allUsers.filter(u=>u.role === 'seller').length})</option>
+                    <option value="buyer">Buyers Only ({allUsers.filter(u=>u.role === 'buyer').length})</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-400 uppercase">Push Message Body *</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={pushMessage}
+                  onChange={(e) => setPushMessage(e.target.value)}
+                  placeholder="Enter message text to push into target users' notification center..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-purple-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-purple-900/40 transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                <span>Dispatch Mass Push Notification</span>
+              </button>
+            </form>
+
+            {/* Header Banner Announcement Form */}
             <form onSubmit={handleCreateAnnouncement} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 font-black text-sm uppercase tracking-wider">
                 <Megaphone className="w-5 h-5" />
-                <span>Create Global Header Broadcast</span>
+                <span>Create Global Header Broadcast Banner</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
