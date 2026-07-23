@@ -1,7 +1,7 @@
 import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { Category, Condition } from '../types/sealify';
-import { Filter, RotateCcw, X, MapPin } from 'lucide-react';
+import { Filter, RotateCcw, X, MapPin, Tag } from 'lucide-react';
 
 interface FilterDrawerProps {
   isOpen: boolean;
@@ -38,13 +38,20 @@ const POPULAR_CITIES = [
   'Lagos',
 ];
 
+const BUDGET_PRESETS = [
+  { label: 'Under ₦50k', min: null, max: 50000 },
+  { label: 'Under ₦250k', min: null, max: 250000 },
+  { label: 'Under ₦1M', min: null, max: 1000000 },
+  { label: '₦1M+', min: 1000000, max: null },
+];
+
 const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
   const { filters, setFilters, resetFilters } = useSealify();
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex justify-end font-sans">
       <div className="w-full max-w-md bg-slate-900 h-full overflow-y-auto p-6 space-y-6 shadow-2xl border-l border-slate-800 text-slate-200">
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-2 font-bold text-lg text-white">
@@ -57,6 +64,39 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Quick Budget Presets */}
+        <div className="space-y-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+            <Tag className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Budget Presets</span>
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {BUDGET_PRESETS.map((preset) => {
+              const isSelected = filters.maxPrice === preset.max && filters.minPrice === preset.min;
+              return (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      minPrice: preset.min,
+                      maxPrice: preset.max,
+                    }))
+                  }
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all text-center border ${
+                    isSelected
+                      ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow'
+                      : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -79,7 +119,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Price Range (₦ NGN)</label>
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-400">Custom Price Range (₦ NGN)</label>
           <div className="flex items-center gap-2">
             <input
               type="number"

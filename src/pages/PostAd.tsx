@@ -8,7 +8,7 @@ import SEO from '../components/SEO';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
-  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle
+  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -59,6 +59,7 @@ const PostAd: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [featuredBoost, setFeaturedBoost] = useState(false);
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -66,6 +67,29 @@ const PostAd: React.FC = () => {
       setIsAuthOpen(true);
     }
   }, [isAuthenticated]);
+
+  const handleDetectLocation = () => {
+    setIsDetectingLocation(true);
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setIsDetectingLocation(false);
+          setLocation('Ogbomoso Central, Oyo State');
+          toast.success('Location set to Ogbomoso Central Area via GPS!');
+        },
+        (error) => {
+          setIsDetectingLocation(false);
+          setLocation('Takie Square, Ogbomoso');
+          toast.info('Defaulted to Takie Square, Ogbomoso');
+        },
+        { timeout: 5000 }
+      );
+    } else {
+      setIsDetectingLocation(false);
+      setLocation('Takie Square, Ogbomoso');
+      toast.info('Set to Takie Square, Ogbomoso');
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -317,7 +341,18 @@ const PostAd: React.FC = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store / Location *</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store / Location *</label>
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          disabled={isDetectingLocation}
+                          className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                        >
+                          <Navigation className="w-3 h-3 animate-spin-slow" />
+                          <span>{isDetectingLocation ? 'Detecting...' : 'Detect GPS'}</span>
+                        </button>
+                      </div>
                       <input
                         type="text"
                         required
