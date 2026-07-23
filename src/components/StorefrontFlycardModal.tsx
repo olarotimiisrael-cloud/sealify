@@ -47,7 +47,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
 
   const formattedPrice = price ? formatNGN(price) : 'Contact for Price';
 
-  const promoCaption = `🔥 AVAILABLE ON SEALIFY NIGERIA 🔥\n\n📦 Item: ${title}\n💰 Price: ${formattedPrice}\n📍 Location: ${location}\n👤 Seller: ${businessName || sellerName}\n📞 Phone: ${sellerPhone}\n\n👉 Inspect and buy safely on Sealify:\n${itemUrl}`;
+  const promoCaption = `🔥 AVAILABLE ON SEALIFY NIGERIA 🔥\n\n📦 Item: \${title}\n💰 Price: \${formattedPrice}\n📍 Location: \${location}\n👤 Seller: \${businessName || sellerName}\n📞 Phone: \${sellerPhone}\n\n👉 Inspect and buy safely on Sealify:\n\${itemUrl}`;
 
   const handleCopyCaption = () => {
     navigator.clipboard.writeText(promoCaption);
@@ -57,7 +57,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
   };
 
   const handleWhatsAppShare = () => {
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(promoCaption)}`;
+    const waUrl = `https://wa.me/?text=\${encodeURIComponent(promoCaption)}`;
     window.open(waUrl, '_blank');
   };
 
@@ -65,7 +65,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
     window.print();
   };
 
-  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=\${encodeURIComponent(
     itemUrl
   )}&color=059669&bgcolor=020617`;
 
