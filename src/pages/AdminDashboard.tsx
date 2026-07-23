@@ -10,7 +10,7 @@ import {
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
   KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload,
-  AlertTriangle, LogOut, Megaphone, Bell, Radio
+  AlertTriangle, LogOut, Megaphone, Bell, Radio, ShieldAlert
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -20,10 +20,11 @@ export const AdminDashboard: React.FC = () => {
     isAdmin, user, logout, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest,
-    announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement
+    announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
+    reports, processReport
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments' | 'broadcasts'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments' | 'broadcasts' | 'reports'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -54,6 +55,7 @@ export const AdminDashboard: React.FC = () => {
   const pendingPW = passwordRequests.filter(r => r.status === 'pending');
   const pendingVerif = verificationRequests.filter(r => r.status === 'pending');
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
+  const pendingReports = reports.filter(r => r.status === 'pending');
   const promotedAds = listings.filter(l => l.featured);
 
   const handleCreateAnnouncement = (e: React.FormEvent) => {
@@ -193,6 +195,15 @@ export const AdminDashboard: React.FC = () => {
           <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS ({allUsers.length})</button>
           <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES ({categories.length})</button>
           <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS ({listings.length})</button>
+          <button onClick={() => setActiveTab('reports')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative flex items-center gap-1 ${activeTab === 'reports' ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-white'}`}>
+            <ShieldAlert className="w-3.5 h-3.5" />
+            <span>REPORTS</span>
+            {pendingReports.length > 0 && (
+              <span className="bg-rose-600 text-white text-[8px] font-bold px-1.5 py-0.2 rounded-full">
+                {pendingReports.length}
+              </span>
+            )}
+          </button>
           <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
             APPROVALS
             {(pendingPW.length + pendingVerif.length) > 0 && (
@@ -210,6 +221,96 @@ export const AdminDashboard: React.FC = () => {
             )}
           </button>
         </div>
+
+        {/* Tab Content: Reports & Moderation Queue */}
+        {activeTab === 'reports' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20">
+                <ShieldAlert className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-white">Ad Reports & Safety Moderation</h2>
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                  {pendingReports.length} pending user flags
+                </p>
+              </div>
+            </div>
+
+            {reports.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">
+                No flags or reports submitted yet. Marketplace operating safely!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {reports.map((rep) => {
+                  const targetListing = listings.find((l) => l.id === rep.listingId);
+
+                  return (
+                    <div
+                      key={rep.id}
+                      className={`p-5 rounded-3xl border space-y-4 shadow-xl ${
+                        rep.status === 'pending'
+                          ? 'bg-slate-900 border-rose-500/30'
+                          : 'bg-slate-950/60 border-slate-800 opacity-60'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            rep.status === 'pending' ? 'bg-rose-500 text-white' : 'bg-slate-800 text-slate-400'
+                          }`}>
+                            {rep.status}
+                          </span>
+                          <h4 className="font-bold text-sm text-white">{rep.listingTitle}</h4>
+                          <p className="text-[10px] text-slate-400">Reporter: {rep.reporterName} • {rep.createdAt}</p>
+                        </div>
+
+                        {targetListing && (
+                          <Link
+                            to={`/listing/${targetListing.id}`}
+                            className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                            title="Inspect reported listing"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>View</span>
+                          </Link>
+                        )}
+                      </div>
+
+                      <div className="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 text-xs space-y-1">
+                        <p className="font-bold text-rose-400">Reason: {rep.reason}</p>
+                        {rep.details && (
+                          <p className="text-slate-300 text-[11px] leading-relaxed italic">
+                            "{rep.details}"
+                          </p>
+                        )}
+                      </div>
+
+                      {rep.status === 'pending' && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            onClick={() => processReport(rep.id, 'dismiss')}
+                            className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+                          >
+                            Dismiss Flag
+                          </button>
+                          <button
+                            onClick={() => processReport(rep.id, 'resolve_delete_ad')}
+                            className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition-colors shadow flex items-center justify-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Reported Ad</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tab Content: Broadcasts & Announcements */}
         {activeTab === 'broadcasts' && (

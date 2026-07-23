@@ -67,6 +67,17 @@ export interface PromotionPaymentRequest {
   durationMonths: number;
 }
 
+export interface AdReport {
+  id: string;
+  listingId: string;
+  listingTitle: string;
+  reporterName?: string;
+  reason: string;
+  details?: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  createdAt: string;
+}
+
 export interface Listing {
   id: string;
   sellerId: string;

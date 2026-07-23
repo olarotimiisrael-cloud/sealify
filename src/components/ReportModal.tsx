@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { X, ShieldAlert, Check } from 'lucide-react';
-import { toast } from 'sonner';
+import { useSealify } from '../context/SealifyContext';
 
 interface ReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   listingTitle: string;
+  listingId?: string;
 }
 
 const REASONS = [
@@ -16,7 +17,8 @@ const REASONS = [
   'Spam or Commercial Vendor Violation',
 ];
 
-export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listingTitle }) => {
+export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listingTitle, listingId = 'lst_unknown' }) => {
+  const { submitReport } = useSealify();
   const [selectedReason, setSelectedReason] = useState(REASONS[0]);
   const [details, setDetails] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -25,8 +27,13 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, listi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    submitReport({
+      listingId,
+      listingTitle,
+      reason: selectedReason,
+      details: details.trim() || undefined,
+    });
     setSubmitted(true);
-    toast.success('Report submitted to Sealify Trust & Safety team');
     setTimeout(() => {
       setSubmitted(false);
       onClose();

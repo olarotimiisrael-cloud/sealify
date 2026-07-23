@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -89,6 +89,9 @@ interface SealifyContextType {
   addAnnouncement: (ann: Omit<SystemAnnouncement, 'id' | 'createdAt'>) => void;
   toggleAnnouncement: (id: string) => void;
   deleteAnnouncement: (id: string) => void;
+  reports: AdReport[];
+  submitReport: (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => void;
+  processReport: (id: string, action: 'dismiss' | 'resolve_delete_ad') => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -113,6 +116,19 @@ const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
     type: 'success',
     active: true,
     createdAt: 'Today',
+  },
+];
+
+const INITIAL_REPORTS: AdReport[] = [
+  {
+    id: 'rep_1',
+    listingId: 'lst_100',
+    listingTitle: 'Toyota Camry 2018',
+    reporterName: 'Anonymous Buyer',
+    reason: 'Incorrect Price or Misleading Information',
+    details: 'Seller listed NGN 4,500,000 in title but said NGN 5,200,000 in message.',
+    status: 'pending',
+    createdAt: '1 hour ago',
   },
 ];
 
@@ -184,6 +200,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
   });
 
+  const [reports, setReports] = useState<AdReport[]>(() => {
+    const saved = localStorage.getItem('sealify_reports');
+    return saved ? JSON.parse(saved) : INITIAL_REPORTS;
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -240,6 +261,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_announcements', JSON.stringify(announcements));
   }, [announcements]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_reports', JSON.stringify(reports));
+  }, [reports]);
 
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
@@ -420,6 +445,33 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
+  // Report Handling
+  const submitReport = (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => {
+    const newReport: AdReport = {
+      ...rep,
+      id: 'rep_' + Date.now(),
+      reporterName: user?.fullName || 'Anonymous Member',
+      status: 'pending',
+      createdAt: 'Just now'
+    };
+    setReports(prev => [newReport, ...prev]);
+    toast.success('Report submitted to Sealify Trust & Safety moderators');
+  };
+
+  const processReport = (id: string, action: 'dismiss' | 'resolve_delete_ad') => {
+    const rep = reports.find(r => r.id === id);
+    if (!rep) return;
+
+    if (action === 'resolve_delete_ad') {
+      deleteListing(rep.listingId);
+      setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'resolved' } : r));
+      toast.success(`Offending ad "${rep.listingTitle}" deleted and report marked as resolved.`);
+    } else {
+      setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'dismissed' } : r));
+      toast.info('Report dismissed.');
+    }
+  };
+
   // Password Change Logic
   const submitPasswordRequest = (req: any) => {
     const newReq: PasswordChangeRequest = {
@@ -562,7 +614,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
-      announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement
+      announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
+      reports, submitReport, processReport
     }}>
       {children}
     </SealifyContext.Provider>
