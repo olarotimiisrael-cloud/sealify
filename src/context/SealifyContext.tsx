@@ -91,6 +91,7 @@ interface SealifyContextType {
   updateListing: (id: string, updatedData: Partial<Listing>) => void;
   deleteListing: (id: string) => void;
   markAsSold: (id: string) => void;
+  toggleFeaturedListing: (id: string) => void;
   promoteListing: (id: string, durationMonths: number, planName: string) => void;
   conversations: Conversation[];
   sendMessage: (listingId: string, receiverId: string, content: string) => void;
@@ -130,6 +131,7 @@ interface SealifyContextType {
   deleteSearchAlert: (id: string) => void;
   reviews: Review[];
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
+  deleteReview: (id: string) => void;
   buyerRequests: BuyerRequest[];
   createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void;
   deleteBuyerRequest: (id: string) => void;
@@ -392,6 +394,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setReviews(prev => [newReview, ...prev]);
   }, []);
 
+  const deleteReview = useCallback((id: string) => {
+    setReviews(prev => prev.filter(r => r.id !== id));
+    toast.success('Review removed from platform');
+  }, []);
+
   const createBuyerRequest = useCallback((req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => {
     const newReq: BuyerRequest = {
       ...req,
@@ -590,6 +597,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   }, [addNotification]);
 
+  const toggleFeaturedListing = useCallback((id: string) => {
+    setListings(prev => {
+      const updated = prev.map(l => l.id === id ? { ...l, featured: !l.featured } : l);
+      return updated.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    });
+    toast.success('Ad featured status updated!');
+    addAuditLog('Admin Override', `Toggled Top Ad featured status for ${id}`, 'ad');
+  }, [addAuditLog]);
+
   const deleteListing = (id: string) => {
     setListings(prev => prev.filter(l => l.id !== id));
     addAuditLog('Ad Deleted', `Listing ID ${id} removed from global inventory`, 'ad');
@@ -760,7 +776,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       activeCategory: filters.category,
       setActiveCategory: (cat) => setFilters(prev => ({ ...prev, category: cat })),
       compareListingIds, toggleCompareListing, isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing, updateListing, deleteListing, markAsSold, promoteListing,
+      createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing, promoteListing,
       conversations, sendMessage,
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
       broadcastMassNotification,
@@ -774,7 +790,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       recentDeals, sealDeal,
       intrusionLogs, recordIntrusion,
       searchAlerts, saveSearchAlert, deleteSearchAlert,
-      reviews, addReview,
+      reviews, addReview, deleteReview,
       buyerRequests, createBuyerRequest, deleteBuyerRequest
     }}>
       {children}

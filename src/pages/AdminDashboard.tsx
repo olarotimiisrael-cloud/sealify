@@ -18,11 +18,11 @@ import {
   Wallet, FileText, Check, X, ShieldX, ToggleLeft, ToggleRight,
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
-  ChevronDown, SlidersHorizontal, Grid, PlusCircle
+  ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-type AdminTab = 'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser' | 'disputes';
+type AdminTab = 'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser' | 'disputes' | 'buyer_requests' | 'reviews';
 
 interface ModuleItem {
   id: AdminTab;
@@ -42,7 +42,7 @@ interface ModuleGroup {
 export const AdminDashboard: React.FC = () => {
   const { 
     user, isAdmin, logout, categories, addCategory, deleteCategory, updateCategory,
-    listings, allUsers, updateUser, deleteUser, updateListing, deleteListing,
+    listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, toggleFeaturedListing, markAsSold,
     promotionPaymentRequests, processPromotionPaymentRequest, 
     verificationRequests, processVerificationRequest,
     passwordRequests, processPasswordRequest,
@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC = () => {
     disputeCases, processDisputeCase, intrusionLogs,
     systemConfig, updateSystemConfig, siteSettings, updateSiteSettings,
     adminPin, updateAdminPin, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
-    reports, processReport
+    reports, processReport, buyerRequests, deleteBuyerRequest, reviews, deleteReview
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
@@ -113,7 +113,9 @@ export const AdminDashboard: React.FC = () => {
       groupName: "Management & Moderation",
       items: [
         { id: 'users', label: 'User Directory', description: 'Account permissions, bans, and profile editing', icon: Users, badge: allUsers.length, color: 'text-blue-400' },
-        { id: 'listings', label: 'Ad Inventory', description: 'Audit, purge, and manage classified ads', icon: Package, badge: listings.length, color: 'text-teal-400' },
+        { id: 'listings', label: 'Ad Inventory', description: 'Audit, feature, mark sold, and purge ads', icon: Package, badge: listings.length, color: 'text-teal-400' },
+        { id: 'buyer_requests', label: 'Buyer Want Board', description: 'Moderate community product requests', icon: HelpCircle, badge: buyerRequests.length, color: 'text-amber-400' },
+        { id: 'reviews', label: 'Seller Reviews', description: 'Audit buyer feedback and delete spam', icon: Star, badge: reviews.length, color: 'text-yellow-400' },
         { id: 'requests', label: 'Action Queue', description: 'ID verifications and NIN password resets', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length, color: 'text-amber-400', badgeBg: 'bg-amber-500 text-slate-950' },
         { id: 'disputes', label: 'Dispute Center', description: 'Trade arbitration and flagged ad reports', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400', badgeBg: 'bg-rose-600 text-white' },
         { id: 'categories', label: 'Market Grid', description: 'Taxonomy sectors and category customization', icon: Layers, color: 'text-purple-400' },
@@ -331,6 +333,7 @@ export const AdminDashboard: React.FC = () => {
               { id: 'analytics', label: 'Stats', icon: Activity },
               { id: 'users', label: 'Users', icon: Users, badge: allUsers.length },
               { id: 'listings', label: 'Ads', icon: Package, badge: listings.length },
+              { id: 'buyer_requests', label: 'Wants', icon: HelpCircle, badge: buyerRequests.length },
               { id: 'requests', label: 'Queue', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length },
               { id: 'disputes', label: 'Disputes', icon: Gavel, badge: activeDisputes.length + pendingReports.length },
             ].map((pill) => {
@@ -492,9 +495,9 @@ export const AdminDashboard: React.FC = () => {
                  <div>
                     <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
                        <Package className="w-5 h-5 text-emerald-400" />
-                       Global Ad Inventory
+                       Global Ad Inventory ({listings.length})
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Audit and moderate all live classified advertisements</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Audit, toggle featured state, mark sold, or purge classified ads</p>
                  </div>
                  <div className="relative w-full sm:w-72">
                     <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
@@ -514,8 +517,9 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="px-6 py-4">Item Details</th>
                       <th className="px-6 py-4">Seller Context</th>
+                      <th className="px-6 py-4">Status & Boost</th>
                       <th className="px-6 py-4">Financials</th>
-                      <th className="px-6 py-4 text-right">Moderation</th>
+                      <th className="px-6 py-4 text-right">Admin Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -528,7 +532,6 @@ export const AdminDashboard: React.FC = () => {
                               <p className="font-bold text-white truncate max-w-[180px]">{l.title}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-400 uppercase font-bold">{l.category}</span>
-                                {l.featured && <span className="text-[9px] bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded font-black uppercase">Promoted</span>}
                               </div>
                             </div>
                           </div>
@@ -538,11 +541,37 @@ export const AdminDashboard: React.FC = () => {
                            <p className="text-[10px] text-slate-500 font-mono mt-0.5">{l.sellerPhone}</p>
                         </td>
                         <td className="px-6 py-4">
+                           <div className="flex items-center gap-2">
+                             <button
+                               onClick={() => toggleFeaturedListing(l.id)}
+                               className={`px-2.5 py-1 rounded-xl text-[9px] font-black uppercase flex items-center gap-1 border transition-all ${
+                                 l.featured
+                                   ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow'
+                                   : 'bg-slate-950 text-slate-500 border-slate-800 hover:text-white'
+                               }`}
+                               title="Click to toggle Top Ad promotion status"
+                             >
+                               <Crown className={`w-3 h-3 ${l.featured ? 'fill-amber-300' : ''}`} />
+                               <span>{l.featured ? 'Top Ad Active' : '+ Feature'}</span>
+                             </button>
+
+                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${l.status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                               {l.status}
+                             </span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4">
                            <p className="font-black text-emerald-400">₦{l.price.toLocaleString()}</p>
                            <p className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-1"><Eye className="w-3 h-3" /> {l.viewsCount} views</p>
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end gap-1.5">
+                             <button
+                               onClick={() => markAsSold(l.id)}
+                               className="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-800 text-teal-400 rounded-xl border border-slate-800 text-[10px] font-bold"
+                             >
+                               Mark Sold
+                             </button>
                              <Link to={`/listing/${l.id}`} className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 rounded-xl border border-slate-800 transition-all"><ExternalLink className="w-3.5 h-3.5" /></Link>
                              <button onClick={() => deleteListing(l.id)} className="p-2 bg-slate-950 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl border border-slate-800 transition-all"><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
@@ -551,6 +580,105 @@ export const AdminDashboard: React.FC = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {/* Buyer Requests Tab */}
+          {activeTab === 'buyer_requests' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/30">
+                 <div>
+                    <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
+                       <HelpCircle className="w-5 h-5 text-amber-400" />
+                       Buyer Want Board Moderation ({buyerRequests.length})
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Review community buyer item requests and purge inappropriate listings</p>
+                 </div>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {buyerRequests.length === 0 ? (
+                  <div className="text-center py-12 text-slate-600 text-xs font-bold uppercase tracking-widest">No active buyer requests on the board.</div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {buyerRequests.map((req) => (
+                      <div key={req.id} className="bg-slate-950 border border-slate-800 p-5 rounded-3xl space-y-3 relative group">
+                        <button
+                          onClick={() => deleteBuyerRequest(req.id)}
+                          className="absolute top-4 right-4 p-2 bg-slate-900 hover:bg-rose-600 text-slate-500 hover:text-white rounded-xl transition-all"
+                          title="Purge Request"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        <div className="flex items-center gap-3">
+                          <img src={req.userAvatar} className="w-10 h-10 rounded-2xl object-cover border border-slate-800" />
+                          <div>
+                            <p className="text-xs font-black text-white">{req.userName}</p>
+                            <p className="text-[10px] text-teal-400 font-bold">{req.category} • Max ₦{req.maxBudget.toLocaleString()}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="font-bold text-sm text-slate-100">{req.title}</h4>
+                          <p className="text-xs text-slate-400 leading-relaxed mt-1">{req.description}</p>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-900 flex justify-between items-center text-[10px] text-slate-500 font-mono">
+                          <span>Location: {req.location}</span>
+                          <span>Posted {req.createdAt}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Seller Reviews Tab */}
+          {activeTab === 'reviews' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/30">
+                 <div>
+                    <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
+                       <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                       Seller Reviews & Ratings Moderation ({reviews.length})
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Audit buyer feedback and delete fake or abusive reviews</p>
+                 </div>
+              </div>
+
+              <div className="p-6 space-y-3">
+                {reviews.length === 0 ? (
+                  <div className="text-center py-12 text-slate-600 text-xs font-bold uppercase tracking-widest">No reviews logged yet.</div>
+                ) : (
+                  reviews.map((rev) => (
+                    <div key={rev.id} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img src={rev.buyerAvatar} className="w-10 h-10 rounded-xl object-cover border border-slate-800 shrink-0" />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-xs text-white truncate">{rev.buyerName}</span>
+                            <span className="text-[10px] text-amber-400 font-bold flex items-center gap-0.5">
+                              ★ {rev.rating}/5
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-300 italic truncate mt-0.5">"{rev.comment}"</p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => deleteReview(rev.id)}
+                        className="p-2 bg-slate-900 hover:bg-rose-600 text-slate-500 hover:text-white rounded-xl transition-all shrink-0"
+                        title="Delete Review"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}
