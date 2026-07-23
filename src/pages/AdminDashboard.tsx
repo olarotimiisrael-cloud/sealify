@@ -4,12 +4,13 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
+import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import { UserProfile, VerificationBadgeType, Listing, PasswordChangeRequest, VerificationRequest } from '../types/sealify';
 import { 
   Shield, Package, Activity, Layers, RefreshCw, LayoutGrid, Edit3, Trash2,
   Users, MousePointer2, Globe, Clock, Terminal, CheckCircle2, AlertCircle,
   Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X, Tag, Eye,
-  KeyRound, Lock, FileText, ExternalLink, Zap, Crown
+  KeyRound, Lock, FileText, ExternalLink, Zap, Crown, Database
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ export const AdminDashboard: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
   const filteredUsers = allUsers.filter(u => 
     u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || 
@@ -79,7 +81,17 @@ export const AdminDashboard: React.FC = () => {
               <Shield className="w-6 h-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-black">Security Terminal</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-black">Security Terminal</h1>
+                <button
+                  onClick={() => setIsSqlModalOpen(true)}
+                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-[10px] font-black rounded-lg border border-slate-700 flex items-center gap-1 transition-colors"
+                  title="View Supabase Database Migration Schema"
+                >
+                  <Database className="w-3 h-3" />
+                  <span>SQL Migration</span>
+                </button>
+              </div>
               <p className="text-xs text-slate-400">Monitoring {listings.length} ads & {allUsers.length} active nodes</p>
             </div>
           </div>
@@ -360,6 +372,7 @@ export const AdminDashboard: React.FC = () => {
         )}
       </main>
 
+      <SqlSchemaViewer isOpen={isSqlModalOpen} onClose={() => setIsSqlModalOpen(false)} />
       <MobileNav />
     </div>
   );

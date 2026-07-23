@@ -59,7 +59,19 @@ CREATE TABLE IF NOT EXISTS public.verification_requests (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. Messages Table
+-- 5. Password Reset Requests Table (NIN Verification & Admin Review)
+CREATE TABLE IF NOT EXISTS public.password_change_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
+  nin TEXT NOT NULL,
+  id_document_url TEXT NOT NULL,
+  new_password TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 6. Messages Table
 CREATE TABLE IF NOT EXISTS public.messages (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   sender_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
@@ -74,6 +86,7 @@ ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listing_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.password_change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
@@ -117,7 +130,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <p className="text-xs text-slate-400 my-3">
-          Copy and run this migration in your Supabase SQL Editor to set up tables supporting all 3 badge types (Individual, Business, Premium) and Top Ad promotion durations.
+          Copy and run this migration in your Supabase SQL Editor to set up tables supporting password change requests with NIN verification and badge approvals.
         </p>
 
         <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-300 leading-relaxed">
