@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit3, Check, Video, FileVideo } from 'lucide-react';
 import { toast } from 'sonner';
+import { Listing, Condition } from '../types/sealify';
 
 interface EditListingModalProps {
   isOpen: boolean;

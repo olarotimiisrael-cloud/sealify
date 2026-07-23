@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import CategoryBar from '../components/CategoryBar';
+import { CategoryBar } from '../components/CategoryBar';
 import { CategoryGrid } from '../components/CategoryGrid';
 import ListingCard from '../components/ListingCard';
 import FeaturedAdSection from '../components/FeaturedAdSection';

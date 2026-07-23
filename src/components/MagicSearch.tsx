@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { Search, Sparkles, X, ArrowRight, TrendingUp, Command, Smartphone, Car, Home, Shield, MapPin, Tag, Zap } from 'lucide-react';
+import { Search, Sparkles, X, ArrowRight, TrendingUp, Command, Smartphone, Car, Home, Shield, MapPin, Tag, Zap, Clock, Shirt, Armchair, Wrench, Briefcase } from 'lucide-react';
 
 interface MagicSearchProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ const POPULAR_SEARCHES = [
 ];
 
 const CATEGORIES = [
-  { name: 'Vehicles', icon: Smartphone, color: 'text-blue-400' },
+  { name: 'Vehicles', icon: Car, color: 'text-blue-400' },
   { name: 'Electronics', icon: Smartphone, color: 'text-purple-400' },
   { name: 'Real Estate', icon: Home, color: 'text-teal-400' },
   { name: 'Fashion', icon: Shirt, color: 'text-pink-400' },
@@ -32,9 +32,11 @@ const CATEGORIES = [
 ];
 
 export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => {
-  const { listings, filters, setFilters, resetFilters } = useSealify();
+  const { listings, filters, setFilters, resetFilters, recentlyViewedIds } = useSealify();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
+
+  const recentlyViewed = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
   const results = query.trim() === ''
     ? []
@@ -125,24 +127,14 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
                   <span>Trending Categories</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    { icon: Smartphone, label: 'Electronics' },
-                    { icon: Car, label: 'Vehicles' },
-                    { icon: Home, label: 'Real Estate' },
-                    { icon: Shirt, label: 'Fashion' },
-                    { icon: Armchair, label: 'Home & Furniture' },
-                    { icon: Wrench, label: 'Services' },
-                    { icon: Briefcase, label: 'Jobs' },
-                    { icon: Sparkles, label: 'Beauty & Health' },
-                    { icon: Zap, label: 'Utility & Energy' },
-                  ].map((cat, i) => (
+                  {CATEGORIES.map((cat, i) => (
                     <button
                       key={i}
-                      onClick={() => setQuery(cat.label)}
+                      onClick={() => setQuery(cat.name)}
                       className="flex items-center gap-2 px-4 py-2 bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-xl text-xs font-bold text-slate-300 transition-all"
                     >
                       <cat.icon className={`w-3.5 h-3.5 ${cat.color}`} />
-                      {cat.label}
+                      {cat.name}
                     </button>
                   ))}
                 </div>

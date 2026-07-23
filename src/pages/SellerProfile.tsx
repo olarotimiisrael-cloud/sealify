@@ -22,17 +22,10 @@ import {
   Award, 
   ShieldCheck, 
   Zap, 
-  Scale,
-  Smartphone,
-  Eye,
-  ShieldAlert,
   ExternalLink,
   Share2,
-  Calendar,
   AlertCircle,
   Crown,
-  ExternalLink,
-  Share2,
   Download,
   Settings,
   Bell,
@@ -52,7 +45,7 @@ const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Pl
 
 const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { listings, allUsers, user } = useSealify();
+  const { listings, allUsers, user, sendMessage } = useSealify();
 
   const sellerUser = allUsers.find((u) => u.id === id);
   const sellerListings = listings.filter((l) => l.sellerId === id);
@@ -62,7 +55,7 @@ const SellerProfile: React.FC = () => {
   const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
   const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
-  const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Nigeria';
+  const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
   const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 800 000 0000';
   const memberSince = sellerUser?.memberSince || '2023';
 
@@ -71,6 +64,10 @@ const SellerProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'reviews' | 'listings'>('overview');
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [query, setQuery] = useState('');
+  const [activeConv, setActiveConv] = useState<typeof listings[0] | null>(null);
+  const [text, setText] = useState('');
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -96,136 +93,111 @@ const SellerProfile: React.FC = () => {
     sendMessage(activeConv.listingId, activeConv.otherUser.id, reply);
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
-      <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200" 
-        onClick={onClose}
-      />
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <Navbar />
 
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative z-10">
-        <div className="p-4 border-b border-slate-800 flex items-center gap-3 relative z-10">
-          <div className="p-2 bg-emerald-500/10 rounded-xl">
-            <Sparkles className="w-5 h-5 text-emerald-400 animate-pulse" />
-          </div>
-          <input
-            autoFocus
-            type="text"
-            placeholder="Search anything... (AI magic enabled)"
-            className="flex-1 bg-transparent border-none text-white text-lg focus:outline-none placeholder:text-slate-500 font-medium"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800 border border-slate-700 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-              <Command className="w-3 h-3" />
-              <span>ESC</span>
+      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+          <div className="flex items-center gap-4">
+            <img
+              src={sellerAvatar}
+              alt={sellerName}
+              className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500"
+            />
+            <div>
+              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+                {sellerName}
+                {sellerVerified && <VerifiedBadge type={sellerVerificationType} showText />}
+              </h1>
+              <p className="text-slate-400 text-sm">{sellerLocation}</p>
+              <p className="text-slate-500 text-xs">Member since {memberSince}</p>
             </div>
-            <button onClick={onClose} className="p-2 text-slate-400 hover:text-white transition-colors">
-              <X className="w-5 h-5" />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                activeTab === 'overview' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('listings')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Listings ({sellerListings.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                activeTab === 'reviews' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Reviews
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Analytics
             </button>
           </div>
-        </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-2 no-scrollbar">
-          {query.trim() === '' ? (
-            <div className="p-4 space-y-6">
-              {recentlyViewed.length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>Jump Back In</span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2">
-                    {recentlyViewed.map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => handleSelect(item.id)}
-                        className="flex items-center gap-3 p-3 bg-slate-950/40 hover:bg-slate-800 border border-slate-800 rounded-2xl transition-all text-left group"
-                      >
-                        <img src={item.images[0]} className="w-10 h-10 rounded-xl object-cover" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{item.title}</p>
-                          <p className="text-[10px] text-emerald-400 font-bold">₦{item.price.toLocaleString()}</p>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 transition-colors" />
-                      </button>
-                    ))}
-                  </div>
+          {activeTab === 'overview' && (
+            <div className="space-y-4">
+              <TrustScore 
+                score={98} 
+                responseTime="< 2 hours" 
+                verified={sellerVerified} 
+                salesCount={sellerListings.length} 
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <p className="text-xs text-slate-400">Total Listings</p>
+                  <p className="text-2xl font-bold text-white">{sellerListings.length}</p>
                 </div>
-              )}
+                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <p className="text-xs text-slate-400">Total Views</p>
+                  <p className="text-2xl font-bold text-emerald-400">
+                    {sellerListings.reduce((acc, l) => acc + l.viewsCount, 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
-              {query.trim() === '' ? (
-                <div className="p-12 text-center space-y-3">
-                  <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto">
-                    <Search className="w-6 h-6 text-slate-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white">No magic matches found</p>
-                    <p className="text-xs text-slate-500">Try searching for generic terms like "phone" or "car"</p>
-                  </div>
-                </div>
-              ) : results.length > 0 ? (
-                <div className="p-2 space-y-1">
-                  <div className="px-3 pb-2 text-[10px] font-black text-slate-500 flex items-center justify-between">
-                    <span>Magic Results</span>
-                    <span className="text-emerald-500">{results.length} items found</span>
-                  </div>
-                  {results.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelect(item.id)}
-                      className="w-full flex items-center gap-4 p-3 hover:bg-emerald-500/5 border border-slate-800 transition-all text-left group"
-                    >
-                      <div className="relative shrink-0">
-                        <img src={item.images[0]} className="w-14 h-14 rounded-xl object-cover border border-slate-800" />
-                        {item.featured && (
-                          <div className="absolute -top-1 -left-1 bg-amber-500 p-0.5 rounded-md">
-                            <Zap className="w-2.5 h-2.5 text-slate-950 fill-current" />
-                          </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-[9px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-1.5 py-0.5 rounded">
-                            {item.category}
-                          </span>
-                          <span className="text-[9px] font-bold text-slate-500">{item.location}</span>
-                        </div>
-                        <h4 className="text-sm font-bold text-white truncate mt-1 group-hover:text-emerald-400 transition-colors">
-                          {item.title}
-                        </h4>
-                        <p className="text-sm font-black text-white mt-0.5">₦{item.price.toLocaleString()}</p>
-                      </div>
-                      <div className="bg-slate-800 p-2 rounded-xl group-hover:bg-emerald-500 group-hover:text-slate-950 transition-all">
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-12 text-center space-y-3">
-                  <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mx-auto">
-                    <Search className="w-6 h-6 text-slate-500" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-bold text-white">No magic matches found</p>
-                    <p className="text-xs text-slate-500">Try searching for generic terms like "phone" or "car"</p>
-                  </div>
-                </div>
-              )}
-        </div>
+          {activeTab === 'listings' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {sellerListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
 
-        <div className="p-3 bg-slate-950/50 border-t border-slate-800 text-center">
-          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center justify-center gap-1.5">
-            <Zap className="w-3 h-3 text-emerald-500" />
-            Instant Discovery Engine Powered by Sealify Logic
-          </p>
+          {activeTab === 'reviews' && (
+            <div className="text-center py-8 text-slate-400">
+              <p>No reviews yet</p>
+            </div>
+          )}
+
+          {activeTab === 'analytics' && (
+            <div className="text-center py-8 text-slate-400">
+              <p>Analytics coming soon</p>
+            </div>
+          )}
         </div>
-      </div>
+      </main>
+
+      <MobileNav />
     </div>
   );
 };
 
-export default MagicSearch;
+export default SellerProfile;

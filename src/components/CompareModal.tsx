@@ -36,7 +36,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
               >
                 Clear All
               </button>
-            </div>
+            )}
             <button
               onClick={onClose}
               className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
@@ -125,7 +125,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
                 </div>
               ))}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

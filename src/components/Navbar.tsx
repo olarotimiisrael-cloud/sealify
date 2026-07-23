@@ -23,6 +23,15 @@ import {
   Command
 } from 'lucide-react';
 
+const languages = [
+  { code: 'en', label: 'English' },
+  { code: 'yo', label: 'Yorùbá' },
+  { code: 'pg', label: 'Pidgin' },
+  { code: 'ha', label: 'Hausa' },
+  { code: 'fr', label: 'Français' },
+  { code: 'zh', label: '中文' },
+];
+
 const Navbar: React.FC = () => {
   const { 
     user, 
@@ -182,6 +191,22 @@ const Navbar: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {isMobileMenuOpen && (
+          <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Link to="/safety" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                <ShieldCheck className="w-4 h-4 text-blue-400" /> Safety
+              </Link>
+              <Link to="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                <Bell className="w-4 h-4 text-emerald-400" /> {t('notifications')}
+              </Link>
+            </div>
+            <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
+              {t('post_free_ad').toUpperCase()}
+            </Link>
+          </div>
+        )}
 
         {isMagicSearchOpen && (
           <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
