@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SealifyProvider } from "./context/SealifyContext";
+import SplashScreen from "./components/SplashScreen";
 import Index from "./pages/Index";
 import ListingDetail from "./pages/ListingDetail";
 import PostAd from "./pages/PostAd";
@@ -22,6 +23,7 @@ import DisputeResolution from "./pages/DisputeResolution";
 
 const App = () => (
   <SealifyProvider>
+    <SplashScreen />
     <Toaster position="bottom-right" richColors />
     <BrowserRouter>
       <Routes>
