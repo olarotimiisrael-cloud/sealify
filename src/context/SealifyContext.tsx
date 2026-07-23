@@ -620,7 +620,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Ad listing deleted');
   };
 
-  const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
+  const updateListing = (id: string, data: Partial<Listing>) => {
+    setListings(prev => prev.map(l => {
+      if (l.id === id) {
+        // Trigger automatic price drop notification if price was lowered
+        if (data.price && data.price < l.price) {
+          addNotification({
+            type: 'price_drop',
+            title: `💰 Price Drop: ${l.title}`,
+            description: `Great news! The price of ${l.title} has dropped to ₦${data.price.toLocaleString()}`,
+            linkUrl: `/listing/${l.id}`
+          });
+        }
+        return { ...l, ...data, originalPrice: data.price && data.price < l.price ? l.price : l.originalPrice };
+      }
+      return l;
+    }));
+  };
+
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
   
   const promoteListing = (id: string, months: number, plan: string) => {

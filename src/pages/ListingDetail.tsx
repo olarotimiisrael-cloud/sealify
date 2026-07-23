@@ -37,7 +37,10 @@ import {
   Video,
   Share2,
   Truck,
-  CheckSquare
+  CheckSquare,
+  TrendingDown,
+  CheckCircle2,
+  Award
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -324,9 +327,15 @@ const ListingDetail: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
               <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800 flex-wrap sm:flex-nowrap">
                 <div>
-                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
-                    {listing.category}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                      {listing.category}
+                    </span>
+                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <TrendingDown className="w-3 h-3" />
+                      Fair Market Deal
+                    </span>
+                  </div>
                   <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
                   <div className="flex items-center gap-4 text-xs text-slate-400 mt-2 flex-wrap">
                     <span className="flex items-center gap-1">
