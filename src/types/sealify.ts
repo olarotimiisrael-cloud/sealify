@@ -11,9 +11,19 @@ export type Category =
 
 export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
 
-export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'none';
+export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'student' | 'none';
 
 export type UserStatus = 'active' | 'suspended' | 'banned' | 'restricted';
+
+export interface CategoryStats {
+  category: Category;
+  avgPrice: number;
+  minPrice: number;
+  maxPrice: number;
+  totalAds: number;
+  demandScore: number; // 0 to 100
+  trend: 'up' | 'down' | 'stable';
+}
 
 export interface SiteSettings {
   logoUrl: string;
@@ -52,6 +62,8 @@ export interface UserProfile {
   status?: UserStatus;
   restrictionReason?: string;
   appealStatus?: 'none' | 'pending' | 'resolved';
+  totalValueTraded?: number;
+  completedDeals?: number;
 }
 
 export interface SecurityIntrusionLog {

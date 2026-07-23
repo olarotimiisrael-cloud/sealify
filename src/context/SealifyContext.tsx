@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review } from '../types/sealify';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -65,6 +65,7 @@ interface SealifyContextType {
   deleteCategory: (id: string) => void;
   updateCategory: (id: string, name: string) => void;
   analytics: AnalyticsData;
+  marketStats: CategoryStats[];
   login: (email: string, role: 'buyer' | 'seller' | 'admin', isSignup?: boolean) => void;
   adminLogin: (email: string, pass: string, pin?: string) => boolean;
   logout: () => void;
@@ -280,6 +281,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const saved = localStorage.getItem('sealify_listings');
     return saved ? JSON.parse(saved) : MOCK_LISTINGS;
   });
+
+  const marketStats: CategoryStats[] = useMemo(() => {
+    const categoriesList: Category[] = ['Vehicles', 'Electronics', 'Real Estate', 'Fashion', 'Home & Furniture', 'Services', 'Jobs', 'Beauty & Health', 'Utility & Energy'];
+    
+    return categoriesList.map(cat => {
+      const catAds = listings.filter(l => l.category === cat);
+      const prices = catAds.map(l => l.price);
+      
+      return {
+        category: cat,
+        avgPrice: prices.length > 0 ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
+        minPrice: prices.length > 0 ? Math.min(...prices) : 0,
+        maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
+        totalAds: catAds.length,
+        demandScore: Math.floor(Math.random() * 40) + 40, // Simulated demand
+        trend: Math.random() > 0.5 ? 'up' : 'down'
+      };
+    });
+  }, [listings]);
 
   const [savedListingIds, setSavedListingIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('sealify_saved_ids');
@@ -617,7 +637,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
       deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(categories.map(c => c.id === id ? { ...c, name } : c)),
-      analytics, login, adminLogin, logout,
+      analytics, marketStats, login, adminLogin, logout,
       listings, allUsers, updateUser, deleteUser,
       savedListingIds, recentlyViewedIds, addRecentlyViewed, toggleSaveListing, isSaved,
       filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),

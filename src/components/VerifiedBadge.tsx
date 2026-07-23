@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Building2, Crown, Sparkles } from 'lucide-react';
+import { ShieldCheck, Building2, Crown, Sparkles, GraduationCap } from 'lucide-react';
 import { VerificationBadgeType } from '../types/sealify';
 import TrustBadgeExplainerModal from './TrustBadgeExplainerModal';
 
@@ -51,6 +51,19 @@ export const VerifiedBadge: React.FC<VerifiedBadgeProps> = ({
         >
           <Building2 className="w-3.5 h-3.5 text-amber-400" />
           {showText && <span>Verified Business</span>}
+        </span>
+      );
+    }
+
+    if (type === 'student') {
+      return (
+        <span
+          onClick={handleClick}
+          className={`inline-flex items-center gap-1 font-bold text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-full text-[10px] cursor-pointer hover:scale-105 transition-transform ${className}`}
+          title="Verified Student ID (Campus Community) — Click to learn more"
+        >
+          <GraduationCap className="w-3.5 h-3.5 text-blue-400" />
+          {showText && <span>Verified Student</span>}
         </span>
       );
     }

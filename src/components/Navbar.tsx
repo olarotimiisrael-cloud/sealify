@@ -24,7 +24,8 @@ import {
   User,
   Store,
   ChevronDown,
-  Shield
+  Shield,
+  TrendingUp
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -101,6 +102,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/market-insights" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors mr-1 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Price Index</span>
+            </Link>
+
             <button
               onClick={() => setIsEscrowOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-teal-400 hover:text-teal-300 transition-colors mr-1 bg-teal-500/10 rounded-xl border border-teal-500/20"
