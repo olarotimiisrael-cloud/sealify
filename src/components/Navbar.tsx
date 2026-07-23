@@ -165,6 +165,9 @@ const Navbar: React.FC = () => {
                     src={user?.avatarUrl} 
                     className="w-8 h-8 rounded-full border border-emerald-500" 
                     alt={user?.fullName}
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'; // fallback to a default image
+                    }}
                   />
                   <span className="text-xs font-bold hidden xl:inline">{user?.fullName}</span>
                 </Link>
@@ -182,7 +185,7 @@ const Navbar: React.FC = () => {
             {!isAuthenticated && (
               <button onClick={() => setIsAuthModalOpen(true)} className="text-xs font-bold px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
                 {t('login')}
-              </button>
+              }
             )}
 
             <Link to="/post-ad" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/10 transition-all">
@@ -199,7 +202,7 @@ const Navbar: React.FC = () => {
               {unreadNotifications > 0 && (
                 <span className="absolute top-1 right-0 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   {unreadNotifications}
-                </span>
+                )
               )}
             </Link>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
