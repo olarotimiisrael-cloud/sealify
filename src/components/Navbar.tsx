@@ -13,6 +13,7 @@ import {
   Bell,
   Globe,
   ShieldCheck,
+  Building2,
   Command
 } from 'lucide-react';
 
@@ -77,6 +78,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span>Vendors</span>
+            </Link>
+
             <Link to="/safety" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-2">
               <ShieldCheck className="w-4 h-4" />
               <span>Safety Center</span>
@@ -180,11 +186,11 @@ const Navbar: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-2">
+              <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                <Building2 className="w-4 h-4 text-emerald-400" /> Merchants
+              </Link>
               <Link to="/safety" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
                 <ShieldCheck className="w-4 h-4 text-blue-400" /> Safety
-              </Link>
-              <Link to="/notifications" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
-                <Bell className="w-4 h-4 text-emerald-400" /> {t('notifications')}
               </Link>
             </div>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">

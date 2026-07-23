@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import Notifications from "./pages/Notifications";
 import SafetyCenter from "./pages/SafetyCenter";
+import VendorsPage from "./pages/VendorsPage";
 
 const App = () => (
   <SealifyProvider>
@@ -26,6 +27,7 @@ const App = () => (
         <Route path="/" element={<Index />} />
         <Route path="/listing/:id" element={<ListingDetail />} />
         <Route path="/seller/:id" element={<SellerProfile />} />
+        <Route path="/vendors" element={<VendorsPage />} />
         <Route path="/post-ad" element={<PostAd />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/saved" element={<SavedAds />} />
