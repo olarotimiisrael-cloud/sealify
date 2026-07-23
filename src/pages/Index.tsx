@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useSealify, MarketplaceDeal } from '../context/SealifyContext';
 import SEO from '../components/SEO';
 import { CategoryBar } from '../components/CategoryBar';
@@ -37,16 +37,35 @@ import {
 } from 'lucide-react';
 
 export const Index: React.FC = () => {
-  const { siteSettings, listings, filters, announcements, recentDeals, compareListingIds, t } = useSealify();
+  const { siteSettings, listings, filters, setFilters, announcements, recentDeals, compareListingIds, t } = useSealify();
+  const [searchParams] = useSearchParams();
+
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [dismissedBannerIds, setDismissedBannerIds] = useState<string[]>([]);
 
+  // Sync URL query parameters with active marketplace filters
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    const searchParam = searchParams.get('search') || searchParams.get('q');
+    const locationParam = searchParams.get('location');
+
+    if (categoryParam || searchParam || locationParam) {
+      setFilters((prev) => ({
+        ...prev,
+        category: (categoryParam as any) || prev.category,
+        searchQuery: searchParam || prev.searchQuery,
+        location: locationParam || prev.location,
+      }));
+    }
+  }, [searchParams, setFilters]);
+
   const activeAnnouncements = announcements.filter(a => a.active && !dismissedBannerIds.includes(a.id));
   
   const recommendedListings = listings
+    .slice()
     .sort(() => 0.5 - Math.random())
     .slice(0, 4);
 
@@ -218,7 +237,7 @@ export const Index: React.FC = () => {
              className="flex items-center gap-3 bg-emerald-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs shadow-2xl shadow-emerald-500/40 hover:scale-105 transition-transform"
            >
               <Scale className="w-4 h-4" />
-              <span>Compare Items (${compareListingIds.length})</span>
+              <span>Compare Items ({compareListingIds.length})</span>
            </button>
         </div>
       )}

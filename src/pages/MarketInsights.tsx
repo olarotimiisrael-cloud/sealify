@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -8,19 +8,17 @@ import {
   TrendingUp, 
   TrendingDown, 
   BarChart3, 
-  Info, 
-  ChevronRight, 
-  PieChart, 
-  Zap,
-  ShoppingBag,
+  Search,
   ArrowUpRight,
-  ShieldCheck,
-  Calculator
+  Calculator,
+  Filter
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const MarketInsights: React.FC = () => {
   const { marketStats } = useSealify();
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -30,6 +28,12 @@ export const MarketInsights: React.FC = () => {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  const filteredStats = marketStats.filter((stat) => {
+    if (selectedCategory !== 'All' && stat.category !== selectedCategory) return false;
+    if (searchQuery && !stat.category.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return stat.totalAds > 0;
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
@@ -68,8 +72,39 @@ export const MarketInsights: React.FC = () => {
           </div>
         </div>
 
+        {/* Filter Controls */}
+        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              placeholder="Search index by category..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full sm:w-auto">
+            {['All', 'Vehicles', 'Electronics', 'Real Estate', 'Fashion', 'Home & Furniture'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  selectedCategory === cat
+                    ? 'bg-emerald-500 text-slate-950 font-black shadow'
+                    : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Category Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-           {marketStats.filter(s => s.totalAds > 0).map((stat) => (
+           {filteredStats.map((stat) => (
               <div key={stat.category} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 hover:border-emerald-500/30 transition-all group shadow-xl">
                  <div className="flex justify-between items-start">
                     <div>
@@ -110,7 +145,7 @@ export const MarketInsights: React.FC = () => {
                  </div>
 
                  <Link 
-                   to={`/?category=${stat.category}`}
+                   to={`/?category=${encodeURIComponent(stat.category)}`}
                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1 transition-colors"
                  >
                     <span>View Market Deals</span>
