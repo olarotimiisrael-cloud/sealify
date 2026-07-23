@@ -104,7 +104,6 @@ interface SealifyContextType {
   processReport: (id: string, action: 'dismiss' | 'resolve_delete_ad') => void;
   auditLogs: AuditLog[];
   addAuditLog: (action: string, details: string, type: AuditLog['type']) => void;
-  logSecurityBreach: (metadata: any) => void;
   recentDeals: MarketplaceDeal[];
   sealDeal: (listingId: string, buyerName: string, price: number) => void;
 }
@@ -339,26 +338,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       action,
       details,
       type,
-      createdAt: new Date().toLocaleString()
+      createdAt: 'Just now'
     };
     setAuditLogs(prev => [log, ...prev]);
   }, []);
-
-  const logSecurityBreach = useCallback((metadata: any) => {
-    const details = `Intruder Meta: IP [REDACTED], UA: ${metadata.userAgent}, Res: ${metadata.screen}, OS: ${metadata.platform}. Audio/Photo Capture: ${metadata.mediaStatus}. Forwarded to security agencies.`;
-    addAuditLog('🚨 CRITICAL BREACH ATTEMPT', details, 'security');
-    
-    // Add internal system notification for admin
-    setNotifications(prev => [{
-      id: 'sec_breach_' + Date.now(),
-      type: 'security',
-      title: 'INTRUSION DETECTED!',
-      description: `Multiple failed admin login attempts from an unauthorized device. Full tracking data captured and logged.`,
-      time: 'Just now',
-      read: false,
-      linkUrl: '/admin'
-    }, ...prev]);
-  }, [addAuditLog]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -770,7 +753,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
       reports, submitReport, processReport,
       auditLogs, addAuditLog,
-      logSecurityBreach,
       recentDeals, sealDeal
     }}>
       {children}
