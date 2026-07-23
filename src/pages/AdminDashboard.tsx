@@ -10,7 +10,7 @@ import {
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
   KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload,
-  AlertTriangle, LogOut
+  AlertTriangle, LogOut, Megaphone, Bell, Radio
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -19,14 +19,20 @@ export const AdminDashboard: React.FC = () => {
   const { 
     isAdmin, user, logout, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
-    promotionPaymentRequests, processPromotionPaymentRequest
+    promotionPaymentRequests, processPromotionPaymentRequest,
+    announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments' | 'broadcasts'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+
+  // New Announcement Broadcast State
+  const [annTitle, setAnnTitle] = useState('');
+  const [annMessage, setAnnMessage] = useState('');
+  const [annType, setAnnType] = useState<'info' | 'warning' | 'success' | 'alert'>('info');
 
   // New Category state
   const [newCatName, setNewCatName] = useState('');
@@ -50,12 +56,20 @@ export const AdminDashboard: React.FC = () => {
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
   const promotedAds = listings.filter(l => l.featured);
 
-  // Function to check if a promotion has expired
-  const isPromotionExpired = (listing: Listing): boolean => {
-    if (!listing.promotionEndDate) return false;
-    const endDate = new Date(listing.promotionEndDate);
-    const now = new Date();
-    return now > endDate;
+  const handleCreateAnnouncement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!annTitle.trim() || !annMessage.trim()) {
+      toast.error('Title and message are required for broadcasts');
+      return;
+    }
+    addAnnouncement({
+      title: annTitle.trim(),
+      message: annMessage.trim(),
+      type: annType,
+      active: true,
+    });
+    setAnnTitle('');
+    setAnnMessage('');
   };
 
   const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
@@ -117,7 +131,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
@@ -128,21 +142,19 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-black">Security Terminal</h1>
+                <h1 className="text-2xl font-black">Admin Command Dashboard</h1>
                 <button
                   onClick={() => setIsSqlModalOpen(true)}
                   className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-[10px] font-black rounded-lg border border-slate-700 flex items-center gap-1 transition-colors"
-                  title="View Supabase Database Migration Schema"
                 >
                   <Database className="w-3 h-3" />
-                  <span>SQL Migration</span>
+                  <span>SQL Schema</span>
                 </button>
               </div>
-              <p className="text-xs text-slate-400">Monitoring {listings.length} ads & {allUsers.length} active nodes</p>
+              <p className="text-xs text-slate-400">Monitoring {listings.length} live ads & {allUsers.length} user profiles</p>
             </div>
           </div>
 
-          {/* User avatar and logout in admin dashboard header */}
           {user && (
             <div className="flex items-center gap-3">
               <img 
@@ -153,10 +165,13 @@ export const AdminDashboard: React.FC = () => {
                   (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
                 }}
               />
-              <span className="text-xs font-bold text-slate-300 hidden sm:inline">{user?.fullName}</span>
+              <div className="text-left">
+                <p className="text-xs font-bold text-white">{user?.fullName}</p>
+                <span className="text-[10px] text-emerald-400 font-extrabold uppercase">Administrator</span>
+              </div>
               <button
                 onClick={logout}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors ml-2"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -165,11 +180,19 @@ export const AdminDashboard: React.FC = () => {
           )}
         </div>
 
+        {/* Tab Navigation */}
         <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
           <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
-          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
-          <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
-          <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
+          <button onClick={() => setActiveTab('broadcasts')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative flex items-center gap-1 ${activeTab === 'broadcasts' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>BROADCASTS</span>
+            {announcements.filter(a => a.active).length > 0 && (
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            )}
+          </button>
+          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS ({allUsers.length})</button>
+          <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES ({categories.length})</button>
+          <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS ({listings.length})</button>
           <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
             APPROVALS
             {(pendingPW.length + pendingVerif.length) > 0 && (
@@ -179,7 +202,7 @@ export const AdminDashboard: React.FC = () => {
             )}
           </button>
           <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-            PROMOTION PAYMENTS
+            PAYMENTS
             {pendingPromoPay.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                 {pendingPromoPay.length}
@@ -188,10 +211,123 @@ export const AdminDashboard: React.FC = () => {
           </button>
         </div>
 
+        {/* Tab Content: Broadcasts & Announcements */}
+        {activeTab === 'broadcasts' && (
+          <div className="space-y-6">
+            <form onSubmit={handleCreateAnnouncement} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+              <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-base">
+                <Radio className="w-5 h-5 animate-pulse" />
+                <span>Publish Live Platform Announcement</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-300 uppercase">Banner Headline / Title *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. New Safe Meetup Spot added at Sabo Market!"
+                    value={annTitle}
+                    onChange={(e) => setAnnTitle(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300 uppercase">Banner Type</label>
+                  <select
+                    value={annType}
+                    onChange={(e) => setAnnType(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="info">Info (Blue)</option>
+                    <option value="success">Success / Feature (Green)</option>
+                    <option value="warning">Warning / Notice (Amber)</option>
+                    <option value="alert">Critical Alert (Red)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-300 uppercase">Announcement Description *</label>
+                <textarea
+                  rows={2}
+                  required
+                  placeholder="Detailed broadcast message to show on top of user feeds..."
+                  value={annMessage}
+                  onChange={(e) => setAnnMessage(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 shadow transition-colors"
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>Broadcast Announcement Nationwide</span>
+              </button>
+            </form>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+              <h3 className="text-base font-extrabold text-white">Active System Announcements</h3>
+
+              {announcements.length === 0 ? (
+                <p className="text-xs text-slate-500 italic">No broadcast messages currently active.</p>
+              ) : (
+                <div className="space-y-3">
+                  {announcements.map((ann) => (
+                    <div
+                      key={ann.id}
+                      className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+                        ann.active
+                          ? 'bg-slate-950 border-emerald-500/30 text-white'
+                          : 'bg-slate-950/40 border-slate-800 text-slate-500 opacity-60'
+                      }`}
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                            ann.type === 'alert' ? 'bg-rose-500 text-white' :
+                            ann.type === 'warning' ? 'bg-amber-500 text-slate-950' :
+                            ann.type === 'success' ? 'bg-emerald-500 text-slate-950' :
+                            'bg-blue-500 text-white'
+                          }`}>
+                            {ann.type}
+                          </span>
+                          <h4 className="font-bold text-xs text-white truncate">{ann.title}</h4>
+                        </div>
+                        <p className="text-xs text-slate-300">{ann.message}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => toggleAnnouncement(ann.id)}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border ${
+                            ann.active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}
+                        >
+                          {ann.active ? 'ACTIVE' : 'PAUSED'}
+                        </button>
+
+                        <button
+                          onClick={() => deleteAnnouncement(ann.id)}
+                          className="p-1.5 bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tab Content: Categories Management */}
         {activeTab === 'categories' && (
           <div className="space-y-6">
-            {/* Create Category Form */}
             <form onSubmit={handleAddCategory} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-base">
                 <Layers className="w-5 h-5" />
@@ -254,7 +390,6 @@ export const AdminDashboard: React.FC = () => {
               </button>
             </form>
 
-            {/* Existing Categories List */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
               <h3 className="text-base font-extrabold text-white">Active Categories ({categories.length})</h3>
 
@@ -301,7 +436,6 @@ export const AdminDashboard: React.FC = () => {
                               setEditingCatName(cat.name);
                             }}
                             className="p-1.5 bg-slate-900 text-slate-400 hover:text-white rounded-lg"
-                            title="Edit Category Name"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -312,7 +446,6 @@ export const AdminDashboard: React.FC = () => {
                             toast.info(`Category "${cat.name}" deleted`);
                           }}
                           className="p-1.5 bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg"
-                          title="Delete Category"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -352,6 +485,7 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="px-6 py-4 font-black uppercase text-slate-400">User Profile</th>
                       <th className="px-6 py-4 font-black uppercase text-slate-400">Contact Details</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Role</th>
                       <th className="px-6 py-4 font-black uppercase text-slate-400 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -399,7 +533,6 @@ export const AdminDashboard: React.FC = () => {
                             <button
                               onClick={() => handleToggleRole(u)}
                               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-[10px] border border-slate-700 transition-all"
-                              title="Cycle User Role"
                             >
                               Role: {u.role.toUpperCase()}
                             </button>
@@ -407,7 +540,6 @@ export const AdminDashboard: React.FC = () => {
                             <button
                               onClick={() => deleteUser(u.id)}
                               className="p-1.5 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
-                              title="Delete user"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -422,10 +554,9 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Approvals (PW & Verification) */}
+        {/* Tab Content: Approvals */}
         {activeTab === 'approvals' && (
           <div className="space-y-10">
-            {/* 1. Verification Badge Requests */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
@@ -439,25 +570,18 @@ export const AdminDashboard: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {verificationRequests.map((req) => (
-                  <div key={req.id} className={`bg-slate-900 border p-5 rounded-3xl space-y-4 shadow-xl ${
-                    req.status === 'pending' ? 'border-emerald-500/30 ring-1 ring-emerald-500/10' : 'border-slate-800'
-                  }`}>
+                  <div key={req.id} className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <img src={req.docUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800 hover:scale-150 transition-transform cursor-zoom-in" />
+                        <img src={req.docUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
                         <div>
                           <h4 className="font-bold text-sm text-white">{req.userName}</h4>
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                            req.type === 'premium' ? 'bg-purple-600 text-white' : 
-                            req.type === 'business' ? 'bg-amber-500 text-slate-950' : 'bg-emerald-500 text-slate-950'
-                          }`}>
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-500 text-slate-950">
                             {req.type} Apply
                           </span>
                         </div>
                       </div>
-                      <span className={`text-[9px] font-black uppercase ${req.status === 'pending' ? 'text-amber-400' : 'text-slate-500'}`}>
-                        {req.status}
-                      </span>
+                      <span className="text-[9px] font-black uppercase text-amber-400">{req.status}</span>
                     </div>
                     <div className="bg-slate-950/50 p-3 rounded-2xl text-[11px] space-y-1.5">
                       <p className="text-slate-400 truncate">Doc: <strong className="text-white">{req.docType}</strong></p>
@@ -465,8 +589,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2">
-                        <button onClick={() => processVerificationRequest(req.id, 'rejected')} className="flex-1 py-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold rounded-xl text-[10px]">REJECT</button>
-                        <button onClick={() => processVerificationRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-[10px]">ISSUE BADGE</button>
+                        <button onClick={() => processVerificationRequest(req.id, 'rejected')} className="flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded-xl text-[10px]">REJECT</button>
+                        <button onClick={() => processVerificationRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">ISSUE BADGE</button>
                       </div>
                     )}
                   </div>
@@ -474,7 +598,6 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. Password Reset Requests */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
@@ -501,8 +624,8 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2">
-                        <button onClick={() => processPasswordRequest(req.id, 'declined')} className="flex-1 py-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold rounded-xl text-[10px]">DECLINE</button>
-                        <button onClick={() => processPasswordRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-[10px]">APPROVE NEW PW</button>
+                        <button onClick={() => processPasswordRequest(req.id, 'declined')} className="flex-1 py-2 bg-slate-800 text-slate-400 font-bold rounded-xl text-[10px]">DECLINE</button>
+                        <button onClick={() => processPasswordRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">APPROVE NEW PW</button>
                       </div>
                     )}
                   </div>
@@ -541,37 +664,34 @@ export const AdminDashboard: React.FC = () => {
                       <tr key={req.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            {req.paymentProofUrl && (
+                            {req.paymentProofUrl ? (
                               <img src={req.paymentProofUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
-                            )}
-                            {!req.paymentProofUrl && (
-                              <div className="w-10 h-10 bg-slate-900 rounded-flex flex items-center justify-center">
+                            ) : (
+                              <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
                                 <Upload className="w-5 h-5 text-slate-400" />
                               </div>
                             )}
                             <div className="min-w-0">
                               <p className="font-bold text-white truncate">Promotion: {req.planName} ({req.durationMonths} months)</p>
-                              <p className="text-[10px] text-emerald-400">Amount: {formatNGN(req.amount)}</p>
+                              <p className="text-[10px] text-emerald-400 font-bold">Amount: {formatNGN(req.amount)}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-300">{allUsers.find(u => u.id === req.userId)?.fullName || 'Unknown User'}</span>
-                            {allUsers.find(u => u.id === req.userId)?.verified && <VerifiedBadge type={allUsers.find(u => u.id === req.userId)?.verificationType || 'individual'} />}
                           </div>
                           <p className="text-[10px] text-slate-500 mt-0.5">{allUsers.find(u => u.id === req.userId)?.email}</p>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-400" /><span className="font-bold">{req.id}</span></div>
-                            {req.paymentProofUrl && <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[9px] font-black uppercase border border-amber-500/20">Proof Uploaded</span>}
+                            <span className="font-bold text-slate-400">{req.id}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => processPromotionPaymentRequest(req.id, 'rejected')} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
-                            <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="p-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all"><Check className="w-4 h-4" /></button>
+                            <button onClick={() => processPromotionPaymentRequest(req.id, 'rejected')} className="p-2 bg-slate-800 text-slate-400 hover:text-red-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="p-2 bg-emerald-500 text-slate-950 font-black rounded-xl"><Check className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -638,22 +758,21 @@ export const AdminDashboard: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-black flex items-center gap-2">
                   <Zap className="w-5 h-5 text-amber-400" />
-                  Active Promotions ({promotedAds.length})
+                  Active Promoted Ads ({promotedAds.length})
                 </h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {promotedAds.map(ad => (
                   <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
                     <div className="flex items-center gap-2">
                       <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" />
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white truncate">{ad.title}</p>
-                        <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName}</p>
+                        <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName || 'TOP AD'}</p>
                       </div>
                     </div>
                     <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 pt-2 border-t border-slate-800">
-                      <span>Expires in {ad.promotionDurationMonths} mo</span>
+                      <span>Featured</span>
                       <button onClick={() => updateListing(ad.id, { featured: false })} className="text-red-400 hover:underline">REVOKE</button>
                     </div>
                   </div>
@@ -687,20 +806,18 @@ export const AdminDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-300">{ad.sellerName}</span>
-                            {ad.sellerVerified && <VerifiedBadge type={ad.sellerVerificationType || 'individual'} />}
                           </div>
                           <p className="text-[10px] text-slate-500 mt-0.5">{ad.location}</p>
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-400" /><span className="font-bold">{ad.viewsCount}</span></div>
-                            {ad.featured && <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[9px] font-black uppercase border border-amber-500/20">Featured</span>}
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
-                            <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl"><Eye className="w-4 h-4" /></Link>
+                            <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
                       </tr>
@@ -709,40 +826,10 @@ export const AdminDashboard: React.FC = () => {
                 </table>
               </div>
             </div>
-
-            {/* Expired Promotions Section */}
-            {promotedAds.filter(isPromotionExpired).length > 0 && (
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-amber-400" />
-                    Expired Promotions ({promotedAds.filter(isPromotionExpired).length})
-                  </h3>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {promotedAds.filter(isPromotionExpired).map(ad => (
-                    <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
-                      <div className="flex items-center gap-2">
-                        <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{ad.title}</p>
-                          <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName}</p>
-                        </div>
-                      </div>
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 pt-2 border-t border-slate-800">
-                        <span>Expired on {new Date(ad.promotionEndDate!).toLocaleDateString()}</span>
-                        <button onClick={() => updateListing(ad.id, { featured: false, promotionPlanName: undefined, promotionDurationMonths: undefined, promotionStartDate: undefined, promotionEndDate: undefined, paymentStatus: undefined, paymentProofUrl: undefined, amountPaid: undefined })} className="text-red-400 hover:underline">STOP PROMOTION</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Badge Alignment Modal (Users Tab) */}
+        {/* Badge Alignment Modal */}
         {editingUser && (
           <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl relative space-y-6">

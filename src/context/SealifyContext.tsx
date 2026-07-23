@@ -14,6 +14,15 @@ export interface AppNotification {
   linkUrl?: string;
 }
 
+export interface SystemAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'alert';
+  active: boolean;
+  createdAt: string;
+}
+
 interface AnalyticsData {
   visitors: number;
   activeAds: number;
@@ -76,6 +85,10 @@ interface SealifyContextType {
   promotionPaymentRequests: PromotionPaymentRequest[];
   submitPromotionPaymentRequest: (req: Omit<PromotionPaymentRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPromotionPaymentRequest: (id: string, status: 'approved' | 'rejected') => void;
+  announcements: SystemAnnouncement[];
+  addAnnouncement: (ann: Omit<SystemAnnouncement, 'id' | 'createdAt'>) => void;
+  toggleAnnouncement: (id: string) => void;
+  deleteAnnouncement: (id: string) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -91,6 +104,17 @@ const DEFAULT_ADMIN: UserProfile = {
   location: 'Ogbomoso, Oyo State',
   password: 'Tscw+1234',
 };
+
+const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
+  {
+    id: 'ann_1',
+    title: 'Safe Exchange Zones Update',
+    message: 'New verified police safe exchange points added at Ogbomoso Divisional HQ & LAUTECH Main Gate.',
+    type: 'success',
+    active: true,
+    createdAt: 'Today',
+  },
+];
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
@@ -125,38 +149,6 @@ const INITIAL_CONVERSATIONS: Conversation[] = [
       },
     ],
   },
-  {
-    id: 'conv_2',
-    listingId: 'lst_200',
-    listingTitle: 'iPhone 15 Pro Max',
-    listingImage: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format',
-    listingPrice: 1200000,
-    otherUser: {
-      id: 'usr_2',
-      name: 'Blessing Okonjo',
-      avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300',
-    },
-    lastMessage: 'Can we meet at Ogbomoso Divisional Police HQ Safe Zone?',
-    lastMessageTime: '1h ago',
-    messages: [
-      {
-        id: 'm3',
-        senderId: 'usr_2',
-        receiverId: 'usr_admin_default',
-        listingId: 'lst_200',
-        content: 'Hi! Yes, the iPhone is brand new sealed in box.',
-        createdAt: '2h ago',
-      },
-      {
-        id: 'm4',
-        senderId: 'usr_admin_default',
-        receiverId: 'usr_2',
-        listingId: 'lst_200',
-        content: 'Can we meet at Ogbomoso Divisional Police HQ Safe Zone?',
-        createdAt: '1h ago',
-      },
-    ],
-  },
 ];
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
@@ -164,7 +156,7 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
     const savedUser = localStorage.getItem('sealify_user');
-    return savedUser ? JSON.parse(savedUser) : null;
+    return savedUser ? JSON.parse(savedUser) : DEFAULT_ADMIN;
   });
 
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
@@ -187,6 +179,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>(() => {
+    const saved = localStorage.getItem('sealify_announcements');
+    return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -206,8 +203,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     ];
   });
 
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    visitors: 148,
+  const [analytics] = useState<AnalyticsData>({
+    visitors: 184,
     activeAds: MOCK_LISTINGS.length,
     totalChats: 92,
     sessionsPerMinute: [15, 22, 18, 28, 24, 35, 26, 30, 32, 40],
@@ -239,6 +236,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_conversations', JSON.stringify(conversations));
   }, [conversations]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_announcements', JSON.stringify(announcements));
+  }, [announcements]);
 
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
@@ -280,8 +281,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password) {
       setUser(DEFAULT_ADMIN);
       localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      toast.success('Authenticated as Administrator');
       return true;
     }
+    toast.error('Invalid admin credentials');
     return false;
   };
 
@@ -310,7 +313,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sellerId: user.id,
       sellerName: user.fullName,
       sellerAvatar: user.avatarUrl,
-      sellerPhone: user.phoneNumber || '+234 000 000 0000',
+      sellerPhone: user.phoneNumber || '+234 813 120 8468',
       sellerVerified: user.verified,
       sellerVerificationType: user.verificationType,
       status: 'active',
@@ -321,7 +324,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Your ad is now live!');
   };
 
-  const deleteListing = (id: string) => setListings(prev => prev.filter(l => l.id !== id));
+  const deleteListing = (id: string) => {
+    setListings(prev => prev.filter(l => l.id !== id));
+    toast.success('Ad listing deleted');
+  };
+
   const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
   
@@ -387,7 +394,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     });
 
-    toast.success('Message sent to seller!');
+    toast.success('Message sent!');
   };
 
   const addNotification = useCallback((notif: any) => {
@@ -422,7 +429,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPasswordRequests(prev => [newReq, ...prev]);
-    toast.success('Password change request submitted to Admin for verification.');
+    toast.success('Password change request submitted to Admin.');
   };
 
   const processPasswordRequest = (id: string, status: 'approved' | 'declined') => {
@@ -431,9 +438,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (status === 'approved') {
       updateUser(req.userId, { password: req.newPassword });
-      toast.success(`Email sent to ${req.userEmail}: Password change approved.`);
+      toast.success(`Password reset for ${req.userEmail} approved!`);
     } else {
-      toast.error(`Email sent to ${req.userEmail}: Password reset declined.`);
+      toast.error(`Password reset for ${req.userEmail} declined.`);
     }
 
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
@@ -448,7 +455,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setVerificationRequests(prev => [newReq, ...prev]);
-    toast.success(`${req.type.toUpperCase()} Verification submitted to Admin!`);
+    toast.success(`${req.type.toUpperCase()} Verification request submitted!`);
   };
 
   const processVerificationRequest = (id: string, status: 'approved' | 'rejected') => {
@@ -474,7 +481,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPromotionPaymentRequests(prev => [newReq, ...prev]);
-    toast.success('Promotion payment proof submitted. Awaiting admin verification.');
+    toast.success('Promotion payment submitted for admin review.');
   };
 
   const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => {
@@ -482,7 +489,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!req) return;
 
     if (status === 'approved') {
-      // Update listing: set featured true, set promotion dates, paymentStatus verified, amountPaid
       const now = new Date();
       const startDate = now.toISOString();
       const endDate = new Date(now.getFullYear(), now.getMonth() + req.durationMonths, now.getDate()).toISOString();
@@ -502,24 +508,38 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             } 
           : l
       ));
-      // Optionally, update user to premium if not already
-      // updateUser(req.userId, { verified: true, verificationType: 'premium' });
-      toast.success(`Promotion payment approved. Ad is now featured for ${req.durationMonths} months.`);
+      toast.success(`Promotion payment approved for ${req.durationMonths} month(s).`);
     } else {
-      // Rejected: set paymentStatus to failed
       setListings(prev => prev.map(l => 
         l.id === req.listingId 
-          ? { 
-              ...l, 
-              paymentStatus: 'failed',
-              paymentProofUrl: req.paymentProofUrl
-            } 
+          ? { ...l, paymentStatus: 'failed' } 
           : l
       ));
       toast.error(`Promotion payment rejected.`);
     }
 
     setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
+  // Announcements logic
+  const addAnnouncement = (ann: Omit<SystemAnnouncement, 'id' | 'createdAt'>) => {
+    const newAnn: SystemAnnouncement = {
+      ...ann,
+      id: 'ann_' + Date.now(),
+      createdAt: 'Just now'
+    };
+    setAnnouncements(prev => [newAnn, ...prev]);
+    toast.success('System Announcement published live!');
+  };
+
+  const toggleAnnouncement = (id: string) => {
+    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
+    toast.info('Announcement status updated');
+  };
+
+  const deleteAnnouncement = (id: string) => {
+    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    toast.success('Announcement removed');
   };
 
   return (
@@ -541,7 +561,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
-      promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest
+      promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
+      announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement
     }}>
       {children}
     </SealifyContext.Provider>

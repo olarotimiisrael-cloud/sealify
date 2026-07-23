@@ -17,7 +17,6 @@ import LiveActivityToast from '../components/LiveActivityToast';
 import { CompareModal } from '../components/CompareModal';
 import { 
   SlidersHorizontal, 
-  Search, 
   Sparkles, 
   ShieldCheck, 
   Zap, 
@@ -28,32 +27,30 @@ import {
   MapPin,
   PlusCircle,
   MessageSquare,
-  ArrowRight,
-  TrendingUp,
   CheckCircle2,
-  Lock,
   Lightbulb,
   Scale,
   Smartphone,
-  Eye,
   Building,
   Activity,
-  Award
+  Megaphone,
+  X
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
 const Index: React.FC = () => {
-  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, compareListingIds, t } = useSealify();
+  const { listings, filters, setFilters, recentlyViewedIds, compareListingIds, announcements, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
   const [isSavedAlertsOpen, setIsSavedAlertsOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [dismissedBannerIds, setDismissedBannerIds] = useState<string[]>([]);
 
+  const activeAnnouncements = announcements.filter(a => a.active && !dismissedBannerIds.includes(a.id));
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
   
-  // AI Recommendation simulation
   const recommendedListings = listings
     .filter(l => !recentlyViewedIds.includes(l.id))
     .sort(() => 0.5 - Math.random())
@@ -85,6 +82,33 @@ const Index: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
       <SEO />
       <Navbar />
+      
+      {/* Live System Announcement Banner */}
+      {activeAnnouncements.map((ann) => (
+        <div 
+          key={ann.id}
+          className={`py-2 px-4 border-b text-xs flex items-center justify-between gap-3 ${
+            ann.type === 'alert' ? 'bg-rose-950 border-rose-800 text-rose-200' :
+            ann.type === 'warning' ? 'bg-amber-950 border-amber-800 text-amber-200' :
+            ann.type === 'success' ? 'bg-emerald-950 border-emerald-800 text-emerald-200' :
+            'bg-slate-900 border-slate-800 text-slate-200'
+          }`}
+        >
+          <div className="flex items-center gap-2 max-w-7xl mx-auto flex-1 truncate">
+            <Megaphone className="w-4 h-4 shrink-0 animate-bounce" />
+            <span className="font-bold truncate">{ann.title}:</span>
+            <span className="truncate opacity-90">{ann.message}</span>
+          </div>
+
+          <button
+            onClick={() => setDismissedBannerIds(prev => [...prev, ann.id])}
+            className="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-white shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+
       <CategoryBar />
       <LiveActivityToast />
 
@@ -95,7 +119,6 @@ const Index: React.FC = () => {
         <div className="max-w-7xl mx-auto space-y-6 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
             
-            {/* Left Column */}
             <div className="lg:col-span-5 space-y-3 sm:space-y-4 text-center lg:text-left flex flex-col justify-center">
               <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] sm:text-xs font-black px-3.5 py-1 rounded-full self-center lg:self-start shadow-sm">
                 <MapPin className="w-3.5 h-3.5" />
@@ -127,7 +150,6 @@ const Index: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Showcase Hub */}
             <div className="lg:col-span-7 flex flex-col justify-center">
               <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>
@@ -222,7 +244,7 @@ const Index: React.FC = () => {
           </div>
         </section>
 
-        {/* AI Monitoring: Personalized Recommendations Section */}
+        {/* AI Recommendations */}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-purple-500/10 text-purple-400 rounded-lg border border-purple-500/20">
