@@ -35,6 +35,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   const getDaysLeft = (): number | null => {
     if (!listing.promotionEndDate) return null;
     const end = new Date(listing.promotionEndDate);
+    if (isNaN(end.getTime())) return null;
     const now = new Date();
     const diffTime = end.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
