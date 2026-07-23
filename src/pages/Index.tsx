@@ -34,13 +34,16 @@ import {
   Megaphone,
   X,
   Filter,
-  Tag
+  Tag,
+  TrendingUp,
+  Handshake,
+  ArrowUpRight
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
 export const Index: React.FC = () => {
-  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, compareListingIds, announcements, t } = useSealify();
+  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, compareListingIds, announcements, recentDeals, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
   const [isSavedAlertsOpen, setIsSavedAlertsOpen] = useState(false);
@@ -230,6 +233,55 @@ export const Index: React.FC = () => {
       </section>
 
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-8 sm:space-y-12">
+        
+        {/* Live Marketplace Deals Ticker */}
+        <section className="bg-slate-900 border border-emerald-500/20 rounded-3xl p-4 sm:p-5 relative overflow-hidden shadow-xl">
+           <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-emerald-500/5 to-transparent"></div>
+           <div className="flex flex-col sm:flex-row items-center gap-4 relative z-10">
+              <div className="flex items-center gap-2 shrink-0 border-r border-slate-800 pr-4">
+                 <div className="w-10 h-10 bg-emerald-500/10 text-emerald-400 rounded-xl flex items-center justify-center border border-emerald-500/30">
+                    <Handshake className="w-6 h-6 animate-pulse" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none">Live Deals</p>
+                    <h3 className="text-sm font-black text-white">Ogbomoso Pulse</h3>
+                 </div>
+              </div>
+
+              <div className="flex-1 overflow-hidden">
+                 <div className="flex items-center gap-8 animate-marquee whitespace-nowrap">
+                    {recentDeals.map((deal) => (
+                      <div key={deal.id} className="flex items-center gap-2">
+                         <span className="text-[11px] font-bold text-slate-100">"{deal.itemTitle}"</span>
+                         <span className="text-[11px] font-black text-emerald-400">₦{deal.price.toLocaleString()}</span>
+                         <span className="text-[9px] bg-slate-950 px-2 py-0.5 rounded-full text-slate-500 font-bold border border-slate-800">
+                           {deal.location.split(',')[0]} • {deal.time}
+                         </span>
+                         <div className="w-1.5 h-1.5 rounded-full bg-slate-800 mx-2"></div>
+                      </div>
+                    ))}
+                    {/* Repeat for continuous loop */}
+                    {recentDeals.map((deal) => (
+                      <div key={`${deal.id}-copy`} className="flex items-center gap-2">
+                         <span className="text-[11px] font-bold text-slate-100">"{deal.itemTitle}"</span>
+                         <span className="text-[11px] font-black text-emerald-400">₦{deal.price.toLocaleString()}</span>
+                         <span className="text-[9px] bg-slate-950 px-2 py-0.5 rounded-full text-slate-500 font-bold border border-slate-800">
+                           {deal.location.split(',')[0]} • {deal.time}
+                         </span>
+                         <div className="w-1.5 h-1.5 rounded-full bg-slate-800 mx-2"></div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <div className="shrink-0 hidden lg:block">
+                 <Link to="/vendors" className="text-[11px] font-black text-emerald-400 hover:underline flex items-center gap-1">
+                   VIEW MERCHANTS <ArrowUpRight className="w-3.5 h-3.5" />
+                 </Link>
+              </div>
+           </div>
+        </section>
+
         <CategoryGrid />
         
         {/* Local Market Pulse: Live Stats */}

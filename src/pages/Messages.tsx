@@ -6,8 +6,9 @@ import MobileNav from '../components/MobileNav';
 import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
+import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const QUICK_REPLIES = [
@@ -18,7 +19,7 @@ const QUICK_REPLIES = [
 ];
 
 const Messages: React.FC = () => {
-  const { conversations, sendMessage, isAuthenticated, user, listings } = useSealify();
+  const { conversations, sendMessage, isAuthenticated, user, listings, sealDeal } = useSealify();
   const [activeConvId, setActiveConvId] = useState<string>(conversations[0]?.id || '');
   const [text, setText] = useState('');
   const [isAuthOpen, setIsAuthOpen] = useState(!isAuthenticated);
@@ -27,12 +28,15 @@ const Messages: React.FC = () => {
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
   const activeListing = listings.find((l) => l.id === activeConv?.listingId);
+
+  const isSeller = activeListing?.sellerId === user?.id;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +84,16 @@ const Messages: React.FC = () => {
   const handleSendInspectionReport = (reportMsg: string) => {
     if (!activeConv) return;
     sendMessage(activeConv.listingId, activeConv.otherUser.id, reportMsg);
+  };
+
+  const handleSealTheDeal = (receiptMsg: string) => {
+    if (!activeConv || !activeListing) return;
+    
+    // Official Platform Action
+    sealDeal(activeListing.id, activeConv.otherUser.name, activeListing.price);
+    
+    // Send Receipt Text to Chat
+    sendMessage(activeConv.listingId, activeConv.otherUser.id, receiptMsg);
   };
 
   if (!isAuthenticated) {
@@ -163,12 +177,22 @@ const Messages: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
+                  {isSeller && activeListing?.status === 'active' && (
+                    <button
+                      onClick={() => setIsReceiptOpen(true)}
+                      className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Seal the Deal</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={() => setIsInspectionOpen(true)}
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-purple-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
                   >
                     <CheckSquare className="w-3.5 h-3.5" />
-                    <span>Inspection Checklist</span>
+                    <span className="hidden sm:inline">Checklist</span>
                   </button>
 
                   <button
@@ -176,7 +200,7 @@ const Messages: React.FC = () => {
                     className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-teal-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
                   >
                     <MapPin className="w-3.5 h-3.5" />
-                    <span>Safe Meetup</span>
+                    <span className="hidden sm:inline">Meetup</span>
                   </button>
 
                   <button
@@ -184,7 +208,7 @@ const Messages: React.FC = () => {
                     className="px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 rounded-xl text-xs font-bold border border-emerald-500/30 flex items-center gap-1.5 transition-colors"
                   >
                     <Tag className="w-3.5 h-3.5" />
-                    <span>Make Offer</span>
+                    <span className="hidden sm:inline">Offer</span>
                   </button>
                 </div>
               </div>
@@ -196,6 +220,7 @@ const Messages: React.FC = () => {
                   const isLocationMsg = m.content.includes('PROPOSED SAFE MEETUP LOCATION');
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
                   const isInspectionMsg = m.content.includes('IN-PERSON INSPECTION REPORT');
+                  const isReceiptMsg = m.content.includes('OFFICIAL SEALIFY TRANSACTION RECEIPT');
                   const isAudioMsg = m.content.includes('Voice Note');
 
                   return (
@@ -210,6 +235,8 @@ const Messages: React.FC = () => {
                             ? 'bg-amber-950/80 border border-amber-500/40 text-amber-200 rounded-bl-none'
                             : isInspectionMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
+                            : isReceiptMsg
+                            ? 'bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 rounded-bl-none'
                             : isAudioMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
@@ -313,6 +340,15 @@ const Messages: React.FC = () => {
         itemTitle={activeConv?.listingTitle || 'Item'}
         onSendChecklistToChat={handleSendInspectionReport}
       />
+
+      {activeListing && (
+        <TransactionReceiptModal
+          isOpen={isReceiptOpen}
+          onClose={() => setIsReceiptOpen(false)}
+          listing={activeListing}
+          onSendToChat={handleSealTheDeal}
+        />
+      )}
 
       <MobileNav />
     </div>

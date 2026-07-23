@@ -23,6 +23,14 @@ export interface SystemAnnouncement {
   createdAt: string;
 }
 
+export interface MarketplaceDeal {
+  id: string;
+  itemTitle: string;
+  price: number;
+  location: string;
+  time: string;
+}
+
 interface AnalyticsData {
   visitors: number;
   activeAds: number;
@@ -96,6 +104,8 @@ interface SealifyContextType {
   processReport: (id: string, action: 'dismiss' | 'resolve_delete_ad') => void;
   auditLogs: AuditLog[];
   addAuditLog: (action: string, details: string, type: AuditLog['type']) => void;
+  recentDeals: MarketplaceDeal[];
+  sealDeal: (listingId: string, buyerName: string, price: number) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -123,6 +133,12 @@ const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
     active: true,
     createdAt: 'Today',
   },
+];
+
+const INITIAL_DEALS: MarketplaceDeal[] = [
+  { id: 'd1', itemTitle: 'iPhone 13 Pro', price: 420000, location: 'Under G, Ogbomoso', time: '12m ago' },
+  { id: 'd2', itemTitle: 'Toyota Camry 2012', price: 3800000, location: 'Takie Square', time: '45m ago' },
+  { id: 'd3', itemTitle: '2 Bedroom Flat', price: 250000, location: 'Aroje Area', time: '2h ago' },
 ];
 
 const INITIAL_REPORTS: AdReport[] = [
@@ -220,6 +236,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
   });
 
+  const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>(() => {
+    const saved = localStorage.getItem('sealify_recent_deals');
+    return saved ? JSON.parse(saved) : INITIAL_DEALS;
+  });
+
   const [reports, setReports] = useState<AdReport[]>(() => {
     const saved = localStorage.getItem('sealify_reports');
     return saved ? JSON.parse(saved) : INITIAL_REPORTS;
@@ -286,6 +307,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_announcements', JSON.stringify(announcements));
   }, [announcements]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_recent_deals', JSON.stringify(recentDeals));
+  }, [recentDeals]);
 
   useEffect(() => {
     localStorage.setItem('sealify_reports', JSON.stringify(reports));
@@ -450,6 +475,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
     addAuditLog('Listing Promoted', `Promoted ad ID: ${id} with ${plan}`, 'ad');
   };
+
+  const sealDeal = useCallback((listingId: string, buyerName: string, price: number) => {
+    const listing = listings.find(l => l.id === listingId);
+    if (!listing) return;
+
+    markAsSold(listingId);
+
+    const deal: MarketplaceDeal = {
+      id: 'deal_' + Date.now(),
+      itemTitle: listing.title,
+      price,
+      location: listing.location,
+      time: 'Just now'
+    };
+
+    setRecentDeals(prev => [deal, ...prev].slice(0, 15));
+    addAuditLog('Deal Sealed', `Transaction complete for "${listing.title}" with buyer ${buyerName}`, 'ad');
+    toast.success(`🎉 Deal Sealed! Transaction proof generated for ${listing.title}.`);
+  }, [listings, markAsSold, addAuditLog]);
 
   const sendMessage = (listingId: string, receiverId: string, content: string) => {
     if (!user) {
@@ -708,7 +752,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
       reports, submitReport, processReport,
-      auditLogs, addAuditLog
+      auditLogs, addAuditLog,
+      recentDeals, sealDeal
     }}>
       {children}
     </SealifyContext.Provider>
