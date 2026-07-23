@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -113,6 +113,9 @@ interface SealifyContextType {
   reports: AdReport[];
   submitReport: (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => void;
   processReport: (id: string, action: 'dismiss' | 'resolve_delete_ad') => void;
+  disputeCases: DisputeCase[];
+  submitDisputeCase: (disp: Omit<DisputeCase, 'id' | 'status' | 'createdAt'>) => void;
+  processDisputeCase: (id: string, status: 'in_review' | 'resolved') => void;
   auditLogs: AuditLog[];
   addAuditLog: (action: string, details: string, type: AuditLog['type']) => void;
   recentDeals: MarketplaceDeal[];
@@ -152,6 +155,22 @@ const INITIAL_DEALS: MarketplaceDeal[] = [
   { id: 'd1', itemTitle: 'iPhone 13 Pro', price: 420000, location: 'Under G, Ogbomoso', time: '12m ago' },
   { id: 'd2', itemTitle: 'Toyota Camry 2012', price: 3800000, location: 'Takie Square', time: '45m ago' },
   { id: 'd3', itemTitle: '2 Bedroom Flat', price: 250000, location: 'Aroje Area', time: '2h ago' },
+];
+
+const INITIAL_DISPUTES: DisputeCase[] = [
+  {
+    id: 'DISP-2024-8841',
+    userId: 'usr_2',
+    userEmail: 'chioma@gmail.com',
+    receiptRef: 'RCP-2024-100293',
+    itemTitle: 'iPhone 13 Pro 256GB',
+    counterparty: 'Adebowale Ogunleye',
+    category: 'Electronics',
+    reason: 'Item Condition Misrepresentation (Undisclosed Faults)',
+    details: 'The camera glass had a crack not disclosed in the listing photos.',
+    status: 'in_review',
+    createdAt: '2 days ago',
+  },
 ];
 
 const INITIAL_REPORTS: AdReport[] = [
@@ -254,6 +273,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>(() => {
+    const saved = localStorage.getItem('sealify_dispute_cases');
+    return saved ? JSON.parse(saved) : INITIAL_DISPUTES;
+  });
+
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>(() => {
     const saved = localStorage.getItem('sealify_announcements');
     return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
@@ -333,6 +357,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [conversations]);
 
   useEffect(() => {
+    localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
+  }, [disputeCases]);
+
+  useEffect(() => {
     localStorage.setItem('sealify_announcements', JSON.stringify(announcements));
   }, [announcements]);
 
@@ -378,8 +406,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       exportTimestamp: new Date().toISOString(),
       usersCount: allUsers.length,
       listingsCount: listings.length,
+      disputesCount: disputeCases.length,
       allUsers,
       listings,
+      disputeCases,
       auditLogs,
       reports,
       announcements,
@@ -394,7 +424,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     downloadAnchor.remove();
 
     toast.success('Full Database Backup JSON downloaded successfully!');
-  }, [allUsers, listings, auditLogs, reports, announcements]);
+  }, [allUsers, listings, disputeCases, auditLogs, reports, announcements]);
 
   const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
     const log: AuditLog = {
@@ -406,6 +436,23 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
     setAuditLogs(prev => [log, ...prev]);
   }, []);
+
+  const submitDisputeCase = useCallback((disp: Omit<DisputeCase, 'id' | 'status' | 'createdAt'>) => {
+    const newCase: DisputeCase = {
+      ...disp,
+      id: `DISP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'pending',
+      createdAt: 'Just now'
+    };
+    setDisputeCases(prev => [newCase, ...prev]);
+    addAuditLog('Dispute Filed', `New dispute claim #${newCase.id} filed for "${disp.itemTitle}"`, 'dispute');
+  }, [addAuditLog]);
+
+  const processDisputeCase = useCallback((id: string, status: 'in_review' | 'resolved') => {
+    setDisputeCases(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+    addAuditLog('Dispute Updated', `Dispute claim ${id} marked as ${status.toUpperCase()}`, 'dispute');
+    toast.success(`Dispute ${id} status updated to ${status.toUpperCase()}`);
+  }, [addAuditLog]);
 
   const recordIntrusion = useCallback((email: string, mediaStatus: string) => {
     const intrusion: SecurityIntrusionLog = {
@@ -859,6 +906,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
+      disputeCases, submitDisputeCase, processDisputeCase,
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
       reports, submitReport, processReport,
       auditLogs, addAuditLog,

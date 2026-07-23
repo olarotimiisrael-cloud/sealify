@@ -14,7 +14,7 @@ import {
   Bell, Radio, ShieldAlert, Download, FileSpreadsheet, Terminal, 
   Clock, Server, DollarSign, Image, User, Users, FileText, CheckCircle2,
   AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, Cpu, Globe,
-  Sliders, Lock, Unlock, ToggleLeft, ToggleRight, Send
+  Sliders, Lock, Unlock, ToggleLeft, ToggleRight, Send, Scale
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -27,10 +27,10 @@ export const AdminDashboard: React.FC = () => {
     promotionPaymentRequests, processPromotionPaymentRequest, announcements, addAnnouncement, 
     toggleAnnouncement, deleteAnnouncement, reports, processReport, auditLogs, analytics,
     adminPin, updateAdminPin, intrusionLogs, systemConfig, updateSystemConfig, exportDatabaseBackup,
-    broadcastMassNotification
+    broadcastMassNotification, disputeCases, processDisputeCase
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'moderation' | 'settings' | 'audit' | 'intrusions'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'disputes' | 'moderation' | 'settings' | 'audit' | 'intrusions'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
@@ -57,6 +57,7 @@ export const AdminDashboard: React.FC = () => {
   const pendingVerifications = verificationRequests.filter(r => r.status === 'pending');
   const pendingPasswordRequests = passwordRequests.filter(r => r.status === 'pending');
   const pendingReports = reports.filter(r => r.status === 'pending');
+  const pendingDisputes = disputeCases.filter(c => c.status !== 'resolved');
   const expiredAds = listings.filter(l => l.featured && l.promotionEndDate && new Date(l.promotionEndDate) < new Date());
 
   const handleAddCategory = (e: React.FormEvent) => {
@@ -188,6 +189,9 @@ export const AdminDashboard: React.FC = () => {
           <button onClick={() => setActiveTab('users')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
             USERS & BADGES {(pendingVerifications.length > 0 || pendingPasswordRequests.length > 0) && <span className="ml-1 bg-amber-500 text-slate-950 text-[8px] px-1.5 py-0.2 rounded-full font-extrabold">{pendingVerifications.length + pendingPasswordRequests.length}</span>}
           </button>
+          <button onClick={() => setActiveTab('disputes')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'disputes' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+            DISPUTES {pendingDisputes.length > 0 && <span className="ml-1 bg-rose-600 text-white text-[8px] px-1.5 py-0.2 rounded-full font-bold">{pendingDisputes.length}</span>}
+          </button>
           <button onClick={() => setActiveTab('categories')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
           <button onClick={() => setActiveTab('listings')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
             INVENTORY {expiredAds.length > 0 && <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1 right-1 animate-pulse"></span>}
@@ -259,6 +263,66 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                </div>
             </div>
+          </div>
+        )}
+
+        {/* DISPUTES & ARBITRATION TAB */}
+        {activeTab === 'disputes' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
+                <Gavel className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">Trade Dispute Arbitration Court</h2>
+                <p className="text-xs text-slate-400">Review trade grievance claims and issue binding admin verdicts</p>
+              </div>
+            </div>
+
+            {disputeCases.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">
+                No trade dispute claims logged. Marketplace transactions running smoothly!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {disputeCases.map((disp) => (
+                  <div key={disp.id} className="bg-slate-900 border border-amber-500/30 p-5 rounded-3xl space-y-4 shadow-xl">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-mono font-bold text-amber-400">{disp.id}</span>
+                        <h4 className="font-extrabold text-sm text-white">{disp.itemTitle}</h4>
+                        <p className="text-[10px] text-slate-400">Claimant: {disp.userEmail} • Receipt: {disp.receiptRef}</p>
+                      </div>
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                        disp.status === 'in_review' ? 'bg-amber-500/20 text-amber-400' :
+                        disp.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        {disp.status}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800 italic">
+                      "{disp.details}"
+                    </p>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        onClick={() => processDisputeCase(disp.id, 'in_review')}
+                        className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl text-xs"
+                      >
+                        Set In Review
+                      </button>
+                      <button
+                        onClick={() => processDisputeCase(disp.id, 'resolved')}
+                        className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow"
+                      >
+                        Issue Resolved Verdict
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -890,6 +954,7 @@ export const AdminDashboard: React.FC = () => {
                           log.type === 'security' ? 'bg-rose-500/20 text-rose-400' :
                           log.type === 'verification' ? 'bg-purple-500/20 text-purple-300' :
                           log.type === 'ad' ? 'bg-blue-500/20 text-blue-300' : 
+                          log.type === 'dispute' ? 'bg-amber-500/20 text-amber-300' :
                           log.type === 'intrusion' ? 'bg-red-600 text-white' : 'bg-emerald-500/20 text-emerald-400'
                         }`}>
                           {log.type}

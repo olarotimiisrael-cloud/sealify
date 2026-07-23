@@ -90,6 +90,21 @@ export interface PromotionPaymentRequest {
   durationMonths: number;
 }
 
+export interface DisputeCase {
+  id: string;
+  userId: string;
+  userEmail: string;
+  receiptRef: string;
+  itemTitle: string;
+  counterparty: string;
+  category: string;
+  reason: string;
+  details: string;
+  evidenceUrl?: string;
+  status: 'pending' | 'in_review' | 'resolved';
+  createdAt: string;
+}
+
 export interface AdReport {
   id: string;
   listingId: string;
@@ -105,7 +120,7 @@ export interface AuditLog {
   id: string;
   action: string;
   details: string;
-  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion';
+  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute';
   createdAt: string;
 }
 
@@ -132,8 +147,8 @@ export interface Listing {
   featured?: boolean;
   promotionDurationMonths?: number;
   promotionPlanName?: string;
-  promotionStartDate?: string; // ISO string
-  promotionEndDate?: string; // ISO string
+  promotionStartDate?: string;
+  promotionEndDate?: string;
   paymentStatus?: 'pending' | 'verified' | 'failed';
   paymentProofUrl?: string;
   amountPaid?: number;

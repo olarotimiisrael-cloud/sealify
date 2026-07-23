@@ -6,31 +6,15 @@ import Footer from '../components/Footer';
 import SEO from '../components/SEO';
 import { 
   ShieldAlert, 
-  FileText, 
   Upload, 
   CheckCircle2, 
   Clock, 
-  AlertCircle, 
   Gavel, 
   Send, 
   Scale, 
-  MessageSquare,
-  HelpCircle,
-  X,
   ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface DisputeCase {
-  id: string;
-  receiptRef: string;
-  itemTitle: string;
-  counterparty: string;
-  category: string;
-  reason: string;
-  status: 'pending' | 'in_review' | 'resolved';
-  createdAt: string;
-}
 
 const DISPUTE_REASONS = [
   'Item Condition Misrepresentation (Undisclosed Faults)',
@@ -41,26 +25,13 @@ const DISPUTE_REASONS = [
 ];
 
 export const DisputeResolution: React.FC = () => {
-  const { user, isAuthenticated } = useSealify();
+  const { user, disputeCases, submitDisputeCase } = useSealify();
   const [receiptRef, setReceiptRef] = useState('');
   const [itemTitle, setItemTitle] = useState('');
   const [counterparty, setCounterparty] = useState('');
   const [reason, setReason] = useState(DISPUTE_REASONS[0]);
   const [details, setDetails] = useState('');
   const [evidenceUrl, setEvidenceUrl] = useState<string | null>(null);
-
-  const [activeCases, setActiveCases] = useState<DisputeCase[]>([
-    {
-      id: 'DISP-2024-8841',
-      receiptRef: 'RCP-2024-100293',
-      itemTitle: 'iPhone 13 Pro 256GB',
-      counterparty: 'Adebowale Ogunleye',
-      category: 'Electronics',
-      reason: 'Item Condition Misrepresentation (Undisclosed Faults)',
-      status: 'in_review',
-      createdAt: '2 days ago',
-    },
-  ]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -82,19 +53,19 @@ export const DisputeResolution: React.FC = () => {
       return;
     }
 
-    const newCase: DisputeCase = {
-      id: `DISP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    submitDisputeCase({
+      userId: user?.id || 'usr_guest',
+      userEmail: user?.email || 'guest@sealify.ng',
       receiptRef: receiptRef.trim() || 'N/A (Pre-sale Issue)',
       itemTitle: itemTitle.trim(),
       counterparty: counterparty.trim(),
       category: 'General Trade',
       reason,
-      status: 'pending',
-      createdAt: 'Just now',
-    };
+      details: details.trim(),
+      evidenceUrl: evidenceUrl || undefined,
+    });
 
-    setActiveCases((prev) => [newCase, ...prev]);
-    toast.success(`Dispute Case #${newCase.id} filed! A Sealify moderator has been assigned.`);
+    toast.success(`Dispute claim submitted! A Sealify moderator has been assigned.`);
 
     // Reset form
     setReceiptRef('');
@@ -141,7 +112,7 @@ export const DisputeResolution: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* Dispute Filing Form (8 Cols) */}
+          {/* Dispute Filing Form (7 Cols) */}
           <div className="lg:col-span-7 space-y-6">
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
               <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
@@ -271,15 +242,15 @@ export const DisputeResolution: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h3 className="font-black text-base text-white flex items-center gap-2">
                   <Clock className="w-4 h-4 text-emerald-400" />
-                  <span>Your Dispute Cases</span>
+                  <span>Platform Dispute Log</span>
                 </h3>
                 <span className="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">
-                  {activeCases.length} Total
+                  {disputeCases.length} Claims
                 </span>
               </div>
 
               <div className="space-y-3">
-                {activeCases.map((c) => (
+                {disputeCases.map((c) => (
                   <div
                     key={c.id}
                     className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 relative"
@@ -290,9 +261,10 @@ export const DisputeResolution: React.FC = () => {
                         <h4 className="font-bold text-xs text-white mt-0.5">{c.itemTitle}</h4>
                       </div>
                       <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
-                        c.status === 'in_review' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-emerald-500/20 text-emerald-400'
+                        c.status === 'in_review' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                        c.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
                       }`}>
-                        {c.status === 'in_review' ? 'Under Review' : 'Resolved'}
+                        {c.status === 'in_review' ? 'Under Review' : c.status === 'resolved' ? 'Resolved' : 'Pending Queue'}
                       </span>
                     </div>
 
