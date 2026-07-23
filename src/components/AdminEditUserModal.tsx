@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserProfile, VerificationBadgeType, UserStatus } from '../types/sealify';
-import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info } from 'lucide-react';
+import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminEditUserModalProps {
@@ -22,6 +22,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   const [role, setRole] = useState<'buyer' | 'seller' | 'admin'>('buyer');
   const [verificationType, setVerificationType] = useState<VerificationBadgeType>('none');
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [password, setPassword] = useState('');
   
   // Moderation state
   const [status, setStatus] = useState<UserStatus>('active');
@@ -39,6 +40,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       setAvatarUrl(user.avatarUrl || '');
       setStatus(user.status || 'active');
       setRestrictionReason(user.restrictionReason || '');
+      setPassword(user.password || '');
     }
   }, [user]);
 
@@ -63,10 +65,11 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       avatarUrl: avatarUrl.trim() || user.avatarUrl,
       status,
       restrictionReason: status !== 'active' ? restrictionReason.trim() : '',
-      appealStatus: status === 'active' ? 'none' : user.appealStatus
+      appealStatus: status === 'active' ? 'none' : user.appealStatus,
+      password: password.trim() || undefined
     });
 
-    toast.success(`User record for "${fullName}" updated!`);
+    toast.success(`User record and password for "${fullName}" updated!`);
     onClose();
   };
 
@@ -96,7 +99,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                 {user.id}
               </span>
             </div>
-            <p className="text-xs text-slate-400">Modify profile, permissions, and status</p>
+            <p className="text-xs text-slate-400">Modify profile, permissions, and security</p>
           </div>
         </div>
 
@@ -146,6 +149,29 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                   <p className="text-[10px] text-slate-500 italic">This message will be permanently visible to the user until status is reset to Active.</p>
                 </div>
              )}
+          </div>
+
+          {/* Security & Authentication Section */}
+          <div className="p-4 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-3">
+             <div className="flex items-center gap-2 text-emerald-400 font-extrabold uppercase tracking-widest">
+                <Lock className="w-4 h-4" />
+                <span>Security & Authentication</span>
+             </div>
+
+             <div className="space-y-1">
+                <label className="text-slate-300 font-bold uppercase flex items-center gap-1.5">
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Administrative Password Reset</span>
+                </label>
+                <input
+                  type="text"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter new password to overwrite"
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"
+                />
+                <p className="text-[10px] text-slate-500 italic mt-1">Leave unchanged to keep current user password. This will update the user's login credentials instantly.</p>
+             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
