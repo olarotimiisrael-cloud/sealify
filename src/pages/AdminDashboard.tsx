@@ -196,7 +196,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={exportUsersCSV}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
               title="Export registered users to CSV"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
@@ -205,7 +205,7 @@ export const AdminDashboard: React.FC = () => {
 
             <button
               onClick={exportAdsCSV}
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
               title="Export all ads to CSV"
             >
               <Download className="w-4 h-4 text-blue-400" />
@@ -394,7 +394,7 @@ export const AdminDashboard: React.FC = () => {
                         {targetListing && (
                           <Link
                             to={`/listing/${targetListing.id}`}
-                            className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl text-xs flex items-center gap-1 shrink-0"
+                            className="p-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 rounded-xl text-xs flex items-center gap-1 shrink-0"
                             title="Inspect reported listing"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -416,7 +416,7 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2 pt-1">
                           <button
                             onClick={() => processReport(rep.id, 'dismiss')}
-                            className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-colors"
+                            className="flex-1 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-xl text-xs transition-colors"
                           >
                             Dismiss Flag
                           </button>
@@ -671,7 +671,7 @@ export const AdminDashboard: React.FC = () => {
                             deleteCategory(cat.id);
                             toast.info(`Category "${cat.name}" deleted`);
                           }}
-                          className="p-1.5 bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg"
+                          className="p-1.5 bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -750,7 +750,7 @@ export const AdminDashboard: React.FC = () => {
                           <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => setEditingUser(u)}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-[10px] border border-slate-700 transition-all flex items-center gap-1"
+                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-[10px] border border-slate-700 transition-all flex items-center gap-1"
                               title="Modify all user record fields"
                             >
                               <Edit3 className="w-3 h-3" />
@@ -1037,7 +1037,7 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl"><Eye className="w-4 h-4" /></Link>
+                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-750 text-blue-400 rounded-xl"><Eye className="w-4 h-4" /></Link>
                             <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
