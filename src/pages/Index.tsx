@@ -15,6 +15,7 @@ import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
 import LiveActivityToast from '../components/LiveActivityToast';
 import { CompareModal } from '../components/CompareModal';
+import { NeighborhoodFilter } from '../components/NeighborhoodFilter';
 import { 
   SlidersHorizontal, 
   Sparkles, 
@@ -284,6 +285,9 @@ export const Index: React.FC = () => {
 
         <CategoryGrid />
         
+        {/* Neighborhood Filter */}
+        <NeighborhoodFilter />
+
         {/* Local Market Pulse: Live Stats */}
         <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
           <div className="absolute -left-12 -top-12 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl"></div>
