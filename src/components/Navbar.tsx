@@ -1,29 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import AuthModal from './AuthModal';
 import MagicSearch from './MagicSearch';
+import { SupportedLanguage } from '../translations/languages';
 import { 
-  PlusCircle, 
   Heart, 
   MessageSquare, 
-  User as UserIcon, 
   LogOut, 
   Search,
   Menu,
   X,
-  HelpCircle,
-  Scale,
   Bell,
-  Settings as SettingsIcon,
-  Shield,
   Globe,
   ShieldCheck,
-  Sparkles,
   Command
 } from 'lucide-react';
 
-const languages = [
+const languages: { code: SupportedLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'yo', label: 'Yorùbá' },
   { code: 'pg', label: 'Pidgin' },
@@ -38,17 +31,12 @@ const Navbar: React.FC = () => {
     isAuthenticated, 
     isAdmin,
     logout, 
-    savedListingIds, 
-    conversations, 
-    filters, 
-    setFilters, 
     notifications,
     language,
     setLanguage,
     t
   } = useSealify();
 
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -84,9 +72,6 @@ const Navbar: React.FC = () => {
                   <Command className="w-2.5 h-2.5" />
                   <span>ESC</span>
                 </div>
-                <button onClick={() => setIsMagicSearchOpen(false)} className="p-2 text-slate-400 hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
               </div>
             </button>
           </div>
@@ -103,7 +88,7 @@ const Navbar: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-colors"
               >
                 <Globe className="w-4 h-4 text-emerald-400" />
-                <span>{language}</span>
+                <span>{language.toUpperCase()}</span>
               </button>
 
               {showLangMenu && (

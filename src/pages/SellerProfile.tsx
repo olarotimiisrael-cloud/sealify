@@ -1,51 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
-import ReviewModal from '../components/ReviewModal';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import TrustScore from '../components/TrustScore';
+import Footer from '../components/Footer';
 import { 
   MapPin, 
   Calendar, 
-  Phone, 
   ArrowLeft, 
-  Package, 
-  Star, 
-  TrendingUp, 
-  TrendingDown, 
   Eye, 
   MessageSquare, 
-  Heart,
+  Package, 
+  Star, 
   Award, 
   ShieldCheck, 
-  Zap, 
-  ExternalLink,
-  Share2,
-  AlertCircle,
-  Crown,
-  Download,
-  Settings,
-  Bell,
-  Activity,
-  Target,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
-  Plus,
-  Filter,
-  Grid,
-  List
+  Phone
 } from 'lucide-react';
-
-const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
 const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { listings, allUsers, user, sendMessage } = useSealify();
+  const { listings, allUsers, sendMessage, user } = useSealify();
 
   const sellerUser = allUsers.find((u) => u.id === id);
   const sellerListings = listings.filter((l) => l.sellerId === id);
@@ -59,142 +36,158 @@ const SellerProfile: React.FC = () => {
   const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 800 000 0000';
   const memberSince = sellerUser?.memberSince || '2023';
 
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'reviews' | 'listings'>('overview');
-  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [query, setQuery] = useState('');
-  const [activeConv, setActiveConv] = useState<typeof listings[0] | null>(null);
-  const [text, setText] = useState('');
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'listings' | 'overview' | 'reviews'>('listings');
+  const [showPhone, setShowPhone] = useState(false);
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsMagicSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text.trim() || !activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, text);
-    setText('');
-  };
-
-  const handleQuickReply = (reply: string) => {
-    if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, reply);
-  };
+  const totalViews = sellerListings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
-          <div className="flex items-center gap-4">
-            <img
-              src={sellerAvatar}
-              alt={sellerName}
-              className="w-20 h-20 rounded-2xl object-cover border-2 border-emerald-500"
-            />
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                {sellerName}
-                {sellerVerified && <VerifiedBadge type={sellerVerificationType} showText />}
-              </h1>
-              <p className="text-slate-400 text-sm">{sellerLocation}</p>
-              <p className="text-slate-500 text-xs">Member since {memberSince}</p>
-            </div>
-          </div>
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to Marketplace</span>
+        </Link>
 
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                activeTab === 'overview' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('listings')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Listings ({sellerListings.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('reviews')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                activeTab === 'reviews' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Reviews
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              Analytics
-            </button>
-          </div>
-
-          {activeTab === 'overview' && (
-            <div className="space-y-4">
-              <TrustScore 
-                score={98} 
-                responseTime="< 2 hours" 
-                verified={sellerVerified} 
-                salesCount={sellerListings.length} 
+        {/* Profile Header Card */}
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <img
+                src={sellerAvatar}
+                alt={sellerName}
+                className="w-24 h-24 rounded-2xl object-cover border-2 border-emerald-500 shadow-lg"
               />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <p className="text-xs text-slate-400">Total Listings</p>
-                  <p className="text-2xl font-bold text-white">{sellerListings.length}</p>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                  <h1 className="text-2xl font-black text-white tracking-tight">{sellerName}</h1>
+                  {sellerVerified && (
+                    <VerifiedBadge type={sellerVerificationType} showText />
+                  )}
                 </div>
-                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <p className="text-xs text-slate-400">Total Views</p>
-                  <p className="text-2xl font-bold text-emerald-400">
-                    {sellerListings.reduce((acc, l) => acc + l.viewsCount, 0)}
-                  </p>
+
+                <div className="flex items-center gap-3 text-xs text-slate-400 justify-center sm:justify-start flex-wrap">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                    {sellerLocation}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                    Member since {memberSince}
+                  </span>
                 </div>
               </div>
             </div>
-          )}
 
-          {activeTab === 'listings' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {sellerListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
+            <button
+              onClick={() => setShowPhone(!showPhone)}
+              className="px-5 py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-2xl text-xs flex items-center gap-2 border border-slate-700 transition-colors shadow"
+            >
+              <Phone className="w-4 h-4 text-emerald-400" />
+              <span>{showPhone ? sellerPhone : 'Contact Seller'}</span>
+            </button>
+          </div>
 
-          {activeTab === 'reviews' && (
-            <div className="text-center py-8 text-slate-400">
-              <p>No reviews yet</p>
-            </div>
-          )}
+          {/* Tab Navigation */}
+          <div className="flex items-center gap-2 border-t border-slate-800/80 pt-4 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setActiveTab('listings')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
+                activeTab === 'listings'
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>Active Ads ({sellerListings.length})</span>
+            </button>
 
-          {activeTab === 'analytics' && (
-            <div className="text-center py-8 text-slate-400">
-              <p>Analytics coming soon</p>
-            </div>
-          )}
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
+                activeTab === 'overview'
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Award className="w-4 h-4" />
+              <span>Trust & Analytics</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-colors flex items-center gap-1.5 ${
+                activeTab === 'reviews'
+                  ? 'bg-emerald-500 text-slate-950 shadow'
+                  : 'bg-slate-950/60 text-slate-400 hover:text-white'
+              }`}
+            >
+              <Star className="w-4 h-4" />
+              <span>Reviews</span>
+            </button>
+          </div>
         </div>
+
+        {/* Tab Content */}
+        {activeTab === 'listings' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-black text-white">All Classifieds by {sellerName}</h2>
+            {sellerListings.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs">
+                No active listings from this vendor at the moment.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {sellerListings.map((item) => (
+                  <ListingCard key={item.id} listing={item} />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <TrustScore
+              score={98}
+              responseTime="< 2 hours"
+              verified={sellerVerified}
+              salesCount={sellerListings.length}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
+                <p className="text-xs font-bold text-slate-400 uppercase">Total Published Items</p>
+                <p className="text-3xl font-black text-white">{sellerListings.length}</p>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
+                <p className="text-xs font-bold text-slate-400 uppercase">Cumulative Views</p>
+                <p className="text-3xl font-black text-emerald-400">{totalViews}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'reviews' && (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-3">
+            <div className="w-12 h-12 bg-amber-500/10 text-amber-400 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/30">
+              <Star className="w-6 h-6 fill-amber-400" />
+            </div>
+            <h3 className="font-bold text-base text-white">Verified Buyer Feedback</h3>
+            <p className="text-xs text-slate-400 max-w-xs mx-auto">
+              This seller maintains an impressive 98% overall trust score with quick response time.
+            </p>
+          </div>
+        )}
       </main>
 
+      <Footer />
       <MobileNav />
     </div>
   );
