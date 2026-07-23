@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
@@ -47,7 +47,6 @@ const Navbar: React.FC = () => {
 
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
-  // Shortcut for search
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -83,7 +82,6 @@ const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Magic Search Trigger */}
           <div className="hidden md:flex flex-1 max-w-md">
             <button 
               onClick={() => setIsMagicSearchOpen(true)}
@@ -154,7 +152,6 @@ const Navbar: React.FC = () => {
               <Link to="/admin" className="px-3 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-black text-[10px] rounded-xl">ADMIN</Link>
             )}
 
-            {/* User avatar and logout */}
             {isAuthenticated && (
               <>
                 <Link 
@@ -165,8 +162,8 @@ const Navbar: React.FC = () => {
                     src={user?.avatarUrl} 
                     className="w-8 h-8 rounded-full border border-emerald-500" 
                     alt={user?.fullName}
-                    onError={(e) => {
-                      e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'; // fallback to a default image
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
                     }}
                   />
                   <span className="text-xs font-bold hidden xl:inline">{user?.fullName}</span>
@@ -185,7 +182,7 @@ const Navbar: React.FC = () => {
             {!isAuthenticated && (
               <button onClick={() => setIsAuthModalOpen(true)} className="text-xs font-bold px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
                 {t('login')}
-              }
+              </button>
             )}
 
             <Link to="/post-ad" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/10 transition-all">
@@ -202,7 +199,7 @@ const Navbar: React.FC = () => {
               {unreadNotifications > 0 && (
                 <span className="absolute top-1 right-0 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   {unreadNotifications}
-                )
+                </span>
               )}
             </Link>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
@@ -211,7 +208,6 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
             <div className="grid grid-cols-2 gap-2">

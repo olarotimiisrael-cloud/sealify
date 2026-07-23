@@ -70,6 +70,7 @@ export default function ProductDetail() {
             Back to Home
           </Link>
         </div>
+        <MobileNav />
       </div>
     );
   }
@@ -119,7 +120,6 @@ export default function ProductDetail() {
     navigate('/messages');
   };
 
-  // Calculate days left for promotion
   const getDaysLeft = (): number | null => {
     if (!listing.promotionEndDate) return null;
     const end = new Date(listing.promotionEndDate);
@@ -236,7 +236,6 @@ export default function ProductDetail() {
               </div>
 
               <div className="flex gap-2 overflow-x-auto pb-1 items-center">
-                {/* Image Thumbnails */}
                 {listing.images.map((img, idx) => (
                   <button
                     key={idx}
@@ -252,7 +251,6 @@ export default function ProductDetail() {
                   </button>
                 ))}
 
-                {/* Video Thumbnail (if exists) */}
                 {listing.videoUrl && (
                   <button
                     onClick={() => setViewMode('video')}
@@ -323,7 +321,6 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Promotion Info */}
             {listing.featured && (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -358,6 +355,9 @@ export default function ProductDetail() {
                     src={listing.sellerAvatar}
                     alt={listing.sellerName}
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                    }}
                   />
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">

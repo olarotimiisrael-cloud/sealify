@@ -30,10 +30,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     ? Math.round(((listing.originalPrice! - listing.price) / listing.originalPrice!) * 100)
     : 0;
 
-  // AI-inspired Deal Rating (Simulated logic)
   const isGreatDeal = listing.price < 500000 && (listing.viewsCount > 100 || hasPriceDrop);
 
-  // Calculate days left for promotion
   const getDaysLeft = (): number | null => {
     if (!listing.promotionEndDate) return null;
     const end = new Date(listing.promotionEndDate);
@@ -47,7 +45,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
-      {/* Badges Top Left */}
       <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start max-w-[70%]">
         {listing.featured && (
           <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md">
@@ -71,7 +68,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         )}
       </div>
 
-      {/* Action Buttons Top Right */}
       <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
         <button
           onClick={(e) => {
@@ -113,6 +109,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             alt={listing.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80';
+            }}
           />
           {listing.status === 'sold' && (
             <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center">

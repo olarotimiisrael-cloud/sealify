@@ -100,6 +100,9 @@ const Settings: React.FC = () => {
                   src={selectedAvatar || user.avatarUrl}
                   alt={user.fullName}
                   className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  }}
                 />
                 <button
                   onClick={() => setEditingProfile(true)}
@@ -133,7 +136,6 @@ const Settings: React.FC = () => {
             </button>
           </div>
 
-          {/* Profile Photo Upload / Edit Section */}
           {editingProfile && (
             <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs animate-in fade-in duration-200">
               <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider">

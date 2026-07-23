@@ -17,9 +17,10 @@ import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    isAdmin, user, logout, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
+    isAdmin, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
-    promotionPaymentRequests, processPromotionPaymentRequest
+    promotionPaymentRequests, processPromotionPaymentRequest,
+    user, logout, isAuthenticated
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments'>('analytics');
@@ -28,7 +29,6 @@ export const AdminDashboard: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
 
-  // New Category state
   const [newCatName, setNewCatName] = useState('');
   const [newCatIcon, setNewCatIcon] = useState('Sparkles');
   const [newCatColor, setNewCatColor] = useState('bg-emerald-500');
@@ -50,7 +50,6 @@ export const AdminDashboard: React.FC = () => {
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
   const promotedAds = listings.filter(l => l.featured);
 
-  // Function to check if a promotion has expired
   const isPromotionExpired = (listing: Listing): boolean => {
     if (!listing.promotionEndDate) return false;
     const endDate = new Date(listing.promotionEndDate);
@@ -142,56 +141,52 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* User avatar and logout in admin dashboard header */}
-          {user && (
-            <div className="flex items-center gap-3">
+          {isAuthenticated && user && (
+            <div className="flex items-center gap-3 ml-auto">
               <img 
-                src={user.avatarUrl} 
+                src={user?.avatarUrl} 
                 className="w-10 h-10 rounded-full border border-emerald-500" 
-                alt={user.fullName}
-                onError={(e) => {
-                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'; // fallback
+                alt={user?.fullName}
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
                 }}
               />
-              <span className="text-xs font-bold text-slate-300 hidden sm:inline">{user.fullName}</span>
               <button
                 onClick={logout}
-                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                className="ml-2 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
           )}
+
+          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
+            <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
+            <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
+            <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
+            <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
+            <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+              APPROVALS
+              {(pendingPW.length + pendingVerif.length) > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {pendingPW.length + pendingVerif.length}
+                </span>
+              )}
+            </button>
+            <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+              PROMOTION PAYMENTS
+              {pendingPromoPay.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {pendingPromoPay.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
-          <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
-          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
-          <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
-          <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
-          <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-            APPROVALS
-            {(pendingPW.length + pendingVerif.length) > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {pendingPW.length + pendingVerif.length}
-              </span>
-            )}
-          </button>
-          <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-            PROMOTION PAYMENTS
-            {pendingPromoPay.length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                {pendingPromoPay.length}
-              </span>
-            )}
-          </button>
-        </div>
-
-        {/* Tab Content: Categories Management */}
         {activeTab === 'categories' && (
           <div className="space-y-6">
-            {/* Create Category Form */}
             <form onSubmit={handleAddCategory} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-base">
                 <Layers className="w-5 h-5" />
@@ -254,7 +249,6 @@ export const AdminDashboard: React.FC = () => {
               </button>
             </form>
 
-            {/* Existing Categories List */}
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
               <h3 className="text-base font-extrabold text-white">Active Categories ({categories.length})</h3>
 
@@ -325,7 +319,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Users Management */}
         {activeTab === 'users' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
@@ -360,7 +353,11 @@ export const AdminDashboard: React.FC = () => {
                       <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <img src={u.avatarUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
+                            <img src={u.avatarUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" 
+                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                              }}
+                            />
                             <div>
                               <p className="font-bold text-white flex items-center gap-1.5">
                                 {u.fullName}
@@ -422,10 +419,8 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Approvals (PW & Verification) */}
         {activeTab === 'approvals' && (
           <div className="space-y-10">
-            {/* 1. Verification Badge Requests */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
@@ -444,7 +439,11 @@ export const AdminDashboard: React.FC = () => {
                   }`}>
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <img src={req.docUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800 hover:scale-150 transition-transform cursor-zoom-in" />
+                        <img src={req.docUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800 hover:scale-150 transition-transform cursor-zoom-in" 
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                          }}
+                        />
                         <div>
                           <h4 className="font-bold text-sm text-white">{req.userName}</h4>
                           <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
@@ -461,7 +460,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="bg-slate-950/50 p-3 rounded-2xl text-[11px] space-y-1.5">
                       <p className="text-slate-400 truncate">Doc: <strong className="text-white">{req.docType}</strong></p>
-                      <p className="text-slate-400">ID: <strong className="text-emerald-400 font-mono">{req.docNumber}</strong></p>
+                      <p className="text-slate-400">ID: <strong className="text-white font-mono">{req.docNumber}</strong></p>
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2">
@@ -474,7 +473,6 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. Password Reset Requests */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20">
@@ -489,7 +487,11 @@ export const AdminDashboard: React.FC = () => {
                 {passwordRequests.map((req) => (
                   <div key={req.id} className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
                     <div className="flex items-center gap-3">
-                       <img src={req.idDocumentUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
+                       <img src={req.idDocumentUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800" 
+                         onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                           e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                         }}
+                       />
                        <div className="min-w-0">
                          <h4 className="font-bold text-sm text-white truncate">{req.userName}</h4>
                          <p className="text-[10px] text-slate-500 truncate">{req.userEmail}</p>
@@ -512,7 +514,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Promotion Payments */}
         {activeTab === 'promotionPayments' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -542,7 +543,11 @@ export const AdminDashboard: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
                             {req.paymentProofUrl && (
-                              <img src={req.paymentProofUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
+                              <img src={req.paymentProofUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" 
+                                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                                }}
+                              />
                             )}
                             {!req.paymentProofUrl && (
                               <div className="w-10 h-10 bg-slate-900 rounded-flex flex items-center justify-center">
@@ -583,25 +588,24 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Analytics */}
         {activeTab === 'analytics' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400"><Activity className="w-4 h-4" /><span className="text-[10px] font-black uppercase">{t('visitors')}</span></div>
+                  <div className="flex items-center gap-2 text-emerald-400"><Activity className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">{t('visitors')}</span></div>
                   <p className="text-3xl font-black text-white">{analytics.visitors}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-blue-400"><Package className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Active Ads</span></div>
+                  <div className="flex items-center gap-2 text-blue-400"><Package className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Active Ads</span></div>
                   <p className="text-3xl font-black text-white">{listings.length}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-purple-400"><Layers className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Categories</span></div>
+                  <div className="flex items-center gap-2 text-purple-400"><Layers className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Categories</span></div>
                   <p className="text-3xl font-black text-white">{categories.length}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-amber-400"><RefreshCw className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Uptime</span></div>
+                  <div className="flex items-center gap-2 text-amber-400"><RefreshCw className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Uptime</span></div>
                   <p className="text-3xl font-black text-white">99.9%</p>
                 </div>
               </div>
@@ -617,7 +621,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Platform Integrity</h3>
+              <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Platform Integrity</h3>
               <div className="space-y-3">
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -631,7 +635,6 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Content: Listings & Promotions */}
         {activeTab === 'listings' && (
           <div className="space-y-8">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
@@ -646,7 +649,11 @@ export const AdminDashboard: React.FC = () => {
                   <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
                     <div className="flex items-center gap-2">
-                      <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" />
+                      <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" 
+                        onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                        }}
+                      />
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-white truncate">{ad.title}</p>
                         <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName}</p>
@@ -677,7 +684,11 @@ export const AdminDashboard: React.FC = () => {
                       <tr key={ad.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <img src={ad.images[0]} className="w-12 h-10 rounded-lg object-cover border border-slate-700" />
+                            <img src={ad.images[0]} className="w-12 h-10 rounded-lg object-cover border border-slate-700" 
+                              onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                              }}
+                            />
                             <div className="min-w-0">
                               <p className="font-bold text-white truncate">{ad.title}</p>
                               <p className="text-[10px] text-emerald-400 font-black">{formatNGN(ad.price)} • {ad.category}</p>
@@ -699,7 +710,7 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
+                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-750 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
                             <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
@@ -710,7 +721,6 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Expired Promotions Section */}
             {promotedAds.filter(isPromotionExpired).length > 0 && (
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
                 <div className="flex items-center justify-between">
@@ -724,7 +734,11 @@ export const AdminDashboard: React.FC = () => {
                     <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
                       <div className="flex items-center gap-2">
-                        <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" />
+                        <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" 
+                          onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                            e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                          }}
+                        />
                         <div className="min-w-0">
                           <p className="text-xs font-bold text-white truncate">{ad.title}</p>
                           <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName}</p>
@@ -742,14 +756,17 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Badge Alignment Modal (Users Tab) */}
         {editingUser && (
           <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl relative space-y-6">
               <button onClick={() => setEditingUser(null)} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white bg-slate-800 rounded-xl"><X className="w-4 h-4" /></button>
               
               <div className="text-center space-y-2">
-                <img src={editingUser.avatarUrl} className="w-20 h-20 rounded-3xl mx-auto border-2 border-emerald-500 mb-2" />
+                <img src={editingUser.avatarUrl} className="w-20 h-20 rounded-3xl mx-auto border-2 border-emerald-500 mb-2" 
+                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                  }}
+                />
                 <h3 className="text-xl font-black text-white">{editingUser.fullName}</h3>
                 <p className="text-xs text-slate-400">Align Verified Badge Status for this user</p>
               </div>

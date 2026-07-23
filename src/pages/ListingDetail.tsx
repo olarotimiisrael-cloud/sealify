@@ -91,6 +91,17 @@ const ListingDetail: React.FC = () => {
 
   const formattedPrice = formatNGN(listing.price);
 
+  const getDaysLeft = (): number | null => {
+    if (!listing.promotionEndDate) return null;
+    const end = new Date(listing.promotionEndDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const daysLeft = getDaysLeft();
+
   const handleStartChat = () => {
     if (!isAuthenticated) {
       setIsAuthOpen(true);
@@ -224,7 +235,6 @@ const ListingDetail: React.FC = () => {
               </div>
 
               <div className="flex gap-2 overflow-x-auto pb-1 items-center">
-                {/* Image Thumbnails */}
                 {listing.images.map((img, idx) => (
                   <button
                     key={idx}
@@ -240,7 +250,6 @@ const ListingDetail: React.FC = () => {
                   </button>
                 ))}
 
-                {/* Video Thumbnail (if exists) */}
                 {listing.videoUrl && (
                   <button
                     onClick={() => setViewMode('video')}
@@ -312,6 +321,29 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {listing.featured && (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400">Promotion Active</span>
+                  {daysLeft !== null && (
+                    <span className="text-xs font-bold text-emerald-400">{daysLeft} days left</span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400">
+                  This ad is promoted as a Top Ad for {listing.promotionDurationMonths} month(s).
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Safety Tips for Buyers</h3>
+              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
+                <li>Meet the seller in a public, well-lit area.</li>
+                <li>Inspect the product thoroughly before making payment.</li>
+                <li>Avoid wire transfers or paying advance deposits.</li>
+              </ul>
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -324,6 +356,9 @@ const ListingDetail: React.FC = () => {
                     src={listing.sellerAvatar}
                     alt={listing.sellerName}
                     className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
+                    }}
                   />
                   <div>
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -395,9 +430,9 @@ const ListingDetail: React.FC = () => {
                 </Link>
               </div>
               <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
-                <li>Meet the seller in a public, well-lit area.</li>
-                <li>Inspect the product thoroughly before making payment.</li>
-                <li>Avoid wire transfers or paying advance deposits.</li>
+                <li>Always meet in well-lit, public spaces like coffee shops, mall lobbies, or official police station exchange zones.</li>
+                <li>Avoid secluded areas or private residences when meeting a seller or buyer for the first time.</li>
+                <li>Bring a friend or family member with you whenever possible.</li>
               </ul>
             </div>
           </div>
