@@ -9,6 +9,7 @@ import FeaturedAdSection from '../components/FeaturedAdSection';
 import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
 import FilterDrawer from '../components/FilterDrawer';
 import CompareModal from '../components/CompareModal';
+import SavedAlertsModal from '../components/SavedAlertsModal';
 import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -31,13 +32,15 @@ import {
   Globe,
   ArrowRight,
   TrendingUp,
-  Scale
+  Scale,
+  Bell
 } from 'lucide-react';
 
 export const Index: React.FC = () => {
   const { siteSettings, listings, filters, announcements, recentDeals, compareListingIds, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [dismissedBannerIds, setDismissedBannerIds] = useState<string[]>([]);
 
@@ -64,13 +67,15 @@ export const Index: React.FC = () => {
     return true;
   });
 
+  const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.maxPrice !== null;
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
       <SEO />
       <Navbar />
       
       {activeAnnouncements.map((ann) => (
-        <div key={ann.id} className={`py-2 px-4 border-b text-xs flex items-center justify-between gap-3 \${ann.type === 'alert' ? 'bg-rose-950 border-rose-800 text-rose-200' : 'bg-slate-900 border-slate-800 text-slate-200'}`}>
+        <div key={ann.id} className={`py-2 px-4 border-b text-xs flex items-center justify-between gap-3 ${ann.type === 'alert' ? 'bg-rose-950 border-rose-800 text-rose-200' : 'bg-slate-900 border-slate-800 text-slate-200'}`}>
           <div className="flex items-center gap-2 max-w-7xl mx-auto flex-1 truncate">
             <Megaphone className="w-4 h-4 shrink-0 animate-bounce" />
             <span className="font-bold truncate">{ann.title}:</span>
@@ -89,11 +94,11 @@ export const Index: React.FC = () => {
         
         <div className="animate-marquee whitespace-nowrap flex items-center gap-8 pl-48">
           {[...recentDeals, ...recentDeals].map((deal, idx) => (
-            <div key={`\${deal.id}-\${idx}`} className="flex items-center gap-2.5 text-[11px] font-bold text-slate-300">
+            <div key={`${deal.id}-${idx}`} className="flex items-center gap-2.5 text-[11px] font-bold text-slate-300">
                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
                <span className="text-white">₦{deal.price.toLocaleString()}</span>
                <span className="text-slate-500">for</span>
-               <span className="text-emerald-400 italic">"\${deal.itemTitle}"</span>
+               <span className="text-emerald-400 italic">"{deal.itemTitle}"</span>
                <span className="text-slate-600">@ {deal.location}</span>
                <span className="text-[9px] text-slate-700 font-mono ml-1">{deal.time}</span>
             </div>
@@ -171,14 +176,25 @@ export const Index: React.FC = () => {
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />
             <h2 className="text-xl font-black text-white tracking-tight">
-              {filters.category === 'All' ? t('trending') : `\${filters.category} Ads`}
+              {filters.category === 'All' ? t('trending') : `${filters.category} Ads`}
             </h2>
           </div>
           <div className="flex items-center gap-2">
             <div className="bg-slate-900 border border-slate-800 p-1 rounded-xl flex items-center gap-1">
-              <button onClick={() => setViewMode('grid')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all \${viewMode === 'grid' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
-              <button onClick={() => setViewMode('map')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all \${viewMode === 'map' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'}`}><Map className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setViewMode('grid')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'grid' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+              <button onClick={() => setViewMode('map')} className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'map' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'}`}><Map className="w-3.5 h-3.5" /></button>
             </div>
+            
+            {hasActiveFilters && (
+              <button 
+                onClick={() => setIsAlertsOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500/10 text-emerald-400 rounded-xl text-xs font-bold border border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+              >
+                <Bell className="w-3.5 h-3.5" />
+                <span>Save Alert</span>
+              </button>
+            )}
+
             <button onClick={() => setIsFilterOpen(true)} className="flex items-center gap-1.5 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-bold"><SlidersHorizontal className="w-3.5 h-3.5 text-emerald-400" /> <span>Filter</span></button>
           </div>
         </div>
@@ -202,13 +218,14 @@ export const Index: React.FC = () => {
              className="flex items-center gap-3 bg-emerald-500 text-slate-950 px-5 py-3 rounded-2xl font-black text-xs shadow-2xl shadow-emerald-500/40 hover:scale-105 transition-transform"
            >
               <Scale className="w-4 h-4" />
-              <span>Compare Items (\${compareListingIds.length})</span>
+              <span>Compare Items (${compareListingIds.length})</span>
            </button>
         </div>
       )}
 
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
+      <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
       <Footer />
       <MobileNav />
     </div>
