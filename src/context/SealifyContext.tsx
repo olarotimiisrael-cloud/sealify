@@ -126,6 +126,7 @@ interface SealifyContextType {
   recordIntrusion: (email: string, mediaStatus: string) => void;
 }
 
+const DEFAULT_ADMIN_PIN = '336699';
 const DEFAULT_ADMIN: UserProfile = {
   id: 'usr_admin_default',
   email: 'olarotimiisrael@gmail.com',
@@ -139,8 +140,6 @@ const DEFAULT_ADMIN: UserProfile = {
   location: 'Ogbomoso, Oyo State',
   password: 'Tscw+1234',
 };
-
-const DEFAULT_ADMIN_PIN = '336699';
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
@@ -256,7 +255,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : MOCK_LISTINGS;
   });
 
-  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
+  const [savedListingIds, setSavedListingIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('sealify_saved_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
@@ -273,7 +275,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
     localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
-  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases]);
+    localStorage.setItem('sealify_saved_ids', JSON.stringify(savedListingIds));
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds]);
 
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
@@ -370,7 +373,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       localStorage.setItem('sealify_user', JSON.stringify(existing));
     } else {
       const newUser: UserProfile = { 
-        id: 'usr_' + Date.now(), email, fullName: email.split('@')[0], phoneNumber: '', avatarUrl: '', role, verified: false, memberSince: 'Just now', location: 'Ogbomoso' 
+        id: 'usr_' + Date.now(), email, fullName: email.split('@')[0], phoneNumber: '', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300', role, verified: false, memberSince: 'Just now', location: 'Ogbomoso' 
       };
       setAllUsers(prev => [...prev, newUser]);
       setUser(newUser);
@@ -410,7 +413,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addAuditLog('Ad Posted', `User ${user.fullName} created "${data.title}"`, 'ad');
   };
 
-  const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
+  const updateListing = useCallback((id: string, data: Partial<Listing>) => {
+    setListings(prev => {
+      const listing = prev.find(l => l.id === id);
+      
+      // Smart Price Drop Notification System
+      if (listing && data.price && data.price < listing.price) {
+        const savedByUsers = savedListingIds.includes(id); // Simulating notification logic
+        const dropPercent = Math.round(((listing.price - data.price) / listing.price) * 100);
+        
+        if (dropPercent >= 5) {
+          addNotification({
+            type: 'price_drop',
+            title: `📉 Price Drop on "${listing.title}"`,
+            description: `Good news! The price has dropped by ${dropPercent}%. It is now ₦${data.price.toLocaleString()}.`,
+            linkUrl: `/listing/${id}`
+          });
+        }
+      }
+
+      return prev.map(l => l.id === id ? { ...l, ...data } : l);
+    });
+  }, [addNotification, savedListingIds]);
 
   const deleteListing = (id: string) => {
     setListings(prev => prev.filter(l => l.id !== id));
