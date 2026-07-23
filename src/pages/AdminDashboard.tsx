@@ -1,31 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
-import { UserProfile, VerificationBadgeType, Listing, PasswordChangeRequest, VerificationRequest } from '../types/sealify';
+import { UserProfile, VerificationBadgeType, Listing } from '../types/sealify';
 import { 
-  Shield, Package, Activity, Layers, RefreshCw, LayoutGrid, Edit3, Trash2,
-  Users, MousePointer2, Globe, Clock, Terminal, CheckCircle2, AlertCircle,
-  Search, ShieldCheck, Mail, Phone, MapPin, Award, Check, X, Tag, Eye,
-  KeyRound, Lock, FileText, ExternalLink, Zap, Crown, Database, UserCheck, ShieldAlert
+  Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
+  Search, ShieldCheck, Award, Check, X, Eye,
+  KeyRound, Zap, Crown, Database, Plus, Sparkles
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    isAdmin, categories, addCategory, deleteCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
+    isAdmin, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'listings' | 'approvals'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+
+  // New Category state
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('Sparkles');
+  const [newCatColor, setNewCatColor] = useState('bg-emerald-500');
+  const [editingCatId, setEditingCatId] = useState<string | null>(null);
+  const [editingCatName, setEditingCatName] = useState('');
 
   const filteredUsers = allUsers.filter(u => 
     u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || 
@@ -54,6 +60,29 @@ export const AdminDashboard: React.FC = () => {
     const nextRole = user.role === 'admin' ? 'seller' : user.role === 'seller' ? 'buyer' : 'admin';
     updateUser(user.id, { role: nextRole });
     toast.info(`${user.fullName}'s role changed to ${nextRole.toUpperCase()}`);
+  };
+
+  const handleAddCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) {
+      toast.error('Please enter a category name');
+      return;
+    }
+    addCategory({
+      name: newCatName.trim(),
+      iconName: newCatIcon,
+      count: 0,
+      color: newCatColor,
+    });
+    setNewCatName('');
+    toast.success(`Category "${newCatName.trim()}" added successfully!`);
+  };
+
+  const handleSaveCatName = (id: string) => {
+    if (!editingCatName.trim()) return;
+    updateCategory(id, editingCatName.trim());
+    setEditingCatId(null);
+    toast.success('Category updated');
   };
 
   const formatNGN = (amount: number) => {
@@ -105,6 +134,7 @@ export const AdminDashboard: React.FC = () => {
           <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
             <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
             <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
+            <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
             <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
             <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
               APPROVALS
@@ -116,6 +146,144 @@ export const AdminDashboard: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Tab Content: Categories Management */}
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            {/* Create Category Form */}
+            <form onSubmit={handleAddCategory} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
+              <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-base">
+                <Layers className="w-5 h-5" />
+                <span>Create New Category</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1 sm:col-span-1">
+                  <label className="text-xs font-bold text-slate-300 uppercase">Category Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Solar & Energy"
+                    value={newCatName}
+                    onChange={(e) => setNewCatName(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300 uppercase">Icon Class</label>
+                  <select
+                    value={newCatIcon}
+                    onChange={(e) => setNewCatIcon(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Sparkles">Sparkles</option>
+                    <option value="Car">Car / Transport</option>
+                    <option value="Smartphone">Electronics / Phone</option>
+                    <option value="Home">Home / Property</option>
+                    <option value="Shirt">Fashion / Apparel</option>
+                    <option value="Wrench">Services / Tools</option>
+                    <option value="Briefcase">Jobs / Work</option>
+                    <option value="Armchair">Furniture</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-300 uppercase">Theme Accent</label>
+                  <select
+                    value={newCatColor}
+                    onChange={(e) => setNewCatColor(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="bg-emerald-500">Emerald Green</option>
+                    <option value="bg-blue-500">Blue Accent</option>
+                    <option value="bg-purple-500">Purple Accent</option>
+                    <option value="bg-amber-500">Amber / Gold</option>
+                    <option value="bg-rose-500">Rose / Pink</option>
+                    <option value="bg-cyan-500">Cyan Teal</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Category to Marketplace</span>
+              </button>
+            </form>
+
+            {/* Existing Categories List */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+              <h3 className="text-base font-extrabold text-white">Active Categories ({categories.length})</h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {categories.map((cat) => {
+                  const isEditing = editingCatId === cat.id;
+
+                  return (
+                    <div
+                      key={cat.id}
+                      className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3 flex flex-col justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl ${cat.color} text-white flex items-center justify-center shrink-0`}>
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editingCatName}
+                              onChange={(e) => setEditingCatName(e.target.value)}
+                              className="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
+                            />
+                          ) : (
+                            <h4 className="font-bold text-xs text-white truncate">{cat.name}</h4>
+                          )}
+                          <p className="text-[10px] text-slate-500">{cat.count || 0} active listings</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-900">
+                        {isEditing ? (
+                          <button
+                            onClick={() => handleSaveCatName(cat.id)}
+                            className="p-1.5 bg-emerald-500 text-slate-950 rounded-lg text-[10px] font-bold"
+                          >
+                            Save
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingCatId(cat.id);
+                              setEditingCatName(cat.name);
+                            }}
+                            className="p-1.5 bg-slate-900 text-slate-400 hover:text-white rounded-lg"
+                            title="Edit Category Name"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            deleteCategory(cat.id);
+                            toast.info(`Category "${cat.name}" deleted`);
+                          }}
+                          className="p-1.5 bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-lg"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab Content: Users Management */}
         {activeTab === 'users' && (
@@ -348,13 +516,6 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="w-8 h-4 bg-emerald-500 rounded-full"></div>
                 </div>
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-500/10 text-purple-400 rounded-xl flex items-center justify-center"><Terminal className="w-5 h-5" /></div>
-                    <div><p className="font-bold text-white">API Layer</p><p className="text-[10px] text-slate-500">Ready</p></div>
-                  </div>
-                  <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                </div>
               </div>
             </div>
           </div>
@@ -428,7 +589,7 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
+                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-750 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
                             <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
