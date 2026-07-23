@@ -44,7 +44,7 @@ interface SealifyContextType {
   updateCategory: (id: string, name: string) => void;
   analytics: AnalyticsData;
   login: (email: string, role: 'buyer' | 'seller' | 'admin', isSignup?: boolean) => void;
-  adminLogin: (email: string, pass: string) => boolean;
+  adminLogin: (email: string, pass: string, pin?: string) => boolean;
   logout: () => void;
   listings: Listing[];
   allUsers: UserProfile[];
@@ -109,6 +109,8 @@ const DEFAULT_ADMIN: UserProfile = {
   location: 'Ogbomoso, Oyo State',
   password: 'Tscw+1234',
 };
+
+const DEFAULT_ADMIN_PIN = '984021';
 
 const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
   {
@@ -309,7 +311,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const dispatchSecurityWelcome = useCallback((userName: string, userEmail: string, phone: string) => {
-    // Simulate multi-channel dispatch
     toast.info(`Security Dispatch: Login details sent to ${userEmail} and ${phone || 'SMS'}`);
     
     addNotification({
@@ -352,15 +353,20 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const adminLogin = (email: string, pass: string) => {
-    if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password) {
+  const adminLogin = (email: string, pass: string, pin?: string) => {
+    const isEmailValid = email.trim().toLowerCase() === DEFAULT_ADMIN.email.toLowerCase();
+    const isPassValid = pass === DEFAULT_ADMIN.password;
+    const isPinValid = !pin || pin === DEFAULT_ADMIN_PIN;
+
+    if (isEmailValid && isPassValid && isPinValid) {
       setUser(DEFAULT_ADMIN);
       localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
-      addAuditLog('Admin Authenticated', `Administrator logged in`, 'security');
+      addAuditLog('Admin Authenticated', `Administrator logged in with verified PIN`, 'security');
       toast.success('Authenticated as Administrator');
       return true;
     }
-    toast.error('Invalid admin credentials');
+    
+    addAuditLog('Failed Admin Access Attempt', `Failed login attempt for email: ${email}`, 'security');
     return false;
   };
 
@@ -375,7 +381,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateUser = (id: string, updatedData: Partial<UserProfile>, suppressSecurityDispatch: boolean = false) => {
     setAllUsers(prev => prev.map(u => {
       if (u.id === id) {
-        // If password is being updated by admin, send dispatch
         if (updatedData.password && !suppressSecurityDispatch) {
           dispatchSecurityWelcome(u.fullName, u.email, u.phoneNumber);
         }

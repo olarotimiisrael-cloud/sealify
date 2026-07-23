@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate } from 'react-router-dom';
-import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthModalProps {
@@ -21,9 +21,14 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const [password, setPassword] = useState('');
   const [signupCompleteEmail, setSignupCompleteEmail] = useState<string | null>(null);
 
-  // Admin login fields
-  const [adminEmail, setAdminEmail] = useState('olarotimiisrael@gmail.com');
-  const [adminPassword, setAdminPassword] = useState('Tscw+1234');
+  // Admin login fields (Completely blank by default for maximum security)
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPin, setAdminPin] = useState('');
+
+  // Rate-limiting / Brute-force protection state
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [isLockedOut, setIsLockedOut] = useState(false);
 
   if (!isOpen) return null;
 
@@ -49,17 +54,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
 
   const handleAdminAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = adminLogin(adminEmail, adminPassword);
+
+    if (isLockedOut) {
+      toast.error('Admin portal locked due to multiple failed login attempts. Please try again later.');
+      return;
+    }
+
+    if (!adminEmail || !adminPassword || !adminPin) {
+      toast.error('All fields including Security PIN are required.');
+      return;
+    }
+
+    const success = adminLogin(adminEmail, adminPassword, adminPin);
     if (success) {
+      setFailedAttempts(0);
       onClose();
       navigate('/admin');
+    } else {
+      const newCount = failedAttempts + 1;
+      setFailedAttempts(newCount);
+      if (newCount >= 3) {
+        setIsLockedOut(true);
+        toast.error('🚨 Security Lockout Triggered: 3 failed attempts detected. Access blocked.');
+      } else {
+        toast.error(`Invalid admin credentials. ${3 - newCount} attempts remaining before security lockout.`);
+      }
     }
-  };
-
-  const handleFillAdminDemo = () => {
-    setAdminEmail('olarotimiisrael@gmail.com');
-    setAdminPassword('Tscw+1234');
-    toast.info('Loaded default Admin credentials');
   };
 
   return (
@@ -286,17 +306,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               </form>
             )}
 
-            {/* Option 3: Admin Panel Login */}
+            {/* Option 3: Secure Admin Panel Login */}
             {activeTab === 'admin' && (
               <form onSubmit={handleAdminAuth} className="space-y-4">
                 <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-xs text-rose-300">
                   <p className="font-bold flex items-center gap-1">
-                    <Shield className="w-4 h-4" /> Restricted Administrator Portal
+                    <Shield className="w-4 h-4 text-rose-400" /> High-Security Administrator Portal
                   </p>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Manage user accounts, vendor verifications, and marketplace ad moderation.
+                    Authorized access required. Attempts are monitored & rate-limited.
                   </p>
                 </div>
+
+                {isLockedOut && (
+                  <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-2xl text-xs text-red-200 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+                    <span>Portal Locked due to consecutive security failures.</span>
+                  </div>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-400">Admin Email</label>
@@ -305,9 +332,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                     <input
                       type="email"
                       required
+                      disabled={isLockedOut}
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500"
+                      placeholder="admin@sealify.ng"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -319,28 +348,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                     <input
                       type="password"
                       required
+                      disabled={isLockedOut}
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500"
+                      placeholder="••••••••••••"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 disabled:opacity-50"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-400">Master Security Access PIN</label>
+                  <div className="relative">
+                    <Key className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      maxLength={6}
+                      disabled={isLockedOut}
+                      value={adminPin}
+                      onChange={(e) => setAdminPin(e.target.value)}
+                      placeholder="Enter 6-digit PIN"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 font-mono tracking-widest disabled:opacity-50"
                     />
                   </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 mt-2"
+                  disabled={isLockedOut}
+                  className="w-full py-3 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 mt-2"
                 >
                   <Shield className="w-4 h-4" />
                   <span>Authenticate & Access Admin Dashboard</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleFillAdminDemo()}
-                  className="w-full py-2 bg-slate-950 hover:bg-slate-800 text-emerald-400 font-bold rounded-xl text-xs border border-slate-800 flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>Fill Default Admin Credentials</span>
                 </button>
               </form>
             )}
@@ -348,7 +388,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             <div className="mt-4 pt-3 border-t border-slate-800 text-center">
               <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Protected by Supabase Authentication Security
+                Protected by Encrypted Multi-Factor Authentication
               </p>
             </div>
           </>
