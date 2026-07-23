@@ -9,7 +9,8 @@ import { UserProfile, VerificationBadgeType, Listing, PromotionPaymentRequest } 
 import { 
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
-  KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload
+  KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload,
+  AlertTriangle
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -48,6 +49,14 @@ export const AdminDashboard: React.FC = () => {
   const pendingVerif = verificationRequests.filter(r => r.status === 'pending');
   const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
   const promotedAds = listings.filter(l => l.featured);
+
+  // Function to check if a promotion has expired
+  const isPromotionExpired = (listing: Listing): boolean => {
+    if (!listing.promotionEndDate) return false;
+    const endDate = new Date(listing.promotionEndDate);
+    const now = new Date();
+    return now > endDate;
+  };
 
   const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
     updateUser(userId, { 
@@ -679,6 +688,36 @@ export const AdminDashboard: React.FC = () => {
                 </table>
               </div>
             </div>
+
+            {/* Expired Promotions Section */}
+            {promotedAds.filter(isPromotionExpired).length > 0 && (
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                    Expired Promotions ({promotedAds.filter(isPromotionExpired).length})
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {promotedAds.filter(isPromotionExpired).map(ad => (
+                    <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
+                      <div className="flex items-center gap-2">
+                        <img src={ad.images[0]} className="w-10 h-10 rounded-lg object-cover" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white truncate">{ad.title}</p>
+                          <p className="text-[9px] text-amber-400 font-black uppercase">{ad.promotionPlanName}</p>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 pt-2 border-t border-slate-800">
+                        <span>Expired on {new Date(ad.promotionEndDate!).toLocaleDateString()}</span>
+                        <button onClick={() => updateListing(ad.id, { featured: false, promotionPlanName: undefined, promotionDurationMonths: undefined, promotionStartDate: undefined, promotionEndDate: undefined, paymentStatus: undefined, paymentProofUrl: undefined, amountPaid: undefined })} className="text-red-400 hover:underline">STOP PROMOTION</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
