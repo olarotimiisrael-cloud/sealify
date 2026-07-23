@@ -32,19 +32,24 @@ import {
   Scale,
   Activity,
   Megaphone,
-  X
+  X,
+  Filter,
+  Tag
 } from 'lucide-react';
 
 const POPULAR_SEARCHES = ['Tesla', 'MacBook', 'Apartment', 'iPhone', 'Sofa', 'Plumbing', 'Real Estate', 'Vehicles'];
 
-const Index: React.FC = () => {
-  const { listings, filters, setFilters, recentlyViewedIds, compareListingIds, announcements, t } = useSealify();
+export const Index: React.FC = () => {
+  const { listings, filters, setFilters, resetFilters, recentlyViewedIds, compareListingIds, announcements, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isSafetyTipsOpen, setIsSafetyTipsOpen] = useState(false);
   const [isSavedAlertsOpen, setIsSavedAlertsOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [dismissedBannerIds, setDismissedBannerIds] = useState<string[]>([]);
+
+  // Preset state
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
   const activeAnnouncements = announcements.filter(a => a.active && !dismissedBannerIds.includes(a.id));
   const recentlyViewedListings = listings.filter((l) => recentlyViewedIds.includes(l.id));
@@ -53,6 +58,25 @@ const Index: React.FC = () => {
     .filter(l => !recentlyViewedIds.includes(l.id))
     .sort(() => 0.5 - Math.random())
     .slice(0, 4);
+
+  const applyPreset = (presetKey: string) => {
+    if (activePreset === presetKey) {
+      setActivePreset(null);
+      resetFilters();
+      return;
+    }
+
+    setActivePreset(presetKey);
+    if (presetKey === 'under50k') {
+      setFilters(prev => ({ ...prev, maxPrice: 50000, minPrice: null }));
+    } else if (presetKey === 'under250k') {
+      setFilters(prev => ({ ...prev, maxPrice: 250000, minPrice: null }));
+    } else if (presetKey === 'under1m') {
+      setFilters(prev => ({ ...prev, maxPrice: 1000000, minPrice: null }));
+    } else if (presetKey === 'brandnew') {
+      setFilters(prev => ({ ...prev, condition: 'Brand New' }));
+    }
+  };
 
   const filteredListings = listings.filter((item) => {
     if (filters.searchQuery) {
@@ -239,6 +263,57 @@ const Index: React.FC = () => {
               <p className="text-2xl font-black text-blue-400">12</p>
               <p className="text-[10px] font-bold text-slate-500 uppercase">Safe Zones</p>
             </div>
+          </div>
+        </section>
+
+        {/* Quick Filter Presets Row */}
+        <section className="bg-slate-900/60 border border-slate-800 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-extrabold text-slate-300">
+            <Tag className="w-4 h-4 text-emerald-400" />
+            <span>Quick Deal Filters:</span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => applyPreset('under50k')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                activePreset === 'under50k' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              Under ₦50,000
+            </button>
+            <button
+              onClick={() => applyPreset('under250k')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                activePreset === 'under250k' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              Under ₦250,000
+            </button>
+            <button
+              onClick={() => applyPreset('under1m')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                activePreset === 'under1m' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              Under ₦1,000,000
+            </button>
+            <button
+              onClick={() => applyPreset('brandnew')}
+              className={`px-3 py-1 rounded-xl text-xs font-bold border transition-all ${
+                activePreset === 'brandnew' ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow' : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+              }`}
+            >
+              Brand New Only
+            </button>
+            {activePreset && (
+              <button
+                onClick={() => { setActivePreset(null); resetFilters(); }}
+                className="px-2.5 py-1 text-[10px] font-black uppercase text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl hover:bg-rose-500/20 transition-colors"
+              >
+                Clear Preset
+              </button>
+            )}
           </div>
         </section>
 

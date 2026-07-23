@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { 
   X, Zap, ShieldCheck, Check, Sparkles, CreditCard, Building, 
   Smartphone, Crown, Calendar, DollarSign, ArrowRight, Lock, Upload,
-  ExternalLink, Info
+  ExternalLink, Info, Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Listing } from '../types/sealify';
@@ -37,6 +37,11 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
   const currentPlan = DURATION_PLANS.find(p => p.months === selectedMonths)!;
   const total = currentPlan.rate * currentPlan.months;
 
+  const handleCopyAdId = () => {
+    navigator.clipboard.writeText(listing.id);
+    toast.success(`Ad ID "${listing.id}" copied to clipboard! Paste this as your transfer narration.`);
+  };
+
   const handlePagaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!receipt) {
@@ -57,9 +62,9 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl"><X className="w-5 h-5" /></button>
+        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"><X className="w-5 h-5" /></button>
 
         {step === 'plan' ? (
           <div className="space-y-6">
@@ -92,7 +97,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
 
             <button
               onClick={() => setStep('payment')}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20"
+              className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-colors"
             >
               <span>Continue to Secure Payment</span>
               <ArrowRight className="w-4 h-4" />
@@ -116,7 +121,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                 onClick={() => setPaymentMethod('paga')}
                 className={`py-3 rounded-xl text-xs font-black transition-all ${paymentMethod === 'paga' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-500'}`}
               >
-                Paga / Bank Transfer
+                Paga / Direct Transfer
               </button>
             </div>
 
@@ -128,6 +133,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                   <a
                     href="https://flutterwave.com/pay/8eqijxd7cmv1"
                     target="_blank"
+                    rel="noreferrer"
                     className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg transition-transform active:scale-95"
                   >
                     <span>Launch Payment Gateway</span>
@@ -147,10 +153,18 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                     <p>Acc Number: <strong className="text-emerald-400 font-mono text-base">6117594285</strong></p>
                     <p>Acc Name: <strong className="text-white">Israel Ogunpade</strong></p>
                   </div>
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <p className="text-[10px] text-slate-500 uppercase font-black mb-1">Mandatory Narration / Ad ID:</p>
-                    <p className="font-mono text-white font-black select-all cursor-pointer" title="Click to copy">{listing.id}</p>
-                    <p className="text-[9px] text-amber-300 mt-2 font-bold italic">Failure to use this Ad ID as your transfer description will delay verification.</p>
+                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] text-slate-500 uppercase font-black">Mandatory Transfer Narration / Ad ID:</p>
+                      <p className="font-mono text-white font-black">{listing.id}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleCopyAdId}
+                      className="p-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 rounded-xl text-xs flex items-center gap-1 font-bold"
+                    >
+                      <Copy className="w-3.5 h-3.5" /> Copy
+                    </button>
                   </div>
                 </div>
 
@@ -170,7 +184,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                   </label>
                 </div>
 
-                <button type="submit" className="w-full py-4 bg-emerald-500 text-slate-950 font-black rounded-2xl shadow-xl">Submit Proof & Activate Ad</button>
+                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl transition-colors">Submit Proof & Activate Ad</button>
               </form>
             )}
           </div>

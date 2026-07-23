@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, MapPin, Navigation, Clock, Share2, Check, ExternalLink, Building2, Coffee, Shield } from 'lucide-react';
+import { X, ShieldCheck, MapPin, Navigation, Clock, Share2, Check, ExternalLink, Building2, Coffee, Shield, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface SafeMeetupModalProps {
@@ -12,6 +12,7 @@ interface SafeMeetupModalProps {
 interface MeetupSpot {
   id: string;
   name: string;
+  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
   category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
   address: string;
   distance: string;
@@ -25,6 +26,7 @@ const SAFE_SPOTS: MeetupSpot[] = [
   {
     id: 'spot_1',
     name: 'Ogbomoso Police Divisional HQ Safe Zone',
+    zone: 'Police HQ',
     category: 'Police Safe Zone',
     address: 'Oja-Igbo Road, Ogbomoso, Oyo State',
     distance: '0.8 km away',
@@ -36,8 +38,9 @@ const SAFE_SPOTS: MeetupSpot[] = [
   {
     id: 'spot_2',
     name: 'Ogbomoso Public Library - Main Branch',
+    zone: 'Takie / Center',
     category: 'Public Library',
-    address: 'Iluju Area, Ogbomoso, Oyo State',
+    address: 'Takie / Iluju Area, Ogbomoso, Oyo State',
     distance: '1.2 km away',
     hours: 'Mon-Sat 8:00 AM - 6:00 PM',
     cctvVerified: true,
@@ -47,6 +50,7 @@ const SAFE_SPOTS: MeetupSpot[] = [
   {
     id: 'spot_3',
     name: 'Ogbomoso Shopping Complex Atrium',
+    zone: 'Sabo Market Zone',
     category: 'Shopping Mall',
     address: 'Sabo Market Road, Ogbomoso, Oyo State',
     distance: '1.5 km away',
@@ -57,16 +61,31 @@ const SAFE_SPOTS: MeetupSpot[] = [
   },
   {
     id: 'spot_4',
-    name: 'Popular Café at LAUTECH Gate',
+    name: 'Popular Café at LAUTECH Main Gate',
+    zone: 'LAUTECH Area',
     category: 'Café',
-    address: 'LAUTECH Main Gate, Ogbomoso, Oyo State',
+    address: 'LAUTECH Main Gate / Under G, Ogbomoso, Oyo State',
     distance: '2.1 km away',
     hours: 'Daily 7:00 AM - 10:00 PM',
     cctvVerified: true,
     icon: Coffee,
     badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
   },
+  {
+    id: 'spot_5',
+    name: 'General Post Office Safe Zone',
+    zone: 'Takie / Center',
+    category: 'Police Safe Zone',
+    address: 'Takie Square, Ogbomoso, Oyo State',
+    distance: '0.5 km away',
+    hours: 'Mon-Sat 8:00 AM - 5:00 PM',
+    cctvVerified: true,
+    icon: Shield,
+    badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
+  },
 ];
+
+type ZoneFilter = 'All' | 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
 
 export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
   isOpen,
@@ -75,14 +94,16 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
   onSelectSpot,
 }) => {
   const [selectedSpotId, setSelectedSpotId] = useState<string>(SAFE_SPOTS[0].id);
+  const [selectedZone, setSelectedZone] = useState<ZoneFilter>('All');
   const [shared, setShared] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
-  const currentSpot = SAFE_SPOTS.find((s) => s.id === selectedSpotId) || SAFE_SPOTS[0];
+  const filteredSpots = SAFE_SPOTS.filter(s => selectedZone === 'All' || s.zone === selectedZone);
+  const currentSpot = SAFE_SPOTS.find((s) => s.id === selectedSpotId) || filteredSpots[0] || SAFE_SPOTS[0];
 
   const handleShareLocation = () => {
-    if (onSelectSpot) {
+    if (onSelectSpot && currentSpot) {
       onSelectSpot(currentSpot.name, currentSpot.address);
     }
     setShared(true);
@@ -95,27 +116,53 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6 font-sans">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="space-y-6">
-          <div className="text-center space-y-1">
-            <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-black text-white">Verified Safe Meetup Spots</h2>
-            <p className="text-xs text-slate-400">
-              Choose a well-lit, CCTV-monitored public location to meet in person
-            </p>
+        <div className="text-center space-y-1">
+          <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
+            <ShieldCheck className="w-6 h-6" />
           </div>
+          <h2 className="text-2xl font-black text-white">Verified Safe Meetup Spots</h2>
+          <p className="text-xs text-slate-400">
+            Choose a well-lit, CCTV-monitored public location to meet in person in Ogbomosoland
+          </p>
+        </div>
 
-          <div className="space-y-3">
-            {SAFE_SPOTS.map((spot) => {
+        {/* Zone Selector Chips */}
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold uppercase tracking-wider">
+            <Filter className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Filter by Neighborhood Area</span>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            {(['All', 'LAUTECH Area', 'Takie / Center', 'Sabo Market Zone', 'Police HQ'] as ZoneFilter[]).map((zone) => (
+              <button
+                key={zone}
+                onClick={() => setSelectedZone(zone)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                  selectedZone === zone
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                {zone}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Spots List */}
+        <div className="space-y-3">
+          {filteredSpots.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-500">No safe spots in this area.</div>
+          ) : (
+            filteredSpots.map((spot) => {
               const Icon = spot.icon;
               const isSelected = selectedSpotId === spot.id;
 
@@ -163,10 +210,12 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
                   </span>
                 </button>
               );
-            })}
-          </div>
+            })
+          )}
+        </div>
 
-          <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+        <div className="pt-2 border-t border-slate-800 flex flex-col sm:flex-row gap-3">
+          {currentSpot && (
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
                 `${currentSpot.name} ${currentSpot.address}`
@@ -179,15 +228,15 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
               <span>Get GPS Directions</span>
               <ExternalLink className="w-3 h-3 text-slate-500" />
             </a>
+          )}
 
-            <button
-              onClick={handleShareLocation}
-              className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
-            >
-              {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-              <span>{shared ? 'Location Sent!' : 'Propose Meetup Location'}</span>
-            </button>
-          </div>
+          <button
+            onClick={handleShareLocation}
+            className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-2"
+          >
+            {shared ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+            <span>{shared ? 'Location Sent!' : 'Propose Meetup Location'}</span>
+          </button>
         </div>
       </div>
     </div>
