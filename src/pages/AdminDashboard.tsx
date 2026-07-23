@@ -472,7 +472,7 @@ export const AdminDashboard: React.FC = () => {
                             <button onClick={() => setEditingUser(u)} className="p-2 bg-slate-950 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 rounded-xl transition-all border border-slate-800">
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <button onClick={() => deleteUser(u.id)} className="p-2 bg-slate-950 hover:bg-rose-500 hover:text-white text-slate-500 rounded-xl transition-all border border-slate-800">
+                            <button onClick={() => deleteUser(u.id)} className="p-2 bg-slate-950 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl transition-all border border-slate-800">
                               <UserMinus className="w-3.5 h-3.5" />
                             </button>
                           </div>
