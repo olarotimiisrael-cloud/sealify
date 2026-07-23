@@ -136,7 +136,7 @@ const Index: React.FC = () => {
                 Buy. Sell. Connect. Everything you need in one place — from luxury vehicles and real estate to phones, fashion, and services.
               </p>
 
-              <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-1 sm:gap-1.5">
+              <div className="pt-1 flex flex-wrap items-center justify-center lg:justify-start gap-1.5">
                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-500">Trending:</span>
                 {POPULAR_SEARCHES.map((tag) => (
                   <button

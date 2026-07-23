@@ -833,7 +833,7 @@ export const AdminDashboard: React.FC = () => {
                 {passwordRequests.map((req) => (
                   <div key={req.id} className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
                     <div className="flex items-center gap-3">
-                       <img src={req.idDocumentUrl} className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
+                       <img src={req.id_document_url} className="w-12 h-12 rounded-xl object-cover border border-slate-800" />
                        <div className="min-w-0">
                          <h4 className="font-bold text-sm text-white truncate">{req.userName}</h4>
                          <p className="text-[10px] text-slate-500 truncate">{req.userEmail}</p>

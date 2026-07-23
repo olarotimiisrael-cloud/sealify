@@ -53,7 +53,7 @@ export interface PasswordChangeRequest {
   userEmail: string;
   userName: string;
   nin: string;
-  idDocumentUrl: string;
+  id_document_url: string;
   newPassword: string;
   reason: string;
   status: 'pending' | 'approved' | 'declined';

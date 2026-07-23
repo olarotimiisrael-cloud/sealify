@@ -65,7 +65,7 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ isOpen
       nin,
       newPassword,
       reason,
-      idDocumentUrl: idDoc,
+      id_document_url: idDoc,
     });
 
     setIsSubmitted(true);
