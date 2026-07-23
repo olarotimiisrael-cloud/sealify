@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, Check, Send, HelpCircle, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,6 +35,10 @@ const Contact: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Contact Support — Sealify Nigeria"
+        description="Get in touch with Sealify Customer Support for assistance with account verification, ad promotions, or safety inquiries."
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

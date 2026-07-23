@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { Link } from 'react-router-dom';
 import { 
   ShieldCheck, 
@@ -15,6 +16,10 @@ import {
 const HelpCenter: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Knowledge Base & Support — Sealify Nigeria"
+        description="Learn how to post classified ads, verify vendor status, and transact safely in Ogbomosoland and across Nigeria."
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

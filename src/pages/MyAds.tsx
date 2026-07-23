@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
@@ -66,6 +67,10 @@ const MyAds: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="My Ads & Inventory — Sealify Nigeria"
+        description="Manage your active listings, view performance analytics, apply for verified vendor badges, and bump ads on Sealify."
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

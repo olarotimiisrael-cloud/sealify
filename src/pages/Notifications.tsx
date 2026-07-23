@@ -2,6 +2,7 @@ import React from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { 
   Bell, TrendingDown, MessageSquare, Tag, Sparkles, Trash2, 
   CheckCircle2, ShoppingBag, Clock, ArrowRight, ShieldCheck, Zap
@@ -33,6 +34,10 @@ const Notifications: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Account Notifications — Sealify Nigeria"
+        description="Stay updated with price alerts, direct messages, and deal notifications on Sealify."
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

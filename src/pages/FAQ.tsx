@@ -1,6 +1,7 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { 
   ShieldCheck, 
   Info, 
@@ -14,6 +15,10 @@ import {
 const FAQ: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Frequently Asked Questions — Sealify Nigeria"
+        description="Find answers to common questions about posting ads, safe meetup zones, payment verification, and trading on Sealify."
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
