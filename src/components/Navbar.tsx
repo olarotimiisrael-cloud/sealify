@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
+import EscrowProtectionModal from './EscrowProtectionModal';
 import { SupportedLanguage } from '../translations/languages';
 import { 
   Heart, 
@@ -14,7 +15,8 @@ import {
   Globe,
   ShieldCheck,
   Building2,
-  Command
+  Command,
+  Lock
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -39,6 +41,7 @@ const Navbar: React.FC = () => {
   } = useSealify();
 
   const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
+  const [isEscrowOpen, setIsEscrowOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
 
@@ -90,6 +93,14 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <button
+              onClick={() => setIsEscrowOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-teal-400 hover:text-teal-300 transition-colors mr-1 bg-teal-500/10 rounded-xl border border-teal-500/20"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Safe Escrow Protocol</span>
+            </button>
+
             <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
               <Building2 className="w-4 h-4 text-emerald-400" />
               <span>Vendors</span>
@@ -215,6 +226,8 @@ const Navbar: React.FC = () => {
           <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
         )}
       </header>
+
+      <EscrowProtectionModal isOpen={isEscrowOpen} onClose={() => setIsEscrowOpen(false)} />
     </>
   );
 };
