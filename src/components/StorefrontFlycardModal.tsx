@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, QrCode, Download, Share2, Copy, Check, Sparkles, MessageCircle, ShieldCheck, MapPin, Building2, Phone } from 'lucide-react';
+import { X, QrCode, Download, Share2, Copy, Check, Sparkles, MessageCircle, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import VerifiedBadge from './VerifiedBadge';
 import Logo from './Logo';
@@ -33,6 +33,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
   itemUrl = window.location.href,
 }) => {
   const [copiedText, setCopiedText] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   if (!isOpen) return null;
 
@@ -47,26 +48,50 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
 
   const formattedPrice = price ? formatNGN(price) : 'Contact for Price';
 
-  const promoCaption = `🔥 AVAILABLE ON SEALIFY NIGERIA 🔥\n\n📦 Item: \${title}\n💰 Price: \${formattedPrice}\n📍 Location: \${location}\n👤 Seller: \${businessName || sellerName}\n📞 Phone: \${sellerPhone}\n\n👉 Inspect and buy safely on Sealify:\n\${itemUrl}`;
+  // Ensure absolute URL back to this item on Sealify
+  const targetItemUrl = itemUrl.startsWith('http') 
+    ? itemUrl 
+    : `${window.location.origin}${itemUrl}`;
+
+  const promoCaption = `🔥 AVAILABLE ON SEALIFY NIGERIA 🔥\n\n📦 Item: ${title}\n💰 Price: ${formattedPrice}\n📍 Location: ${location}\n👤 Seller: ${businessName || sellerName}\n📞 Phone: ${sellerPhone}\n\n👉 Click link below to view details and inspect on Sealify:\n${targetItemUrl}`;
 
   const handleCopyCaption = () => {
     navigator.clipboard.writeText(promoCaption);
     setCopiedText(true);
-    toast.success('WhatsApp Status caption copied to clipboard!');
+    toast.success('WhatsApp Status caption copied to clipboard with direct item link!');
     setTimeout(() => setCopiedText(false), 2000);
   };
 
+  const handleCopyDirectLink = () => {
+    navigator.clipboard.writeText(targetItemUrl);
+    setCopiedLink(true);
+    toast.success('Direct item link copied!');
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
   const handleWhatsAppShare = () => {
-    const waUrl = `https://wa.me/?text=\${encodeURIComponent(promoCaption)}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(promoCaption)}`;
     window.open(waUrl, '_blank');
+  };
+
+  const handleNativeShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${title} — ${formattedPrice} on Sealify`,
+        text: promoCaption,
+        url: targetItemUrl,
+      }).catch(() => {});
+    } else {
+      handleWhatsAppShare();
+    }
   };
 
   const handlePrintFlyer = () => {
     window.print();
   };
 
-  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=\${encodeURIComponent(
-    itemUrl
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
+    targetItemUrl
   )}&color=059669&bgcolor=020617`;
 
   return (
@@ -86,7 +111,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
           </div>
           <h2 className="text-2xl font-black text-white">WhatsApp & Social Promo Card</h2>
           <p className="text-xs text-slate-400">
-            Generate a branded share card for WhatsApp Status, Facebook & Instagram
+            Generates a branded share card with a direct clickable link to your item
           </p>
         </div>
 
@@ -119,19 +144,34 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
             </div>
 
             <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-[9px] font-extrabold uppercase text-slate-500">Contact Merchant</p>
                 <p className="font-extrabold text-xs text-white truncate">{businessName || sellerName}</p>
                 <p className="text-[11px] font-mono text-emerald-400 font-bold">{sellerPhone}</p>
+                <p className="text-[10px] text-teal-400 font-mono truncate mt-0.5">{targetItemUrl}</p>
               </div>
 
               {/* QR Code */}
               <div className="bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0 text-center">
-                <img src={qrDataUrl} alt="QR Link" className="w-12 h-12 rounded" />
-                <span className="text-[8px] font-bold text-slate-500 uppercase block mt-0.5">Scan Ad</span>
+                <img src={qrDataUrl} alt="Scan QR Link" className="w-12 h-12 rounded" />
+                <span className="text-[8px] font-bold text-slate-500 uppercase block mt-0.5">Scan to View</span>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Direct Link Preview Box */}
+        <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1 text-xs">
+            <p className="text-[10px] text-slate-500 font-bold uppercase">Direct Redirect Link</p>
+            <p className="text-emerald-400 font-mono text-[11px] truncate">{targetItemUrl}</p>
+          </div>
+          <button
+            onClick={handleCopyDirectLink}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold shrink-0 transition-colors border border-slate-800"
+          >
+            {copiedLink ? 'Copied!' : 'Copy Link'}
+          </button>
         </div>
 
         {/* Action Buttons */}
@@ -149,15 +189,15 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
             className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition-colors"
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Post WhatsApp</span>
+            <span>Post to WhatsApp</span>
           </button>
 
           <button
-            onClick={handlePrintFlyer}
-            className="py-3 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
+            onClick={handleNativeShare}
+            className="py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg transition-colors"
           >
-            <Download className="w-4 h-4" />
-            <span>Print Poster</span>
+            <Share2 className="w-4 h-4" />
+            <span>Share App Flyer</span>
           </button>
         </div>
       </div>
