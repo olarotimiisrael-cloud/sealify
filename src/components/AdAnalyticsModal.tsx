@@ -6,7 +6,7 @@ interface AdAnalyticsModalProps {
   isOpen: boolean;
   onClose: () => void;
   listing: Listing | null;
-}
+};
 
 export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
   isOpen,
@@ -52,13 +52,13 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
         </button>
 
         <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
-              <BarChart2 className="w-6 h-6" />
+          <div className="flex items-center gap-2">
+            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/30">
+              <TrendingUp className="w-5 h-5" />
             </div>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-black text-white truncate">Ad Performance Analytics</h2>
-              <p className="text-xs text-slate-400 truncate">{listing.title}</p>
+            <div>
+              <h2 className="text-xl font-black text-white">Ad Performance Analytics</h2>
+              <p className="text-xs text-slate-400">{listing?.title}</p>
             </div>
           </div>
 
@@ -92,11 +92,11 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
               {weeklyViews.map((item) => {
                 const heightPercent = Math.round((item.count / maxDayViews) * 100);
                 return (
-                  <div key={item.day} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <div key={item.day} className="flex-1 flex flex-col items-center gap-1.5 h-full">
                     <span className="text-[9px] text-slate-400 font-mono">{item.count}</span>
                     <div
                       style={{ height: `${Math.max(15, heightPercent)}%` }}
-                      className="w-full bg-emerald-500 rounded-t-md hover:bg-emerald-400 transition-colors"
+                      className="w-full rounded-t-md hover:bg-emerald-400 transition-colors"
                     ></div>
                     <span className="text-[10px] text-slate-500 font-bold">{item.day}</span>
                   </div>
@@ -111,25 +111,26 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
                   <span className="text-slate-300 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     Multiple product photos uploaded
-                </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">Good</span>
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">Good</span>
+                </div>
+
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                  <span className="text-slate-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400" />
+                    Promote with Top Ad Highlight
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">+5x Boost</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                <span className="text-slate-300 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-400" />
-                  Promote with Top Ad Highlight
-                </span>
-                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">+5x Boost</span>
-              </div>
+              <button
+                onClick={onClose}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
+              >
+                Close Analytics Dashboard
+              </button>
             </div>
-
-            <button
-              onClick={onClose}
-              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
-            >
-              Close Analytics Dashboard
-            </button>
           </div>
         </div>
       </div>

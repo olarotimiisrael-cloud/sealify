@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 import MagicSearch from './MagicSearch';
-import { SupportedLanguage } from '@/translations/languages';
 import { 
   PlusCircle, 
   Heart, 
@@ -47,33 +46,13 @@ const Navbar: React.FC = () => {
 
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsMagicSearchOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const languages: { code: SupportedLanguage, label: string }[] = [
-    { code: 'en', label: 'UK English' },
-    { code: 'yo', label: 'Yoruba' },
-    { code: 'pg', label: 'Pidgin' },
-    { code: 'ha', label: 'Hausa' },
-    { code: 'fr', label: 'French' },
-    { code: 'zh', label: 'Chinese' },
-  ];
-
   return (
     <>
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
           
           <Link to="/" className="flex items-center shrink-0">
-            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700/50">
+            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700">
               <img 
                 src="/logo.png" 
                 alt="Sealify Logo" 
@@ -94,9 +73,11 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-800 rounded-md border border-slate-700 text-[10px] font-black group-hover:text-emerald-400 transition-colors">
                   <Command className="w-2.5 h-2.5" />
-                  <span>K</span>
+                  <span>ESC</span>
                 </div>
-                <Sparkles className="w-3.5 h-3.5 text-emerald-500/40 group-hover:text-emerald-400 group-hover:animate-pulse transition-all" />
+                <button onClick={onClose} className="p-2 text-slate-400 hover:text-white transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </button>
           </div>
@@ -110,10 +91,10 @@ const Navbar: React.FC = () => {
             <div className="relative group">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
-                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-xl text-xs font-bold transition-colors"
+                className="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-colors"
               >
                 <Globe className="w-4 h-4 text-emerald-400" />
-                <span>{languages.find(l => l.code === language)?.label}</span>
+                <span>{language}</span>
               </button>
 
               {showLangMenu && (
@@ -156,7 +137,7 @@ const Navbar: React.FC = () => {
               <>
                 <Link 
                   to={isAdmin ? '/admin' : '/my-ads'} 
-                  className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-xl border border-slate-800"
+                  className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-xl border border-slate-800 transition-colors"
                 >
                   <img 
                     src={user?.avatarUrl} 
@@ -179,13 +160,7 @@ const Navbar: React.FC = () => {
               </>
             )}
 
-            {!isAuthenticated && (
-              <button onClick={() => setIsAuthModalOpen(true)} className="text-xs font-bold px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
-                {t('login')}
-              </button>
-            )}
-
-            <Link to="/post-ad" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs shadow-lg shadow-emerald-500/10 transition-all">
+            <Link to="/post-ad" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-5 py-2.5 rounded-2xl text-xs shadow-lg">
               {t('post_free_ad').toUpperCase()}
             </Link>
           </div>
@@ -197,7 +172,7 @@ const Navbar: React.FC = () => {
             <Link to="/notifications" className="relative p-2 text-slate-300">
               <Bell className="w-6 h-6" />
               {unreadNotifications > 0 && (
-                <span className="absolute top-1 right-0 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute top-1 right-1 bg-emerald-500 text-slate-950 font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center">
                   {unreadNotifications}
                 </span>
               )}
@@ -218,13 +193,16 @@ const Navbar: React.FC = () => {
                 <Bell className="w-4 h-4 text-emerald-400" /> {t('notifications')}
               </Link>
             </div>
-            <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center text-xs">{t('post_free_ad').toUpperCase()}</Link>
+            <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
+              {t('post_free_ad').toUpperCase()}
+            </Link>
           </div>
         )}
-      </header>
 
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
-      <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
+        {isMagicSearchOpen && (
+          <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
+        )}
+      </header>
     </>
   );
 };

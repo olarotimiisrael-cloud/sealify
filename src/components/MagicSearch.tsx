@@ -1,55 +1,48 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { 
-  Search, 
-  Sparkles, 
-  X, 
-  ArrowRight, 
-  TrendingUp, 
-  Command,
-  Smartphone,
-  Car,
-  Home,
-  Zap,
-  Clock
-} from 'lucide-react';
+import { Search, Sparkles, X, ArrowRight, TrendingUp, Command, Smartphone, Car, Home, Shield, MapPin, Tag, Zap } from 'lucide-react';
 
 interface MagicSearchProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
+const POPULAR_SEARCHES = [
+  'Tesla',
+  'MacBook',
+  'Apartment',
+  'iPhone',
+  'Sofa',
+  'Plumbing',
+  'Real Estate',
+  'Vehicles',
+];
+
+const CATEGORIES = [
+  { name: 'Vehicles', icon: Smartphone, color: 'text-blue-400' },
+  { name: 'Electronics', icon: Smartphone, color: 'text-purple-400' },
+  { name: 'Real Estate', icon: Home, color: 'text-teal-400' },
+  { name: 'Fashion', icon: Shirt, color: 'text-pink-400' },
+  { name: 'Home & Furniture', icon: Armchair, color: 'text-amber-400' },
+  { name: 'Services', icon: Wrench, color: 'text-cyan-400' },
+  { name: 'Jobs', icon: Briefcase, color: 'text-indigo-400' },
+  { name: 'Beauty & Health', icon: Sparkles, color: 'text-rose-400' },
+  { name: 'Utility & Energy', icon: Zap, color: 'text-yellow-400' },
+];
+
 export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => {
-  const { listings, recentlyViewedIds, t } = useSealify();
+  const { listings, filters, setFilters, resetFilters } = useSealify();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
-  // Filter listings based on query
-  const results = query.trim() === '' 
-    ? [] 
-    : listings.filter(l => 
+  const results = query.trim() === ''
+    ? []
+    : listings.filter(l =>
         l.title.toLowerCase().includes(query.toLowerCase()) ||
         l.category.toLowerCase().includes(query.toLowerCase()) ||
-        l.description.toLowerCase().includes(query.toLowerCase())
+        l.location.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 6);
-
-  const recentlyViewed = listings.filter(l => recentlyViewedIds.includes(l.id)).slice(0, 3);
-
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
 
   const handleSelect = (id: string) => {
     navigate(`/listing/${id}`);
@@ -60,18 +53,18 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center pt-20 px-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-md flex items-start justify-center pt-20 px-4">
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200" 
+      <div
+        className="fixed inset-0 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-200"
         onClick={onClose}
       />
 
       {/* Search Tray */}
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-200">
-        {/* Glow Effect */}
+        {/* Glow Effects */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="p-4 border-b border-slate-800 flex items-center gap-3 relative z-10">
           <div className="p-2 bg-emerald-500/10 rounded-xl">
@@ -86,7 +79,7 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
             onChange={(e) => setQuery(e.target.value)}
           />
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800 rounded-lg border border-slate-700 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800 rounded-md border border-slate-700 text-[10px] font-black group-hover:text-emerald-400 transition-colors">
               <Command className="w-3 h-3" />
               <span>ESC</span>
             </div>
@@ -107,7 +100,7 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
                     <span>Jump Back In</span>
                   </div>
                   <div className="grid grid-cols-1 gap-2">
-                    {recentlyViewed.map(item => (
+                    {recentlyViewed.map((item) => (
                       <button
                         key={item.id}
                         onClick={() => handleSelect(item.id)}
@@ -116,7 +109,7 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
                         <img src={item.images[0]} className="w-10 h-10 rounded-xl object-cover" />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-bold text-white truncate">{item.title}</p>
-                          <p className="text-[10px] text-emerald-400 font-black">₦{item.price.toLocaleString()}</p>
+                          <p className="text-[10px] text-emerald-400 font-bold">₦{item.price.toLocaleString()}</p>
                         </div>
                         <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-emerald-400 transition-colors" />
                       </button>
@@ -133,10 +126,15 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { icon: Smartphone, label: 'Electronics', color: 'text-purple-400' },
-                    { icon: Car, label: 'Vehicles', color: 'text-blue-400' },
-                    { icon: Home, label: 'Real Estate', color: 'text-teal-400' },
-                    { icon: Zap, label: 'Services', color: 'text-amber-400' }
+                    { icon: Smartphone, label: 'Electronics' },
+                    { icon: Car, label: 'Vehicles' },
+                    { icon: Home, label: 'Real Estate' },
+                    { icon: Shirt, label: 'Fashion' },
+                    { icon: Armchair, label: 'Home & Furniture' },
+                    { icon: Wrench, label: 'Services' },
+                    { icon: Briefcase, label: 'Jobs' },
+                    { icon: Sparkles, label: 'Beauty & Health' },
+                    { icon: Zap, label: 'Utility & Energy' },
                   ].map((cat, i) => (
                     <button
                       key={i}
@@ -152,15 +150,15 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
             </div>
           ) : results.length > 0 ? (
             <div className="p-2 space-y-1">
-              <div className="px-3 pb-2 text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between">
+              <div className="px-3 pb-2 text-[10px] font-black text-slate-500 uppercase tracking-wider">
                 <span>Magic Results</span>
                 <span className="text-emerald-500">{results.length} items found</span>
               </div>
-              {results.map(item => (
+              {results.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => handleSelect(item.id)}
-                  className="w-full flex items-center gap-4 p-3 hover:bg-emerald-500/5 hover:border-emerald-500/20 border border-transparent rounded-2xl transition-all text-left group"
+                  className="w-full flex items-center gap-4 p-3 hover:bg-emerald-500/5 hover:border-emerald-500/20 border border-slate-800 transition-all text-left group"
                 >
                   <div className="relative shrink-0">
                     <img src={item.images[0]} className="w-14 h-14 rounded-xl object-cover border border-slate-800" />

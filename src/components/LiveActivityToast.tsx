@@ -41,7 +41,7 @@ export const LiveActivityToast: React.FC = () => {
           <Icon className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-black text-white uppercase tracking-widest leading-none">Activity Now</p>
+          <p className="text-[10px] font-black text-white uppercase tracking-widest">Activity Now</p>
           <p className="text-[11px] text-slate-300 mt-1 leading-snug">
             <span className="font-bold text-emerald-400">{currentActivity.user}</span> 
             {currentActivity.type === 'view' ? ' is viewing ' : 

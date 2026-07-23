@@ -1,7 +1,7 @@
 import React from 'react';
-import { useSealify } from '../context/SealifyContext';
 import { X, Scale, Trash2, ShieldCheck, MapPin, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
 
 interface CompareModalProps {
   isOpen: boolean;
@@ -36,10 +36,10 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
               >
                 Clear All
               </button>
-            )}
+            </div>
             <button
               onClick={onClose}
-              className="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
+              className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white"
             >
               <X className="w-5 h-5" />
             </button>
@@ -125,7 +125,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
                 </div>
               ))}
             </div>
-          )}
+          }
         </div>
       </div>
     </div>
