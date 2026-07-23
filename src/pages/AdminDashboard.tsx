@@ -10,14 +10,14 @@ import {
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
   KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload,
-  AlertTriangle
+  AlertTriangle, LogOut
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    isAdmin, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
+    isAdmin, user, logout, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest
   } = useSealify();
@@ -142,28 +142,50 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
-            <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
-            <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
-            <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
-            <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
-            <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-              APPROVALS
-              {(pendingPW.length + pendingVerif.length) > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {pendingPW.length + pendingVerif.length}
-                </span>
-              )}
-            </button>
-            <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
-              PROMOTION PAYMENTS
-              {pendingPromoPay.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {pendingPromoPay.length}
-                </span>
-              )}
-            </button>
-          </div>
+          {/* User avatar and logout in admin dashboard header */}
+          {user && (
+            <div className="flex items-center gap-3">
+              <img 
+                src={user.avatarUrl} 
+                className="w-10 h-10 rounded-full border border-emerald-500" 
+                alt={user.fullName}
+                onError={(e) => {
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'; // fallback
+                }}
+              />
+              <span className="text-xs font-bold text-slate-300 hidden sm:inline">{user.fullName}</span>
+              <button
+                onClick={logout}
+                className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
+          <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
+          <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>USERS</button>
+          <button onClick={() => setActiveTab('categories')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
+          <button onClick={() => setActiveTab('listings')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>ADS & PROMOTIONS</button>
+          <button onClick={() => setActiveTab('approvals')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'approvals' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+            APPROVALS
+            {(pendingPW.length + pendingVerif.length) > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {pendingPW.length + pendingVerif.length}
+              </span>
+            )}
+          </button>
+          <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+            PROMOTION PAYMENTS
+            {pendingPromoPay.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                {pendingPromoPay.length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Tab Content: Categories Management */}
@@ -200,7 +222,6 @@ export const AdminDashboard: React.FC = () => {
                     <option value="Car">Car / Transport</option>
                     <option value="Smartphone">Electronics / Phone</option>
                     <option value="Home">Home / Property</option>
-                    <option value="Shirt">Fashion / Apparel</option>
                     <option value="Wrench">Services / Tools</option>
                     <option value="Briefcase">Jobs / Work</option>
                     <option value="Armchair">Furniture</option>
@@ -440,7 +461,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="bg-slate-950/50 p-3 rounded-2xl text-[11px] space-y-1.5">
                       <p className="text-slate-400 truncate">Doc: <strong className="text-white">{req.docType}</strong></p>
-                      <p className="text-slate-400">ID: <strong className="text-white font-mono">{req.docNumber}</strong></p>
+                      <p className="text-slate-400">ID: <strong className="text-emerald-400 font-mono">{req.docNumber}</strong></p>
                     </div>
                     {req.status === 'pending' && (
                       <div className="flex gap-2">
@@ -568,19 +589,19 @@ export const AdminDashboard: React.FC = () => {
             <div className="lg:col-span-2 space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-400"><Activity className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">{t('visitors')}</span></div>
+                  <div className="flex items-center gap-2 text-emerald-400"><Activity className="w-4 h-4" /><span className="text-[10px] font-black uppercase">{t('visitors')}</span></div>
                   <p className="text-3xl font-black text-white">{analytics.visitors}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-blue-400"><Package className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Active Ads</span></div>
+                  <div className="flex items-center gap-2 text-blue-400"><Package className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Active Ads</span></div>
                   <p className="text-3xl font-black text-white">{listings.length}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-purple-400"><Layers className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Categories</span></div>
+                  <div className="flex items-center gap-2 text-purple-400"><Layers className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Categories</span></div>
                   <p className="text-3xl font-black text-white">{categories.length}</p>
                 </div>
                 <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2 text-amber-400"><RefreshCw className="w-4 h-4" /><span className="text-[10px] font-bold uppercase">Uptime</span></div>
+                  <div className="flex items-center gap-2 text-amber-400"><RefreshCw className="w-4 h-4" /><span className="text-[10px] font-black uppercase">Uptime</span></div>
                   <p className="text-3xl font-black text-white">99.9%</p>
                 </div>
               </div>
@@ -596,7 +617,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Platform Integrity</h3>
+              <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider">Platform Integrity</h3>
               <div className="space-y-3">
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -678,7 +699,7 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-750 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
+                            <Link to={`/listing/${ad.id}`} className="p-2 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-xl transition-all"><Eye className="w-4 h-4" /></Link>
                             <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
                           </div>
                         </td>
