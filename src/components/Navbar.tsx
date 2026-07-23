@@ -154,12 +154,32 @@ const Navbar: React.FC = () => {
               <Link to="/admin" className="px-3 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-black text-[10px] rounded-xl">ADMIN</Link>
             )}
 
-            {isAuthenticated ? (
-              <Link to="/my-ads" className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-xl border border-slate-800">
-                <img src={user?.avatarUrl} className="w-8 h-8 rounded-full border border-emerald-500" />
-                <span className="text-xs font-bold hidden xl:inline">{user?.fullName}</span>
-              </Link>
-            ) : (
+            {/* User avatar and logout */}
+            {isAuthenticated && (
+              <>
+                <Link 
+                  to={isAdmin ? '/admin' : '/my-ads'} 
+                  className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-xl border border-slate-800"
+                >
+                  <img 
+                    src={user?.avatarUrl} 
+                    className="w-8 h-8 rounded-full border border-emerald-500" 
+                    alt={user?.fullName}
+                  />
+                  <span className="text-xs font-bold hidden xl:inline">{user?.fullName}</span>
+                </Link>
+                
+                <button
+                  onClick={logout}
+                  className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
+            {!isAuthenticated && (
               <button onClick={() => setIsAuthModalOpen(true)} className="text-xs font-bold px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 transition-colors">
                 {t('login')}
               </button>
