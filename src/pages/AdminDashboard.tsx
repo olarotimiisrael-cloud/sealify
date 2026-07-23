@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import AdminEditUserModal from '../components/AdminEditUserModal';
-import { UserProfile, Listing, Category, VerificationRequest, PasswordChangeRequest, PromotionPaymentRequest, AdReport, DisputeCase, SecurityIntrusionLog, AuditLog } from '../types/sealify';
+import { UserProfile, Listing, Category } from '../types/sealify';
 import { 
   Shield, Package, Activity, RefreshCw, Edit3, Trash2,
   Database, Megaphone, LogOut, Download, 
@@ -17,9 +17,27 @@ import {
   ShieldQuestion, BarChart3, Radio, Clock, AlertTriangle, 
   Wallet, FileText, Check, X, ShieldX, ToggleLeft, ToggleRight,
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
-  UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp
+  UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
+  ChevronDown, SlidersHorizontal, Grid
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+type AdminTab = 'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser' | 'disputes';
+
+interface ModuleItem {
+  id: AdminTab;
+  label: string;
+  description: string;
+  icon: React.FC<{ className?: string }>;
+  badge?: number;
+  color?: string;
+  badgeBg?: string;
+}
+
+interface ModuleGroup {
+  groupName: string;
+  items: ModuleItem[];
+}
 
 export const AdminDashboard: React.FC = () => {
   const { 
@@ -35,7 +53,8 @@ export const AdminDashboard: React.FC = () => {
     reports, processReport
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'categories' | 'logs' | 'settings' | 'superuser' | 'disputes'>('analytics');
+  const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [userSearch, setUserSearch] = useState('');
@@ -47,6 +66,8 @@ export const AdminDashboard: React.FC = () => {
   const [adminPhone, setAdminPhone] = useState(user?.phoneNumber || '');
   const [newPin, setNewPin] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [bcTitle, setBcTitle] = useState('');
   const [bcMsg, setBcMsg] = useState('');
   const [bcTarget, setBcTarget] = useState<'all' | 'seller' | 'buyer'>('all');
@@ -61,7 +82,57 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [user, activeTab]);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   if (!isAdmin || !user) return null;
+
+  const pendingVerifications = verificationRequests.filter(r => r.status === 'pending');
+  const pendingPasswords = passwordRequests.filter(r => r.status === 'pending');
+  const activeDisputes = disputeCases.filter(c => c.status !== 'resolved');
+  const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
+  const pendingReports = reports.filter(r => r.status === 'pending');
+
+  const moduleGroups: ModuleGroup[] = [
+    {
+      groupName: "Overview & Root",
+      items: [
+        { id: 'analytics', label: 'Vitals & Stats', description: 'Real-time metrics, node traffic, gross liquidity', icon: Activity, color: 'text-emerald-400' },
+        { id: 'superuser', label: 'Master Profile', description: 'Configure master identity and root authentication', icon: Fingerprint, color: 'text-emerald-400' },
+      ]
+    },
+    {
+      groupName: "Management & Moderation",
+      items: [
+        { id: 'users', label: 'User Directory', description: 'Account permissions, bans, and profile editing', icon: Users, badge: allUsers.length, color: 'text-blue-400' },
+        { id: 'listings', label: 'Ad Inventory', description: 'Audit, purge, and manage classified ads', icon: Package, badge: listings.length, color: 'text-teal-400' },
+        { id: 'requests', label: 'Action Queue', description: 'ID verifications and NIN password resets', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length, color: 'text-amber-400', badgeBg: 'bg-amber-500 text-slate-950' },
+        { id: 'disputes', label: 'Dispute Center', description: 'Trade arbitration and flagged ad reports', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400', badgeBg: 'bg-rose-600 text-white' },
+        { id: 'categories', label: 'Market Grid', description: 'Taxonomy sectors and category customization', icon: Layers, color: 'text-purple-400' },
+      ]
+    },
+    {
+      groupName: "Treasury & Security",
+      items: [
+        { id: 'finance', label: 'Treasury & Revenue', description: 'Ad promotion payments and financial ledger', icon: Wallet, badge: pendingPromoPay.length, color: 'text-emerald-400', badgeBg: 'bg-emerald-500 text-slate-950' },
+        { id: 'security', label: 'Threat Logs', description: 'Forensic intrusion detection and device logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500', badgeBg: 'bg-rose-600 text-white' },
+        { id: 'logs', label: 'Audit Trail', description: 'System-wide activity ledger and change log', icon: History, color: 'text-slate-400' },
+        { id: 'settings', label: 'Global Config', description: 'System protocols and broadcast alerts', icon: SettingsIcon, color: 'text-cyan-400' },
+      ]
+    }
+  ];
+
+  const allModules = moduleGroups.flatMap(g => g.items);
+  const activeModule = allModules.find(m => m.id === activeTab) || allModules[0];
+  const ActiveIcon = activeModule.icon;
 
   const handleUpdateIdentity = (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,13 +175,6 @@ export const AdminDashboard: React.FC = () => {
     toast.success(`Market segment "${newCatName}" added to grid.`);
   };
 
-  // Filtered Data Sets
-  const pendingVerifications = verificationRequests.filter(r => r.status === 'pending');
-  const pendingPasswords = passwordRequests.filter(r => r.status === 'pending');
-  const activeDisputes = disputeCases.filter(c => c.status !== 'resolved');
-  const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
-  const pendingReports = reports.filter(r => r.status === 'pending');
-
   const filteredUsers = allUsers.filter(u => 
     u.fullName.toLowerCase().includes(userSearch.toLowerCase()) || 
     u.email.toLowerCase().includes(userSearch.toLowerCase()) ||
@@ -131,7 +195,7 @@ export const AdminDashboard: React.FC = () => {
       <div className="bg-slate-900/50 border-b border-slate-800/80 backdrop-blur-xl sticky top-[64px] z-30">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden">
+            <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden shrink-0">
               <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-lg flex items-center justify-center border-2 border-slate-900 z-20">
                 <ShieldCheck className="w-3 h-3" />
@@ -160,46 +224,144 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 flex flex-col lg:flex-row gap-8">
-        {/* Navigation Sidebar */}
-        <aside className="w-full lg:w-64 space-y-2 shrink-0">
-          {[
-            { id: 'analytics', label: 'Vitals & Stats', icon: Activity },
-            { id: 'superuser', label: 'Master Profile', icon: Fingerprint, color: 'text-emerald-400' },
-            { id: 'users', label: 'User Directory', icon: Users, badge: allUsers.length },
-            { id: 'listings', label: 'Ad Inventory', icon: Package, badge: listings.length },
-            { id: 'requests', label: 'Action Queue', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length },
-            { id: 'finance', label: 'Treasury', icon: Wallet, badge: pendingPromoPay.length },
-            { id: 'disputes', label: 'Dispute Center', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400' },
-            { id: 'categories', label: 'Market Grid', icon: Layers },
-            { id: 'security', label: 'Threat Logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500' },
-            { id: 'logs', label: 'Audit Trail', icon: History },
-            { id: 'settings', label: 'Global Config', icon: SettingsIcon },
-          ].map(tab => (
-            <button 
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)} 
-              className={`w-full flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all ${activeTab === tab.id ? 'bg-emerald-500 text-slate-950 shadow-xl' : 'text-slate-400 hover:bg-slate-900/80 hover:text-slate-200'}`}
-            >
-              <div className="flex items-center gap-3">
-                <tab.icon className={`w-4.5 h-4.5 ${activeTab === tab.id ? 'text-slate-950' : tab.color || 'text-slate-500'}`} />
-                <span className="text-[11px] font-black uppercase tracking-wider">{tab.label}</span>
-              </div>
-              {tab.badge && tab.badge > 0 && (
-                <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${activeTab === tab.id ? 'bg-slate-950 text-emerald-400' : 'bg-rose-600 text-white'}`}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
-          ))}
-        </aside>
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
+        
+        {/* Module Selector Header Bar with Dropdown */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-20">
+          
+          <div className="relative flex-1" ref={dropdownRef}>
+            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1.5 ml-1 flex items-center gap-1.5">
+              <SlidersHorizontal className="w-3 h-3 text-emerald-400" />
+              <span>Select Control Module</span>
+            </p>
 
-        {/* Content Modules */}
-        <div className="flex-1 space-y-6">
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="w-full bg-slate-950 hover:bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 p-3.5 rounded-2xl flex items-center justify-between transition-all group shadow-inner"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">
+                  <ActiveIcon className={`w-5 h-5 ${activeModule.color || 'text-emerald-400'}`} />
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-black text-sm text-white truncate">{activeModule.label}</span>
+                    {activeModule.badge && activeModule.badge > 0 && (
+                      <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black ${activeModule.badgeBg || 'bg-rose-600 text-white'}`}>
+                        {activeModule.badge}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-slate-500 truncate">{activeModule.description}</p>
+                </div>
+              </div>
+
+              <ChevronDown className={`w-5 h-5 text-slate-400 group-hover:text-emerald-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+            </button>
+
+            {/* Categorized Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute top-full mt-2 left-0 right-0 bg-slate-900 border-2 border-slate-800 rounded-3xl shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 max-h-[75vh] overflow-y-auto no-scrollbar divide-y divide-slate-800/60">
+                {moduleGroups.map((group) => (
+                  <div key={group.groupName} className="py-2 first:pt-0 last:pb-0 space-y-1">
+                    <p className="px-3 py-1 text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-slate-950/40 rounded-lg w-fit mb-1">
+                      {group.groupName}
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {group.items.map((item) => {
+                        const Icon = item.icon;
+                        const isSelected = activeTab === item.id;
+
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              setActiveTab(item.id);
+                              setIsDropdownOpen(false);
+                            }}
+                            className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 ${
+                              isSelected
+                                ? 'bg-emerald-500 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
+                                : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 hover:text-white border border-slate-800/60'
+                            }`}
+                          >
+                            <div className={`p-2 rounded-xl border shrink-0 mt-0.5 ${
+                              isSelected 
+                                ? 'bg-slate-950/20 border-slate-950/30 text-slate-950' 
+                                : 'bg-slate-900 border-slate-800'
+                            }`}>
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center justify-between gap-1">
+                                <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-950 font-black' : 'text-white'}`}>
+                                  {item.label}
+                                </p>
+                                {item.badge && item.badge > 0 && (
+                                  <span className={`px-1.5 py-0.5 rounded text-[8px] font-black ${
+                                    isSelected ? 'bg-slate-950 text-emerald-400' : item.badgeBg || 'bg-rose-600 text-white'
+                                  }`}>
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className={`text-[10px] line-clamp-1 ${isSelected ? 'text-slate-900/80' : 'text-slate-500'}`}>
+                                {item.description}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Quick-Switch Pill Bar for Top Frequency Modules */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 md:pb-0 self-end md:self-center">
+            {[
+              { id: 'analytics', label: 'Stats', icon: Activity },
+              { id: 'users', label: 'Users', icon: Users, badge: allUsers.length },
+              { id: 'listings', label: 'Ads', icon: Package, badge: listings.length },
+              { id: 'requests', label: 'Queue', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length },
+              { id: 'disputes', label: 'Disputes', icon: Gavel, badge: activeDisputes.length + pendingReports.length },
+            ].map((pill) => {
+              const Icon = pill.icon;
+              const isSelected = activeTab === pill.id;
+
+              return (
+                <button
+                  key={pill.id}
+                  onClick={() => setActiveTab(pill.id as AdminTab)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shrink-0 ${
+                    isSelected
+                      ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
+                      : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-slate-950' : 'text-emerald-400'}`} />
+                  <span>{pill.label}</span>
+                  {pill.badge && pill.badge > 0 ? (
+                    <span className={`px-1.5 py-0.2 rounded-md text-[9px] font-black ${isSelected ? 'bg-slate-950 text-emerald-400' : 'bg-slate-800 text-slate-300'}`}>
+                      {pill.badge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+        </div>
+
+        {/* Content Modules Area */}
+        <div className="space-y-6">
           
           {/* Analytics Module */}
           {activeTab === 'analytics' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2">
                   <Activity className="w-5 h-5 text-emerald-400" />
@@ -229,7 +391,7 @@ export const AdminDashboard: React.FC = () => {
                     {analytics.sessionsPerMinute.map((val, i) => (
                       <div key={i} className="flex-1 flex flex-col gap-2 h-full">
                          <div style={{ height: `${(val / 40) * 100}%` }} className="bg-emerald-500/20 rounded-t-lg border-t-2 border-emerald-500 relative group">
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-950 px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">{val} ops</div>
+                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-950 px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{val} ops</div>
                          </div>
                       </div>
                     ))}
@@ -241,7 +403,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* User Directory Tab */}
           {activeTab === 'users' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-right-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950/30">
                  <div>
                     <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
@@ -320,7 +482,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Ad Inventory Tab */}
           {activeTab === 'listings' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-right-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="p-6 border-b border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-slate-950/30">
                  <div>
                     <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
@@ -390,7 +552,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Action Queue (Requests) Tab */}
           {activeTab === 'requests' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
               <div className="flex items-center gap-3">
                  <div className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl border border-blue-500/20"><BadgeCheck className="w-6 h-6" /></div>
                  <div>
@@ -462,7 +624,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Finance Tab */}
           {activeTab === 'finance' && (
-             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                    <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1">
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Platform Revenue</p>
@@ -507,7 +669,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Disputes & Reports Tab */}
           {activeTab === 'disputes' && (
-             <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="flex flex-col lg:flex-row gap-6">
                    {/* Reported Ads */}
                    <div className="flex-1 space-y-4">
@@ -583,7 +745,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Market Grid / Categories Tab */}
           {activeTab === 'categories' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
                   <div className="flex items-center gap-3">
                      <div className="p-3 bg-purple-500/10 text-purple-400 rounded-2xl border border-purple-500/20"><Layers className="w-6 h-6" /></div>
@@ -635,7 +797,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Security Tab */}
           {activeTab === 'security' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                <div className="bg-rose-500/10 border border-rose-500/30 rounded-[2.5rem] p-6 sm:p-8 space-y-4">
                   <div className="flex items-center gap-3">
                      <div className="p-3 bg-rose-500/20 text-rose-500 rounded-2xl shadow-inner"><ShieldAlert className="w-7 h-7" /></div>
@@ -690,7 +852,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Audit Logs Tab */}
           {activeTab === 'logs' && (
-             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-right-4">
+             <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="p-6 border-b border-slate-800 flex items-center justify-between gap-4 bg-slate-950/30">
                     <h3 className="text-sm font-black text-white flex items-center gap-2 uppercase tracking-widest"><History className="w-5 h-5 text-purple-400" /> Platform Audit Trail</h3>
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{auditLogs.length} logged events</span>
@@ -716,7 +878,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Settings Tab */}
           {activeTab === 'settings' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                   {/* System Protocol Toggles */}
                   <div className="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
@@ -814,7 +976,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Superuser Profile Terminal */}
           {activeTab === 'superuser' && (
-             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4">
+             <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl relative overflow-hidden">
                    <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
                    
