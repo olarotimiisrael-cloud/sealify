@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Wand2 } from 'lucide-react';
+import { X, Sparkles, Wand2, Check } from 'lucide-react';
 import { Category, Condition } from '../types/sealify';
 import { toast } from 'sonner';
 
@@ -42,21 +42,21 @@ export const AiAdAssistantModal: React.FC<AiAdAssistantModalProps> = ({
 • Location: ${itemLoc}
 
 🔍 Description & Highlights:
-This ${itemTitle} is in ${condition.toLowerCase()} working condition, carefully tested and ready for immediate pickup or dispatch delivery. 100% authentic and well-maintained.
+This ${itemTitle} is in ${condition.toLowerCase()} working condition, carefully tested and ready for immediate pickup or dispatch delivery. 100% authentic and well-maintained. Perfect for anyone looking for quality in ${itemLoc}.
 
-🛡️ Inspection & Guarantee:
-• Physical inspection available at verified Safe Meetup Spots in Ogbomoso.
-• Test thoroughly before payment.
-• Direct phone call or instant live chat available.`,
+🛡️ Safety & Inspection:
+• Physical inspection highly recommended at verified Safe Meetup Spots.
+• Test thoroughly before making any payment.
+• Direct phone call or instant live chat available for serious buyers.`,
 
     punchy: `🚀 QUICK SALE: ${itemTitle} (${formattedPrice})
 
 Condition: ${condition}
 Location: ${itemLoc}
 
-Clean, fully functional, and ready to go! No hidden faults. Serious buyers only.
+Clean, fully functional, and ready to go! No hidden faults. Very good value for money compared to market average. Serious buyers only.
 
-📍 Meetup in public safe zone or doorstep dispatch rider available. Message or call now!`,
+📍 Meetup in public safe zone or doorstep dispatch rider available. Message now to seal the deal!`,
 
     commercial: `🏪 SEALIFY VERIFIED MERCHANT LISTING
 Product Name: ${itemTitle}
@@ -65,7 +65,7 @@ Price: ${formattedPrice}
 Location / Store: ${itemLoc}
 
 Description:
-Professional grade ${category.toLowerCase()} listing offered with full seller verification. Guaranteed working condition. Comes with original accessories if applicable.
+Professional grade ${category.toLowerCase()} listing offered with full seller verification. Guaranteed working condition. Comes with all primary accessories. We pride ourselves on transparent trading in ${itemLoc}.
 
 📞 Contact seller today for fast response and safe meetup arrangement!`,
   };
@@ -92,7 +92,7 @@ Professional grade ${category.toLowerCase()} listing offered with full seller ve
           </div>
           <h2 className="text-2xl font-black text-white">AI Ad Content Generator</h2>
           <p className="text-xs text-slate-400">
-            Auto-generate professional, buyer-trusted description copy in 1 tap
+            Generate professional, buyer-trusted description copy based on your ad details
           </p>
         </div>
 
@@ -107,7 +107,7 @@ Professional grade ${category.toLowerCase()} listing offered with full seller ve
             }`}
           >
             <p className="text-xs font-bold text-white">Detailed</p>
-            <p className="text-[9px] text-slate-400">Specs & Trust</p>
+            <p className="text-[9px] text-slate-400">Full Specs</p>
           </button>
 
           <button
@@ -119,7 +119,7 @@ Professional grade ${category.toLowerCase()} listing offered with full seller ve
                 : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
-            <p className="text-xs font-bold text-white">Quick & Punchy</p>
+            <p className="text-xs font-bold text-white">Quick</p>
             <p className="text-[9px] text-slate-400">Fast Sale</p>
           </button>
 
@@ -132,17 +132,16 @@ Professional grade ${category.toLowerCase()} listing offered with full seller ve
                 : 'border-slate-800 bg-slate-950 text-slate-400'
             }`}
           >
-            <p className="text-xs font-bold text-white">Merchant</p>
-            <p className="text-[9px] text-slate-400">Business Style</p>
+            <p className="text-xs font-bold text-white">Store</p>
+            <p className="text-[9px] text-slate-400">Professional</p>
           </button>
         </div>
 
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
             <span>Generated Text Preview</span>
-            <span className="text-purple-400 text-[10px] lowercase font-mono">100% formatted</span>
           </label>
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl font-sans text-xs text-slate-200 whitespace-pre-line leading-relaxed max-h-56 overflow-y-auto">
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl font-sans text-xs text-slate-200 whitespace-pre-line leading-relaxed max-h-56 overflow-y-auto shadow-inner">
             {templates[selectedStyle]}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ShieldCheck, CheckSquare, Square, Smartphone, Car, Home, Shirt, Copy, Send, Sparkles, RotateCcw, AlertCircle, Wrench } from 'lucide-react';
+import { X, ShieldCheck, CheckSquare, Square, Send, RotateCcw, AlertCircle } from 'lucide-react';
 import { Category } from '../types/sealify';
 import { toast } from 'sonner';
 
@@ -21,36 +21,36 @@ interface ChecklistItem {
 const DEFAULT_CHECKLISTS: Record<string, string[]> = {
   Electronics: [
     'Power on device and verify battery charges smoothly',
-    'Verify screen touch responsiveness and test for dead pixels',
-    'Check cameras (front & back) and test microphone/speaker audio',
-    'Verify SIM card detection, cellular call, and Wi-Fi signal',
-    'Ensure iCloud / Google Account / Password locks are completely signed out',
-    'Check physical casing for hidden water damage or cracks',
+    'Verify screen responsiveness and check for dead pixels',
+    'Test front/back cameras and all audio speakers',
+    'Verify SIM card detection and Wi-Fi signal strength',
+    'Ensure all iCloud / Google accounts are signed out',
+    'Check physical casing for hidden cracks or water damage',
   ],
   Vehicles: [
-    'Inspect engine sound for knocking, smoke emissions, or oil leaks',
-    'Check gear transmission shifts smoothly in both hot & cold states',
-    'Verify vehicle VIN / Chassis number matches registration documents',
-    'Test air conditioning cooling, brakes, suspension, and all headlights',
-    'Inspect tire tread wear, spare wheel, and jack accessories',
-    'Perform a 10-minute safe test drive along a main road',
+    'Inspect engine sound for knocking or abnormal vibration',
+    'Verify vehicle VIN / Chassis number matches registration',
+    'Test brakes, suspension, and all lighting systems',
+    'Check transmission shifts smoothly during driving',
+    'Inspect tire tread wear and spare wheel availability',
+    'Verify AC cooling and internal electric systems',
   ],
   'Real Estate': [
-    'Verify structural integrity (walls, ceiling leaks, plumbing pressure)',
-    'Confirm electricity meter, wiring quality, and generator connection',
-    'Inspect neighborhood security level, drainage during rainfall, and road access',
-    'Verify landlord / property owner title documents and legal allocation papers',
+    'Verify structural integrity (walls, roof leaks, plumbing)',
+    'Check electricity meter and wiring quality',
+    'Inspect neighborhood security and road access',
+    'Verify landlord title documents and allocation papers',
   ],
   Fashion: [
-    'Check fabric condition for tears, discoloration, or altered stitching',
-    'Verify zipper, button, and buckle functionality',
+    'Check fabric condition for tears or discoloration',
+    'Verify zipper and button functionality',
     'Confirm size tag accuracy and authenticity markings',
   ],
   General: [
-    'Inspect physical appearance against photos provided in the ad',
-    'Test power on/off and primary mechanism functions',
-    'Verify inclusion of power adapters, chargers, or original box',
-    'Ensure seller identity matches verified account details before paying',
+    'Inspect physical appearance against ad photos',
+    'Test primary mechanisms and power functions',
+    'Verify inclusion of all chargers and accessories',
+    'Ensure seller identity matches verified account details',
   ],
 };
 
@@ -65,10 +65,10 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
     const listKey = DEFAULT_CHECKLISTS[category] ? category : 'General';
     const rawList = DEFAULT_CHECKLISTS[listKey] || DEFAULT_CHECKLISTS['General'];
     return rawList.map((text, idx) => ({
-      id: `chk_\${idx}`,
+      id: `chk_${idx}`,
       text,
       checked: false,
-      critical: idx < 2,
+      critical: idx < 2, // First two items are usually critical
     }));
   };
 
@@ -76,7 +76,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
 
   useEffect(() => {
     setItems(getInitialItems());
-  }, [category]);
+  }, [category, isOpen]);
 
   if (!isOpen) return null;
 
@@ -94,7 +94,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
   const progressPercent = Math.round((checkedCount / items.length) * 100);
 
   const handleShareReport = () => {
-    const reportMsg = `📋 IN-PERSON INSPECTION REPORT:\nItem: \${itemTitle}\nPassed Tests: \${checkedCount} of \${items.length} checks (\${progressPercent}% verified)\nStatus: \${progressPercent === 100 ? '✅ All checks passed! Ready to seal transaction.' : '⚠️ Inspection in progress.'}`;
+    const reportMsg = `📋 IN-PERSON INSPECTION REPORT:\nItem: ${itemTitle}\nPassed Tests: ${checkedCount} of ${items.length} checks (${progressPercent}% verified)\nStatus: ${progressPercent === 100 ? '✅ All checks passed! Ready to seal deal.' : '⚠️ Inspection in progress.'}`;
     
     if (onSendChecklistToChat) {
       onSendChecklistToChat(reportMsg);
@@ -114,18 +114,16 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-1">
           <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
             <CheckSquare className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-black text-white">Physical Inspection Checklist</h2>
           <p className="text-xs text-slate-400">
-            Category Guide for <strong className="text-emerald-400">"\${itemTitle}"</strong> (\${category})
+            Category Guide for <strong className="text-emerald-400">"{itemTitle}"</strong> ({category})
           </p>
         </div>
 
-        {/* Progress Bar */}
         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
           <div className="flex justify-between items-center text-xs">
             <span className="font-bold text-slate-300 uppercase tracking-wider">Verification Score</span>
@@ -134,12 +132,11 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
           <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
             <div
               className="bg-emerald-500 h-full transition-all duration-300"
-              style={{ width: `\${progressPercent}%` }}
+              style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
         </div>
 
-        {/* Checklist */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-xs text-slate-400 font-bold uppercase tracking-wider">
             <span>Essential Test Points</span>
@@ -157,7 +154,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
                 key={item.id}
                 type="button"
                 onClick={() => toggleItem(item.id)}
-                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 \${
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
                   item.checked
                     ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
                     : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-800/40'
@@ -172,7 +169,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
                 </div>
 
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <p className={`text-xs font-semibold leading-relaxed \${item.checked ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                  <p className={`text-xs font-semibold leading-relaxed ${item.checked ? 'line-through text-slate-400' : 'text-slate-100'}`}>
                     {item.text}
                   </p>
                   {item.critical && !item.checked && (
@@ -186,16 +183,13 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
           </div>
         </div>
 
-        {/* Bottom Actions */}
-        <div className="pt-2 border-t border-slate-800 flex gap-3">
-          <button
-            onClick={handleShareReport}
-            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-2"
-          >
-            <Send className="w-4 h-4" />
-            <span>Send Inspection Report to Chat</span>
-          </button>
-        </div>
+        <button
+          onClick={handleShareReport}
+          className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <Send className="w-4 h-4" />
+          <span>Send Inspection Report to Chat</span>
+        </button>
       </div>
     </div>
   );

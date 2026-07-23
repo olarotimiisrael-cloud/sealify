@@ -34,19 +34,19 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
 
     // Category factor
     let categoryFactor = 1.0;
-    if (category === 'Electronics') categoryFactor = 0.90; // Tech depreciates faster
-    if (category === 'Vehicles') categoryFactor = 0.95;
-    if (category === 'Real Estate') categoryFactor = 1.25; // Appreciates
+    if (category === 'Electronics') categoryFactor = 0.85; // Tech depreciates faster
+    if (category === 'Vehicles') categoryFactor = 0.90;
+    if (category === 'Real Estate') categoryFactor = 1.20; // Appreciates
 
-    // Age factor (0.95 per 6 months)
-    const ageFactor = Math.max(0.4, Math.pow(0.95, ageMonths / 6));
+    // Age factor (compounding depreciation)
+    const ageFactor = Math.max(0.4, Math.pow(0.96, ageMonths / 4));
 
     const estimated = Math.round(orig * conditionFactor * categoryFactor * ageFactor);
     const minPrice = Math.round(estimated * 0.9);
     const maxPrice = Math.round(estimated * 1.1);
 
     // Days to sell estimation
-    const daysToSell = condition === 'Brand New' || condition === 'Like New' ? 3 : 7;
+    const daysToSell = condition === 'Brand New' || condition === 'Like New' ? 3 : 8;
 
     setResult({
       suggestedPrice: estimated,
@@ -82,19 +82,19 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white">Smart Price Estimator</h3>
-              <p className="text-xs text-slate-400">Calculate fair market valuation for Ogbomoso</p>
+              <p className="text-xs text-slate-400">Calculate fair market valuation for Ogbomoso Hub</p>
             </div>
           </div>
 
           <form onSubmit={calculateValuation} className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Original Retail / Purchase Price (₦ NGN)</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Original Retail Price (₦ NGN)</label>
               <input
                 type="number"
                 required
                 value={originalPrice}
                 onChange={(e) => setOriginalPrice(e.target.value)}
-                placeholder="e.g. 200000"
+                placeholder="How much was it bought for?"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -105,14 +105,13 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
                 <select
                   value={category}
                   onChange={(e) => setCategory(e.target.value as Category)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
                 >
                   <option value="Electronics">Electronics</option>
                   <option value="Vehicles">Vehicles</option>
                   <option value="Real Estate">Real Estate</option>
                   <option value="Fashion">Fashion</option>
                   <option value="Home & Furniture">Home & Furniture</option>
-                  <option value="Services">Services</option>
                 </select>
               </div>
 
@@ -121,7 +120,7 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
                 <select
                   value={condition}
                   onChange={(e) => setCondition(e.target.value as Condition)}
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
                 >
                   <option value="Brand New">Brand New</option>
                   <option value="Like New">Like New</option>
@@ -132,17 +131,17 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Age / Duration of Use</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Age of Item</label>
               <select
                 value={ageMonths}
                 onChange={(e) => setAgeMonths(Number(e.target.value))}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none"
               >
                 <option value={1}>Under 3 Months</option>
                 <option value={6}>3 to 6 Months</option>
-                <option value={12}>6 to 12 Months</option>
-                <option value={24}>1 to 2 Years</option>
-                <option value={36}>Over 2 Years</option>
+                <option value={12}>1 Year</option>
+                <option value={24}>2 Years</option>
+                <option value={48}>Over 3 Years</option>
               </select>
             </div>
 
@@ -164,8 +163,8 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
 
               <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300">
                 <div className="p-2 bg-slate-900 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Fast Sale Range</span>
-                  <span className="font-bold text-white">{formatNGN(result.minPrice)} - {formatNGN(result.maxPrice)}</span>
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Fast Sale Min</span>
+                  <span className="font-bold text-white">{formatNGN(result.minPrice)}</span>
                 </div>
 
                 <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 flex items-center gap-1.5">
@@ -187,7 +186,7 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
                   className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
                 >
                   <Check className="w-4 h-4" />
-                  <span>Apply ₦{result.suggestedPrice.toLocaleString()} to Listing</span>
+                  <span>Apply ₦{result.suggestedPrice.toLocaleString()} to Ad</span>
                 </button>
               )}
             </div>

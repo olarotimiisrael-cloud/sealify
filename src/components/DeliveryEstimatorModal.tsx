@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Truck, MapPin, Clock, ShieldCheck, Check, Send, ArrowRight, PackageCheck } from 'lucide-react';
+import { X, Truck, MapPin, Clock, ShieldCheck, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface DeliveryEstimatorModalProps {
@@ -15,10 +15,9 @@ const DESTINATIONS = [
   { area: 'Takie Square / Center', zone: 'local', fee: 1000, time: '30-45 mins' },
   { area: 'Sabo Market / Aroje', zone: 'local', fee: 1200, time: '30-50 mins' },
   { area: 'General / Akala Way', zone: 'local', fee: 1000, time: '30-45 mins' },
-  { area: 'Ibadan, Oyo State', zone: 'interstate', fee: 3500, time: '1 Day (Express Park)' },
-  { area: 'Ilorin, Kwara State', zone: 'interstate', fee: 3000, time: '1 Day (Express Park)' },
+  { area: 'Ibadan, Oyo State', zone: 'interstate', fee: 3500, time: '1 Day (Express)' },
+  { area: 'Ilorin, Kwara State', zone: 'interstate', fee: 3000, time: '1 Day (Express)' },
   { area: 'Lagos State', zone: 'interstate', fee: 4500, time: '1-2 Days Courier' },
-  { area: 'Abuja (FCT)', zone: 'interstate', fee: 5500, time: '2 Days Doorstep' },
 ];
 
 export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
@@ -43,11 +42,11 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
   };
 
   const calculatedFee = deliveryType === 'doorstep' && selectedDest.zone === 'local' 
-    ? selectedDest.fee + 400 
+    ? selectedDest.fee + 500 
     : selectedDest.fee;
 
   const handleShareToChat = () => {
-    const msg = `🚚 ESTIMATED DELIVERY DISPATCH:\nItem: ${itemTitle}\nDestination: ${selectedDest.area}\nEst. Fee: ${formatNGN(calculatedFee)}\nEst. Time: ${selectedDest.time}`;
+    const msg = `🚚 ESTIMATED DELIVERY DISPATCH:\nItem: ${itemTitle}\nDestination: ${selectedDest.area}\nEst. Fee: ${formatNGN(calculatedFee)}\nEst. Time: ${selectedDest.time}\nProvider: Verified Sealify Dispatch Node`;
     if (onSendEstimateToChat) {
       onSendEstimateToChat(msg);
     }
@@ -69,15 +68,15 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
           <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
             <Truck className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-black text-white">Local & Inter-State Delivery Estimator</h2>
+          <h2 className="text-2xl font-black text-white">Local Dispatch Estimator</h2>
           <p className="text-xs text-slate-400">
-            Calculate dispatch rider and courier rates for <strong className="text-emerald-400">"{itemTitle}"</strong>
+            Calculate rider and courier rates for <strong className="text-emerald-400">"{itemTitle}"</strong>
           </p>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Delivery Destination</label>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Delivery Destination</label>
             <select
               value={selectedDest.area}
               onChange={(e) => {
@@ -86,14 +85,14 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
               }}
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500"
             >
-              <optgroup label="Ogbomoso Local Neighborhoods">
+              <optgroup label="Ogbomoso Hub Areas">
                 {DESTINATIONS.filter(d => d.zone === 'local').map((d) => (
-                  <option key={d.area} value={d.area}>{d.area} ({formatNGN(d.fee)})</option>
+                  <option key={d.area} value={d.area}>{d.area}</option>
                 ))}
               </optgroup>
-              <optgroup label="Inter-State Courier">
+              <optgroup label="Inter-State Regions">
                 {DESTINATIONS.filter(d => d.zone === 'interstate').map((d) => (
-                  <option key={d.area} value={d.area}>{d.area} ({formatNGN(d.fee)})</option>
+                  <option key={d.area} value={d.area}>{d.area}</option>
                 ))}
               </optgroup>
             </select>
@@ -109,8 +108,8 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
                   : 'border-slate-800 bg-slate-950 text-slate-400'
               }`}
             >
-              <p className="text-xs text-white">Standard Express</p>
-              <p className="text-[10px] text-slate-400">Pickup Spot / Station</p>
+              <p className="text-xs text-white">Station Pickup</p>
+              <p className="text-[10px] text-slate-400">Standard Express</p>
             </button>
 
             <button
@@ -122,14 +121,14 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
                   : 'border-slate-800 bg-slate-950 text-slate-400'
               }`}
             >
-              <p className="text-xs text-white">Doorstep Delivery</p>
-              <p className="text-[10px] text-slate-400">+₦400 Local Handle</p>
+              <p className="text-xs text-white">Doorstep Service</p>
+              <p className="text-[10px] text-slate-400">+₦500 Handle</p>
             </button>
           </div>
 
           <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
             <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-              <span className="text-xs text-slate-400 font-bold uppercase">Estimated Dispatch Fee</span>
+              <span className="text-xs text-slate-400 font-bold uppercase">Estimated Fee</span>
               <span className="text-2xl font-black text-emerald-400">{formatNGN(calculatedFee)}</span>
             </div>
 
@@ -145,7 +144,7 @@ export const DeliveryEstimatorModal: React.FC<DeliveryEstimatorModalProps> = ({
               <div className="flex items-center gap-2 text-slate-300">
                 <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
                 <div>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Security</p>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Reliability</p>
                   <p className="font-bold text-white text-xs">Verified Rider</p>
                 </div>
               </div>
