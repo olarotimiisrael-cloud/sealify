@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
+import SEO from '../components/SEO';
 import AuthModal from '../components/AuthModal';
 import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
@@ -30,7 +31,8 @@ import {
   QrCode,
   Shield,
   Maximize2,
-  Video
+  Video,
+  Share2
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -59,6 +61,7 @@ const ListingDetail: React.FC = () => {
   if (!listing) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+        <SEO title="Listing Not Found — Sealify" description="This classified item is no longer available on Sealify." />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
@@ -130,6 +133,12 @@ const ListingDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0">
+      <SEO 
+        title={`${listing.title} — ${formattedPrice} | Sealify Nigeria`} 
+        description={`${listing.description.substring(0, 160)}... Available in ${listing.location}.`}
+        image={listing.images[0]}
+        url={window.location.href}
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
@@ -155,10 +164,10 @@ const ListingDetail: React.FC = () => {
             <button
               onClick={() => setIsQrOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="QR Code & Share"
+              title="Share & QR Link Preview"
             >
-              <QrCode className="w-4 h-4" />
-              <span className="hidden sm:inline">QR Code</span>
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Share Ad</span>
             </button>
 
             <button

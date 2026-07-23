@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
+import SEO from '../components/SEO';
 import { CategoryBar } from '../components/CategoryBar';
 import { CategoryGrid } from '../components/CategoryGrid';
 import ListingCard from '../components/ListingCard';
@@ -82,6 +83,7 @@ const Index: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
+      <SEO />
       <Navbar />
       <CategoryBar />
       <LiveActivityToast />
@@ -125,7 +127,7 @@ const Index: React.FC = () => {
               </div>
             </div>
 
-            {/* Right Column: Redesigned Showcase Hub */}
+            {/* Right Column: Showcase Hub */}
             <div className="lg:col-span-7 flex flex-col justify-center">
               <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none"></div>

@@ -1,13 +1,14 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
-  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info 
+  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -48,7 +49,7 @@ const PostAd: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
 
-  const [isAuthOpen, setIsAuthOpen] = useState(!isAuthenticated);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Electronics');
   const [condition, setCondition] = useState<Condition>('Like New');
@@ -58,6 +59,13 @@ const PostAd: React.FC = () => {
   const [images, setImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
   const [featuredBoost, setFeaturedBoost] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast.info('Account Required: Please sign up or log in to post an ad on Sealify.');
+      setIsAuthOpen(true);
+    }
+  }, [isAuthenticated]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -91,6 +99,7 @@ const PostAd: React.FC = () => {
     e.preventDefault();
 
     if (!isAuthenticated) {
+      toast.error('You must own an account to post an ad.');
       setIsAuthOpen(true);
       return;
     }
@@ -123,9 +132,25 @@ const PostAd: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO title="Post Free Classified Ad — Sealify" description="List your items, vehicles, electronics, or services for free in Ogbomosoland and across Nigeria." />
       <Navbar />
 
       <main className="max-w-3xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6">
+        {!isAuthenticated && (
+          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-between text-xs text-amber-200 gap-3">
+            <div className="flex items-center gap-2">
+              <Lock className="w-5 h-5 text-amber-400 shrink-0" />
+              <span>You must own a Sealify account to post advertisements and list items for sale.</span>
+            </div>
+            <button
+              onClick={() => setIsAuthOpen(true)}
+              className="px-3.5 py-1.5 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400 transition-colors shrink-0"
+            >
+              Sign Up Now
+            </button>
+          </div>
+        )}
+
         <div className="text-center space-y-1">
           <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black px-3.5 py-1 rounded-full mb-2">
             <MapPin className="w-3.5 h-3.5" />
@@ -360,7 +385,7 @@ const PostAd: React.FC = () => {
         </form>
       </main>
 
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} initialTab="signup" />
       <MobileNav />
     </div>
   );
