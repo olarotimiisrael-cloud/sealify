@@ -10,7 +10,8 @@ import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Upload, 
-  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check, Shield
+  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check, Shield,
+  Sliders, Gauge, Cpu, Home, Shirt
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -73,6 +74,21 @@ const PostAd: React.FC = () => {
   const [featuredBoost, setFeaturedBoost] = useState(isAdmin ? true : false);
   const [customSellerName, setCustomSellerName] = useState(user?.fullName || '');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
+
+  // Dynamic Specs Fields
+  const [vehicleTransmission, setVehicleTransmission] = useState('Automatic');
+  const [vehicleFuel, setVehicleFuel] = useState('Petrol');
+  const [vehicleMileage, setVehicleFuelMileage] = useState('45,000 km');
+
+  const [deviceStorage, setDeviceStorage] = useState('256GB');
+  const [deviceRam, setDeviceRam] = useState('8GB');
+  const [batteryHealth, setBatteryHealth] = useState('92%');
+
+  const [propertyBedrooms, setPropertyBedrooms] = useState('3 Bedrooms');
+  const [propertyFurnished, setPropertyFurnished] = useState('Fully Furnished');
+
+  const [fashionSize, setFashionSize] = useState('Medium / EU 42');
+  const [fashionGender, setFashionGender] = useState('Unisex');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -141,6 +157,28 @@ const PostAd: React.FC = () => {
     }
   };
 
+  const buildSpecifications = (): Record<string, string> => {
+    const specs: Record<string, string> = {};
+
+    if (category === 'Vehicles') {
+      specs['Transmission'] = vehicleTransmission;
+      specs['Fuel Type'] = vehicleFuel;
+      specs['Mileage'] = vehicleMileage;
+    } else if (category === 'Electronics') {
+      specs['Storage'] = deviceStorage;
+      specs['RAM / Memory'] = deviceRam;
+      specs['Battery Health'] = batteryHealth;
+    } else if (category === 'Real Estate') {
+      specs['Bedrooms'] = propertyBedrooms;
+      specs['Furnishing'] = propertyFurnished;
+    } else if (category === 'Fashion') {
+      specs['Size'] = fashionSize;
+      specs['Gender'] = fashionGender;
+    }
+
+    return specs;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -165,6 +203,8 @@ const PostAd: React.FC = () => {
       return;
     }
 
+    const specifications = buildSpecifications();
+
     createListing({
       title,
       category,
@@ -176,6 +216,7 @@ const PostAd: React.FC = () => {
       videoUrl: videoUrl || undefined,
       featured: featuredBoost,
       sellerName: isAdmin && customSellerName ? customSellerName : user?.fullName,
+      specifications,
     });
 
     toast.success(
@@ -368,6 +409,95 @@ const PostAd: React.FC = () => {
                       </select>
                     </div>
                   </div>
+
+                  {/* Category-Specific Dynamic Specifications Card */}
+                  {category === 'Vehicles' && (
+                    <div className="bg-slate-950 border border-blue-500/30 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-blue-400 font-extrabold text-xs uppercase tracking-wider">
+                        <Gauge className="w-4 h-4" />
+                        <span>Vehicle Specifications</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Transmission</label>
+                          <select value={vehicleTransmission} onChange={(e) => setVehicleTransmission(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
+                            <option value="Automatic">Automatic</option>
+                            <option value="Manual">Manual</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Fuel Type</label>
+                          <select value={vehicleFuel} onChange={(e) => setVehicleFuel(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
+                            <option value="Petrol">Petrol</option>
+                            <option value="Diesel">Diesel</option>
+                            <option value="Hybrid">Hybrid</option>
+                            <option value="Electric">Electric</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Mileage</label>
+                          <input type="text" value={vehicleMileage} onChange={(e) => setVehicleFuelMileage(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {category === 'Electronics' && (
+                    <div className="bg-slate-950 border border-purple-500/30 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-purple-400 font-extrabold text-xs uppercase tracking-wider">
+                        <Cpu className="w-4 h-4" />
+                        <span>Device Technical Specifications</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Storage</label>
+                          <select value={deviceStorage} onChange={(e) => setDeviceStorage(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
+                            <option value="64GB">64GB</option>
+                            <option value="128GB">128GB</option>
+                            <option value="256GB">256GB</option>
+                            <option value="512GB">512GB</option>
+                            <option value="1TB">1TB</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">RAM</label>
+                          <select value={deviceRam} onChange={(e) => setDeviceRam(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
+                            <option value="4GB">4GB</option>
+                            <option value="8GB">8GB</option>
+                            <option value="16GB">16GB</option>
+                            <option value="32GB">32GB</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Battery Health</label>
+                          <input type="text" value={batteryHealth} onChange={(e) => setBatteryHealth(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {category === 'Real Estate' && (
+                    <div className="bg-slate-950 border border-teal-500/30 p-4 rounded-2xl space-y-3">
+                      <div className="flex items-center gap-2 text-teal-400 font-extrabold text-xs uppercase tracking-wider">
+                        <Home className="w-4 h-4" />
+                        <span>Property Details</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Bedrooms</label>
+                          <input type="text" value={propertyBedrooms} onChange={(e) => setPropertyBedrooms(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase">Furnishing Status</label>
+                          <select value={propertyFurnished} onChange={(e) => setPropertyFurnished(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
+                            <option value="Fully Furnished">Fully Furnished</option>
+                            <option value="Semi-Furnished">Semi-Furnished</option>
+                            <option value="Unfurnished">Unfurnished</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">

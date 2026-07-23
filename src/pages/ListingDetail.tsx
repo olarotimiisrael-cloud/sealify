@@ -44,7 +44,8 @@ import {
   Info,
   Zap,
   CheckCircle2,
-  X
+  X,
+  Sliders
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,7 +77,6 @@ const ListingDetail: React.FC = () => {
     if (listing?.id) {
       addRecentlyViewed(listing.id);
       
-      // Track Viral Traffic for Analytics
       if (isFromFlyer) {
         addAuditLog('Viral View', `Item "${listing.title}" viewed via social flyer referral`, 'ad');
       }
@@ -101,9 +101,9 @@ const ListingDetail: React.FC = () => {
   }
 
   const categoryAds = listings.filter(l => l.category === listing.category);
-  const avgPrice = categoryAds.reduce((acc, l) => acc + l.price, 0) / categoryAds.length;
+  const avgPrice = categoryAds.reduce((acc, l) => acc + l.price, 0) / (categoryAds.length || 1);
   const isBelowAvg = listing.price < avgPrice;
-  const priceDiffPercent = Math.abs(Math.round(((listing.price - avgPrice) / avgPrice) * 100));
+  const priceDiffPercent = Math.abs(Math.round(((listing.price - avgPrice) / (avgPrice || 1)) * 100));
 
   const relatedListings = listings
     .filter((l) => l.category === listing.category && l.id !== listing.id)
@@ -173,6 +173,8 @@ const ListingDetail: React.FC = () => {
     sendMessage(listing.id, listing.sellerId, reportMsg);
     navigate('/messages');
   };
+
+  const specsList = listing.specifications ? Object.entries(listing.specifications) : [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
@@ -374,6 +376,24 @@ const ListingDetail: React.FC = () => {
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
                 </div>
               </div>
+
+              {/* Dynamic Technical Specifications Section */}
+              {specsList.length > 0 && (
+                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
+                    <Sliders className="w-4 h-4 text-emerald-400" />
+                    Key Specifications & Attributes
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {specsList.map(([key, value]) => (
+                      <div key={key} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-0.5">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">{key}</span>
+                        <strong className="text-xs text-white font-extrabold block truncate">{value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">

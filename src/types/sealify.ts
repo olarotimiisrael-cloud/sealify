@@ -184,6 +184,7 @@ export interface Listing {
   paymentStatus?: 'pending' | 'verified' | 'failed';
   paymentProofUrl?: string;
   amountPaid?: number;
+  specifications?: Record<string, string>;
 }
 
 export interface Message {
