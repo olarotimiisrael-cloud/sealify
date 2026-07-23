@@ -5,7 +5,10 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import { Category, Condition } from '../types/sealify';
-import { X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, Video, FileVideo, Crown, Sparkles, MapPin } from 'lucide-react';
+import { 
+  X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
+  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info 
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 const CATEGORIES: Category[] = [
@@ -27,6 +30,18 @@ const CONDITIONS: Condition[] = [
   'Used - Fair',
 ];
 
+const LOCAL_LOCATIONS = [
+  'Under G Area, Ogbomoso',
+  'LAUTECH Main Gate, Ogbomoso',
+  'Takie Square, Ogbomoso',
+  'Sabo Market, Ogbomoso',
+  'Aroje, Ogbomoso',
+  'Akala Way, Ogbomoso',
+  'General Area, Ogbomoso',
+  'Ibadan, Oyo State',
+  'Ilorin Road, Oyo State',
+];
+
 const PostAd: React.FC = () => {
   const { createListing, isAuthenticated, user } = useSealify();
   const navigate = useNavigate();
@@ -38,7 +53,7 @@ const PostAd: React.FC = () => {
   const [category, setCategory] = useState<Category>('Electronics');
   const [condition, setCondition] = useState<Condition>('Like New');
   const [price, setPrice] = useState('');
-  const [location, setLocation] = useState(user?.location || 'Ogbomoso, Oyo State');
+  const [location, setLocation] = useState(user?.location || 'Under G Area, Ogbomoso');
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -124,18 +139,27 @@ const PostAd: React.FC = () => {
           {/* Photos Upload Section */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Compulsory Photos *</label>
-              <span className="text-[10px] text-slate-500">Add up to 10 photos</span>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
+                <span>Product Photos *</span>
+                <span className="text-emerald-400 text-[10px] lowercase font-normal">(1st photo is cover)</span>
+              </label>
+              <span className="text-[10px] text-slate-500">Up to 10 photos</span>
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {images.map((img, idx) => (
-                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
+                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group">
                   <img src={img} alt="Product upload" className="w-full h-full object-cover" />
+                  {idx === 0 && (
+                    <span className="absolute bottom-1 left-1 bg-emerald-500 text-slate-950 text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow">
+                      COVER
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => setImages(images.filter((_, i) => i !== idx))}
-                    className="absolute top-1 right-1 p-1 bg-slate-950/80 text-red-400 rounded-lg hover:bg-slate-900"
+                    className="absolute top-1 right-1 p-1 bg-slate-950/80 text-red-400 rounded-lg hover:bg-slate-900 transition-colors"
+                    title="Remove image"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -168,7 +192,7 @@ const PostAd: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setVideoUrl('')}
-                    className="absolute top-3 right-3 p-2 bg-slate-900/90 text-red-400 rounded-xl shadow-lg border border-slate-700"
+                    className="absolute top-3 right-3 p-2 bg-slate-900/90 text-red-400 rounded-xl shadow-lg border border-slate-700 hover:bg-slate-900"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -250,7 +274,7 @@ const PostAd: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store / Seller Location *</label>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store / Location *</label>
                 <input
                   type="text"
                   required
@@ -262,6 +286,27 @@ const PostAd: React.FC = () => {
               </div>
             </div>
 
+            {/* Location quick chips */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Select Area:</span>
+              <div className="flex flex-wrap gap-1.5">
+                {LOCAL_LOCATIONS.map((loc) => (
+                  <button
+                    key={loc}
+                    type="button"
+                    onClick={() => setLocation(loc)}
+                    className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
+                      location === loc
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold'
+                        : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    {loc}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
               <textarea
@@ -269,7 +314,7 @@ const PostAd: React.FC = () => {
                 required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Provide all technical details, reason for selling, contact hours, etc."
+                placeholder="Provide technical specs, reason for selling, contact window, or warranty details..."
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
