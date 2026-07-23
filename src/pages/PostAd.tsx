@@ -10,7 +10,7 @@ import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Upload, 
-  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2
+  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,16 +33,23 @@ const CONDITIONS: Condition[] = [
   'Used - Fair',
 ];
 
-const LOCAL_LOCATIONS = [
+const LOCAL_NEIGHBORHOODS = [
   'Under G Area, Ogbomoso',
   'LAUTECH Main Gate, Ogbomoso',
   'Takie Square, Ogbomoso',
   'Sabo Market, Ogbomoso',
   'Aroje, Ogbomoso',
+  'Adenike Area, Ogbomoso',
   'Akala Way, Ogbomoso',
-  'General Area, Ogbomoso',
   'Ibadan, Oyo State',
-  'Ilorin Road, Oyo State',
+];
+
+const DEMO_PRESET_IMAGES = [
+  { label: 'Smartphone', url: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop' },
+  { label: 'Laptop', url: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800&auto=format&fit=crop' },
+  { label: 'Vehicle', url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop' },
+  { label: 'Apartment', url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop' },
+  { label: 'Fashion', url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop' },
 ];
 
 const PostAd: React.FC = () => {
@@ -76,12 +83,12 @@ const PostAd: React.FC = () => {
     setIsDetectingLocation(true);
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        () => {
           setIsDetectingLocation(false);
           setLocation('Ogbomoso Central, Oyo State');
           toast.success('Location set to Ogbomoso Central Area via GPS!');
         },
-        (error) => {
+        () => {
           setIsDetectingLocation(false);
           setLocation('Takie Square, Ogbomoso');
           toast.info('Defaulted to Takie Square, Ogbomoso');
@@ -109,6 +116,15 @@ const PostAd: React.FC = () => {
       reader.readAsDataURL(file);
     });
     toast.success('Photo added');
+  };
+
+  const handleAddPresetImage = (url: string) => {
+    if (images.includes(url)) {
+      toast.info('This sample photo is already attached');
+      return;
+    }
+    setImages((prev) => [...prev, url]);
+    toast.success('Sample photo attached!');
   };
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -192,10 +208,13 @@ const PostAd: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-8 space-y-6 shadow-2xl">
-                <div className="space-y-4">
+                
+                {/* Photo Uploader */}
+                <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-                      <span>Product Photos *</span>
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-emerald-400" />
+                      <span>Product Photos * ({images.length} added)</span>
                     </label>
                   </div>
 
@@ -216,12 +235,33 @@ const PostAd: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all"
+                      className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all cursor-pointer"
                     >
                       <Plus className="w-5 h-5" />
+                      <span className="text-[9px] font-bold mt-1">Upload</span>
                     </button>
                   </div>
 
+                  {/* Sample presets for quick testing */}
+                  {images.length === 0 && (
+                    <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 space-y-2">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Sample Stock Photos:</p>
+                      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+                        {DEMO_PRESET_IMAGES.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => handleAddPresetImage(preset.url)}
+                            className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 rounded-lg text-[10px] font-bold border border-slate-800 shrink-0 transition-colors"
+                          >
+                            + {preset.label} Photo
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Video Attachment */}
                   <div className="pt-2 border-t border-slate-800">
                     <div className="flex justify-between items-center mb-3">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
@@ -257,6 +297,7 @@ const PostAd: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Listing Details */}
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Listing Title *</label>
@@ -265,7 +306,7 @@ const PostAd: React.FC = () => {
                       required
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Clean Toyota Camry 2018"
+                      placeholder="e.g. Clean Toyota Camry 2018 or iPhone 13 Pro Max"
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -317,7 +358,7 @@ const PostAd: React.FC = () => {
                         value={price}
                         onChange={(e) => setPrice(e.target.value)}
                         placeholder="e.g. 4500000"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 font-extrabold"
                       />
                     </div>
 
@@ -345,13 +386,34 @@ const PostAd: React.FC = () => {
                     </div>
                   </div>
 
+                  {/* Neighborhood Location Chips */}
+                  <div className="space-y-1.5 pt-1">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Ogbomoso Areas:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {LOCAL_NEIGHBORHOODS.map((nh) => (
+                        <button
+                          key={nh}
+                          type="button"
+                          onClick={() => setLocation(nh)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
+                            location === nh
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                          }`}
+                        >
+                          {nh.split(',')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
                       <button
                         type="button"
                         onClick={() => setIsAiAssistantOpen(true)}
-                        className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/30 text-[10px] font-bold flex items-center gap-1"
+                        className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/30 text-[10px] font-bold flex items-center gap-1 hover:bg-purple-500/20 transition-colors"
                       >
                         <Wand2 className="w-3 h-3 text-amber-300" />
                         <span>AI Assistant</span>
@@ -362,8 +424,8 @@ const PostAd: React.FC = () => {
                       required
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Provide technical specs, reason for selling..."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500"
+                      placeholder="Provide technical specs, condition details, accessories included..."
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
                     />
                   </div>
                 </div>
@@ -373,7 +435,7 @@ const PostAd: React.FC = () => {
                     <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
                     <div>
                       <h4 className="font-extrabold text-xs text-white">Enable Top Ad Boost</h4>
-                      <p className="text-[11px] text-slate-400">Pin listing at the top of category feeds</p>
+                      <p className="text-[11px] text-slate-400">Pin listing at the top of category feeds for 5x visibility</p>
                     </div>
                   </div>
 
@@ -394,7 +456,7 @@ const PostAd: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
                 >
                   <ShieldCheck className="w-6 h-6" />
                   <span>Publish Classified Ad</span>
