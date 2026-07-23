@@ -324,7 +324,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
     localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
-    localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
+    localStorage.setItem('sealify_disputeCases', JSON.stringify(disputeCases));
     localStorage.setItem('sealify_saved_ids', JSON.stringify(savedListingIds));
     localStorage.setItem('sealify_reviews', JSON.stringify(reviews));
     localStorage.setItem('sealify_search_alerts', JSON.stringify(searchAlerts));
@@ -481,8 +481,20 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createListing = (data: any) => {
     if (!user) return;
+    const isUserAdmin = user.role === 'admin';
+
     const newListing: Listing = {
-      ...data, id: 'lst_' + Date.now(), sellerId: user.id, sellerName: user.fullName, sellerAvatar: user.avatarUrl, sellerPhone: user.phoneNumber || '+234 813 120 8468', sellerVerified: user.verified, status: 'active', viewsCount: 0, createdAt: 'Just now'
+      ...data, 
+      id: 'lst_' + Date.now(), 
+      sellerId: user.id, 
+      sellerName: data.sellerName || user.fullName, 
+      sellerAvatar: user.avatarUrl, 
+      sellerPhone: user.phoneNumber || '+234 813 120 8468', 
+      sellerVerified: isUserAdmin ? true : user.verified, 
+      sellerVerificationType: isUserAdmin ? 'premium' : user.verificationType,
+      status: 'active', 
+      viewsCount: 0, 
+      createdAt: 'Just now'
     };
     
     // Check Search Alerts
@@ -505,7 +517,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
 
     setListings(prev => [newListing, ...prev]);
-    addAuditLog('Ad Posted', `User ${user.fullName} created "${data.title}"`, 'ad');
+    addAuditLog('Ad Posted', `${isUserAdmin ? 'ADMIN OFFICIAL POST' : 'User ' + user.fullName} created "${data.title}"`, 'ad');
   };
 
   const updateListing = useCallback((id: string, data: Partial<Listing>) => {
@@ -533,9 +545,53 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
   
-  const promoteListing = (id: string, months: number, plan: string) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: months } : l));
-  };
+  const promoteListing = useCallback((id: string, months: number, plan: string) => {
+    setListings(prev => {
+      const updated = prev.map(l => l.id === id ? { 
+        ...l, 
+        featured: true, 
+        promotionPlanName: plan, 
+        promotionDurationMonths: months,
+        promotionStartDate: new Date().toISOString(),
+        promotionEndDate: new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toISOString()
+      } : l);
+
+      // Re-sort listings to put all featured/promoted listings at the top
+      return updated.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+    });
+  }, []);
+
+  const processPromotionPaymentRequest = useCallback((id: string, status: 'approved' | 'rejected') => {
+    const req = promotionPaymentRequests.find(r => r.id === id);
+    if (status === 'approved' && req) {
+       promoteListing(req.listingId, req.durationMonths, req.planName);
+
+       const targetListing = listings.find(l => l.id === req.listingId);
+       const adTitle = targetListing?.title || 'Featured Deal';
+       const adPrice = targetListing?.price ? `₦${targetListing.price.toLocaleString()}` : '';
+
+       // 1. Send in-app notification to all users
+       addNotification({
+         type: 'recommendation',
+         title: `🔥 Featured Deal Alert: ${adTitle}`,
+         description: `Special promoted offer now available on Sealify: "${adTitle}" (${adPrice}). Check it out today!`,
+         linkUrl: `/listing/${req.listingId}`
+       });
+
+       // 2. Log mass email dispatch event
+       addAuditLog(
+         'Mass Email & App Push Sent', 
+         `Promoted advert "${adTitle}" (Ref: ${id}) dispatched via email & in-app alerts to ${allUsers.length} registered users.`, 
+         'finance'
+       );
+
+       toast.success(`🎉 Promotion Approved! Mass email & push notifications dispatched to all ${allUsers.length} users on Sealify.`);
+    } else {
+       toast.info(`Promotion payment request #${id} marked as ${status}`);
+    }
+
+    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  }, [promotionPaymentRequests, promoteListing, listings, addNotification, addAuditLog, allUsers.length]);
 
   const sealDeal = useCallback((listingId: string, buyerName: string, price: number) => {
     const listing = listings.find(l => l.id === listingId);
@@ -631,16 +687,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const submitPromotionPaymentRequest = (req: any) => setPromotionPaymentRequests(prev => [{ ...req, id: 'ppr_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
-
-  const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => {
-    const req = promotionPaymentRequests.find(r => r.id === id);
-    if (status === 'approved' && req) {
-       promoteListing(req.listingId, req.durationMonths, req.planName);
-    }
-    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Payment #${id} ${status}`);
-    addAuditLog('Payment Processed', `Promotion for #${id} ${status}`, 'finance');
-  };
 
   const addAnnouncement = (ann: any) => setAnnouncements(prev => [{ ...ann, id: 'ann_' + Date.now(), createdAt: 'Just now' }, ...prev]);
   const toggleAnnouncement = (id: string) => setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));

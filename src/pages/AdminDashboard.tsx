@@ -18,7 +18,7 @@ import {
   Wallet, FileText, Check, X, ShieldX, ToggleLeft, ToggleRight,
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
-  ChevronDown, SlidersHorizontal, Grid
+  ChevronDown, SlidersHorizontal, Grid, PlusCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -213,10 +213,15 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <Link to="/post-ad" className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black rounded-xl shadow-lg flex items-center gap-1.5 transition-all">
+              <PlusCircle className="w-3.5 h-3.5" /> POST FREE OFFICIAL AD
+            </Link>
+
             <button onClick={exportDatabaseBackup} className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-emerald-400 text-[10px] font-black rounded-xl border border-slate-800 flex items-center gap-1.5 transition-all">
               <Download className="w-3.5 h-3.5" /> BACKUP
             </button>
+
             <button onClick={logout} className="p-2.5 bg-rose-600/10 text-rose-500 rounded-xl border border-rose-500/20 hover:bg-rose-500/20 transition-all">
               <LogOut className="w-4.5 h-4.5" />
             </button>
@@ -656,7 +661,7 @@ export const AdminDashboard: React.FC = () => {
                                   </div>
                                </div>
                                <div className="flex gap-2">
-                                  <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Approve</button>
+                                  <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase flex items-center justify-center gap-1.5 shadow-lg"><CheckCircle2 className="w-3.5 h-3.5" /> Approve & Broadcast</button>
                                   <button onClick={() => processPromotionPaymentRequest(req.id, 'rejected')} className="px-5 py-2.5 bg-slate-800 text-slate-400 font-bold rounded-xl text-[10px] uppercase">Void</button>
                                </div>
                             </div>

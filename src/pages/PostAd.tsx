@@ -10,7 +10,7 @@ import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Upload, 
-  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check
+  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check, Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,10 +50,11 @@ const DEMO_PRESET_IMAGES = [
   { label: 'Vehicle', url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop' },
   { label: 'Apartment', url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop' },
   { label: 'Fashion', url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop' },
+  { label: 'Service / Business', url: 'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=800&auto=format&fit=crop' },
 ];
 
 const PostAd: React.FC = () => {
-  const { createListing, isAuthenticated, user } = useSealify();
+  const { createListing, isAuthenticated, user, isAdmin } = useSealify();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +70,8 @@ const PostAd: React.FC = () => {
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [videoUrl, setVideoUrl] = useState<string>('');
-  const [featuredBoost, setFeaturedBoost] = useState(false);
+  const [featuredBoost, setFeaturedBoost] = useState(isAdmin ? true : false);
+  const [customSellerName, setCustomSellerName] = useState(user?.fullName || '');
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
 
   useEffect(() => {
@@ -173,9 +175,14 @@ const PostAd: React.FC = () => {
       images,
       videoUrl: videoUrl || undefined,
       featured: featuredBoost,
+      sellerName: isAdmin && customSellerName ? customSellerName : user?.fullName,
     });
 
-    toast.success(featuredBoost ? '🎉 Ad posted with Top Ad Boost enabled!' : '🎉 Classified Ad published successfully!');
+    toast.success(
+      isAdmin 
+        ? '🎉 Official Admin Advert published 100% free with Top Ad boost enabled!' 
+        : featuredBoost ? '🎉 Ad posted with Top Ad Boost enabled!' : '🎉 Classified Ad published successfully!'
+    );
     navigate('/my-ads');
   };
 
@@ -207,6 +214,29 @@ const PostAd: React.FC = () => {
                 <p className="text-xs text-slate-400">Items with clear photos and video sell <strong className="text-emerald-400">3x faster</strong></p>
               </div>
 
+              {/* Admin Special Mode Banner */}
+              {isAdmin && (
+                <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-purple-950 border-2 border-emerald-500/50 p-5 rounded-3xl space-y-3 shadow-2xl">
+                  <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-widest">
+                    <Shield className="w-4 h-4 text-emerald-400" />
+                    <span>Admin Official Listing Mode</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    As a Sealify Administrator, you can post unlimited <strong>100% FREE official adverts</strong> for vendor services, local store offerings, or partner products with complimentary Top Ad promotion.
+                  </p>
+                  <div className="pt-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Display Merchant / Brand Name Override (Optional)</label>
+                    <input
+                      type="text"
+                      value={customSellerName}
+                      onChange={(e) => setCustomSellerName(e.target.value)}
+                      placeholder="e.g. LAUTECH Shuttle Services or Ogbomoso Auto Hub"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-8 space-y-6 shadow-2xl">
                 
                 {/* Photo Uploader */}
@@ -214,7 +244,7 @@ const PostAd: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
                       <ImageIcon className="w-4 h-4 text-emerald-400" />
-                      <span>Product Photos * ({images.length} added)</span>
+                      <span>Product / Service Photos * ({images.length} added)</span>
                     </label>
                   </div>
 
@@ -266,7 +296,7 @@ const PostAd: React.FC = () => {
                     <div className="flex justify-between items-center mb-3">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                         <Video className="w-4 h-4 text-purple-400" />
-                        <span>Product Video (Optional)</span>
+                        <span>Product / Service Video (Optional)</span>
                       </label>
                     </div>
 
@@ -290,7 +320,7 @@ const PostAd: React.FC = () => {
                           className="w-full py-4 rounded-2xl border-2 border-dashed border-purple-500/20 hover:border-purple-500/50 bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-purple-400 transition-all group"
                         >
                           <FileVideo className="w-6 h-6" />
-                          <p className="text-xs font-bold">Attach Short Video</p>
+                          <p className="text-xs font-bold">Attach Short Video Demonstration</p>
                         </button>
                       </>
                     )}
@@ -306,7 +336,7 @@ const PostAd: React.FC = () => {
                       required
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Clean Toyota Camry 2018 or iPhone 13 Pro Max"
+                      placeholder="e.g. Professional Laptop Repair & Servicing or Toyota Camry 2018"
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -424,7 +454,7 @@ const PostAd: React.FC = () => {
                       required
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Provide technical specs, condition details, accessories included..."
+                      placeholder="Provide technical specs, condition details, service guarantees..."
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
                     />
                   </div>
@@ -459,7 +489,7 @@ const PostAd: React.FC = () => {
                   className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
                 >
                   <ShieldCheck className="w-6 h-6" />
-                  <span>Publish Classified Ad</span>
+                  <span>{isAdmin ? 'Publish Official Free Advert' : 'Publish Classified Ad'}</span>
                 </button>
               </form>
            </>
