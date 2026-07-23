@@ -6,10 +6,11 @@ import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import SEO from '../components/SEO';
 import ValuationCalculatorModal from '../components/ValuationCalculatorModal';
+import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
-  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation, Calculator
+  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation, Calculator, Wand2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -52,6 +53,7 @@ const PostAd: React.FC = () => {
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isValuationOpen, setIsValuationOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Electronics');
   const [condition, setCondition] = useState<Condition>('Like New');
@@ -398,7 +400,17 @@ const PostAd: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
+                      <button
+                        type="button"
+                        onClick={() => setIsAiAssistantOpen(true)}
+                        className="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                      >
+                        <Wand2 className="w-3 h-3 text-amber-300" />
+                        <span>AI Assistant</span>
+                      </button>
+                    </div>
                     <textarea
                       rows={5}
                       required
@@ -457,6 +469,16 @@ const PostAd: React.FC = () => {
         isOpen={isValuationOpen}
         onClose={() => setIsValuationOpen(false)}
         onApplyPrice={(suggested) => setPrice(suggested.toString())}
+      />
+      <AiAdAssistantModal
+        isOpen={isAiAssistantOpen}
+        onClose={() => setIsAiAssistantOpen(false)}
+        title={title}
+        category={category}
+        condition={condition}
+        price={price}
+        location={location}
+        onApplyDescription={(genText) => setDescription(genText)}
       />
       <MobileNav />
     </div>
