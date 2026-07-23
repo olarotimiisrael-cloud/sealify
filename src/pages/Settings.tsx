@@ -6,7 +6,7 @@ import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
 import SEO from '../components/SEO';
-import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, KeyRound, Lock } from 'lucide-react';
+import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SAMPLE_AVATARS = [
@@ -26,7 +26,6 @@ const Settings: React.FC = () => {
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
-  const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -66,7 +65,6 @@ const Settings: React.FC = () => {
       if (event.target?.result) {
         const dataUrl = event.target.result as string;
         setSelectedAvatar(dataUrl);
-        setCustomAvatarUrl('');
         toast.success('Photo loaded successfully! Click "Save Profile Photo & Changes" to complete.');
       }
     };
@@ -74,15 +72,19 @@ const Settings: React.FC = () => {
   };
 
   const handleSave = () => {
-    const avatarToSave = customAvatarUrl.trim() || selectedAvatar;
     updateUser(user.id, {
       fullName,
       email: newEmail,
       phoneNumber: newPhone,
-      avatarUrl: avatarToSave,
+      avatarUrl: selectedAvatar,
     });
     setEditingProfile(false);
     toast.success('🎉 Profile photo and account settings updated!');
+  };
+
+  const handleStatusUpdate = (role: 'buyer' | 'seller' | 'admin') => {
+    updateUser(user.id, { role });
+    toast.success(`Trading status updated to: ${role === 'admin' ? 'Administrator' : role.toUpperCase()}`);
   };
 
   const handleConfirmDelete = () => {
@@ -128,8 +130,9 @@ const Settings: React.FC = () => {
                   )}
                 </div>
                 <p className="text-slate-400 text-xs mt-0.5">{user.email} • {user.phoneNumber}</p>
-                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1">
-                  Role: {user.role} {user.role === 'admin' ? '(Administrator)' : ''}
+                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1 flex items-center gap-1">
+                  <UserCheck className="w-3 h-3" />
+                  Currently: {user.role === 'admin' ? 'Administrator' : user.role}
                 </span>
               </div>
             </div>
@@ -141,6 +144,46 @@ const Settings: React.FC = () => {
               <Edit3 className="w-4 h-4 text-emerald-400" />
               <span>{editingProfile ? 'Cancel Editing' : 'Edit Photo & Details'}</span>
             </button>
+          </div>
+
+          {/* Trading Status Toggle */}
+          <div className="p-5 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-4">
+             <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest">
+                <Zap className="w-4 h-4" />
+                <span>Trading Visibility & Intent</span>
+             </div>
+             
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  onClick={() => handleStatusUpdate('buyer')}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                    user.role === 'buyer' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                  }`}
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  <span className="text-[10px]">Currently Buying</span>
+                </button>
+
+                <button
+                  onClick={() => handleStatusUpdate('seller')}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                    user.role === 'seller' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                  }`}
+                >
+                  <Store className="w-5 h-5" />
+                  <span className="text-[10px]">Currently Selling</span>
+                </button>
+
+                <button
+                  onClick={() => handleStatusUpdate('admin')}
+                  className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all ${
+                    user.role === 'admin' ? 'bg-emerald-500 border-emerald-400 text-slate-950 font-black' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-emerald-500/40'
+                  }`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="text-[10px]">Seamless (Both)</span>
+                </button>
+             </div>
           </div>
 
           {editingProfile && (

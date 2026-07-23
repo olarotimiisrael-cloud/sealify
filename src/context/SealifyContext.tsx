@@ -48,7 +48,7 @@ interface SealifyContextType {
   logout: () => void;
   listings: Listing[];
   allUsers: UserProfile[];
-  updateUser: (id: string, updatedData: Partial<UserProfile>) => void;
+  updateUser: (id: string, updatedData: Partial<UserProfile>, suppressSecurityDispatch?: boolean) => void;
   deleteUser: (id: string) => void;
   savedListingIds: string[];
   recentlyViewedIds: string[];
@@ -141,13 +141,6 @@ const INITIAL_AUDITS: AuditLog[] = [
     details: 'Israel Olarotimi accessed Admin Command Terminal from Ogbomoso IP',
     type: 'security',
     createdAt: 'Today 09:15 AM',
-  },
-  {
-    id: 'aud_2',
-    action: 'System Broadcast Published',
-    details: 'Published "Safe Exchange Zones Update" banner across feed',
-    type: 'broadcast',
-    createdAt: 'Today 10:30 AM',
   },
 ];
 
@@ -311,6 +304,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAuditLogs(prev => [log, ...prev]);
   }, []);
 
+  const addNotification = useCallback((notif: any) => {
+    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
+  }, []);
+
+  const dispatchSecurityWelcome = useCallback((userName: string, userEmail: string, phone: string) => {
+    // Simulate multi-channel dispatch
+    toast.info(`Security Dispatch: Login details sent to ${userEmail} and ${phone || 'SMS'}`);
+    
+    addNotification({
+      type: 'security',
+      title: 'Password Update Approved!',
+      description: `Greetings ${userName}! Your password reset has been successfully approved by the Sealify Security Team. Please proceed to login and start selling/buying seamlessly.`,
+      linkUrl: '/'
+    });
+  }, [addNotification]);
+
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
   }, [language]);
@@ -363,8 +372,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.removeItem('sealify_user');
   };
 
-  const updateUser = (id: string, updatedData: Partial<UserProfile>) => {
-    setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...updatedData } : u));
+  const updateUser = (id: string, updatedData: Partial<UserProfile>, suppressSecurityDispatch: boolean = false) => {
+    setAllUsers(prev => prev.map(u => {
+      if (u.id === id) {
+        // If password is being updated by admin, send dispatch
+        if (updatedData.password && !suppressSecurityDispatch) {
+          dispatchSecurityWelcome(u.fullName, u.email, u.phoneNumber);
+        }
+        return { ...u, ...updatedData };
+      }
+      return u;
+    }));
     if (user?.id === id) {
       setUser(prev => prev ? { ...prev, ...updatedData } : null);
     }
@@ -474,10 +492,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Message sent!');
   };
 
-  const addNotification = useCallback((notif: any) => {
-    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
-  }, []);
-
   const markNotificationRead = (id: string) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   const markAllNotificationsRead = () => setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   const clearNotification = (id: string) => setNotifications(prev => prev.filter(n => n.id !== id));
@@ -497,7 +511,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  // Report Handling
   const submitReport = (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => {
     const newReport: AdReport = {
       ...rep,
@@ -527,7 +540,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Password Change Logic
   const submitPasswordRequest = (req: any) => {
     const newReq: PasswordChangeRequest = {
       ...req,
@@ -545,7 +557,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!req) return;
 
     if (status === 'approved') {
-      updateUser(req.userId, { password: req.newPassword });
+      updateUser(req.userId, { password: req.newPassword }, true);
+      dispatchSecurityWelcome(req.userName, req.userEmail, '');
       addAuditLog('Password Reset Approved', `Approved password update for ${req.userEmail}`, 'security');
       toast.success(`Password reset for ${req.userEmail} approved!`);
     } else {
@@ -556,7 +569,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
-  // Verification Logic
   const submitVerificationRequest = (req: any) => {
     const newReq: VerificationRequest = {
       ...req,
@@ -585,7 +597,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
-  // Promotion Payment Logic
   const submitPromotionPaymentRequest = (req: any) => {
     const newReq: PromotionPaymentRequest = {
       ...req,
@@ -636,7 +647,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
-  // Announcements logic
   const addAnnouncement = (ann: Omit<SystemAnnouncement, 'id' | 'createdAt'>) => {
     const newAnn: SystemAnnouncement = {
       ...ann,
