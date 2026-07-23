@@ -184,7 +184,7 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(() => {
     const savedUser = localStorage.getItem('sealify_user');
-    return savedUser ? JSON.parse(savedUser) : DEFAULT_ADMIN;
+    return savedUser ? JSON.parse(savedUser) : null;
   });
 
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
