@@ -11,8 +11,8 @@ export const AdminLogin: React.FC = () => {
   const { adminLogin } = useSealify();
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('olarotimiisrael@gmail.com');
-  const [password, setPassword] = useState('Tscw+1234');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export const AdminLogin: React.FC = () => {
               <ShieldAlert className="w-7 h-7" />
             </div>
             <h1 className="text-2xl font-black text-white tracking-tight">Admin Portal Access</h1>
-            <p className="text-slate-400 text-xs">
+            <p className="text-xs text-slate-400">
               Log in with administrator privileges to manage users and platform records.
             </p>
           </div>

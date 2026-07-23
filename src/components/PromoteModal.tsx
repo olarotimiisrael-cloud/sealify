@@ -147,7 +147,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
               </div>
               <h2 className="text-2xl font-black text-white">Promote Ad & Get Premium Badge</h2>
               <p className="text-xs text-slate-400">
-                Boost views by <strong className="text-emerald-400">up to 10x</strong> for: <strong className="text-slate-200">{listing.title}</strong>
+                Boost views by <strong className="text-emerald-400">up to 10x</strong> for: <strong className="text-edge-200">{listing.title}</strong>
               </p>
             </div>
 
@@ -384,8 +384,8 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-2">
                 <p className="text-slate-400 font-medium">Make payment to Opay account:</p>
                 <div className="space-y-1 bg-slate-900 p-3 rounded-xl border border-slate-800">
-                  <p className="text-slate-400">Account Number: <strong className="text-emerald-400 font-mono text-base">813 120 8468</strong></p>
-                  <p className="text-slate-400">Account Name: <strong className="text-white">Sealify Marketplace</strong></p>
+                  <p className="text-slate-400">Account Number: <strong className="text-emerald-400 font-mono text-base">6117594285</strong></p>
+                  <p className="text-slate-400">Account Name: <strong className="text-white">Israel Ogunpade</strong></p>
                   <p className="text-slate-400">Use Ad ID as description: <strong className="text-emerald-400">{listing.id}</strong></p>
                 </div>
                 <div className="space-y-1">
