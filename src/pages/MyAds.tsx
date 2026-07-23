@@ -22,7 +22,10 @@ import {
   Eye,
   Package,
   Sparkles,
-  Layers
+  AlertOctagon,
+  Gavel,
+  ShieldAlert,
+  Send
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -30,7 +33,7 @@ import { toast } from 'sonner';
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing } = useSealify();
+  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser } = useSealify();
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
@@ -51,6 +54,18 @@ const MyAds: React.FC = () => {
   const activeCount = myAds.filter((ad) => ad.status === 'active').length;
   const soldCount = myAds.filter((ad) => ad.status === 'sold').length;
 
+  const handleBumpAd = (ad: Listing) => {
+    updateListing(ad.id, { createdAt: 'Just now' });
+    toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+  };
+
+  const handleAppeal = () => {
+    if (user?.id) {
+       updateUser(user.id, { appealStatus: 'pending' });
+       toast.success('Your appeal has been submitted to Sealify Safety moderators. We will review it shortly.');
+    }
+  };
+
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -60,10 +75,7 @@ const MyAds: React.FC = () => {
     }).format(amount);
   };
 
-  const handleBumpAd = (ad: Listing) => {
-    updateListing(ad.id, { createdAt: 'Just now' });
-    toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
-  };
+  const isRestricted = user?.status && user.status !== 'active';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
@@ -74,6 +86,56 @@ const MyAds: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+        
+        {/* Account Restriction Warning Banner */}
+        {isRestricted && (
+          <div className="bg-rose-500/10 border-2 border-rose-500/30 rounded-3xl p-6 sm:p-8 space-y-5 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden">
+            <div className="absolute -top-12 -right-12 w-48 h-48 bg-rose-500/5 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+               <div className="p-4 bg-rose-500/20 text-rose-500 rounded-2xl border border-rose-500/30 shadow-inner">
+                  <AlertOctagon className="w-8 h-8" />
+               </div>
+               <div className="space-y-1 flex-1">
+                  <h2 className="text-xl font-black text-rose-400 tracking-tight">Account Restricted: Action Required</h2>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Sealify Safety & Integrity Protocol</p>
+                  
+                  <div className="mt-4 p-4 bg-slate-950/80 border border-rose-500/20 rounded-2xl">
+                     <p className="text-[10px] font-black text-rose-500 uppercase flex items-center gap-1 mb-1.5">
+                        <Gavel className="w-3.5 h-3.5" />
+                        Administrator's Reason & Warning
+                     </p>
+                     <p className="text-sm text-slate-100 leading-relaxed italic">
+                        "{user.restrictionReason || 'Your account is under review for violating marketplace safety guidelines.'}"
+                     </p>
+                  </div>
+               </div>
+
+               <div className="shrink-0 w-full sm:w-auto">
+                 {user.appealStatus === 'pending' ? (
+                    <div className="px-5 py-3 bg-slate-800 text-amber-400 font-black rounded-xl text-xs flex items-center justify-center gap-2 border border-slate-700">
+                       <RefreshCw className="w-4 h-4 animate-spin" />
+                       <span>Appeal Pending Review</span>
+                    </div>
+                 ) : (
+                    <button
+                      onClick={handleAppeal}
+                      className="w-full sm:w-auto px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-900/40 transition-all hover:scale-105 active:scale-95"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Submit Appeal Request</span>
+                    </button>
+                 )}
+               </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-3 border-t border-rose-500/10 text-[10px] text-slate-500 justify-center sm:justify-start">
+               <ShieldAlert className="w-4 h-4 text-rose-500/50" />
+               <span>While restricted, your ability to post new advertisements and message other users is temporarily limited.</span>
+            </div>
+          </div>
+        )}
+
         {/* Profile & Summary Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -126,7 +188,7 @@ const MyAds: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Tabs & Section Header */}
+        {/* My Ads Content... existing list code ... */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-emerald-400" />
@@ -172,7 +234,6 @@ const MyAds: React.FC = () => {
           </div>
         </div>
 
-        {/* Ads List */}
         {filteredAds.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4 max-w-md mx-auto my-8">
             <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-600">
@@ -184,13 +245,15 @@ const MyAds: React.FC = () => {
                 ? "You haven't posted any classified ads yet. Start selling today!"
                 : `You currently have no ${statusFilter} listings.`}
             </p>
-            <Link
-              to="/post-ad"
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Create Ad Now</span>
-            </Link>
+            {!isRestricted && (
+              <Link
+                to="/post-ad"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Create Ad Now</span>
+              </Link>
+            )}
           </div>
         ) : (
           <div className="space-y-3">
@@ -248,18 +311,16 @@ const MyAds: React.FC = () => {
                   <button
                     onClick={() => setAnalyticsListing(ad)}
                     className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors"
-                    title="View Ad Analytics"
                   >
                     <BarChart2 className="w-3.5 h-3.5 text-teal-400" />
                     <span>Stats</span>
                   </button>
 
-                  {ad.status === 'active' && (
+                  {ad.status === 'active' && !isRestricted && (
                     <>
                       <button
                         onClick={() => handleBumpAd(ad)}
                         className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
-                        title="Move ad to top of search results"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
                         <span>Bump</span>
@@ -294,7 +355,6 @@ const MyAds: React.FC = () => {
                   <button
                     onClick={() => deleteListing(ad.id)}
                     className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-colors"
-                    title="Delete Ad"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -305,39 +365,12 @@ const MyAds: React.FC = () => {
         )}
       </main>
 
-      <EditListingModal
-        isOpen={!!editingListing}
-        onClose={() => setEditingListing(null)}
-        listing={editingListing}
-        onSave={updateListing}
-      />
-
-      <PromoteModal
-        isOpen={!!promotingListing}
-        onClose={() => setPromotingListing(null)}
-        listing={promotingListing}
-        onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)}
-      />
-
-      <SoldConfirmationModal
-        isOpen={!!soldPromptListing}
-        onClose={() => setSoldPromptListing(null)}
-        listingTitle={soldPromptListing?.title || ''}
-        onConfirm={() => soldPromptListing && markAsSold(soldPromptListing.id)}
-      />
-
-      <AdAnalyticsModal
-        isOpen={!!analyticsListing}
-        onClose={() => setAnalyticsListing(null)}
-        listing={analyticsListing}
-      />
-
-      <VerificationModal
-        isOpen={isVerificationOpen}
-        onClose={() => setIsVerificationOpen(false)}
-        sellerName={user?.fullName || 'Seller'}
-      />
-
+      {/* Modals and Nav ... */}
+      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
+      <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
+      <SoldConfirmationModal isOpen={!!soldPromptListing} onClose={() => setSoldPromptListing(null)} listingTitle={soldPromptListing?.title || ''} onConfirm={() => soldPromptListing && markAsSold(soldPromptListing.id)} />
+      <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
+      <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} sellerName={user?.fullName || 'Seller'} />
       <MobileNav />
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, VerificationBadgeType } from '../types/sealify';
-import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image } from 'lucide-react';
+import { UserProfile, VerificationBadgeType, UserStatus } from '../types/sealify';
+import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminEditUserModalProps {
@@ -22,6 +22,10 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   const [role, setRole] = useState<'buyer' | 'seller' | 'admin'>('buyer');
   const [verificationType, setVerificationType] = useState<VerificationBadgeType>('none');
   const [avatarUrl, setAvatarUrl] = useState('');
+  
+  // Moderation state
+  const [status, setStatus] = useState<UserStatus>('active');
+  const [restrictionReason, setRestrictionReason] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -33,6 +37,8 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       setRole(user.role || 'buyer');
       setVerificationType(user.verificationType || 'none');
       setAvatarUrl(user.avatarUrl || '');
+      setStatus(user.status || 'active');
+      setRestrictionReason(user.restrictionReason || '');
     }
   }, [user]);
 
@@ -55,6 +61,9 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       verified: verificationType !== 'none',
       verificationType,
       avatarUrl: avatarUrl.trim() || user.avatarUrl,
+      status,
+      restrictionReason: status !== 'active' ? restrictionReason.trim() : '',
+      appealStatus: status === 'active' ? 'none' : user.appealStatus
     });
 
     toast.success(`User record for "${fullName}" updated!`);
@@ -92,7 +101,54 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Moderation Section */}
+          <div className="p-4 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-3">
+             <div className="flex items-center gap-2 text-rose-400 font-extrabold uppercase tracking-widest">
+                <AlertOctagon className="w-4 h-4" />
+                <span>Account Status & Restrictions</span>
+             </div>
+
+             <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-400 font-bold uppercase">Status</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value as UserStatus)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-rose-500 capitalize"
+                  >
+                    <option value="active">Active (Normal)</option>
+                    <option value="restricted">Restricted (No Post/Chat)</option>
+                    <option value="suspended">Suspended (Temp Ban)</option>
+                    <option value="banned">Perm Banned (Access Denied)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                   <label className="text-slate-400 font-bold uppercase">Appeal Status</label>
+                   <div className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white capitalize flex items-center gap-2">
+                      <Info className="w-3.5 h-3.5 text-slate-500" />
+                      {user.appealStatus || 'none'}
+                   </div>
+                </div>
+             </div>
+
+             {status !== 'active' && (
+                <div className="space-y-1 animate-in fade-in slide-in-from-top-2">
+                  <label className="text-slate-300 font-bold uppercase">Restriction Warning / Reason *</label>
+                  <textarea
+                    rows={2}
+                    required
+                    value={restrictionReason}
+                    onChange={(e) => setRestrictionReason(e.target.value)}
+                    placeholder="Enter warning for user. They will see this on their profile..."
+                    className="w-full bg-slate-900 border border-rose-500/40 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
+                  />
+                  <p className="text-[10px] text-slate-500 italic">This message will be permanently visible to the user until status is reset to Active.</p>
+                </div>
+             )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
             <div className="space-y-1">
               <label className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-emerald-400" />

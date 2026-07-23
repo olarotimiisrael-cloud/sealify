@@ -13,6 +13,8 @@ export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair'
 
 export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'none';
 
+export type UserStatus = 'active' | 'suspended' | 'banned' | 'restricted';
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -26,6 +28,10 @@ export interface UserProfile {
   memberSince: string;
   location: string;
   password?: string;
+  // Moderation fields
+  status?: UserStatus;
+  restrictionReason?: string;
+  appealStatus?: 'none' | 'pending' | 'resolved';
 }
 
 export interface VerificationRequest {
