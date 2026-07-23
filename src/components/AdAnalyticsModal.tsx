@@ -96,7 +96,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
                     <span className="text-[9px] text-slate-400 font-mono">{item.count}</span>
                     <div
                       style={{ height: `${Math.max(15, heightPercent)}%` }}
-                      className="w-full rounded-t-md hover:bg-emerald-400 transition-colors"
+                      className="w-full bg-emerald-500/20 rounded-t-md hover:bg-emerald-400 transition-colors"
                     ></div>
                     <span className="text-[10px] text-slate-500 font-bold">{item.day}</span>
                   </div>
@@ -120,7 +120,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
                     <AlertCircle className="w-4 h-4 text-amber-400" />
                     Promote with Top Ad Highlight
                   </span>
-                  <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">+5x Boost</span>
+                  <span className="text-[10px] font-bold text-amber-400 bg-emerald-500/10 px-2 py-0.5 rounded">+5x Boost</span>
                 </div>
               </div>
 
