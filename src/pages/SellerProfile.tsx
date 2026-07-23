@@ -9,6 +9,7 @@ import TrustScore from '../components/TrustScore';
 import Footer from '../components/Footer';
 import ReviewModal from '../components/ReviewModal';
 import AuthModal from '../components/AuthModal';
+import SEO from '../components/SEO';
 import { 
   MapPin, 
   Calendar, 
@@ -103,6 +104,12 @@ const SellerProfile: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
+      <SEO 
+        title={`${sellerName}'s Store & Listings — Sealify Nigeria`} 
+        description={`Explore items and services offered by ${sellerName} in ${sellerLocation}. Verified vendor profile.`}
+        image={sellerAvatar}
+        url={window.location.href}
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

@@ -1,11 +1,16 @@
 import React from 'react';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { ShieldCheck, MapPin, AlertTriangle, CheckCircle, Smartphone, Lock, Eye, Users } from 'lucide-react';
 
 const SafetyCenter: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Trust & Safety Center — Sealify Nigeria" 
+        description="Learn about verified safe exchange spots, fraud prevention guidelines, and transaction security rules on Sealify." 
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">

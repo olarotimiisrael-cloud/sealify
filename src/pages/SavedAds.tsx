@@ -3,6 +3,7 @@ import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { Heart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -12,6 +13,10 @@ const SavedAds: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Saved Ads — Sealify Nigeria" 
+        description="View and organize your bookmarked marketplace items and favorite deals on Sealify." 
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 sm:py-8 flex-1 space-y-6">
