@@ -21,6 +21,7 @@ export const LiveActivityToast: React.FC = () => {
       setTimeout(() => setVisible(false), 5000);
     };
 
+    // Show a new activity every 15 seconds
     const interval = setInterval(triggerActivity, 15000);
     return () => clearInterval(interval);
   }, []);

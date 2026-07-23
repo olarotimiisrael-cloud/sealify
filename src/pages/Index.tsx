@@ -30,8 +30,6 @@ import {
   CheckCircle2,
   Lightbulb,
   Scale,
-  Smartphone,
-  Building,
   Activity,
   Megaphone,
   X
@@ -79,7 +77,7 @@ const Index: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb:16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
       <SEO />
       <Navbar />
       
@@ -113,7 +111,7 @@ const Index: React.FC = () => {
       <LiveActivityToast />
 
       {/* Hero Showcase */}
-      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-6 sm:py-8 px-3 sm:px-4 relative overflow-hidden">
+      <section className="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-6 sm:py-10 px-3 sm:px-4 relative overflow-hidden">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
         <div className="max-w-7xl mx-auto space-y-6 relative z-10">
@@ -125,7 +123,7 @@ const Index: React.FC = () => {
                 <span>Ogbomosoland, Oyo State & Across Nigeria</span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
                 {t('trusted_marketplace')} <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">
                   in Nigeria
@@ -226,7 +224,7 @@ const Index: React.FC = () => {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-10 w-full sm:w-auto">
             <div className="text-center sm:text-left">
-              <p className="text-2xl font-black text-white">1.4k+</p>
+              <p className="text-2xl font-black text-white">1,400+</p>
               <p className="text-[10px] font-bold text-slate-500 uppercase">Ads Active</p>
             </div>
             <div className="text-center sm:text-left">
@@ -261,46 +259,6 @@ const Index: React.FC = () => {
         </section>
 
         <FeaturedAdSection listings={listings} />
-
-        {/* How it Works Section */}
-        <section className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-10 space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight uppercase">Trading on Sealify is easy</h2>
-            <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">3 Steps to Success</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center space-y-4 group">
-              <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20 group-hover:scale-110 transition-transform">
-                <Smartphone className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-bold text-sm text-white">1. Post Your Ad</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">Upload clear photos and set your price. It takes less than 2 minutes to go live.</p>
-              </div>
-            </div>
-
-            <div className="text-center space-y-4 group">
-              <div className="w-16 h-16 bg-teal-500/10 text-teal-400 rounded-2xl flex items-center justify-center mx-auto border border-teal-500/20 group-hover:scale-110 transition-transform">
-                <MessageSquare className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-bold text-sm text-white">2. Chat with Buyers</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">Respond to inquiries directly via in-app chat or phone. Review buyer profiles.</p>
-              </div>
-            </div>
-
-            <div className="text-center space-y-4 group">
-              <div className="w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/20 group-hover:scale-110 transition-transform">
-                <Building className="w-8 h-8" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="font-bold text-sm text-white">3. Meet and Seal</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">Meet at a verified Safe Exchange Zone, inspect the item, and get paid instantly.</p>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {recentlyViewedListings.length > 0 && (
           <div className="space-y-3">
