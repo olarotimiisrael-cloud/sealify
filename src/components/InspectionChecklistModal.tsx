@@ -65,7 +65,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
     const listKey = DEFAULT_CHECKLISTS[category] ? category : 'General';
     const rawList = DEFAULT_CHECKLISTS[listKey] || DEFAULT_CHECKLISTS['General'];
     return rawList.map((text, idx) => ({
-      id: `chk_${idx}`,
+      id: `chk_\${idx}`,
       text,
       checked: false,
       critical: idx < 2,
@@ -94,7 +94,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
   const progressPercent = Math.round((checkedCount / items.length) * 100);
 
   const handleShareReport = () => {
-    const reportMsg = `📋 IN-PERSON INSPECTION REPORT:\nItem: ${itemTitle}\nPassed Tests: ${checkedCount} of ${items.length} checks (${progressPercent}% verified)\nStatus: ${progressPercent === 100 ? '✅ All checks passed! Ready to seal transaction.' : '⚠️ Inspection in progress.'}`;
+    const reportMsg = `📋 IN-PERSON INSPECTION REPORT:\nItem: \${itemTitle}\nPassed Tests: \${checkedCount} of \${items.length} checks (\${progressPercent}% verified)\nStatus: \${progressPercent === 100 ? '✅ All checks passed! Ready to seal transaction.' : '⚠️ Inspection in progress.'}`;
     
     if (onSendChecklistToChat) {
       onSendChecklistToChat(reportMsg);
@@ -121,7 +121,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
           </div>
           <h2 className="text-2xl font-black text-white">Physical Inspection Checklist</h2>
           <p className="text-xs text-slate-400">
-            Category Guide for <strong className="text-emerald-400">"{itemTitle}"</strong> ({category})
+            Category Guide for <strong className="text-emerald-400">"\${itemTitle}"</strong> (\${category})
           </p>
         </div>
 
@@ -134,7 +134,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
           <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
             <div
               className="bg-emerald-500 h-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `\${progressPercent}%` }}
             ></div>
           </div>
         </div>
@@ -157,7 +157,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
                 key={item.id}
                 type="button"
                 onClick={() => toggleItem(item.id)}
-                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 ${
+                className={`w-full text-left p-3.5 rounded-2xl border transition-all flex items-start gap-3 \${
                   item.checked
                     ? 'border-emerald-500/50 bg-emerald-500/10 text-white'
                     : 'border-slate-800 bg-slate-950/60 text-slate-300 hover:bg-slate-800/40'
@@ -172,7 +172,7 @@ export const InspectionChecklistModal: React.FC<InspectionChecklistModalProps> =
                 </div>
 
                 <div className="space-y-0.5 min-w-0 flex-1">
-                  <p className={`text-xs font-semibold leading-relaxed ${item.checked ? 'line-through text-slate-400' : 'text-slate-100'}`}>
+                  <p className={`text-xs font-semibold leading-relaxed \${item.checked ? 'line-through text-slate-400' : 'text-slate-100'}`}>
                     {item.text}
                   </p>
                   {item.critical && !item.checked && (

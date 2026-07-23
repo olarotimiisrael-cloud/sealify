@@ -109,8 +109,8 @@ const ListingDetail: React.FC = () => {
 
   const cleanPhone = listing.sellerPhone.replace(/[^0-9]/g, '');
   const formattedWhatsappPhone = cleanPhone.startsWith('0') ? `234${cleanPhone.slice(1)}` : cleanPhone;
-  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
-    `Hello ${listing.sellerName}, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice}). Is it still available?`
+  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=\${encodeURIComponent(
+    \`Hello \${listing.sellerName}, I am interested in your item on Sealify: "\${listing.title}" (\${formattedPrice}). Is it still available?\`
   )}`;
 
   const handleStartChat = () => {
@@ -132,7 +132,7 @@ const ListingDetail: React.FC = () => {
   };
 
   const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
-    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
+    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n\${spotName}\n\${spotAddress}`;
     if (!isAuthenticated) {
       setIsAuthOpen(true);
       return;
@@ -162,8 +162,8 @@ const ListingDetail: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
       <SEO 
-        title={`${listing.title} — ${formattedPrice} | Sealify Nigeria`} 
-        description={`${listing.description.substring(0, 160)}... Available in ${listing.location}.`}
+        title={`\${listing.title} — \${formattedPrice} | Sealify Nigeria`} 
+        description={`\${listing.description.substring(0, 160)}... Available in \${listing.location}.`}
         image={listing.images[0]}
         url={window.location.href}
       />
@@ -218,13 +218,13 @@ const ListingDetail: React.FC = () => {
 
             <button
               onClick={() => toggleSaveListing(listing.id)}
-              className={`p-2 border rounded-xl transition-colors ${
+              className={`p-2 border rounded-xl transition-colors \${
                 saved
                   ? 'bg-red-500/20 border-red-500 text-red-400'
                   : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
               }`}
             >
-              <Heart className={`w-4 h-4 ${saved ? 'fill-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 \${saved ? 'fill-red-500' : ''}`} />
             </button>
           </div>
         </div>
@@ -295,7 +295,7 @@ const ListingDetail: React.FC = () => {
                       setViewMode('image');
                       setActiveImageIndex(idx);
                     }}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all \${
                       viewMode === 'image' && activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
                     }`}
                   >
@@ -306,7 +306,7 @@ const ListingDetail: React.FC = () => {
                 {listing.videoUrl && (
                   <button
                     onClick={() => setViewMode('video')}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all ${
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all \${
                       viewMode === 'video' ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
                     }`}
                   >
@@ -350,7 +350,7 @@ const ListingDetail: React.FC = () => {
               {/* Market Comparison Card */}
               <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl border ${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                  <div className={`p-2.5 rounded-xl border \${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
                     {isBelowAvg ? <TrendingDown className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
                   </div>
                   <div>
@@ -431,7 +431,7 @@ const ListingDetail: React.FC = () => {
                 </div>
 
                 <Link
-                  to={`/seller/${listing.sellerId}`}
+                  to={`/seller/\${listing.sellerId}`}
                   className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 hover:text-white"
                   title="View Seller Profile"
                 >

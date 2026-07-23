@@ -340,7 +340,7 @@ const PostAd: React.FC = () => {
                           onClick={() => setIsValuationOpen(true)}
                           className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
                         >
-                          <Calculator className="w-3 h-3" />
+                          <Calculator className="w-3.5 h-3.5" />
                           <span>Estimate Worth</span>
                         </button>
                       </div>
@@ -387,7 +387,7 @@ const PostAd: React.FC = () => {
                           key={loc}
                           type="button"
                           onClick={() => setLocation(loc)}
-                          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
+                          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors \${
                             location === loc
                               ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold'
                               : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
@@ -440,12 +440,12 @@ const PostAd: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setFeaturedBoost(!featuredBoost)}
-                    className={`w-12 h-6 rounded-full transition-colors relative shrink-0 p-0.5 ${
+                    className={`w-12 h-6 rounded-full transition-colors relative shrink-0 p-0.5 \${
                       featuredBoost ? 'bg-amber-500' : 'bg-slate-800'
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 rounded-full bg-slate-950 transition-transform shadow ${
+                      className={`w-5 h-5 rounded-full bg-slate-950 transition-transform shadow \${
                         featuredBoost ? 'translate-x-6' : 'translate-x-0'
                       }`}
                     />
