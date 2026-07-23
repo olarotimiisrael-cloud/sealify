@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { ShieldAlert, Lock, Mail, ArrowRight, KeyRound, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,10 @@ export const AdminLogin: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Admin Portal Access — Sealify Nigeria" 
+        description="Restricted administrative dashboard access for Sealify platform security moderators." 
+      />
       <Navbar />
 
       <main className="max-w-md mx-auto w-full px-4 py-12 flex-1 flex flex-col justify-center">

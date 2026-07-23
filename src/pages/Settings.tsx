@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
+import SEO from '../components/SEO';
 import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, KeyRound, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,13 +29,15 @@ const Settings: React.FC = () => {
   const [customAvatarUrl, setCustomAvatarUrl] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
 
-  const [emailNewListings, setEmailNewListings] = useState(true);
-  const [emailFavoriteAlerts, setEmailFavoriteAlerts] = useState(true);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
+        <SEO 
+          title="Account Settings — Sealify Nigeria"
+          description="Manage your profile settings, profile picture, password reset requests, and preferences on Sealify."
+        />
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-4">Login Required</h2>
           <p className="text-slate-400">Please log in to access settings</p>
@@ -89,6 +92,10 @@ const Settings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Account Settings — Sealify Nigeria"
+        description="Manage your profile settings, profile picture, password reset requests, and preferences on Sealify."
+      />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">

@@ -5,6 +5,7 @@ import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
+import SEO from '../components/SEO';
 import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck } from 'lucide-react';
 
 const QUICK_REPLIES = [
@@ -25,7 +26,6 @@ const Messages: React.FC = () => {
   const [isOfferOpen, setIsOfferOpen] = useState(false);
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
-  const activeListing = listings.find((l) => l.id === activeConv?.listingId);
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +53,10 @@ const Messages: React.FC = () => {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+        <SEO 
+          title="Direct Inbox & Messages — Sealify Nigeria" 
+          description="Communicate securely with buyers and sellers in real-time on Sealify." 
+        />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <MessageSquare className="w-12 h-12 text-emerald-400 mb-3" />
@@ -73,6 +77,10 @@ const Messages: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <SEO 
+        title="Direct Inbox & Messages — Sealify Nigeria" 
+        description="Communicate securely with buyers and sellers in real-time on Sealify." 
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col">
@@ -125,7 +133,7 @@ const Messages: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setIsMeetupOpen(true)}
-                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-teal-400 rounded-xl text-xs font-bold border border-slate-700 flex items-center gap-1.5 transition-colors"
                   >
                     <MapPin className="w-3.5 h-3.5" />
                     <span>Safe Meetup</span>
