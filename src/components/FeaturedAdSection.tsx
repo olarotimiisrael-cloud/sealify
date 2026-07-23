@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Flame, MapPin, Eye, Heart, ArrowRight } from 'lucide-react';
+import { Flame, MapPin, Eye, Heart, ArrowRight, Crown, Sparkles, Clock } from 'lucide-react';
 
 interface FeaturedAdSectionProps {
   listings: Listing[];
@@ -12,7 +12,10 @@ interface FeaturedAdSectionProps {
 export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }) => {
   const { toggleSaveListing, isSaved } = useSealify();
 
-  const featuredListings = listings.filter((l) => l.featured || l.viewsCount > 150).slice(0, 4);
+  // Sort and filter for featured/promoted ads
+  const featuredListings = listings
+    .filter((l) => l.featured || l.viewsCount > 120)
+    .slice(0, 4);
 
   if (featuredListings.length === 0) return null;
 
@@ -26,43 +29,46 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
   };
 
   return (
-    <section className="bg-gradient-to-r from-amber-500/10 via-slate-900 to-amber-500/5 border border-amber-500/30 rounded-3xl p-4 sm:p-6 space-y-4 shadow-xl relative overflow-hidden">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/40">
-            <Flame className="w-5 h-5 fill-amber-400" />
+    <section className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-purple-900/20 border-2 border-amber-500/40 rounded-[2.5rem] p-5 sm:p-7 space-y-5 shadow-2xl relative overflow-hidden">
+      <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/40 shadow-inner">
+            <Crown className="w-6 h-6 fill-amber-400 text-amber-400 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">Promoted Top Ads</h2>
-              <span className="text-[9px] font-black uppercase bg-amber-500 text-slate-950 px-2 py-0.5 rounded font-mono">
-                5x Boost
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">Promoted Top Advertisements</h2>
+              <span className="text-[9px] font-black uppercase bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 px-2 py-0.5 rounded-full font-mono shadow-md">
+                5X BOOST ACTIVE
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">Handpicked verified deals across Ogbomoso & Oyo State</p>
+            <p className="text-xs text-slate-400">Handpicked, admin-approved verified deals broadcasted across Sealify</p>
           </div>
         </div>
 
         <Link
           to="/"
-          className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors"
+          className="text-xs font-black text-amber-400 hover:text-amber-300 flex items-center gap-1.5 transition-colors bg-amber-500/10 px-3.5 py-1.5 rounded-xl border border-amber-500/30"
         >
-          <span>Explore All</span>
-          <ArrowRight className="w-3.5 h-3.5" />
+          <span>Explore All Promoted</span>
+          <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 relative z-10">
         {featuredListings.map((item) => {
           const saved = isSaved(item.id);
+
           return (
             <div
               key={item.id}
-              className="group bg-slate-950/80 border border-slate-800 hover:border-amber-500/60 rounded-2xl overflow-hidden transition-all duration-300 flex flex-col justify-between relative shadow-lg h-full"
+              className="group bg-slate-950 border-2 border-amber-500/30 hover:border-amber-400 rounded-3xl overflow-hidden transition-all duration-300 flex flex-col justify-between relative shadow-xl hover:shadow-amber-500/10 hover:scale-[1.02]"
             >
-              <div className="absolute top-2 left-2 z-10">
-                <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow flex items-center gap-0.5">
-                  <Flame className="w-3 h-3 fill-slate-950" /> TOP AD
+              <div className="absolute top-2.5 left-2.5 z-10">
+                <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg shadow-lg flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 fill-slate-950" /> TOP AD
                 </span>
               </div>
 
@@ -72,7 +78,7 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
                   e.stopPropagation();
                   toggleSaveListing(item.id);
                 }}
-                className={`absolute top-2 right-2 z-10 p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+                className={`absolute top-2.5 right-2.5 z-10 p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
                   saved ? 'bg-rose-500 text-white' : 'bg-slate-900/80 text-slate-300 hover:text-white'
                 }`}
               >
@@ -86,16 +92,16 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
                     alt={item.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
-                  <div className="absolute bottom-1.5 right-1.5 bg-slate-950/80 text-slate-300 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
-                    <Eye className="w-3 h-3" />
+                  <div className="absolute bottom-2 right-2 bg-slate-950/80 text-slate-300 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+                    <Eye className="w-3 h-3 text-amber-400" />
                     <span>{item.viewsCount}</span>
                   </div>
                 </Link>
 
-                <div className="p-3 space-y-1">
+                <div className="p-3.5 space-y-1.5">
                   <div className="flex justify-between items-baseline gap-1">
-                    <span className="text-base sm:text-lg font-black text-amber-400">{formatNGN(item.price)}</span>
-                    <span className="text-[9px] font-semibold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded shrink-0">
+                    <span className="text-base sm:text-lg font-black text-amber-400 tracking-tight">{formatNGN(item.price)}</span>
+                    <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded uppercase shrink-0">
                       {item.category}
                     </span>
                   </div>
@@ -108,7 +114,7 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
 
                   <div className="flex items-center gap-1 text-[10px] text-slate-400 pt-1">
                     <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-                    <span className="truncate">{item.location}</span>
+                    <span className="truncate">{item.location.split(',')[0]}</span>
                     {item.sellerVerified && (
                       <VerifiedBadge type={item.sellerVerificationType || 'individual'} className="ml-auto shrink-0" />
                     )}
