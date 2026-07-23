@@ -118,7 +118,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
 
               <button
                 onClick={onClose}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
+                className="w-full py-3 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-xl text-xs transition-colors"
               >
                 Close Analytics Dashboard
               </button>
