@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, QrCode, Download, Share2, Copy, Check, Sparkles, MessageCircle, ShieldCheck, MapPin, Building2, Phone } from 'lucide-react';
+import { X, QrCode, Download, Share2, Copy, Check, Sparkles, MessageCircle, ShieldCheck, MapPin, Building2, Phone, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import VerifiedBadge from './VerifiedBadge';
 import Logo from './Logo';
@@ -47,17 +47,18 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
 
   const formattedPrice = price ? formatNGN(price) : 'Contact for Price';
 
-  const promoCaption = `🔥 AVAILABLE ON SEALIFY NIGERIA 🔥\n\n📦 Item: \${title}\n💰 Price: \${formattedPrice}\n📍 Location: \${location}\n👤 Seller: \${businessName || sellerName}\n📞 Phone: \${sellerPhone}\n\n👉 Inspect and buy safely on Sealify:\n\${itemUrl}`;
+  // Enhanced caption with deep-link redirection
+  const promoCaption = `🔥 *AVAILABLE ON SEALIFY NIGERIA* 🔥\n\n📦 *Item:* ${title}\n💰 *Price:* ${formattedPrice}\n📍 *Location:* ${location}\n👤 *Seller:* ${businessName || sellerName}\n\n👇 *VIEW FULL DETAILS & CHAT WITH SELLER:* \n${itemUrl}\n\n#SealifyNigeria #OgbomosoMarketplace #TrustedTrading`;
 
   const handleCopyCaption = () => {
     navigator.clipboard.writeText(promoCaption);
     setCopiedText(true);
-    toast.success('WhatsApp Status caption copied to clipboard!');
+    toast.success('WhatsApp Status caption with item link copied!');
     setTimeout(() => setCopiedText(false), 2000);
   };
 
   const handleWhatsAppShare = () => {
-    const waUrl = `https://wa.me/?text=\${encodeURIComponent(promoCaption)}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(promoCaption)}`;
     window.open(waUrl, '_blank');
   };
 
@@ -65,7 +66,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
     window.print();
   };
 
-  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=\${encodeURIComponent(
+  const qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
     itemUrl
   )}&color=059669&bgcolor=020617`;
 
@@ -79,14 +80,13 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
         <div className="text-center space-y-1">
           <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
             <Sparkles className="w-6 h-6 animate-pulse" />
           </div>
           <h2 className="text-2xl font-black text-white">WhatsApp & Social Promo Card</h2>
           <p className="text-xs text-slate-400">
-            Generate a branded share card for WhatsApp Status, Facebook & Instagram
+            Generate a branded share card that links directly back to your ad
           </p>
         </div>
 
@@ -120,15 +120,18 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
 
             <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-[9px] font-extrabold uppercase text-slate-500">Contact Merchant</p>
+                <p className="text-[9px] font-extrabold uppercase text-slate-500">Sealify Verified Ad</p>
                 <p className="font-extrabold text-xs text-white truncate">{businessName || sellerName}</p>
-                <p className="text-[11px] font-mono text-emerald-400 font-bold">{sellerPhone}</p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                   <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-tighter">Active Listing</p>
+                </div>
               </div>
 
               {/* QR Code */}
               <div className="bg-slate-950 p-1.5 rounded-xl border border-slate-800 shrink-0 text-center">
                 <img src={qrDataUrl} alt="QR Link" className="w-12 h-12 rounded" />
-                <span className="text-[8px] font-bold text-slate-500 uppercase block mt-0.5">Scan Ad</span>
+                <span className="text-[8px] font-bold text-slate-500 uppercase block mt-0.5">Scan to Buy</span>
               </div>
             </div>
           </div>
@@ -141,7 +144,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
             className="py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
           >
             {copiedText ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            <span>{copiedText ? 'Copied' : 'Copy Caption'}</span>
+            <span>{copiedText ? 'Link Copied' : 'Copy Link'}</span>
           </button>
 
           <button
@@ -157,8 +160,17 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
             className="py-3 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
           >
             <Download className="w-4 h-4" />
-            <span>Print Poster</span>
+            <span>Save Poster</span>
           </button>
+        </div>
+
+        <div className="bg-slate-950 border border-slate-800 p-3 rounded-2xl flex items-center gap-3">
+           <div className="p-2 bg-blue-500/10 text-blue-400 rounded-lg">
+              <ExternalLink className="w-4 h-4" />
+           </div>
+           <p className="text-[10px] text-slate-500 leading-tight">
+              The generated WhatsApp caption includes a **dynamic deep link**. When your contacts click it, they will be brought straight to this ad on Sealify.
+           </p>
         </div>
       </div>
     </div>
