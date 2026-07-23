@@ -31,6 +31,13 @@ export interface MarketplaceDeal {
   time: string;
 }
 
+export interface SystemConfig {
+  maintenanceMode: boolean;
+  autoApproveAds: boolean;
+  requireIdForPosting: boolean;
+  aiSpamFilter: boolean;
+}
+
 interface AnalyticsData {
   visitors: number;
   activeAds: number;
@@ -45,6 +52,9 @@ interface SealifyContextType {
   isAdmin: boolean;
   adminPin: string;
   updateAdminPin: (newPin: string) => void;
+  systemConfig: SystemConfig;
+  updateSystemConfig: (updated: Partial<SystemConfig>) => void;
+  exportDatabaseBackup: () => void;
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
   t: (key: string) => string;
@@ -213,6 +223,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return localStorage.getItem('sealify_admin_pin') || DEFAULT_ADMIN_PIN;
   });
 
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>(() => {
+    const saved = localStorage.getItem('sealify_system_config');
+    return saved ? JSON.parse(saved) : {
+      maintenanceMode: false,
+      autoApproveAds: true,
+      requireIdForPosting: false,
+      aiSpamFilter: true,
+    };
+  });
+
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
     return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
@@ -316,6 +336,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [announcements]);
 
   useEffect(() => {
+    localStorage.setItem('sealify_system_config', JSON.stringify(systemConfig));
+  }, [systemConfig]);
+
+  useEffect(() => {
     localStorage.setItem('sealify_recent_deals', JSON.stringify(recentDeals));
   }, [recentDeals]);
 
@@ -340,8 +364,36 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
     localStorage.setItem('sealify_admin_pin', newPin);
-    toast.success(`Admin Security PIN updated successfully!`);
+    toast.success(`Admin Security Master PIN updated to "${newPin}"!`);
   }, []);
+
+  const updateSystemConfig = useCallback((updated: Partial<SystemConfig>) => {
+    setSystemConfig((prev) => ({ ...prev, ...updated }));
+    toast.success('System Configuration updated live!');
+  }, []);
+
+  const exportDatabaseBackup = useCallback(() => {
+    const backupData = {
+      exportTimestamp: new Date().toISOString(),
+      usersCount: allUsers.length,
+      listingsCount: listings.length,
+      allUsers,
+      listings,
+      auditLogs,
+      reports,
+      announcements,
+    };
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `Sealify_DB_Backup_${Date.now()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+
+    toast.success('Full Database Backup JSON downloaded successfully!');
+  }, [allUsers, listings, auditLogs, reports, announcements]);
 
   const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
     const log: AuditLog = {
@@ -768,7 +820,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin,
+      adminPin, updateAdminPin, systemConfig, updateSystemConfig, exportDatabaseBackup,
       language, setLanguage, t,
       categories, addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
       deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 

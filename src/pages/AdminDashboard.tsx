@@ -13,7 +13,8 @@ import {
   Database, Plus, Sparkles, Upload, AlertTriangle, LogOut, Megaphone, 
   Bell, Radio, ShieldAlert, Download, FileSpreadsheet, Terminal, 
   Clock, Server, DollarSign, Image, User, Users, FileText, CheckCircle2,
-  AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, Cpu, Globe
+  AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, Cpu, Globe,
+  Sliders, Lock, Unlock, ToggleLeft, ToggleRight
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -25,10 +26,10 @@ export const AdminDashboard: React.FC = () => {
     passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
     promotionPaymentRequests, processPromotionPaymentRequest, announcements, addAnnouncement, 
     toggleAnnouncement, deleteAnnouncement, reports, processReport, auditLogs, analytics,
-    adminPin, updateAdminPin, intrusionLogs
+    adminPin, updateAdminPin, intrusionLogs, systemConfig, updateSystemConfig, exportDatabaseBackup
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'moderation' | 'audit' | 'intrusions'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'finance' | 'users' | 'categories' | 'listings' | 'broadcasts' | 'moderation' | 'settings' | 'audit' | 'intrusions'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
@@ -88,6 +89,15 @@ export const AdminDashboard: React.FC = () => {
     setNewPinInput('');
   };
 
+  const handleToggleRestriction = (u: UserProfile) => {
+    const isCurrentlyRestricted = u.status === 'restricted' || u.status === 'banned';
+    const newStatus = isCurrentlyRestricted ? 'active' : 'restricted';
+    const reason = isCurrentlyRestricted ? '' : 'Account restricted by Administrator via Command Terminal';
+    
+    updateUser(u.id, { status: newStatus, restrictionReason: reason });
+    toast.success(`User ${u.fullName} is now ${newStatus.toUpperCase()}`);
+  };
+
   const formatNGN = (amount: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(amount);
 
   if (!isAdmin) return (
@@ -100,124 +110,214 @@ export const AdminDashboard: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-24 md:pb-8 font-sans">
       <Navbar />
-      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 py-6 flex-1 space-y-6">
         
         {/* Top Header Terminal Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl gap-4 shadow-xl relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl gap-4 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
-              <Shield className="w-8 h-8" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30 shrink-0">
+              <Shield className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-black">Sealify Sovereign Terminal</h1>
-              <p className="text-xs text-slate-400">Total System Control • Encrypted Administrative Access</p>
+              <h1 className="text-xl sm:text-2xl font-black text-white">Sealify Sovereign Terminal</h1>
+              <p className="text-[11px] text-slate-400">Master Key & Security Control • Ogbomoso Hub</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 relative z-10 flex-wrap">
+
+          <div className="flex items-center gap-2 relative z-10 flex-wrap w-full sm:w-auto">
             <button 
               onClick={() => setIsPinModalOpen(true)} 
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-rose-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              className="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 hover:bg-slate-750 text-amber-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-colors"
             >
-              <Key className="w-4 h-4" />
-              <span>CHANGE PIN</span>
+              <Key className="w-3.5 h-3.5" />
+              <span>MASTER PIN ({adminPin})</span>
+            </button>
+
+            <button 
+              onClick={exportDatabaseBackup} 
+              className="flex-1 sm:flex-initial px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>BACKUP DB</span>
             </button>
 
             <button 
               onClick={() => setIsSqlModalOpen(true)} 
-              className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-[10px] font-black rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+              className="p-2 bg-slate-800 hover:bg-slate-750 text-teal-400 text-[10px] font-black rounded-xl border border-slate-700"
+              title="View SQL Migration Script"
             >
               <Database className="w-4 h-4" />
-              <span>SQL SCHEMA</span>
             </button>
 
             <button 
               onClick={logout} 
-              className="p-2.5 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/30"
+              className="p-2 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl transition-all border border-rose-500/30"
               title="End Admin Session"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Tab Navigation Controls */}
-        <div className="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
-          <button onClick={() => setActiveTab('analytics')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
-          <button onClick={() => setActiveTab('finance')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'finance' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-            FINANCE {pendingPromoPay.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{pendingPromoPay.length}</span>}
+        <div className="flex items-center gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 overflow-x-auto no-scrollbar">
+          <button onClick={() => setActiveTab('analytics')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'analytics' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>ANALYTICS</button>
+          <button onClick={() => setActiveTab('finance')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'finance' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+            FINANCE {pendingPromoPay.length > 0 && <span className="ml-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-bold">{pendingPromoPay.length}</span>}
           </button>
-          <button onClick={() => setActiveTab('users')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
-            USERS & BADGES {(pendingVerifications.length > 0 || pendingPasswordRequests.length > 0) && <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-extrabold">{pendingVerifications.length + pendingPasswordRequests.length}</span>}
+          <button onClick={() => setActiveTab('users')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'users' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+            USERS & BADGES {(pendingVerifications.length > 0 || pendingPasswordRequests.length > 0) && <span className="ml-1 bg-amber-500 text-slate-950 text-[8px] px-1.5 py-0.2 rounded-full font-extrabold">{pendingVerifications.length + pendingPasswordRequests.length}</span>}
           </button>
-          <button onClick={() => setActiveTab('categories')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
-          <button onClick={() => setActiveTab('listings')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
+          <button onClick={() => setActiveTab('categories')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'categories' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>CATEGORIES</button>
+          <button onClick={() => setActiveTab('listings')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'listings' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>
             INVENTORY {expiredAds.length > 0 && <span className="w-2 h-2 rounded-full bg-amber-400 absolute top-1 right-1 animate-pulse"></span>}
           </button>
-          <button onClick={() => setActiveTab('moderation')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'moderation' ? 'bg-rose-500 text-white shadow-lg shadow-rose-900/20' : 'text-slate-400 hover:text-white'}`}>
-            MODERATION {pendingReports.length > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{pendingReports.length}</span>}
+          <button onClick={() => setActiveTab('moderation')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'moderation' ? 'bg-rose-500 text-white shadow-lg shadow-rose-900/20' : 'text-slate-400 hover:text-white'}`}>
+            MODERATION {pendingReports.length > 0 && <span className="ml-1 bg-red-500 text-white text-[8px] px-1.5 py-0.2 rounded-full font-bold">{pendingReports.length}</span>}
           </button>
-          <button onClick={() => setActiveTab('broadcasts')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all ${activeTab === 'broadcasts' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>BROADCASTS</button>
-          <button onClick={() => setActiveTab('intrusions')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'intrusions' ? 'bg-red-600 text-white shadow-lg shadow-red-900/40' : 'text-slate-400 hover:text-white'}`}>
-            INTRUSIONS {intrusionLogs.length > 0 && <span className="absolute -top-1 -right-1 bg-white text-red-600 text-[8px] w-4 h-4 rounded-full flex items-center justify-center font-black">{intrusionLogs.length}</span>}
+          <button onClick={() => setActiveTab('settings')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'settings' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>SYSTEM CONFIG</button>
+          <button onClick={() => setActiveTab('broadcasts')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'broadcasts' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>BROADCASTS</button>
+          <button onClick={() => setActiveTab('intrusions')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 relative ${activeTab === 'intrusions' ? 'bg-red-600 text-white shadow-lg shadow-red-900/40' : 'text-slate-400 hover:text-white'}`}>
+            INTRUSIONS {intrusionLogs.length > 0 && <span className="ml-1 bg-white text-red-600 text-[8px] px-1.5 py-0.2 rounded-full font-black">{intrusionLogs.length}</span>}
           </button>
-          <button onClick={() => setActiveTab('audit')} className={`px-4 py-2.5 rounded-xl text-[10px] font-black transition-all ${activeTab === 'audit' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>AUDIT LOGS</button>
+          <button onClick={() => setActiveTab('audit')} className={`px-3.5 py-2 rounded-xl text-[10px] font-black transition-all shrink-0 ${activeTab === 'audit' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-white'}`}>AUDIT LOGS</button>
         </div>
 
         {/* 1. ANALYTICS TAB */}
         {activeTab === 'analytics' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                  {[ 
                    { label: 'Live Visitors', value: analytics.visitors, icon: Activity, color: 'text-emerald-400' }, 
                    { label: 'Active Ads', value: listings.length, icon: Package, color: 'text-blue-400' }, 
                    { label: 'Gross Revenue', value: '₦142,500', icon: DollarSign, color: 'text-amber-400' }, 
                    { label: 'Uptime', value: '99.9%', icon: Server, color: 'text-purple-400' } 
                  ].map((stat, i) => (
-                   <div key={i} className="bg-slate-900 border border-slate-800 p-5 rounded-[2rem] space-y-2">
-                     <div className={`flex items-center gap-2 ${stat.color}`}>
-                       <stat.icon className="w-4 h-4" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">{stat.label}</span>
+                   <div key={i} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-1">
+                     <div className={`flex items-center gap-1.5 ${stat.color}`}>
+                       <stat.icon className="w-3.5 h-3.5" />
+                       <span className="text-[9px] font-black uppercase tracking-wider">{stat.label}</span>
                      </div>
-                     <p className="text-3xl font-black text-white">{stat.value}</p>
+                     <p className="text-2xl sm:text-3xl font-black text-white">{stat.value}</p>
                    </div>
                  ))}
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] h-80 shadow-2xl relative overflow-hidden">
-                 <div className="flex items-center gap-2 mb-6">
+
+              <div className="bg-slate-900 border border-slate-800 p-4 sm:p-6 rounded-3xl h-72 shadow-2xl relative overflow-hidden">
+                 <div className="flex items-center gap-2 mb-4">
                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                   <h3 className="text-xs font-black uppercase text-slate-500">Real-Time Platform Sessions</h3>
+                   <h3 className="text-xs font-black uppercase text-slate-400">Real-Time Platform Sessions</h3>
                  </div>
                  <ResponsiveContainer width="100%" height="80%">
                    <AreaChart data={analytics.sessionsPerMinute.map((v, i) => ({ t: i, v }))}>
                      <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px' }} />
-                     <Area type="monotone" dataKey="v" stroke="#10b981" strokeWidth={4} fillOpacity={0.1} fill="#10b981" />
+                     <Area type="monotone" dataKey="v" stroke="#10b981" strokeWidth={3} fillOpacity={0.15} fill="#10b981" />
                    </AreaChart>
                  </ResponsiveContainer>
               </div>
             </div>
+
             <div className="space-y-4">
-               <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
-                  <h3 className="text-xs font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                    <Terminal className="w-4 h-4" />
-                    Security & Health Check
+               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-4 shadow-xl">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest flex items-center gap-2">
+                    <Terminal className="w-4 h-4 text-emerald-400" />
+                    <span>Security & System Health</span>
                   </h3>
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                      {[ 
                        { label: 'Database Integrity', status: 'Online', color: 'text-emerald-400' }, 
                        { label: 'NIN Auth Protocol', status: 'Active', color: 'text-blue-400' }, 
-                       { label: 'Ad Spam Filter', status: 'Scanning', color: 'text-amber-400' } 
+                       { label: 'Ad Spam Filter', status: 'Scanning', color: 'text-amber-400' },
+                       { label: 'Master Security PIN', status: `Set (${adminPin})`, color: 'text-emerald-400' }
                      ].map((item, i) => (
-                       <div key={i} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
-                         <span className="text-[11px] font-bold text-slate-400">{item.label}</span>
+                       <div key={i} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                         <span className="font-bold text-slate-400">{item.label}</span>
                          <span className={`text-[10px] font-black uppercase ${item.color}`}>{item.status}</span>
                        </div>
                      ))}
                   </div>
                </div>
+            </div>
+          </div>
+        )}
+
+        {/* SYSTEM CONFIG TAB */}
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                <Sliders className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white">System Global Configuration</h2>
+                <p className="text-xs text-slate-400">Control marketplace behavior, security policies, and ad approvals</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-3 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-white">Maintenance Mode</h4>
+                    <p className="text-xs text-slate-400">Pause public browsing and new ad postings</p>
+                  </div>
+                  <button
+                    onClick={() => updateSystemConfig({ maintenanceMode: !systemConfig.maintenanceMode })}
+                    className={`p-2 rounded-xl border font-bold text-xs ${systemConfig.maintenanceMode ? 'bg-rose-500/20 border-rose-500 text-rose-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                  >
+                    {systemConfig.maintenanceMode ? 'ACTIVE (PAUSED)' : 'OFF (NORMAL)'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-3 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-white">Auto-Approve New Listings</h4>
+                    <p className="text-xs text-slate-400">Publish ads instantly without manual admin queue</p>
+                  </div>
+                  <button
+                    onClick={() => updateSystemConfig({ autoApproveAds: !systemConfig.autoApproveAds })}
+                    className={`p-2 rounded-xl border font-bold text-xs ${systemConfig.autoApproveAds ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                  >
+                    {systemConfig.autoApproveAds ? 'ENABLED' : 'DISABLED'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-3 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-white">Require NIN ID for Postings</h4>
+                    <p className="text-xs text-slate-400">Force sellers to hold a verified badge before creating ads</p>
+                  </div>
+                  <button
+                    onClick={() => updateSystemConfig({ requireIdForPosting: !systemConfig.requireIdForPosting })}
+                    className={`p-2 rounded-xl border font-bold text-xs ${systemConfig.requireIdForPosting ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                  >
+                    {systemConfig.requireIdForPosting ? 'MANDATORY' : 'OPTIONAL'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-3 shadow-xl">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-sm text-white">AI Fraud & Spam Filter</h4>
+                    <p className="text-xs text-slate-400">Scan ad descriptions for suspicious external links or scam flags</p>
+                  </div>
+                  <button
+                    onClick={() => updateSystemConfig({ aiSpamFilter: !systemConfig.aiSpamFilter })}
+                    className={`p-2 rounded-xl border font-bold text-xs ${systemConfig.aiSpamFilter ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                  >
+                    {systemConfig.aiSpamFilter ? 'SCANNING' : 'OFF'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -315,7 +415,7 @@ export const AdminDashboard: React.FC = () => {
             )}
 
             {/* Users Directory Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-4 p-6">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-4 p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <div>
                   <h3 className="font-extrabold text-base text-white">Registered Marketplace Members ({allUsers.length})</h3>
@@ -333,8 +433,8 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+              <div className="overflow-x-auto no-scrollbar">
+                <table className="w-full text-left text-xs min-w-[600px]">
                   <thead className="bg-slate-950 border-b border-slate-800 font-black uppercase text-slate-500">
                     <tr className="px-4 py-3">
                       <th className="p-3">User Member</th>
@@ -349,10 +449,10 @@ export const AdminDashboard: React.FC = () => {
                       <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-3">
                           <div className="flex items-center gap-3">
-                            <img src={u.avatarUrl} className="w-8 h-8 rounded-xl object-cover border border-slate-800" />
-                            <div>
-                              <p className="font-bold text-white">{u.fullName}</p>
-                              <p className="text-[10px] text-slate-500">{u.email}</p>
+                            <img src={u.avatarUrl} className="w-8 h-8 rounded-xl object-cover border border-slate-800 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-bold text-white truncate">{u.fullName}</p>
+                              <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
                             </div>
                           </div>
                         </td>
@@ -365,7 +465,14 @@ export const AdminDashboard: React.FC = () => {
                             {u.status || 'active'}
                           </span>
                         </td>
-                        <td className="p-3 text-right space-x-2">
+                        <td className="p-3 text-right space-x-1 sm:space-x-2 shrink-0">
+                          <button 
+                            onClick={() => handleToggleRestriction(u)} 
+                            className={`p-1.5 rounded-lg ${u.status === 'restricted' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}
+                            title={u.status === 'restricted' ? 'Restore User' : 'Quick Restrict User'}
+                          >
+                            {u.status === 'restricted' ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+                          </button>
                           <button onClick={() => setEditingUser(u)} className="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 rounded-lg" title="Edit Record"><Edit3 className="w-3.5 h-3.5" /></button>
                           <button onClick={() => deleteUser(u.id)} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg" title="Delete User"><Trash2 className="w-3.5 h-3.5" /></button>
                         </td>
@@ -383,14 +490,14 @@ export const AdminDashboard: React.FC = () => {
           <div className="space-y-6">
             <form onSubmit={handleAddCategory} className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col sm:flex-row items-end gap-4 shadow-xl">
               <div className="flex-1 space-y-1.5 w-full"><label className="text-xs font-black text-slate-400 uppercase">New Category Name</label><input type="text" required value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="e.g. Solar & Inverters" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs focus:border-emerald-500" /></div>
-              <div className="space-y-1.5"><label className="text-xs font-black text-slate-400 uppercase">Accent</label><select value={newCatColor} onChange={e => setNewCatColor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs"><option value="bg-emerald-500">Green</option><option value="bg-blue-500">Blue</option><option value="bg-purple-500">Purple</option><option value="bg-amber-500">Amber</option></select></div>
-              <button type="submit" className="px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2"><Plus className="w-4 h-4" /><span>CREATE</span></button>
+              <div className="space-y-1.5 w-full sm:w-auto"><label className="text-xs font-black text-slate-400 uppercase">Accent</label><select value={newCatColor} onChange={e => setNewCatColor(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs"><option value="bg-emerald-500">Green</option><option value="bg-blue-500">Blue</option><option value="bg-purple-500">Purple</option><option value="bg-amber-500">Amber</option></select></div>
+              <button type="submit" className="w-full sm:w-auto px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-2"><Plus className="w-4 h-4" /><span>CREATE</span></button>
             </form>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                {categories.map(cat => (
                  <div key={cat.id} className="bg-slate-900 p-4 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 group">
-                   <div className="flex items-center gap-2 min-w-0"><div className={`w-8 h-8 rounded-lg ${cat.color} text-white flex items-center justify-center`}><Layers className="w-4 h-4" /></div><span className="font-bold text-xs truncate">{cat.name}</span></div>
-                   <button onClick={() => deleteCategory(cat.id)} className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-500 hover:text-rose-500"><X className="w-4 h-4" /></button>
+                   <div className="flex items-center gap-2 min-w-0"><div className={`w-8 h-8 rounded-lg ${cat.color} text-white flex items-center justify-center shrink-0`}><Layers className="w-4 h-4" /></div><span className="font-bold text-xs truncate">{cat.name}</span></div>
+                   <button onClick={() => deleteCategory(cat.id)} className="p-1.5 text-slate-500 hover:text-rose-500"><X className="w-4 h-4" /></button>
                  </div>
                ))}
             </div>
@@ -414,19 +521,21 @@ export const AdminDashboard: React.FC = () => {
                </div>
              )}
              <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-950 border-b border-slate-800 font-black uppercase text-slate-500"><tr className="px-6 py-4"><th>Classified Ad</th><th>Status</th><th>Performance</th><th>Action</th></tr></thead>
-                  <tbody className="divide-y divide-slate-800/50">
-                    {listings.map(ad => (
-                      <tr key={ad.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4"><div className="flex items-center gap-3"><img src={ad.images[0]} className="w-10 h-8 rounded-lg object-cover" /><div><p className="font-bold text-white">{ad.title}</p><p className="text-[10px] text-slate-500">{ad.category} • {ad.id}</p></div></div></td>
-                        <td className="px-6 py-4"><span className={`px-2 py-0.5 rounded-[6px] font-black uppercase text-[8px] ${ad.featured ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{ad.featured ? 'Promoted' : 'Basic'}</span></td>
-                        <td className="px-6 py-4 font-bold text-slate-300">{ad.viewsCount} Views</td>
-                        <td className="px-6 py-4"><button onClick={() => deleteListing(ad.id)} className="p-2 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto no-scrollbar">
+                  <table className="w-full text-left text-xs min-w-[500px]">
+                    <thead className="bg-slate-950 border-b border-slate-800 font-black uppercase text-slate-500"><tr className="px-6 py-4"><th>Classified Ad</th><th>Status</th><th>Performance</th><th>Action</th></tr></thead>
+                    <tbody className="divide-y divide-slate-800/50">
+                      {listings.map(ad => (
+                        <tr key={ad.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-4 sm:px-6 py-4"><div className="flex items-center gap-3"><img src={ad.images[0]} className="w-10 h-8 rounded-lg object-cover shrink-0" /><div><p className="font-bold text-white truncate max-w-xs">{ad.title}</p><p className="text-[10px] text-slate-500">{ad.category} • {ad.id}</p></div></div></td>
+                          <td className="px-4 sm:px-6 py-4"><span className={`px-2 py-0.5 rounded-[6px] font-black uppercase text-[8px] ${ad.featured ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400'}`}>{ad.featured ? 'Promoted' : 'Basic'}</span></td>
+                          <td className="px-4 sm:px-6 py-4 font-bold text-slate-300">{ad.viewsCount} Views</td>
+                          <td className="px-4 sm:px-6 py-4"><button onClick={() => deleteListing(ad.id)} className="p-2 hover:bg-rose-500/20 text-slate-500 hover:text-rose-500 rounded-lg transition-all"><Trash2 className="w-4 h-4" /></button></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
              </div>
           </div>
         )}
@@ -678,7 +787,7 @@ export const AdminDashboard: React.FC = () => {
 
         {/* 9. AUDIT LOGS TAB */}
         {activeTab === 'audit' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="font-extrabold text-base text-white">System Audit & Compliance Log</h3>
@@ -689,12 +798,12 @@ export const AdminDashboard: React.FC = () => {
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-mono">
+            <div className="overflow-x-auto no-scrollbar">
+              <table className="w-full text-left text-xs font-mono min-w-[500px]">
                 <thead className="bg-slate-950 border-b border-slate-800 text-slate-500 uppercase font-black">
                   <tr className="px-4 py-3">
                     <th className="p-3">Timestamp</th>
-                    <th className="p-3">Log Type</th>
+                    <th className="p-3">Type</th>
                     <th className="p-3">Action Event</th>
                     <th className="p-3">Details</th>
                   </tr>
@@ -724,7 +833,7 @@ export const AdminDashboard: React.FC = () => {
         )}
       </main>
 
-      {/* Change Security PIN Modal */}
+      {/* Change Master Security PIN Modal */}
       {isPinModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100">
@@ -740,8 +849,8 @@ export const AdminDashboard: React.FC = () => {
                 <div className="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30">
                   <Key className="w-6 h-6" />
                 </div>
-                <h3 className="font-extrabold text-xl text-white">Update Admin Security PIN</h3>
-                <p className="text-xs text-slate-400">Current PIN: <span className="font-mono text-emerald-400 font-bold">{adminPin}</span></p>
+                <h3 className="font-extrabold text-xl text-white">Update Master Security PIN</h3>
+                <p className="text-xs text-slate-400">Current Security PIN: <span className="font-mono text-emerald-400 font-bold">{adminPin}</span></p>
               </div>
 
               <div className="space-y-1.5 pt-2">

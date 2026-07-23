@@ -50,37 +50,37 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   return (
     <>
       <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 items-start max-w-[70%]">
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start max-w-[70%]">
           {listing.featured && (
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md">
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md">
               TOP AD
             </span>
           )}
           {isGreatDeal && (
-            <span className="bg-emerald-500 text-slate-950 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
-              <Tag className="w-2.5 h-2.5 fill-current" /> GREAT DEAL
+            <span className="bg-emerald-500 text-slate-950 text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md flex items-center gap-0.5">
+              <Tag className="w-2.5 h-2.5 fill-current" /> DEAL
             </span>
           )}
           {listing.viewsCount > 200 && !listing.featured && (
-            <span className="bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <span className="bg-purple-600 text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md flex items-center gap-0.5">
               <Flame className="w-2.5 h-2.5 fill-current" /> HOT
             </span>
           )}
           {daysLeft !== null && daysLeft >= 0 && (
-            <span className="bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <span className="bg-blue-500 text-white text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md flex items-center gap-0.5">
               <Calendar className="w-2.5 h-2.5" /> {daysLeft}d left
             </span>
           )}
         </div>
 
-        <div className="absolute top-2.5 right-2.5 z-10 flex items-center gap-1">
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
           <button
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
               setIsShareOpen(true);
             }}
-            className="p-1.5 sm:p-2 rounded-full bg-slate-950/70 text-emerald-400 hover:text-white hover:bg-slate-950/90 backdrop-blur-md transition-transform active:scale-90"
+            className="p-1.5 rounded-full bg-slate-950/70 text-emerald-400 hover:text-white hover:bg-slate-950/90 backdrop-blur-md transition-transform active:scale-90"
             title="Share this item on social media"
           >
             <Share2 className="w-3.5 h-3.5" />
@@ -92,7 +92,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
               e.stopPropagation();
               toggleCompareListing(listing.id);
             }}
-            className={`p-1.5 sm:p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+            className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
               compared
                 ? 'bg-emerald-500 text-slate-950 font-bold'
                 : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
@@ -108,7 +108,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
               e.stopPropagation();
               toggleSaveListing(listing.id);
             }}
-            className={`p-1.5 sm:p-2 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
+            className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${
               saved
                 ? 'bg-rose-500 text-white'
                 : 'bg-slate-950/60 text-slate-300 hover:text-white hover:bg-slate-950/80'
@@ -137,18 +137,18 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                 </span>
               </div>
             )}
-            <div className="absolute bottom-2 right-2 bg-slate-950/80 text-slate-300 text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
+            <div className="absolute bottom-2 right-2 bg-slate-950/80 text-slate-300 text-[9px] sm:text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-sm">
               <Eye className="w-3 h-3" />
               <span>{listing.viewsCount}</span>
             </div>
           </Link>
 
-          <div className="p-3 sm:p-4 space-y-1.5">
+          <div className="p-3 sm:p-4 space-y-1">
             <div className="flex justify-between items-baseline gap-1">
-              <span className="text-base sm:text-lg font-black text-emerald-400 tracking-tight">
+              <span className="text-sm sm:text-base md:text-lg font-black text-emerald-400 tracking-tight truncate">
                 {formattedPrice}
               </span>
-              <span className="text-[9px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded uppercase shrink-0">
+              <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded uppercase shrink-0">
                 {listing.category}
               </span>
             </div>
@@ -160,11 +160,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             </Link>
 
             <div className="pt-0.5 flex items-center gap-1">
-              <span className="text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded">
+              <span className="text-[9px] sm:text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded">
                 {listing.condition}
               </span>
               {hasPriceDrop && (
-                <span className="text-[10px] font-black text-emerald-400 flex items-center gap-0.5">
+                <span className="text-[9px] sm:text-[10px] font-black text-emerald-400 flex items-center gap-0.5">
                   <TrendingDown className="w-3 h-3" /> -{discountPercent}%
                 </span>
               )}
@@ -172,10 +172,10 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
           </div>
         </div>
 
-        <div className="px-3 sm:px-4 py-2.5 border-t border-slate-800/80 bg-slate-950/40 text-[11px] text-slate-400 flex justify-between items-center gap-1">
+        <div className="px-3 sm:px-4 py-2 border-t border-slate-800/80 bg-slate-950/40 text-[10px] sm:text-[11px] text-slate-400 flex justify-between items-center gap-1">
           <div className="flex items-center gap-1 truncate text-slate-400 min-w-0">
             <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
-            <span className="truncate text-[10px] sm:text-[11px]">{listing.location}</span>
+            <span className="truncate">{listing.location.split(',')[0]}</span>
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
