@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, QrCode, Download, Share2, Copy, Check, Sparkles, MessageCircle, ShieldCheck, MapPin, Building2, Phone } from 'lucide-react';
 import { toast } from 'sonner';
 import VerifiedBadge from './VerifiedBadge';
+import Logo from './Logo';
 import { VerificationBadgeType } from '../types/sealify';
 
 interface StorefrontFlycardModalProps {
@@ -69,7 +70,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
   )}&color=059669&bgcolor=020617`;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 font-sans">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
         <button
           onClick={onClose}
@@ -95,15 +96,7 @@ export const StorefrontFlycardModal: React.FC<StorefrontFlycardModalProps> = ({
 
           {/* Top Brand Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div className="flex items-center gap-2">
-              <div className="bg-white p-1 rounded-lg border border-slate-700 shrink-0">
-                <img src="/logo.png" alt="Sealify" className="h-6 w-auto object-contain" />
-              </div>
-              <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest">
-                VERIFIED MARKETPLACE
-              </span>
-            </div>
-
+            <Logo size="sm" />
             <VerifiedBadge type={verificationType} showText />
           </div>
 

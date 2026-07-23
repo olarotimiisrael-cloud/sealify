@@ -12,6 +12,7 @@ import MapView from '../components/MapView';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
+import Logo from '../components/Logo';
 import LiveActivityToast from '../components/LiveActivityToast';
 import { NeighborhoodFilter } from '../components/NeighborhoodFilter';
 import { 
@@ -89,7 +90,7 @@ export const Index: React.FC = () => {
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
                 {t('trusted_marketplace')} <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">{siteSettings.siteName}</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500">Sealify Nigeria</span>
               </h1>
               <p className="text-slate-300 text-sm sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">{siteSettings.siteDescription}</p>
               
@@ -102,12 +103,10 @@ export const Index: React.FC = () => {
             <div className="lg:col-span-6">
               <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-2xl space-y-6 relative">
                  <div className="flex items-center gap-4 border-b border-slate-800 pb-5">
-                    <div className="w-14 h-14 bg-white p-2 rounded-2xl shadow-lg border border-slate-700 shrink-0">
-                       <img src={siteSettings.logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                    </div>
+                    <Logo size="xl" />
                     <div>
-                       <h3 className="text-xl font-black text-white">{siteSettings.siteName} Official</h3>
-                       <p className="text-xs text-emerald-400 font-bold flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Verified Marketplace Node</p>
+                       <h3 className="text-xl font-black text-white">Official Node</h3>
+                       <p className="text-xs text-emerald-400 font-bold flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4" /> Verified Marketplace</p>
                     </div>
                  </div>
                  <div className="grid grid-cols-3 gap-3 text-center">

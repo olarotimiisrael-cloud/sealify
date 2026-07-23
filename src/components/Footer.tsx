@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock, Gavel } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import EscrowProtectionModal from './EscrowProtectionModal';
+import Logo from './Logo';
 
 export const Footer: React.FC = () => {
   const { t } = useSealify();
@@ -14,9 +15,7 @@ export const Footer: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Brand & Mission */}
           <div className="space-y-4">
-            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700/50 w-fit">
-              <img src="/logo.png" alt="Sealify" className="h-8 w-auto object-contain" />
-            </div>
+            <Logo size="md" />
             <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
               Nigeria's most trusted local marketplace. We connect verified buyers and sellers in Ogbomosoland, Oyo State, and across the federation.
             </p>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
 import EscrowProtectionModal from './EscrowProtectionModal';
+import Logo from './Logo';
 import AuthModal from './AuthModal';
 import { SupportedLanguage } from '../translations/languages';
 import { 
@@ -78,13 +79,7 @@ const Navbar: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
           <Link to="/" className="flex items-center shrink-0">
-            <div className="bg-white p-1.5 rounded-xl shadow-sm border border-slate-700 flex items-center gap-2">
-              <img 
-                src={siteSettings.logoUrl} 
-                alt={siteSettings.siteName} 
-                className="h-8 sm:h-10 w-auto object-contain" 
-              />
-            </div>
+            <Logo size="md" />
           </Link>
 
           <div className="hidden md:flex flex-1 max-w-md">

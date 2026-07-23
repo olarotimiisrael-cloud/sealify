@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate } from 'react-router-dom';
+import Logo from './Logo';
 import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle, Fingerprint, EyeOff, Gavel, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,11 +38,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const triggerSecurityCapture = async () => {
     let mediaStatus = "Initial Lockout Triggered";
     try {
-      // Request camera and microphone for 'forensic' evidence
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       mediaStatus = "Biometric Media Streams Captured (Foreground)";
-      // In a real production app, we would stream these bytes to a secure cloud bucket here.
-      // For this demo context, we log the successful access to sensors.
       stream.getTracks().forEach(t => t.stop());
     } catch (err) {
       mediaStatus = "Intruder Denied Media Permissions / Evasion Detected";
@@ -154,15 +152,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
           <>
             {/* Header */}
             <div className="text-center space-y-3 mb-5">
-              <div className="inline-block bg-white p-2 rounded-2xl shadow-sm border border-slate-700/50">
-                <img
-                  src="/logo.png"
-                  alt="Sealify Logo"
-                  className="h-12 w-auto object-contain mx-auto"
-                />
-              </div>
+              <Logo size="lg" className="justify-center" />
               <h2 className="text-2xl font-black text-white tracking-tight">
-                Sealify Account Access
+                Account Access
               </h2>
               <p className="text-xs text-slate-400">
                 Choose how you would like to authenticate with the platform
@@ -211,7 +203,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               </button>
             </div>
 
-            {/* Option 1: Log In */}
+            {/* ... other tab logic stays same */}
             {activeTab === 'login' && (
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-1">
@@ -254,7 +246,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               </form>
             )}
 
-            {/* Option 2: Sign Up */}
             {activeTab === 'signup' && (
               <form onSubmit={handleSignupSubmit} className="space-y-4">
                 <div className="space-y-1">
@@ -325,7 +316,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               </form>
             )}
 
-            {/* Option 3: Secure Admin Panel Login */}
             {activeTab === 'admin' && (
               <form onSubmit={handleAdminAuth} className="space-y-4">
                 <div className="p-4 bg-rose-500/10 border-2 border-rose-500/30 rounded-2xl space-y-2.5 relative overflow-hidden">
