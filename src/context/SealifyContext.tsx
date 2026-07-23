@@ -173,7 +173,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const saved = localStorage.getItem('sealify_site_settings');
     return saved ? JSON.parse(saved) : {
       logoUrl: '/logo.png',
-      siteName: 'Sealify Nigeria',
+      siteName: 'Sealify Master ControlPanel',
       siteDescription: "Nigeria's Trusted Local Marketplace. Buy, sell, and connect locally in Ogbomosoland, Oyo State, and across Nigeria.",
       ogImage: '/og-image.png',
       contactEmail: 'support@sealify.ng',
@@ -183,7 +183,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
-    return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+    const baseUsers = saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+    // Ensure default admin is present
+    if (!baseUsers.find((u: any) => u.email === DEFAULT_ADMIN.email)) {
+       return [DEFAULT_ADMIN, ...baseUsers];
+    }
+    return baseUsers;
   });
 
   const [reviews, setReviews] = useState<Review[]>(() => {
@@ -295,7 +300,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         minPrice: prices.length > 0 ? Math.min(...prices) : 0,
         maxPrice: prices.length > 0 ? Math.max(...prices) : 0,
         totalAds: catAds.length,
-        demandScore: Math.floor(Math.random() * 40) + 40, // Simulated demand
+        demandScore: Math.floor(Math.random() * 40) + 40, 
         trend: Math.random() > 0.5 ? 'up' : 'down'
       };
     });
@@ -324,7 +329,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_saved_ids', JSON.stringify(savedListingIds));
     localStorage.setItem('sealify_reviews', JSON.stringify(reviews));
     localStorage.setItem('sealify_search_alerts', JSON.stringify(searchAlerts));
-  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts]);
+    localStorage.setItem('sealify_system_config', JSON.stringify(systemConfig));
+    localStorage.setItem('sealify_site_settings', JSON.stringify(siteSettings));
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts, systemConfig, siteSettings]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -353,7 +360,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
     localStorage.setItem('sealify_admin_pin', newPin);
-    toast.success(`Admin Security Master PIN updated!`);
+    addAuditLog('PIN Update', 'Master Security Access PIN modified by Superuser', 'security');
   }, []);
 
   const updateSystemConfig = useCallback((updated: Partial<SystemConfig>) => {
@@ -451,8 +458,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = (email: string, pass: string, pin?: string) => {
     if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password && (!pin || pin === adminPin)) {
-      setUser(DEFAULT_ADMIN);
-      localStorage.setItem('sealify_user', JSON.stringify(DEFAULT_ADMIN));
+      // Find latest admin state from allUsers
+      const latestAdmin = allUsers.find(u => u.email === DEFAULT_ADMIN.email) || DEFAULT_ADMIN;
+      setUser(latestAdmin);
+      localStorage.setItem('sealify_user', JSON.stringify(latestAdmin));
       addAuditLog('Admin Login', `Root session initialized for ${email}`, 'security');
       return true;
     }
@@ -486,7 +495,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const matchLoc = !alert.location || alert.location === 'Any Location' || newListing.location.toLowerCase().includes(alert.location.toLowerCase());
 
       if (matchQuery && matchCategory && matchPrice && matchLoc) {
-        // Notification logic would target alert.userId
         if (alert.userId !== user.id) {
            addNotification({
              type: 'alert_match',
@@ -505,12 +513,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateListing = useCallback((id: string, data: Partial<Listing>) => {
     setListings(prev => {
       const listing = prev.find(l => l.id === id);
-      
-      // Smart Price Drop Notification System
       if (listing && data.price && data.price < listing.price) {
-        const savedByUsers = savedListingIds.includes(id); 
         const dropPercent = Math.round(((listing.price - data.price) / listing.price) * 100);
-        
         if (dropPercent >= 5) {
           addNotification({
             type: 'price_drop',
@@ -520,10 +524,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           });
         }
       }
-
       return prev.map(l => l.id === id ? { ...l, ...data } : l);
     });
-  }, [addNotification, savedListingIds]);
+  }, [addNotification]);
 
   const deleteListing = (id: string) => {
     setListings(prev => prev.filter(l => l.id !== id));
@@ -594,8 +597,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        updateUser(req.userId, { password: req.newPassword });
     }
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Password request #${id} ${status}`);
-    addAuditLog('Password Request Processed', `Status for #${id} set to ${status}`, 'verification');
+    toast.success(`Password request #${id} \${status}`);
+    addAuditLog('Password Request Processed', `Status for #${id} set to \${status}`, 'verification');
   };
 
   const submitVerificationRequest = (req: any) => setVerificationRequests(prev => [{ ...req, id: 'ver_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
@@ -606,8 +609,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        updateUser(req.userId, { verified: true, verificationType: req.type });
     }
     setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Verification #${id} ${status}`);
-    addAuditLog('Verification Request Processed', `Status for #${id} set to ${status}`, 'verification');
+    toast.success(`Verification #${id} \${status}`);
+    addAuditLog('Verification Request Processed', `Status for #${id} set to \${status}`, 'verification');
   };
 
   const submitPromotionPaymentRequest = (req: any) => setPromotionPaymentRequests(prev => [{ ...req, id: 'ppr_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
@@ -618,14 +621,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        promoteListing(req.listingId, req.durationMonths, req.planName);
     }
     setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Payment #${id} ${status}`);
-    addAuditLog('Payment Processed', `Promotion for #${id} ${status}`, 'finance');
+    toast.success(`Payment #${id} \${status}`);
+    addAuditLog('Payment Processed', `Promotion for #${id} \${status}`, 'finance');
   };
 
   const addAnnouncement = (ann: any) => setAnnouncements(prev => [{ ...ann, id: 'ann_' + Date.now(), createdAt: 'Just now' }, ...prev]);
-
   const toggleAnnouncement = (id: string) => setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
-
   const deleteAnnouncement = (id: string) => setAnnouncements(prev => prev.filter(a => a.id !== id));
 
   return (
