@@ -18,6 +18,7 @@ import {
   MapPin, 
   Phone, 
   MessageSquare, 
+  MessageCircle,
   Heart, 
   ArrowLeft, 
   Calendar,
@@ -92,6 +93,12 @@ const ListingDetail: React.FC = () => {
 
   const formattedPrice = formatNGN(listing.price);
 
+  const cleanPhone = listing.sellerPhone.replace(/[^0-9]/g, '');
+  const formattedWhatsappPhone = cleanPhone.startsWith('0') ? `234${cleanPhone.slice(1)}` : cleanPhone;
+  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
+    `Hello ${listing.sellerName}, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice}). Is it still available?`
+  )}`;
+
   const getDaysLeft = (): number | null => {
     if (!listing.promotionEndDate) return null;
     const end = new Date(listing.promotionEndDate);
@@ -132,7 +139,7 @@ const ListingDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
       <SEO 
         title={`${listing.title} — ${formattedPrice} | Sealify Nigeria`} 
         description={`${listing.description.substring(0, 160)}... Available in ${listing.location}.`}
@@ -395,13 +402,25 @@ const ListingDetail: React.FC = () => {
               />
 
               <div className="space-y-3 pt-2">
-                <button
-                  onClick={() => setShowPhone(!showPhone)}
-                  className="w-full py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-sm flex items-center justify-center gap-2 border border-slate-700 transition-colors"
-                >
-                  <Phone className="w-4 h-4 text-emerald-400" />
-                  <span>{showPhone ? listing.sellerPhone : 'Show Phone Number'}</span>
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setShowPhone(!showPhone)}
+                    className="py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>{showPhone ? listing.sellerPhone : 'Show Phone'}</span>
+                  </button>
+
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition-colors"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Chat WhatsApp</span>
+                  </a>
+                </div>
 
                 <div className="space-y-2 pt-2 border-t border-slate-800">
                   <textarea

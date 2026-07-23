@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
@@ -44,9 +44,21 @@ const Navbar: React.FC = () => {
 
   const unreadNotifications = notifications.filter((n) => !n.read).length;
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsMagicSearchOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <>
-      <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">
+      <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl font-sans">
         <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-4">
           
           <Link to="/" className="flex items-center shrink-0">
@@ -71,7 +83,7 @@ const Navbar: React.FC = () => {
               <div className="flex items-center gap-1.5">
                 <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-800 rounded-md border border-slate-700 text-[10px] font-black group-hover:text-emerald-400 transition-colors">
                   <Command className="w-2.5 h-2.5" />
-                  <span>ESC</span>
+                  <span>K</span>
                 </div>
               </div>
             </button>
