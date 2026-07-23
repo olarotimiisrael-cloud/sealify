@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Listing, Condition } from '../types/sealify';
 import { X, Edit3, Check, Video, FileVideo } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -46,7 +45,6 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Strict compulsory field validation
     if (!title.trim() || !price || !location.trim() || !description.trim()) {
       toast.error('All fields except video are compulsory. Please fill title, price, location and description.');
       return;
@@ -114,6 +112,7 @@ export const EditListingModal: React.FC<EditListingModalProps> = ({
                 ))}
               </select>
             </div>
+
           </div>
 
           <div className="space-y-1">

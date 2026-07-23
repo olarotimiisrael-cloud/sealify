@@ -39,7 +39,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
     { day: 'Sun', count: Math.round(totalViews * 0.1) },
   ];
 
-  const maxDayViews = Math.max(...weeklyViews.map((w) => w.count)) || 1;
+  const maxDayViews = Math.max(...weeklyViews.map(w => w.count)) || 1;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -66,7 +66,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
               <Eye className="w-4 h-4 text-emerald-400 mx-auto" />
               <p className="text-xl font-black text-white">{totalViews}</p>
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">Total Views</p>
+              <p className="text-[10px] text-slate-400 font-semibold">Total Views</p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
@@ -103,25 +103,16 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
                 );
               })}
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Visibility Optimization Checklist</h4>
-            <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                <span className="text-slate-300 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  Multiple product photos uploaded
+            <div className="space-y-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Visibility Optimization Checklist</h4>
+              <div className="space-y-2 text-xs">
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
+                  <span className="text-slate-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    Multiple product photos uploaded
                 </span>
                 <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">Good</span>
-              </div>
-
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
-                <span className="text-slate-300 flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  Asking price competitive for {listing.category}
-                </span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">Fair</span>
               </div>
 
               <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
@@ -132,14 +123,14 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
                 <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">+5x Boost</span>
               </div>
             </div>
-          </div>
 
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
-          >
-            Close Analytics Dashboard
-          </button>
+            <button
+              onClick={onClose}
+              className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
+            >
+              Close Analytics Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </div>
