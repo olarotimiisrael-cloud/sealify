@@ -29,7 +29,7 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 };
 
 export const CategoryBar: React.FC = () => {
-  const { activeCategory, setActiveCategory, categories } = useSealify();
+  const { activeCategory, setActiveCategory, categories, t } = useSealify();
 
   return (
     <div className="bg-slate-900 border-b border-slate-800 py-3 px-4 overflow-x-auto no-scrollbar">
@@ -43,7 +43,7 @@ export const CategoryBar: React.FC = () => {
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>All Categories</span>
+          <span>{t('all_categories')}</span>
         </button>
 
         {categories.map((cat) => {
