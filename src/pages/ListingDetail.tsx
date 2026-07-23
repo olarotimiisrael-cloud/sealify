@@ -7,6 +7,7 @@ import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SafeMeetupModal from '../components/SafeMeetupModal';
+import LightboxModal from '../components/LightboxModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -17,7 +18,6 @@ import {
   Phone, 
   MessageSquare, 
   Heart, 
-  Share2, 
   ArrowLeft, 
   Calendar,
   Eye,
@@ -30,8 +30,6 @@ import {
   QrCode,
   Shield,
   Maximize2,
-  X,
-  Play,
   Video
 } from 'lucide-react';
 
@@ -477,6 +475,14 @@ const ListingDetail: React.FC = () => {
         onClose={() => setIsMeetupOpen(false)}
         itemTitle={listing.title}
         onSelectSpot={handleSelectMeetupSpot}
+      />
+      <LightboxModal
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        images={listing.images}
+        currentIndex={activeImageIndex}
+        onIndexChange={setActiveImageIndex}
+        title={listing.title}
       />
       <MobileNav />
     </div>
