@@ -89,6 +89,73 @@ const DEFAULT_ADMIN: UserProfile = {
   password: 'Tscw+1234',
 };
 
+const INITIAL_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv_1',
+    listingId: 'lst_100',
+    listingTitle: 'Toyota Camry 2018',
+    listingImage: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&auto=format',
+    listingPrice: 4500000,
+    otherUser: {
+      id: 'usr_1',
+      name: 'Adebowale Ogunleye',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300',
+    },
+    lastMessage: 'Is the price slightly negotiable for cash pickup?',
+    lastMessageTime: '10m ago',
+    messages: [
+      {
+        id: 'm1',
+        senderId: 'usr_1',
+        receiverId: 'usr_admin_default',
+        listingId: 'lst_100',
+        content: 'Hello! Thanks for inspecting the Toyota Camry listing.',
+        createdAt: '15m ago',
+      },
+      {
+        id: 'm2',
+        senderId: 'usr_admin_default',
+        receiverId: 'usr_1',
+        listingId: 'lst_100',
+        content: 'Is the price slightly negotiable for cash pickup?',
+        createdAt: '10m ago',
+      },
+    ],
+  },
+  {
+    id: 'conv_2',
+    listingId: 'lst_200',
+    listingTitle: 'iPhone 15 Pro Max',
+    listingImage: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&auto=format',
+    listingPrice: 1200000,
+    otherUser: {
+      id: 'usr_2',
+      name: 'Blessing Okonjo',
+      avatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=300',
+    },
+    lastMessage: 'Can we meet at Ogbomoso Divisional Police HQ Safe Zone?',
+    lastMessageTime: '1h ago',
+    messages: [
+      {
+        id: 'm3',
+        senderId: 'usr_2',
+        receiverId: 'usr_admin_default',
+        listingId: 'lst_200',
+        content: 'Hi! Yes, the iPhone is brand new sealed in box.',
+        createdAt: '2h ago',
+      },
+      {
+        id: 'm4',
+        senderId: 'usr_admin_default',
+        receiverId: 'usr_2',
+        listingId: 'lst_200',
+        content: 'Can we meet at Ogbomoso Divisional Police HQ Safe Zone?',
+        createdAt: '1h ago',
+      },
+    ],
+  },
+];
+
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -146,7 +213,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    const saved = localStorage.getItem('sealify_conversations');
+    return saved ? JSON.parse(saved) : INITIAL_CONVERSATIONS;
+  });
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   useEffect(() => {
@@ -156,6 +226,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_listings', JSON.stringify(listings));
   }, [listings]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_conversations', JSON.stringify(conversations));
+  }, [conversations]);
 
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
@@ -243,10 +317,67 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const promoteListing = (id: string, months: number, plan: string) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: months } : l));
-    // If the user isn't premium yet, ad promotion automatically grants premium badge
     if (user && user.verificationType !== 'premium') {
       updateUser(user.id, { verified: true, verificationType: 'premium' });
     }
+  };
+
+  const sendMessage = (listingId: string, receiverId: string, content: string) => {
+    if (!user) {
+      toast.error('Please log in to send messages');
+      return;
+    }
+
+    const listing = listings.find((l) => l.id === listingId);
+    const receiverUser = allUsers.find((u) => u.id === receiverId) || {
+      id: receiverId,
+      fullName: listing?.sellerName || 'Marketplace Member',
+      avatarUrl: listing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    };
+
+    const newMsg: Message = {
+      id: 'msg_' + Date.now(),
+      senderId: user.id,
+      receiverId: receiverId,
+      listingId: listingId,
+      content,
+      createdAt: 'Just now',
+    };
+
+    setConversations((prev) => {
+      const existingIdx = prev.findIndex((c) => c.listingId === listingId && c.otherUser.id === receiverId);
+
+      if (existingIdx !== -1) {
+        const updated = [...prev];
+        const conv = updated[existingIdx];
+        updated[existingIdx] = {
+          ...conv,
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [...conv.messages, newMsg],
+        };
+        return updated;
+      } else {
+        const newConv: Conversation = {
+          id: 'conv_' + Date.now(),
+          listingId: listingId,
+          listingTitle: listing?.title || 'Classified Item',
+          listingImage: listing?.images[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300',
+          listingPrice: listing?.price || 0,
+          otherUser: {
+            id: receiverUser.id,
+            name: receiverUser.fullName,
+            avatar: receiverUser.avatarUrl,
+          },
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [newMsg],
+        };
+        return [newConv, ...prev];
+      }
+    });
+
+    toast.success('Message sent to seller!');
   };
 
   const addNotification = useCallback((notif: any) => {
@@ -339,7 +470,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setActiveCategory: (cat) => setFilters(prev => ({ ...prev, category: cat })),
       compareListingIds, toggleCompareListing, isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
       createListing, updateListing, deleteListing, markAsSold, promoteListing,
-      conversations, sendMessage: () => {},
+      conversations, sendMessage,
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest
