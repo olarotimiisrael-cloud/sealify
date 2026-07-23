@@ -10,6 +10,7 @@ import SoldConfirmationModal from '../components/SoldConfirmationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import SalesReportModal from '../components/SalesReportModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
@@ -29,7 +30,9 @@ import {
   ShieldAlert,
   Send,
   FileText,
-  FileSpreadsheet
+  FileSpreadsheet,
+  QrCode,
+  Share2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -45,6 +48,7 @@ const MyAds: React.FC = () => {
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [soldPromptListing, setSoldPromptListing] = useState<Listing | null>(null);
   const [receiptListing, setReceiptListing] = useState<Listing | null>(null);
+  const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -336,6 +340,15 @@ const MyAds: React.FC = () => {
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
                   <button
+                    onClick={() => setFlycardListing(ad)}
+                    className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+                    title="Generate WhatsApp Status Poster"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span>Flyer Card</span>
+                  </button>
+
+                  <button
                     onClick={() => setAnalyticsListing(ad)}
                     className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors"
                   >
@@ -408,6 +421,23 @@ const MyAds: React.FC = () => {
       <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
       <TransactionReceiptModal isOpen={!!receiptListing} onClose={() => setReceiptListing(null)} listing={receiptListing} onSendToChat={handleSendReceiptToChat} />
       <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
+      
+      {flycardListing && (
+        <StorefrontFlycardModal
+          isOpen={!!flycardListing}
+          onClose={() => setFlycardListing(null)}
+          title={flycardListing.title}
+          price={flycardListing.price}
+          location={flycardListing.location}
+          image={flycardListing.images[0]}
+          sellerName={user?.fullName || flycardListing.sellerName}
+          sellerPhone={user?.phoneNumber || flycardListing.sellerPhone}
+          verificationType={user?.verificationType || flycardListing.sellerVerificationType}
+          businessName={user?.businessName}
+          itemUrl={`${window.location.origin}/listing/${flycardListing.id}`}
+        />
+      )}
+
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} sellerName={user?.fullName || 'Seller'} />
       <MobileNav />
     </div>
