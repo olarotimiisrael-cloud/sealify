@@ -147,6 +147,12 @@ const SellerProfile: React.FC = () => {
                     <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     Member since {memberSince}
                   </span>
+                  {sellerUser?.role && (
+                     <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-black uppercase text-[10px] flex items-center gap-1">
+                        <UserCheck className="w-3 h-3" />
+                        Currently {sellerUser.role === 'admin' ? 'Seamless' : sellerUser.role}
+                     </span>
+                  )}
                 </div>
               </div>
             </div>

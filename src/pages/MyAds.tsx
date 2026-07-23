@@ -188,7 +188,6 @@ const MyAds: React.FC = () => {
           </div>
         </div>
 
-        {/* My Ads Content... existing list code ... */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Package className="w-5 h-5 text-emerald-400" />
@@ -365,7 +364,6 @@ const MyAds: React.FC = () => {
         )}
       </main>
 
-      {/* Modals and Nav ... */}
       <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
       <SoldConfirmationModal isOpen={!!soldPromptListing} onClose={() => setSoldPromptListing(null)} listingTitle={soldPromptListing?.title || ''} onConfirm={() => soldPromptListing && markAsSold(soldPromptListing.id)} />
