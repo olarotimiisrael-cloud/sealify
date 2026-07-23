@@ -15,15 +15,6 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
 }) => {
   if (!isOpen || !listing) return null;
 
-  const formatNGN = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
   const totalViews = listing.viewsCount || 142;
   const savedCount = Math.round(totalViews * 0.18);
   const totalInquiries = Math.round(totalViews * 0.08) || 3;
@@ -66,7 +57,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
               <Eye className="w-4 h-4 text-emerald-400 mx-auto" />
               <p className="text-xl font-black text-white">{totalViews}</p>
-              <p className="text-[10px] text-slate-400 font-semibold">Total Views</p>
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">Total Views</p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 p-3.5 rounded-2xl text-center space-y-1">
@@ -88,6 +79,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
               <span className="text-[11px] text-emerald-400 font-semibold">{ctrRate}% Buyer Conversion</span>
             </div>
 
+            {/* Simple CSS-based Chart for instant rendering speed */}
             <div className="flex items-end justify-between gap-2 h-28 pt-4 pb-1 border-b border-slate-800">
               {weeklyViews.map((item) => {
                 const heightPercent = Math.round((item.count / maxDayViews) * 100);
