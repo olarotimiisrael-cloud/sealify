@@ -8,6 +8,7 @@ import ReportModal from '../components/ReportModal';
 import OfferModal from '../components/OfferModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SafeMeetupModal from '../components/SafeMeetupModal';
+import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import LightboxModal from '../components/LightboxModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -33,7 +34,8 @@ import {
   Shield,
   Maximize2,
   Video,
-  Share2
+  Share2,
+  Truck
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -49,6 +51,7 @@ const ListingDetail: React.FC = () => {
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
+  const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
@@ -138,6 +141,15 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
+  const handleSendDeliveryEstimate = (estimateMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, estimateMsg);
+    navigate('/messages');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
       <SEO 
@@ -159,6 +171,15 @@ const ListingDetail: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsDeliveryOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              title="Estimate Delivery / Shipping Cost"
+            >
+              <Truck className="w-4 h-4" />
+              <span className="hidden sm:inline">Delivery Fee</span>
+            </button>
+
             <button
               onClick={() => setIsMeetupOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-teal-400 hover:text-white flex items-center gap-1 text-xs font-bold"
@@ -503,6 +524,13 @@ const ListingDetail: React.FC = () => {
         onClose={() => setIsMeetupOpen(false)}
         itemTitle={listing.title}
         onSelectSpot={handleSelectMeetupSpot}
+      />
+      <DeliveryEstimatorModal
+        isOpen={isDeliveryOpen}
+        onClose={() => setIsDeliveryOpen(false)}
+        itemTitle={listing.title}
+        itemLocation={listing.location}
+        onSendEstimateToChat={handleSendDeliveryEstimate}
       />
       <LightboxModal
         isOpen={isLightboxOpen}
