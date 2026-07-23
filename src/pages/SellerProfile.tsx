@@ -9,6 +9,7 @@ import TrustScore from '../components/TrustScore';
 import Footer from '../components/Footer';
 import ReviewModal from '../components/ReviewModal';
 import AuthModal from '../components/AuthModal';
+import ShareQrModal from '../components/ShareQrModal';
 import SEO from '../components/SEO';
 import { 
   MapPin, 
@@ -16,13 +17,21 @@ import {
   ArrowLeft, 
   Eye, 
   MessageSquare, 
+  MessageCircle,
   Package, 
   Star, 
   Award, 
   ShieldCheck, 
   Phone,
   Plus,
-  UserCheck
+  UserCheck,
+  Bell,
+  Check,
+  Share2,
+  Clock,
+  Truck,
+  CreditCard,
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,17 +53,20 @@ const SellerProfile: React.FC = () => {
   const sampleListing = sellerListings[0] || listings[0];
 
   const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Verified Seller';
+  const businessName = sellerUser?.businessName || sampleListing?.title ? `${sellerName}'s Store` : 'Local Merchant';
   const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
   const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
-  const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 800 000 0000';
+  const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 813 120 8468';
   const memberSince = sellerUser?.memberSince || '2023';
 
   const [activeTab, setActiveTab] = useState<'listings' | 'overview' | 'reviews'>('listings');
   const [showPhone, setShowPhone] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const [reviews, setReviews] = useState<ReviewItem[]>([
     {
@@ -76,6 +88,21 @@ const SellerProfile: React.FC = () => {
   ]);
 
   const totalViews = sellerListings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
+
+  const handleToggleFollow = () => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to follow storefronts');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    const nextState = !isFollowing;
+    setIsFollowing(nextState);
+    if (nextState) {
+      toast.success(`You are now following ${sellerName}! You will receive alerts when new ads are posted.`);
+    } else {
+      toast.info(`Unfollowed ${sellerName}`);
+    }
+  };
 
   const handleOpenReviewModal = () => {
     if (!isAuthenticated) {
@@ -101,6 +128,12 @@ const SellerProfile: React.FC = () => {
   const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : '5.0';
+
+  const cleanPhone = sellerPhone.replace(/[^0-9]/g, '');
+  const formattedWhatsappPhone = cleanPhone.startsWith('0') ? `234${cleanPhone.slice(1)}` : cleanPhone;
+  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
+    `Hello ${sellerName}, I am messaging you from your Sealify Vendor Storefront. I would like to inquire about your available inventory.`
+  )}`;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
@@ -138,7 +171,14 @@ const SellerProfile: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3 text-xs text-slate-400 justify-center sm:justify-start flex-wrap">
+                {sellerUser?.businessName && (
+                  <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1">
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>{sellerUser.businessName}</span>
+                  </p>
+                )}
+
+                <div className="flex items-center gap-3 text-xs text-slate-400 justify-center sm:justify-start flex-wrap pt-0.5">
                   <span className="flex items-center gap-1">
                     <MapPin className="w-3.5 h-3.5 text-slate-500" />
                     {sellerLocation}
@@ -148,22 +188,54 @@ const SellerProfile: React.FC = () => {
                     Member since {memberSince}
                   </span>
                   {sellerUser?.role && (
-                     <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-black uppercase text-[10px] flex items-center gap-1">
-                        <UserCheck className="w-3 h-3" />
-                        Currently {sellerUser.role === 'admin' ? 'Seamless' : sellerUser.role}
-                     </span>
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-black uppercase text-[10px] flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" />
+                      Currently {sellerUser.role === 'admin' ? 'Seamless' : sellerUser.role}
+                    </span>
                   )}
                 </div>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowPhone(!showPhone)}
-              className="px-5 py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-2xl text-xs flex items-center gap-2 border border-slate-700 transition-colors shadow"
-            >
-              <Phone className="w-4 h-4 text-emerald-400" />
-              <span>{showPhone ? sellerPhone : 'Contact Seller'}</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
+              <button
+                onClick={handleToggleFollow}
+                className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center gap-2 transition-all shadow ${
+                  isFollowing
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                }`}
+              >
+                {isFollowing ? <Check className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                <span>{isFollowing ? 'Following Store' : 'Follow Vendor'}</span>
+              </button>
+
+              <button
+                onClick={() => setIsShareModalOpen(true)}
+                className="p-3 bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white rounded-2xl border border-slate-700 transition-colors"
+                title="Share Storefront Link"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+
+              <button
+                onClick={() => setShowPhone(!showPhone)}
+                className="px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-2xl text-xs flex items-center gap-2 border border-slate-700 transition-colors shadow"
+              >
+                <Phone className="w-4 h-4 text-emerald-400" />
+                <span>{showPhone ? sellerPhone : 'Show Phone'}</span>
+              </button>
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
           </div>
 
           {/* Tab Navigation */}
@@ -233,7 +305,7 @@ const SellerProfile: React.FC = () => {
               salesCount={sellerListings.length}
             />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
                 <p className="text-xs font-bold text-slate-400 uppercase">Total Published Items</p>
                 <p className="text-3xl font-black text-white">{sellerListings.length}</p>
@@ -242,6 +314,45 @@ const SellerProfile: React.FC = () => {
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
                 <p className="text-xs font-bold text-slate-400 uppercase">Cumulative Views</p>
                 <p className="text-3xl font-black text-emerald-400">{totalViews}</p>
+              </div>
+
+              <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
+                <p className="text-xs font-bold text-slate-400 uppercase">Average Buyer Rating</p>
+                <p className="text-3xl font-black text-amber-400 flex items-center gap-1">
+                  <span>{averageRating}</span>
+                  <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                </p>
+              </div>
+            </div>
+
+            {/* Merchant Operating Guidelines */}
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
+              <h3 className="font-extrabold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-emerald-400" />
+                <span>Store Operations & Fulfillments</span>
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                    <Clock className="w-3 h-3 text-emerald-400" /> Store Hours
+                  </span>
+                  <p className="font-bold text-white">Mon - Sat: 8:00 AM - 7:00 PM</p>
+                </div>
+
+                <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                    <Truck className="w-3 h-3 text-teal-400" /> Delivery Options
+                  </span>
+                  <p className="font-bold text-white">Ogbomoso & Interstate Dispatch</p>
+                </div>
+
+                <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl space-y-1">
+                  <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                    <CreditCard className="w-3 h-3 text-amber-400" /> Accepted Payments
+                  </span>
+                  <p className="font-bold text-white">Bank Transfer / Cash / Escrow</p>
+                </div>
               </div>
             </div>
           </div>
@@ -318,6 +429,14 @@ const SellerProfile: React.FC = () => {
         onClose={() => setIsReviewModalOpen(false)}
         sellerName={sellerName}
         onAddReview={handleAddReview}
+      />
+
+      <ShareQrModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        listingTitle={`${sellerName}'s Storefront`}
+        listingPrice={0}
+        listingUrl={window.location.href}
       />
 
       <AuthModal
