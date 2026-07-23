@@ -99,7 +99,7 @@ export const VendorsPage: React.FC = () => {
               placeholder="Search store name, merchant, or area..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
 
@@ -160,7 +160,7 @@ export const VendorsPage: React.FC = () => {
                             <p className="text-xs font-bold text-emerald-400 truncate">{vendor.businessName}</p>
                           )}
                           <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                             <span className="truncate">{vendor.location || 'Ogbomoso, Oyo State'}</span>
                           </p>
                         </div>

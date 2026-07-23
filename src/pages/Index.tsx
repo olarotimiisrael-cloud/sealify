@@ -79,7 +79,7 @@ const Index: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb:16 md:pb-0">
       <SEO />
       <Navbar />
       
@@ -188,14 +188,14 @@ const Index: React.FC = () => {
                   <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl space-y-1.5 hover:border-teal-500/40 transition-colors">
                     <div className="flex items-center justify-between text-teal-400">
                       <ShieldCheck className="w-4 h-4" />
-                      <span className="text-[9px] font-black uppercase bg-teal-500/10 px-2 py-0.5 rounded border border-teal-500/20">CCTV Safe</span>
+                      <span className="text-[9px] font-black uppercase bg-teal-500/10 px-2 py-0.5 rounded border border-emerald-500/20">CCTV Safe</span>
                     </div>
                     <h4 className="font-extrabold text-xs text-white">Safe Meetup Zones</h4>
                   </div>
                   <div className="bg-slate-950/80 border border-slate-800 p-3.5 rounded-2xl space-y-1.5 hover:border-amber-500/40 transition-colors">
                     <div className="flex items-center justify-between text-amber-400">
                       <MessageSquare className="w-4 h-4" />
-                      <span className="text-[9px] font-black uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Direct</span>
+                      <span className="text-[9px] font-black uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Direct</span>
                     </div>
                     <h4 className="font-extrabold text-xs text-white">Direct Phone & Chat</h4>
                   </div>
