@@ -18,6 +18,7 @@ const CATEGORIES: (Category | 'All')[] = [
   'Services',
   'Jobs',
   'Beauty & Health',
+  'Utility & Energy',
 ];
 
 const CONDITIONS: (Condition | 'All')[] = [
@@ -87,7 +88,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  minPrice: e.target.value ? Number(e.target.value) : null,
+                  minPrice: e.target.value ? Number(e.target.value) : null
                 }))
               }
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
@@ -100,7 +101,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
               onChange={(e) =>
                 setFilters((prev) => ({
                   ...prev,
-                  maxPrice: e.target.value ? Number(e.target.value) : null,
+                  maxPrice: e.target.value ? Number(e.target.value) : null
                 }))
               }
               className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
@@ -126,7 +127,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
                 onClick={() =>
                   setFilters((prev) => ({
                     ...prev,
-                    location: prev.location === city ? '' : city,
+                    location: prev.location === city ? '' : city
                   }))
                 }
                 className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${
@@ -172,7 +173,7 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
             onChange={(e) =>
               setFilters((prev) => ({
                 ...prev,
-                sortBy: e.target.value as 'newest' | 'price-asc' | 'price-desc',
+                sortBy: e.target.value as 'newest' | 'price-asc' | 'price-desc'
               }))
             }
             className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"

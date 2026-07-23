@@ -10,7 +10,8 @@ import {
   Wrench, 
   Briefcase, 
   Sparkles,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 
 interface CategoryItem {
@@ -29,6 +30,7 @@ const categories: CategoryItem[] = [
   { label: 'Services', icon: Wrench, color: 'text-cyan-400 bg-cyan-500/10' },
   { label: 'Jobs', icon: Briefcase, color: 'text-indigo-400 bg-indigo-500/10' },
   { label: 'Beauty & Health', icon: Sparkles, color: 'text-rose-400 bg-rose-500/10' },
+  { label: 'Utility & Energy', icon: Zap, color: 'text-yellow-400 bg-yellow-500/10' },
 ];
 
 const CategoryBar: React.FC = () => {

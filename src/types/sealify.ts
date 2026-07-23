@@ -1,4 +1,4 @@
-export type Category = 
+export type Category =
   | 'Vehicles'
   | 'Real Estate'
   | 'Electronics'
@@ -6,7 +6,8 @@ export type Category =
   | 'Home & Furniture'
   | 'Services'
   | 'Jobs'
-  | 'Beauty & Health';
+  | 'Beauty & Health'
+  | 'Utility & Energy';
 
 export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
 
