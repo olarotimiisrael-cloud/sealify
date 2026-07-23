@@ -32,9 +32,9 @@ export const LiveActivityToast: React.FC = () => {
 
   return (
     <div 
-      className={`fixed bottom-24 left-6 z-[45] max-w-[240px] transition-all duration-500 transform ${
+      className="fixed bottom-24 left-6 z-[45] max-w-[240px] transition-all duration-500 transform ${
         visible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
-      }`}
+      }"
     >
       <div className="bg-slate-900/90 border border-slate-800 backdrop-blur-xl p-3 rounded-2xl shadow-2xl flex items-start gap-3">
         <div className={`p-2 rounded-xl bg-slate-950 border border-slate-800 ${currentActivity.color}`}>

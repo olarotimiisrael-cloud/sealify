@@ -125,7 +125,7 @@ export const CompareModal: React.FC<CompareModalProps> = ({ isOpen, onClose }) =
                 </div>
               ))}
             </div>
-          }
+          </div>
         </div>
       </div>
     </div>
