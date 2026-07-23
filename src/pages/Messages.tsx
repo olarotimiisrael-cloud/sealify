@@ -8,7 +8,7 @@ import OfferModal from '../components/OfferModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const QUICK_REPLIES = [
@@ -94,6 +94,12 @@ const Messages: React.FC = () => {
     
     // Send Receipt Text to Chat
     sendMessage(activeConv.listingId, activeConv.otherUser.id, receiptMsg);
+  };
+
+  const handleAcceptOfferInline = (offerText: string) => {
+    if (!activeConv) return;
+    sendMessage(activeConv.listingId, activeConv.otherUser.id, `✅ OFFER ACCEPTED! I accept your price proposal. Let's arrange a safe meetup inspection.`);
+    toast.success('Offer accepted! Confirmation sent to buyer.');
   };
 
   if (!isAuthenticated) {
@@ -226,7 +232,7 @@ const Messages: React.FC = () => {
                   return (
                     <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div
-                        className={`max-w-[80%] p-3.5 rounded-2xl text-xs space-y-1 ${
+                        className={`max-w-[80%] p-3.5 rounded-2xl text-xs space-y-2 ${
                           isMe
                             ? 'bg-emerald-500 text-slate-950 font-medium rounded-br-none shadow-md'
                             : isLocationMsg
@@ -243,6 +249,26 @@ const Messages: React.FC = () => {
                         }`}
                       >
                         <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
+
+                        {/* Interactive Accept Offer Option for Received Offers */}
+                        {!isMe && isOfferMsg && (
+                          <div className="pt-2 border-t border-amber-500/30 flex gap-2">
+                            <button
+                              onClick={() => handleAcceptOfferInline(m.content)}
+                              className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-lg text-[10px] uppercase flex items-center justify-center gap-1 shadow"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Accept Offer</span>
+                            </button>
+                            <button
+                              onClick={() => setIsOfferOpen(true)}
+                              className="flex-1 py-1.5 bg-slate-900 text-amber-300 font-bold rounded-lg text-[10px] uppercase flex items-center justify-center gap-1 border border-amber-500/30"
+                            >
+                              <span>Counter Offer</span>
+                            </button>
+                          </div>
+                        )}
+
                         <span className={`block text-[9px] text-right ${isMe ? 'text-slate-900/70 font-bold' : 'text-slate-500'}`}>
                           {m.createdAt}
                         </span>
@@ -282,7 +308,7 @@ const Messages: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setIsRecordingVoice(!isRecordingVoice)}
+                  onClick={handleVoiceNote}
                   className={`p-2.5 rounded-xl border transition-colors ${
                     isRecordingVoice
                       ? 'bg-rose-500 text-white border-rose-400 animate-pulse'

@@ -116,6 +116,28 @@ export const AdminDashboard: React.FC = () => {
     toast.success(`User ${u.fullName} is now ${newStatus.toUpperCase()}`);
   };
 
+  const handleExportUsersCSV = () => {
+    const headers = ['User ID', 'Full Name', 'Email', 'Role', 'Verified', 'Badge Type', 'Location', 'Status'];
+    const rows = allUsers.map(u => [u.id, `"${u.fullName}"`, u.email, u.role, u.verified ? 'YES' : 'NO', u.verificationType || 'none', `"${u.location}"`, u.status || 'active']);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `Sealify_Users_Export_${Date.now()}.csv`;
+    link.click();
+    toast.success('Exported Users Directory to CSV!');
+  };
+
+  const handleExportListingsCSV = () => {
+    const headers = ['Ad ID', 'Title', 'Category', 'Price', 'Seller ID', 'Seller Name', 'Status', 'Views', 'Promoted'];
+    const rows = listings.map(l => [l.id, `"${l.title.replace(/"/g, '""')}"`, l.category, l.price, l.sellerId, `"${l.sellerName}"`, l.status, l.viewsCount, l.featured ? 'YES' : 'NO']);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const link = document.createElement('a');
+    link.href = encodeURI(csvContent);
+    link.download = `Sealify_Listings_Export_${Date.now()}.csv`;
+    link.click();
+    toast.success('Exported Listings Inventory to CSV!');
+  };
+
   const formatNGN = (amount: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(amount);
 
   if (!isAdmin) return (
@@ -502,15 +524,24 @@ export const AdminDashboard: React.FC = () => {
                   <h3 className="font-extrabold text-base text-white">Registered Marketplace Members ({allUsers.length})</h3>
                   <p className="text-xs text-slate-400">Search and edit user records, vendor roles, and restrictions</p>
                 </div>
-                <div className="relative w-full sm:w-72">
-                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    placeholder="Search name or email..."
-                    value={userSearch}
-                    onChange={(e) => setUserSearch(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
-                  />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={handleExportUsersCSV}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export CSV</span>
+                  </button>
+                  <div className="relative flex-1 sm:w-64">
+                    <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search name or email..."
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -601,7 +632,18 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                </div>
              )}
-             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-4 p-4 sm:p-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-extrabold text-base text-white">Marketplace Active Listings ({listings.length})</h3>
+                  <button
+                    onClick={handleExportListingsCSV}
+                    className="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Export Listings CSV</span>
+                  </button>
+                </div>
+
                 <div className="overflow-x-auto no-scrollbar">
                   <table className="w-full text-left text-xs min-w-[500px]">
                     <thead className="bg-slate-950 border-b border-slate-800 font-black uppercase text-slate-500"><tr className="px-6 py-4"><th>Classified Ad</th><th>Status</th><th>Performance</th><th>Action</th></tr></thead>

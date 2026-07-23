@@ -6,6 +6,7 @@ import { CategoryBar } from '../components/CategoryBar';
 import { CategoryGrid } from '../components/CategoryGrid';
 import ListingCard from '../components/ListingCard';
 import FeaturedAdSection from '../components/FeaturedAdSection';
+import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
 import FilterDrawer from '../components/FilterDrawer';
 import SafetyTipsModal from '../components/SafetyTipsModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
@@ -287,6 +288,9 @@ export const Index: React.FC = () => {
         
         {/* Neighborhood Filter */}
         <NeighborhoodFilter />
+
+        {/* Featured Vendors Showcase */}
+        <FeaturedVendorsSection />
 
         {/* Local Market Pulse: Live Stats */}
         <section className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl relative overflow-hidden">
