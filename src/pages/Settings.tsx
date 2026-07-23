@@ -6,7 +6,11 @@ import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { PasswordChangeModal } from '../components/PasswordChangeModal';
 import SEO from '../components/SEO';
-import { ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap } from 'lucide-react';
+import { 
+  ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image, Check, Upload, 
+  KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap, Building2, MapPin, Sparkles,
+  Phone, AlertTriangle
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 const SAMPLE_AVATARS = [
@@ -26,23 +30,25 @@ const Settings: React.FC = () => {
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
+  const [location, setLocation] = useState(user?.location || 'Ogbomoso, Oyo State');
+  const [businessName, setBusinessName] = useState(user?.businessName || '');
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">
         <SEO 
           title="Account Settings — Sealify Nigeria"
           description="Manage your profile settings, profile picture, password reset requests, and preferences on Sealify."
         />
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Login Required</h2>
-          <p className="text-slate-400">Please log in to access settings</p>
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center max-w-sm w-full space-y-4">
+          <h2 className="text-xl font-bold text-white">Login Required</h2>
+          <p className="text-slate-400 text-xs">Please log in to access account settings and storefront branding.</p>
           <Link
             to="/"
-            className="mt-3 inline-block px-5 py-2 bg-emerald-500 text-slate-950 rounded-xl font-bold transition-colors"
+            className="inline-block px-5 py-2.5 bg-emerald-500 text-slate-950 rounded-xl font-bold text-xs transition-colors"
           >
             Return Home
           </Link>
@@ -65,7 +71,7 @@ const Settings: React.FC = () => {
       if (event.target?.result) {
         const dataUrl = event.target.result as string;
         setSelectedAvatar(dataUrl);
-        toast.success('Photo loaded successfully! Click "Save Profile Photo & Changes" to complete.');
+        toast.success('Photo loaded! Click "Save Profile & Branding" to confirm.');
       }
     };
     reader.readAsDataURL(file);
@@ -76,10 +82,12 @@ const Settings: React.FC = () => {
       fullName,
       email: newEmail,
       phoneNumber: newPhone,
+      location,
+      businessName: businessName.trim() || undefined,
       avatarUrl: selectedAvatar,
     });
     setEditingProfile(false);
-    toast.success('🎉 Profile photo and account settings updated!');
+    toast.success('🎉 Profile photo, location and store branding updated!');
   };
 
   const handleStatusUpdate = (role: 'buyer' | 'seller' | 'admin') => {
@@ -88,15 +96,15 @@ const Settings: React.FC = () => {
   };
 
   const handleConfirmDelete = () => {
-    toast.success('Account deletion requested');
+    toast.success('Account deletion requested. Our team will contact you shortly.');
     setShowDeleteConfirm(false);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
-        title="Account Settings — Sealify Nigeria"
-        description="Manage your profile settings, profile picture, password reset requests, and preferences on Sealify."
+        title="Account & Store Settings — Sealify Nigeria"
+        description="Manage your profile settings, storefront branding, profile picture, password reset requests, and preferences on Sealify."
       />
       <Navbar />
 
@@ -123,14 +131,20 @@ const Settings: React.FC = () => {
               </div>
 
               <div className="flex flex-col">
-                <div className="flex items-center gap-2 justify-center sm:justify-start">
+                <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                   <h1 className="text-xl sm:text-2xl font-black text-white">{user.fullName}</h1>
                   {user.verified && (
                     <VerifiedBadge type={user.verificationType || 'individual'} showText />
                   )}
                 </div>
-                <p className="text-slate-400 text-xs mt-0.5">{user.email} • {user.phoneNumber}</p>
-                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1 flex items-center gap-1">
+                {user.businessName && (
+                  <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>{user.businessName}</span>
+                  </p>
+                )}
+                <p className="text-slate-400 text-xs mt-0.5">{user.email} • {user.phoneNumber || 'No phone set'}</p>
+                <span className="text-[10px] text-emerald-400 font-extrabold capitalize mt-1 flex items-center justify-center sm:justify-start gap-1">
                   <UserCheck className="w-3 h-3" />
                   Currently: {user.role === 'admin' ? 'Administrator' : user.role}
                 </span>
@@ -146,7 +160,7 @@ const Settings: React.FC = () => {
             </button>
           </div>
 
-          {/* Trading Status Toggle */}
+          {/* Trading Intent / Role Switcher */}
           <div className="p-5 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-4">
              <div className="flex items-center gap-2 text-emerald-400 font-black uppercase text-xs tracking-widest">
                 <Zap className="w-4 h-4" />
@@ -190,11 +204,30 @@ const Settings: React.FC = () => {
             <div className="p-5 bg-slate-950 border border-emerald-500/30 rounded-2xl space-y-4 text-xs animate-in fade-in duration-200">
               <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider">
                 <Camera className="w-4 h-4" />
-                <span>Upload & Update Profile Photo</span>
+                <span>Store Branding & Profile Details</span>
+              </div>
+
+              {/* Avatar Preset Choice */}
+              <div className="space-y-2">
+                <label className="font-bold text-slate-300 block">Choose Avatar Preset</label>
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                  {SAMPLE_AVATARS.map((avUrl, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSelectedAvatar(avUrl)}
+                      className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-transform shrink-0 ${
+                        selectedAvatar === avUrl ? 'border-emerald-500 scale-110 ring-2 ring-emerald-500/30' : 'border-slate-800 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={avUrl} className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-2">
-                <label className="font-bold text-slate-300 block">Select Photo from Device Gallery</label>
+                <label className="font-bold text-slate-300 block">Or Upload Photo from Device</label>
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -205,21 +238,21 @@ const Settings: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full py-3 bg-slate-900 hover:bg-slate-850 text-emerald-400 border border-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Choose Image File from Computer / Mobile</span>
+                  <span>Choose Image File (JPG/PNG)</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-300">Full Name</label>
+                  <label className="font-bold text-slate-300">Full Name *</label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
 
@@ -229,7 +262,31 @@ const Settings: React.FC = () => {
                     type="tel"
                     value={newPhone}
                     onChange={(e) => setNewPhone(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Business / Storefront Name</label>
+                  <input
+                    type="text"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    placeholder="e.g. Ogunleye Tech Store"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Primary Location Area</label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Ogbomoso, Oyo State"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -239,21 +296,21 @@ const Settings: React.FC = () => {
                 className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg flex items-center justify-center gap-1.5 mt-2"
               >
                 <Check className="w-4 h-4" />
-                <span>Save Profile Photo & Changes</span>
+                <span>Save Profile & Storefront Branding</span>
               </button>
             </div>
           )}
 
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Information & Security</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Account Security & Credentials</h3>
 
             <div className="space-y-3">
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase flex items-center gap-2">
-                    <Lock className="w-3.5 h-3.5 text-emerald-400" /> Account Password
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" /> Password Security
                   </h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Control your authentication security</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Request NIN-verified password update</p>
                 </div>
                 <button
                   onClick={() => setIsPasswordModalOpen(true)}
@@ -275,7 +332,7 @@ const Settings: React.FC = () => {
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-bold text-white uppercase">Account Status</h4>
-                  <p className="text-xs text-slate-400 mt-0.5">Active & Verified since {user.memberSince || '2023'}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Active member since {user.memberSince || '2023'}</p>
                 </div>
                 <Calendar className="w-5 h-5 text-slate-500" />
               </div>
