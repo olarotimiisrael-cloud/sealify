@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Check, Copy, Wand2, FileText } from 'lucide-react';
+import { X, Sparkles, Wand2 } from 'lucide-react';
 import { Category, Condition } from '../types/sealify';
 import { toast } from 'sonner';
 
@@ -33,39 +33,39 @@ export const AiAdAssistantModal: React.FC<AiAdAssistantModalProps> = ({
   const itemLoc = location.trim() || 'Ogbomoso, Oyo State';
 
   const templates = {
-    detailed: `✨ \${itemTitle.toUpperCase()} — EXCELLENT DEAL ✨
+    detailed: `✨ ${itemTitle.toUpperCase()} — EXCELLENT DEAL ✨
 
 📌 Product Details:
-• Category: \${category}
-• Condition: \${condition}
-• Asking Price: \${formattedPrice}
-• Location: \${itemLoc}
+• Category: ${category}
+• Condition: ${condition}
+• Asking Price: ${formattedPrice}
+• Location: ${itemLoc}
 
 🔍 Description & Highlights:
-This \${itemTitle} is in \${condition.toLowerCase()} working condition, carefully tested and ready for immediate pickup or dispatch delivery. 100% authentic and well-maintained.
+This ${itemTitle} is in ${condition.toLowerCase()} working condition, carefully tested and ready for immediate pickup or dispatch delivery. 100% authentic and well-maintained.
 
 🛡️ Inspection & Guarantee:
 • Physical inspection available at verified Safe Meetup Spots in Ogbomoso.
 • Test thoroughly before payment.
 • Direct phone call or instant live chat available.`,
 
-    punchy: `🚀 QUICK SALE: \${itemTitle} (\${formattedPrice})
+    punchy: `🚀 QUICK SALE: ${itemTitle} (${formattedPrice})
 
-Condition: \${condition}
-Location: \${itemLoc}
+Condition: ${condition}
+Location: ${itemLoc}
 
 Clean, fully functional, and ready to go! No hidden faults. Serious buyers only.
 
 📍 Meetup in public safe zone or doorstep dispatch rider available. Message or call now!`,
 
     commercial: `🏪 SEALIFY VERIFIED MERCHANT LISTING
-Product Name: \${itemTitle}
-Condition: \${condition}
-Price: \${formattedPrice}
-Location / Store: \${itemLoc}
+Product Name: ${itemTitle}
+Condition: ${condition}
+Price: ${formattedPrice}
+Location / Store: ${itemLoc}
 
 Description:
-Professional grade \${category.toLowerCase()} listing offered with full seller verification. Guaranteed working condition. Comes with original accessories if applicable.
+Professional grade ${category.toLowerCase()} listing offered with full seller verification. Guaranteed working condition. Comes with original accessories if applicable.
 
 📞 Contact seller today for fast response and safe meetup arrangement!`,
   };
@@ -96,12 +96,11 @@ Professional grade \${category.toLowerCase()} listing offered with full seller v
           </p>
         </div>
 
-        {/* Style selection chips */}
         <div className="grid grid-cols-3 gap-2">
           <button
             type="button"
             onClick={() => setSelectedStyle('detailed')}
-            className={`p-3 rounded-2xl border text-center transition-all \${
+            className={`p-3 rounded-2xl border text-center transition-all ${
               selectedStyle === 'detailed'
                 ? 'border-purple-500 bg-purple-500/10 text-purple-300 font-bold ring-2 ring-purple-500/30'
                 : 'border-slate-800 bg-slate-950 text-slate-400'
@@ -114,7 +113,7 @@ Professional grade \${category.toLowerCase()} listing offered with full seller v
           <button
             type="button"
             onClick={() => setSelectedStyle('punchy')}
-            className={`p-3 rounded-2xl border text-center transition-all \${
+            className={`p-3 rounded-2xl border text-center transition-all ${
               selectedStyle === 'punchy'
                 ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold ring-2 ring-emerald-500/30'
                 : 'border-slate-800 bg-slate-950 text-slate-400'
@@ -127,7 +126,7 @@ Professional grade \${category.toLowerCase()} listing offered with full seller v
           <button
             type="button"
             onClick={() => setSelectedStyle('commercial')}
-            className={`p-3 rounded-2xl border text-center transition-all \${
+            className={`p-3 rounded-2xl border text-center transition-all ${
               selectedStyle === 'commercial'
                 ? 'border-amber-500 bg-amber-500/10 text-amber-400 font-bold ring-2 ring-amber-500/30'
                 : 'border-slate-800 bg-slate-950 text-slate-400'
@@ -138,7 +137,6 @@ Professional grade \${category.toLowerCase()} listing offered with full seller v
           </button>
         </div>
 
-        {/* Preview box */}
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
             <span>Generated Text Preview</span>

@@ -24,6 +24,17 @@ export interface SiteSettings {
   contactPhone: string;
 }
 
+export interface Review {
+  id: string;
+  sellerId: string;
+  buyerId: string;
+  buyerName: string;
+  buyerAvatar: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -191,8 +202,9 @@ export interface Conversation {
 
 export interface SearchAlert {
   id: string;
+  userId: string;
   query: string;
-  category: string;
+  category: Category | 'All';
   maxPrice: number | null;
   location: string;
   createdAt: string;

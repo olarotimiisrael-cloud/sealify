@@ -9,8 +9,8 @@ import ValuationCalculatorModal from '../components/ValuationCalculatorModal';
 import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
-  X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
-  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation, Calculator, Wand2
+  X, Plus, ShieldCheck, Upload, 
+  Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -133,7 +133,7 @@ const PostAd: React.FC = () => {
     }
 
     if (user?.status && user.status !== 'active') {
-       toast.error('Account Restricted: You cannot post new advertisements while your account is restricted. Please check your dashboard for details.');
+       toast.error('Account Restricted: You cannot post new advertisements while your account is restricted.');
        return;
     }
 
@@ -180,21 +180,6 @@ const PostAd: React.FC = () => {
            </div>
         )}
 
-        {!isAuthenticated && (
-          <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl flex items-center justify-between text-xs text-amber-200 gap-3">
-            <div className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-amber-400 shrink-0" />
-              <span>You must own a Sealify account to post advertisements and list items for sale.</span>
-            </div>
-            <button
-              onClick={() => setIsAuthOpen(true)}
-              className="px-3.5 py-1.5 bg-amber-500 text-slate-950 font-black rounded-xl text-xs hover:bg-amber-400 transition-colors shrink-0"
-            >
-              Sign Up Now
-            </button>
-          </div>
-        )}
-
         {(!user?.status || user.status === 'active') && (
            <>
               <div className="text-center space-y-1">
@@ -207,30 +192,21 @@ const PostAd: React.FC = () => {
               </div>
 
               <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-8 space-y-6 shadow-2xl">
-                {/* Photos Upload Section */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
                       <span>Product Photos *</span>
-                      <span className="text-emerald-400 text-[10px] lowercase font-normal">(1st photo is cover)</span>
                     </label>
-                    <span className="text-[10px] text-slate-500">Up to 10 photos</span>
                   </div>
 
                   <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                     {images.map((img, idx) => (
                       <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group">
                         <img src={img} alt="Product upload" className="w-full h-full object-cover" />
-                        {idx === 0 && (
-                          <span className="absolute bottom-1 left-1 bg-emerald-500 text-slate-950 text-[8px] font-black uppercase px-1.5 py-0.5 rounded shadow">
-                            COVER
-                          </span>
-                        )}
                         <button
                           type="button"
                           onClick={() => setImages(images.filter((_, i) => i !== idx))}
                           className="absolute top-1 right-1 p-1 bg-slate-950/80 text-red-400 rounded-lg hover:bg-slate-900 transition-colors"
-                          title="Remove image"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
@@ -240,21 +216,18 @@ const PostAd: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all hover:bg-emerald-500/10"
+                      className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all"
                     >
-                      <Upload className="w-5 h-5" />
-                      <span className="text-[9px] font-bold mt-1">Add Photo</span>
+                      <Plus className="w-5 h-5" />
                     </button>
                   </div>
 
-                  {/* Video Attachment Section */}
                   <div className="pt-2 border-t border-slate-800">
                     <div className="flex justify-between items-center mb-3">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
                         <Video className="w-4 h-4 text-purple-400" />
                         <span>Product Video (Optional)</span>
                       </label>
-                      <span className="text-[9px] text-slate-500 px-2 py-0.5 bg-slate-800 rounded">Max 20MB</span>
                     </div>
 
                     {videoUrl ? (
@@ -263,7 +236,7 @@ const PostAd: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setVideoUrl('')}
-                          className="absolute top-3 right-3 p-2 bg-slate-900/90 text-red-400 rounded-xl shadow-lg border border-slate-700 hover:bg-slate-900"
+                          className="absolute top-3 right-3 p-2 bg-slate-900/90 text-red-400 rounded-xl"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -274,22 +247,16 @@ const PostAd: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => videoInputRef.current?.click()}
-                          className="w-full py-4 rounded-2xl border-2 border-dashed border-purple-500/20 hover:border-purple-500/50 bg-purple-500/5 hover:bg-purple-500/10 flex flex-col items-center justify-center gap-2 text-purple-400 transition-all group"
+                          className="w-full py-4 rounded-2xl border-2 border-dashed border-purple-500/20 hover:border-purple-500/50 bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-purple-400 transition-all group"
                         >
-                          <div className="p-2 bg-slate-900 rounded-xl group-hover:scale-110 transition-transform">
-                            <FileVideo className="w-6 h-6" />
-                          </div>
-                          <div className="text-center">
-                            <p className="text-xs font-bold">Attach Short Walk-around Video</p>
-                            <p className="text-[10px] text-slate-500 font-medium">Show details from every angle to build buyer trust</p>
-                          </div>
+                          <FileVideo className="w-6 h-6" />
+                          <p className="text-xs font-bold">Attach Short Video</p>
                         </button>
                       </>
                     )}
                   </div>
                 </div>
 
-                {/* Form Fields */}
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Listing Title *</label>
@@ -298,7 +265,7 @@ const PostAd: React.FC = () => {
                       required
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Clean Toyota Camry 2018 XSE"
+                      placeholder="e.g. Clean Toyota Camry 2018"
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
@@ -309,7 +276,7 @@ const PostAd: React.FC = () => {
                       <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value as Category)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                       >
                         {CATEGORIES.map((c) => (
                           <option key={c} value={c}>{c}</option>
@@ -322,7 +289,7 @@ const PostAd: React.FC = () => {
                       <select
                         value={condition}
                         onChange={(e) => setCondition(e.target.value as Condition)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none"
                       >
                         {CONDITIONS.map((c) => (
                           <option key={c} value={c}>{c}</option>
@@ -338,10 +305,10 @@ const PostAd: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setIsValuationOpen(true)}
-                          className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                          className="text-[10px] text-emerald-400 font-bold"
                         >
-                          <Calculator className="w-3.5 h-3.5" />
-                          <span>Estimate Worth</span>
+                          <Calculator className="w-3.5 h-3.5 inline mr-1" />
+                          Estimate Worth
                         </button>
                       </div>
                       <input
@@ -361,10 +328,10 @@ const PostAd: React.FC = () => {
                           type="button"
                           onClick={handleDetectLocation}
                           disabled={isDetectingLocation}
-                          className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                          className="text-[10px] text-emerald-400 font-bold"
                         >
-                          <Navigation className="w-3 h-3 animate-spin-slow" />
-                          <span>{isDetectingLocation ? 'Detecting...' : 'Detect GPS'}</span>
+                          <Navigation className={`w-3 h-3 inline mr-1 ${isDetectingLocation ? 'animate-spin-slow' : ''}`} />
+                          Detect GPS
                         </button>
                       </div>
                       <input
@@ -378,34 +345,13 @@ const PostAd: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Location quick chips */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Select Area:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {LOCAL_LOCATIONS.map((loc) => (
-                        <button
-                          key={loc}
-                          type="button"
-                          onClick={() => setLocation(loc)}
-                          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition-colors \${
-                            location === loc
-                              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold'
-                              : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200'
-                          }`}
-                        >
-                          {loc}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
                       <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
                       <button
                         type="button"
                         onClick={() => setIsAiAssistantOpen(true)}
-                        className="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 rounded-lg border border-purple-500/30 text-[10px] font-bold flex items-center gap-1 transition-colors"
+                        className="px-2.5 py-1 bg-purple-500/10 text-purple-300 rounded-lg border border-purple-500/30 text-[10px] font-bold flex items-center gap-1"
                       >
                         <Wand2 className="w-3 h-3 text-amber-300" />
                         <span>AI Assistant</span>
@@ -416,36 +362,30 @@ const PostAd: React.FC = () => {
                       required
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Provide technical specs, reason for selling, contact window, or warranty details..."
+                      placeholder="Provide technical specs, reason for selling..."
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500"
                     />
                   </div>
                 </div>
 
-                {/* Top Ad Boost Toggle Option */}
                 <div className="p-4 bg-gradient-to-r from-amber-500/10 via-slate-900 to-amber-500/5 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/40 shrink-0">
-                      <Crown className="w-5 h-5 fill-amber-400" />
-                    </div>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-1.5">
-                        <h4 className="font-extrabold text-xs text-white">Enable Top Ad Boost</h4>
-                        <span className="text-[9px] font-black uppercase bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded">5x Boost</span>
-                      </div>
-                      <p className="text-[11px] text-slate-400">Pin your listing at the top of category feeds for maximum views</p>
+                    <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
+                    <div>
+                      <h4 className="font-extrabold text-xs text-white">Enable Top Ad Boost</h4>
+                      <p className="text-[11px] text-slate-400">Pin listing at the top of category feeds</p>
                     </div>
                   </div>
 
                   <button
                     type="button"
                     onClick={() => setFeaturedBoost(!featuredBoost)}
-                    className={`w-12 h-6 rounded-full transition-colors relative shrink-0 p-0.5 \${
+                    className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
                       featuredBoost ? 'bg-amber-500' : 'bg-slate-800'
                     }`}
                   >
                     <div
-                      className={`w-5 h-5 rounded-full bg-slate-950 transition-transform shadow \${
+                      className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${
                         featuredBoost ? 'translate-x-6' : 'translate-x-0'
                       }`}
                     />
@@ -454,10 +394,10 @@ const PostAd: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2"
                 >
                   <ShieldCheck className="w-6 h-6" />
-                  <span>Publish Professional Ad</span>
+                  <span>Publish Classified Ad</span>
                 </button>
               </form>
            </>

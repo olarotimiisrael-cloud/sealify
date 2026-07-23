@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -124,6 +124,11 @@ interface SealifyContextType {
   sealDeal: (listingId: string, buyerName: string, price: number) => void;
   intrusionLogs: SecurityIntrusionLog[];
   recordIntrusion: (email: string, mediaStatus: string) => void;
+  searchAlerts: SearchAlert[];
+  saveSearchAlert: (alert: Omit<SearchAlert, 'id' | 'userId' | 'createdAt' | 'matchCount'>) => void;
+  deleteSearchAlert: (id: string) => void;
+  reviews: Review[];
+  addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
 }
 
 const DEFAULT_ADMIN_PIN = '336699';
@@ -178,6 +183,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
     return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+  });
+
+  const [reviews, setReviews] = useState<Review[]>(() => {
+    const saved = localStorage.getItem('sealify_reviews');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'rev_1',
+        sellerId: 'usr_1',
+        buyerId: 'usr_2',
+        buyerName: 'Tunde Bakare',
+        buyerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+        rating: 5,
+        comment: 'Very polite seller! Inspected the item at Ogbomoso Police HQ safe zone. Smooth transaction.',
+        createdAt: '3 days ago'
+      }
+    ];
+  });
+
+  const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>(() => {
+    const saved = localStorage.getItem('sealify_search_alerts');
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>(() => {
@@ -276,7 +302,33 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
     localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
     localStorage.setItem('sealify_saved_ids', JSON.stringify(savedListingIds));
-  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds]);
+    localStorage.setItem('sealify_reviews', JSON.stringify(reviews));
+    localStorage.setItem('sealify_search_alerts', JSON.stringify(searchAlerts));
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts]);
+
+  const addNotification = useCallback((notif: any) => {
+    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
+  }, []);
+
+  const saveSearchAlert = useCallback((alert: any) => {
+    if (!user) return;
+    const newAlert: SearchAlert = {
+      ...alert,
+      id: 'alt_' + Date.now(),
+      userId: user.id,
+      createdAt: 'Just now',
+      matchCount: 0
+    };
+    setSearchAlerts(prev => [newAlert, ...prev]);
+    toast.success(`Search alert saved for "${newAlert.query}"!`);
+  }, [user]);
+
+  const deleteSearchAlert = (id: string) => setSearchAlerts(prev => prev.filter(a => a.id !== id));
+
+  const addReview = useCallback((rev: Omit<Review, 'id' | 'createdAt'>) => {
+    const newReview: Review = { ...rev, id: 'rev_' + Date.now(), createdAt: 'Just now' };
+    setReviews(prev => [newReview, ...prev]);
+  }, []);
 
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
@@ -352,10 +404,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addAuditLog('Security Alert', `Intrusion detection log created for ${email}`, 'intrusion');
   }, [addAuditLog]);
 
-  const addNotification = useCallback((notif: any) => {
-    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
-  }, []);
-
   const broadcastMassNotification = useCallback((title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => {
     addNotification({ type: 'system', title: `📢 ${title}`, description: message });
     toast.success(`Broadcast sent!`);
@@ -409,6 +457,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newListing: Listing = {
       ...data, id: 'lst_' + Date.now(), sellerId: user.id, sellerName: user.fullName, sellerAvatar: user.avatarUrl, sellerPhone: user.phoneNumber || '+234 813 120 8468', sellerVerified: user.verified, status: 'active', viewsCount: 0, createdAt: 'Just now'
     };
+    
+    // Check Search Alerts
+    searchAlerts.forEach(alert => {
+      const matchQuery = newListing.title.toLowerCase().includes(alert.query.toLowerCase());
+      const matchCategory = alert.category === 'All' || newListing.category === alert.category;
+      const matchPrice = !alert.maxPrice || newListing.price <= alert.maxPrice;
+      const matchLoc = !alert.location || alert.location === 'Any Location' || newListing.location.toLowerCase().includes(alert.location.toLowerCase());
+
+      if (matchQuery && matchCategory && matchPrice && matchLoc) {
+        // Notification logic would target alert.userId
+        if (alert.userId !== user.id) {
+           addNotification({
+             type: 'alert_match',
+             title: `✨ Search Match: "${newListing.title}"`,
+             description: `A new item matching your alert "${alert.query}" was just posted for ₦${newListing.price.toLocaleString()}.`,
+             linkUrl: `/listing/${newListing.id}`
+           });
+        }
+      }
+    });
+
     setListings(prev => [newListing, ...prev]);
     addAuditLog('Ad Posted', `User ${user.fullName} created "${data.title}"`, 'ad');
   };
@@ -419,7 +488,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       // Smart Price Drop Notification System
       if (listing && data.price && data.price < listing.price) {
-        const savedByUsers = savedListingIds.includes(id); // Simulating notification logic
+        const savedByUsers = savedListingIds.includes(id); 
         const dropPercent = Math.round(((listing.price - data.price) / listing.price) * 100);
         
         if (dropPercent >= 5) {
@@ -469,7 +538,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user) return;
     const newMsg: Message = { id: 'msg_' + Date.now(), senderId: user.id, receiverId, listingId, content, createdAt: 'Just now' };
     setConversations(prev => {
-      const idx = prev.findIndex(c => c.listingId === listingId && c.otherUser.id === receiverId);
+      const idx = prev.findIndex(c => c.listingId === listingId && (c.otherUser.id === receiverId || c.otherUser.id === user.id));
       if (idx !== -1) {
         const updated = [...prev];
         updated[idx] = { ...updated[idx], lastMessage: content, lastMessageTime: 'Just now', messages: [...updated[idx].messages, newMsg] };
@@ -567,7 +636,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       reports, submitReport, processReport,
       auditLogs, addAuditLog,
       recentDeals, sealDeal,
-      intrusionLogs, recordIntrusion
+      intrusionLogs, recordIntrusion,
+      searchAlerts, saveSearchAlert, deleteSearchAlert,
+      reviews, addReview
     }}>
       {children}
     </SealifyContext.Provider>
