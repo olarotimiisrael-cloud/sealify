@@ -13,7 +13,7 @@ import {
   Database, Plus, Sparkles, Upload, AlertTriangle, LogOut, Megaphone, 
   Bell, Radio, ShieldAlert, Download, FileSpreadsheet, Terminal, 
   Clock, Server, DollarSign, Image, User, Users, FileText, CheckCircle2,
-  AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, CPU, Globe
+  AlertOctagon, Gavel, Filter, ArrowUpRight, Key, Fingerprint, Monitor, Cpu, Globe
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -639,7 +639,7 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                           </div>
                           <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center gap-2.5">
-                            <CPU className="w-4 h-4 text-purple-400" />
+                            <Cpu className="w-4 h-4 text-purple-400" />
                             <div>
                               <p className="text-[9px] text-slate-500 uppercase font-bold">Processing</p>
                               <p className="text-[11px] text-white font-bold">{log.deviceInfo.cores} Logical Cores</p>

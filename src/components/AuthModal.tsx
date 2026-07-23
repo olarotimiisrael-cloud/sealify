@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate } from 'react-router-dom';
-import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle, Fingerprint, EyeOff, Gavel } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle, Fingerprint, EyeOff, Gavel, ShieldAlert } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthModalProps {
@@ -363,7 +363,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                       value={adminEmail}
                       onChange={(e) => setAdminEmail(e.target.value)}
                       placeholder="admin@sealify.ng"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-rose-500 disabled:opacity-50"
+                      className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-9 pr-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 disabled:opacity-50"
                     />
                   </div>
                 </div>
