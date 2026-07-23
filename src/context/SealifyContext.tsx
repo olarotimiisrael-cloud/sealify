@@ -208,7 +208,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>(() => {
     const saved = localStorage.getItem('sealify_recent_deals');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : [
+      { id: 'dl_1', itemTitle: 'Toyota Camry', price: 4200000, location: 'Takie', time: '5m ago' },
+      { id: 'dl_2', itemTitle: 'iPhone 13 Pro', price: 650000, location: 'Under G', time: '12m ago' },
+      { id: 'dl_3', itemTitle: 'Office Chair', price: 45000, location: 'Sabo', time: '18m ago' }
+    ];
   });
 
   const [reports, setReports] = useState<AdReport[]>(() => {
@@ -261,15 +265,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     localStorage.setItem('sealify_all_users', JSON.stringify(allUsers));
-  }, [allUsers]);
-
-  useEffect(() => {
     localStorage.setItem('sealify_listings', JSON.stringify(listings));
-  }, [listings]);
-
-  useEffect(() => {
     localStorage.setItem('sealify_categories', JSON.stringify(categories));
-  }, [categories]);
+    localStorage.setItem('sealify_recent_deals', JSON.stringify(recentDeals));
+    localStorage.setItem('sealify_audit_logs', JSON.stringify(auditLogs));
+    localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
+    localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
+    localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
+    localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases]);
 
   const updateAdminPin = useCallback((newPin: string) => {
     setAdminPin(newPin);
@@ -420,9 +424,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sealDeal = useCallback((listingId: string, buyerName: string, price: number) => {
+    const listing = listings.find(l => l.id === listingId);
+    if (!listing) return;
+
     markAsSold(listingId);
-    toast.success(`Deal sealed!`);
-  }, [markAsSold]);
+    
+    const newDeal: MarketplaceDeal = {
+      id: 'dl_' + Date.now(),
+      itemTitle: listing.title,
+      price,
+      location: listing.location.split(',')[0],
+      time: 'Just now'
+    };
+    setRecentDeals(prev => [newDeal, ...prev].slice(0, 10));
+    addAuditLog('Deal Sealed', `Transaction complete for "${listing.title}" (₦${price.toLocaleString()})`, 'ad');
+    toast.success(`Deal sealed! You've officially marked this item as sold.`);
+  }, [listings, markAsSold, addAuditLog]);
 
   const sendMessage = (listingId: string, receiverId: string, content: string) => {
     if (!user) return;
@@ -458,15 +475,39 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const submitPasswordRequest = (req: any) => setPasswordRequests(prev => [{ ...req, id: 'pwr_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
 
-  const processPasswordRequest = (id: string, status: 'approved' | 'declined') => setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  const processPasswordRequest = (id: string, status: 'approved' | 'declined') => {
+    const req = passwordRequests.find(r => r.id === id);
+    if (status === 'approved' && req) {
+       updateUser(req.userId, { password: req.newPassword });
+    }
+    setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    toast.success(`Password request #${id} ${status}`);
+    addAuditLog('Password Request Processed', `Status for #${id} set to ${status}`, 'verification');
+  };
 
   const submitVerificationRequest = (req: any) => setVerificationRequests(prev => [{ ...req, id: 'ver_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
 
-  const processVerificationRequest = (id: string, status: 'approved' | 'rejected') => setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  const processVerificationRequest = (id: string, status: 'approved' | 'rejected') => {
+    const req = verificationRequests.find(r => r.id === id);
+    if (status === 'approved' && req) {
+       updateUser(req.userId, { verified: true, verificationType: req.type });
+    }
+    setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    toast.success(`Verification #${id} ${status}`);
+    addAuditLog('Verification Request Processed', `Status for #${id} set to ${status}`, 'verification');
+  };
 
   const submitPromotionPaymentRequest = (req: any) => setPromotionPaymentRequests(prev => [{ ...req, id: 'ppr_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
 
-  const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => {
+    const req = promotionPaymentRequests.find(r => r.id === id);
+    if (status === 'approved' && req) {
+       promoteListing(req.listingId, req.durationMonths, req.planName);
+    }
+    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    toast.success(`Payment #${id} ${status}`);
+    addAuditLog('Payment Processed', `Promotion for #${id} ${status}`, 'finance');
+  };
 
   const addAnnouncement = (ann: any) => setAnnouncements(prev => [{ ...ann, id: 'ann_' + Date.now(), createdAt: 'Just now' }, ...prev]);
 

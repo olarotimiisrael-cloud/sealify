@@ -129,7 +129,7 @@ export interface AuditLog {
   id: string;
   action: string;
   details: string;
-  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute';
+  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute' | 'finance';
   createdAt: string;
 }
 

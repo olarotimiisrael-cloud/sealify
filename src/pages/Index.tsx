@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useSealify } from '../context/SealifyContext';
+import { useSealify, MarketplaceDeal } from '../context/SealifyContext';
 import SEO from '../components/SEO';
 import { CategoryBar } from '../components/CategoryBar';
 import { CategoryGrid } from '../components/CategoryGrid';
@@ -27,11 +27,13 @@ import {
   Lightbulb,
   Megaphone,
   X,
-  Globe
+  Globe,
+  ArrowRight,
+  TrendingUp
 } from 'lucide-react';
 
 export const Index: React.FC = () => {
-  const { siteSettings, listings, filters, announcements, t } = useSealify();
+  const { siteSettings, listings, filters, announcements, recentDeals, t } = useSealify();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [dismissedBannerIds, setDismissedBannerIds] = useState<string[]>([]);
@@ -74,6 +76,30 @@ export const Index: React.FC = () => {
           <button onClick={() => setDismissedBannerIds(prev => [...prev, ann.id])} className="p-1 hover:bg-slate-800 rounded text-slate-400"><X className="w-3.5 h-3.5" /></button>
         </div>
       ))}
+
+      {/* Live Deals Ticker */}
+      <div className="bg-emerald-500/10 border-b border-emerald-500/20 py-2.5 overflow-hidden relative group">
+        <div className="flex items-center gap-3 absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full border border-emerald-500/30 shadow-lg">
+          <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest whitespace-nowrap">Live Deals Sealed</span>
+        </div>
+        
+        <div className="animate-marquee whitespace-nowrap flex items-center gap-8 pl-48">
+          {[...recentDeals, ...recentDeals].map((deal, idx) => (
+            <div key={`${deal.id}-${idx}`} className="flex items-center gap-2.5 text-[11px] font-bold text-slate-300">
+               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
+               <span className="text-white">₦{deal.price.toLocaleString()}</span>
+               <span className="text-slate-500">for</span>
+               <span className="text-emerald-400 italic">"{deal.itemTitle}"</span>
+               <span className="text-slate-600">@ {deal.location}</span>
+               <span className="text-[9px] text-slate-700 font-mono ml-1">{deal.time}</span>
+            </div>
+          ))}
+          {recentDeals.length === 0 && (
+            <div className="text-[11px] font-bold text-slate-500 italic uppercase tracking-tighter">Ogbomosoland Marketplace Node initializing... Transacting in real-time...</div>
+          )}
+        </div>
+      </div>
 
       <CategoryBar />
       <LiveActivityToast />
