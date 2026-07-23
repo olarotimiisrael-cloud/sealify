@@ -10,7 +10,8 @@ import {
   Wrench, 
   Armchair, 
   Briefcase, 
-  Sparkles, 
+  Sparkles,
+  Zap,
   LayoutGrid 
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
   Armchair,
   Briefcase,
   Sparkles,
+  Zap,
 };
 
 export const CategoryGrid: React.FC = () => {
