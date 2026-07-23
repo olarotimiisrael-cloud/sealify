@@ -14,17 +14,6 @@ export interface AppNotification {
   linkUrl?: string;
 }
 
-export interface SellerReview {
-  id: string;
-  sellerId: string;
-  reviewerId: string;
-  reviewerName: string;
-  reviewerAvatar: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
-}
-
 interface AnalyticsData {
   visitors: number;
   activeAds: number;
@@ -87,8 +76,6 @@ interface SealifyContextType {
   promotionPaymentRequests: PromotionPaymentRequest[];
   submitPromotionPaymentRequest: (req: Omit<PromotionPaymentRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPromotionPaymentRequest: (id: string, status: 'approved' | 'rejected') => void;
-  reviews: SellerReview[];
-  addReview: (sellerId: string, rating: number, comment: string) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -104,29 +91,6 @@ const DEFAULT_ADMIN: UserProfile = {
   location: 'Ogbomoso, Oyo State',
   password: 'Tscw+1234',
 };
-
-const INITIAL_REVIEWS: SellerReview[] = [
-  {
-    id: 'rev_1',
-    sellerId: 'usr_1',
-    reviewerId: 'usr_2',
-    reviewerName: 'Blessing Okonjo',
-    reviewerAvatar: 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=100',
-    rating: 5,
-    comment: 'Great seller! The car was in perfect condition and the paperwork was handled smoothly.',
-    createdAt: '2 weeks ago'
-  },
-  {
-    id: 'rev_2',
-    sellerId: 'usr_2',
-    reviewerId: 'usr_1',
-    reviewerName: 'Adebowale Ogunleye',
-    reviewerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-    rating: 4,
-    comment: 'Fast response and very professional. Recommended for electronics.',
-    createdAt: '1 month ago'
-  }
-];
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
   {
@@ -223,11 +187,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [reviews, setReviews] = useState<SellerReview[]>(() => {
-    const saved = localStorage.getItem('sealify_reviews');
-    return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
-  });
-
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -280,10 +239,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_conversations', JSON.stringify(conversations));
   }, [conversations]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_reviews', JSON.stringify(reviews));
-  }, [reviews]);
 
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
@@ -458,25 +413,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const addReview = (sellerId: string, rating: number, comment: string) => {
-    if (!user) {
-      toast.error('Log in to leave a review');
-      return;
-    }
-    const newReview: SellerReview = {
-      id: 'rev_' + Date.now(),
-      sellerId,
-      reviewerId: user.id,
-      reviewerName: user.fullName,
-      reviewerAvatar: user.avatarUrl,
-      rating,
-      comment,
-      createdAt: 'Just now'
-    };
-    setReviews(prev => [newReview, ...prev]);
-    toast.success('Review submitted successfully!');
-  };
-
   // Password Change Logic
   const submitPasswordRequest = (req: any) => {
     const newReq: PasswordChangeRequest = {
@@ -546,6 +482,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!req) return;
 
     if (status === 'approved') {
+      // Update listing: set featured true, set promotion dates, paymentStatus verified, amountPaid
       const now = new Date();
       const startDate = now.toISOString();
       const endDate = new Date(now.getFullYear(), now.getMonth() + req.durationMonths, now.getDate()).toISOString();
@@ -565,8 +502,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             } 
           : l
       ));
+      // Optionally, update user to premium if not already
+      // updateUser(req.userId, { verified: true, verificationType: 'premium' });
       toast.success(`Promotion payment approved. Ad is now featured for ${req.durationMonths} months.`);
     } else {
+      // Rejected: set paymentStatus to failed
       setListings(prev => prev.map(l => 
         l.id === req.listingId 
           ? { 
@@ -601,8 +541,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
-      promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
-      reviews, addReview
+      promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest
     }}>
       {children}
     </SealifyContext.Provider>
