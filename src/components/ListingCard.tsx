@@ -33,6 +33,18 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   // AI-inspired Deal Rating (Simulated logic)
   const isGreatDeal = listing.price < 500000 && (listing.viewsCount > 100 || hasPriceDrop);
 
+  // Calculate days left for promotion
+  const getDaysLeft = (): number | null => {
+    if (!listing.promotionEndDate) return null;
+    const end = new Date(listing.promotionEndDate);
+    const now = new Date();
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
+
+  const daysLeft = getDaysLeft();
+
   return (
     <div className="group bg-slate-900 border border-slate-800 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
       {/* Badges Top Left */}
@@ -50,6 +62,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         {listing.viewsCount > 200 && !listing.featured && (
           <span className="bg-purple-600 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
             <Flame className="w-2.5 h-2.5 fill-current" /> HOT
+          </span>
+        )}
+        {daysLeft !== null && daysLeft >= 0 && (
+          <span className="bg-blue-500 text-white text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded shadow-md flex items-center gap-1">
+            <Calendar className="w-2.5 h-2.5" /> {daysLeft}d left
           </span>
         )}
       </div>

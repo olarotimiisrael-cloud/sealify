@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -73,6 +73,9 @@ interface SealifyContextType {
   verificationRequests: VerificationRequest[];
   submitVerificationRequest: (req: Omit<VerificationRequest, 'id' | 'status' | 'createdAt'>) => void;
   processVerificationRequest: (id: string, status: 'approved' | 'rejected') => void;
+  promotionPaymentRequests: PromotionPaymentRequest[];
+  submitPromotionPaymentRequest: (req: Omit<PromotionPaymentRequest, 'id' | 'status' | 'createdAt'>) => void;
+  processPromotionPaymentRequest: (id: string, status: 'approved' | 'rejected') => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -179,6 +182,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>(() => {
+    const saved = localStorage.getItem('sealify_promotion_payment_requests');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -235,7 +243,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
     localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
-  }, [passwordRequests, verificationRequests]);
+    localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
+  }, [passwordRequests, verificationRequests, promotionPaymentRequests]);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
@@ -456,6 +465,63 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
+  // Promotion Payment Logic
+  const submitPromotionPaymentRequest = (req: any) => {
+    const newReq: PromotionPaymentRequest = {
+      ...req,
+      id: 'ppr_' + Date.now(),
+      status: 'pending',
+      createdAt: new Date().toLocaleString()
+    };
+    setPromotionPaymentRequests(prev => [newReq, ...prev]);
+    toast.success('Promotion payment proof submitted. Awaiting admin verification.');
+  };
+
+  const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => {
+    const req = promotionPaymentRequests.find(r => r.id === id);
+    if (!req) return;
+
+    if (status === 'approved') {
+      // Update listing: set featured true, set promotion dates, paymentStatus verified, amountPaid
+      const now = new Date();
+      const startDate = now.toISOString();
+      const endDate = new Date(now.getFullYear(), now.getMonth() + req.durationMonths, now.getDate()).toISOString();
+
+      setListings(prev => prev.map(l => 
+        l.id === req.listingId 
+          ? { 
+              ...l, 
+              featured: true, 
+              promotionPlanName: req.planName, 
+              promotionDurationMonths: req.durationMonths,
+              promotionStartDate: startDate,
+              promotionEndDate: endDate,
+              paymentStatus: 'verified',
+              paymentProofUrl: req.paymentProofUrl,
+              amountPaid: req.amount
+            } 
+          : l
+      ));
+      // Optionally, update user to premium if not already
+      // updateUser(req.userId, { verified: true, verificationType: 'premium' });
+      toast.success(`Promotion payment approved. Ad is now featured for ${req.durationMonths} months.`);
+    } else {
+      // Rejected: set paymentStatus to failed
+      setListings(prev => prev.map(l => 
+        l.id === req.listingId 
+          ? { 
+              ...l, 
+              paymentStatus: 'failed',
+              paymentProofUrl: req.paymentProofUrl
+            } 
+          : l
+      ));
+      toast.error(`Promotion payment rejected.`);
+    }
+
+    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
@@ -474,7 +540,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       conversations, sendMessage,
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
       passwordRequests, submitPasswordRequest, processPasswordRequest,
-      verificationRequests, submitVerificationRequest, processVerificationRequest
+      verificationRequests, submitVerificationRequest, processVerificationRequest,
+      promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest
     }}>
       {children}
     </SealifyContext.Provider>

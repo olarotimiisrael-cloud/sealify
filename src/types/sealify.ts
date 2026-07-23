@@ -54,6 +54,19 @@ export interface PasswordChangeRequest {
   createdAt: string;
 }
 
+export interface PromotionPaymentRequest {
+  id: string;
+  userId: string;
+  listingId: string;
+  amount: number;
+  paymentMethod: 'opay' | 'card' | 'transfer' | 'ussd' | 'paystack';
+  paymentProofUrl?: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  planName: string;
+  durationMonths: number;
+}
+
 export interface Listing {
   id: string;
   sellerId: string;
@@ -77,6 +90,11 @@ export interface Listing {
   featured?: boolean;
   promotionDurationMonths?: number;
   promotionPlanName?: string;
+  promotionStartDate?: string; // ISO string
+  promotionEndDate?: string; // ISO string
+  paymentStatus?: 'pending' | 'verified' | 'failed';
+  paymentProofUrl?: string;
+  amountPaid?: number;
 }
 
 export interface Message {

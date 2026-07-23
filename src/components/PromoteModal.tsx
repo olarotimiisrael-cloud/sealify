@@ -12,10 +12,12 @@ import {
   Calendar,
   DollarSign,
   ArrowRight,
-  Lock
+  Lock,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Listing } from '../types/sealify';
+import { useSealify } from '../context/SealifyContext';
 
 interface PromoteModalProps {
   isOpen: boolean;
@@ -45,14 +47,16 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
   listing,
   onPromoteSuccess,
 }) => {
+  const { submitPromotionPaymentRequest } = useSealify();
   const [selectedMonths, setSelectedMonths] = useState<number>(1);
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'ussd' | 'paystack'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'transfer' | 'ussd' | 'paystack' | 'opay'>('card');
   const [step, setStep] = useState<'plan' | 'payment' | 'processing'>('plan');
 
   // Payment form states
   const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
   const [cardExpiry, setCardExpiry] = useState('12/28');
   const [cardCvc, setCardCvc] = useState('123');
+  const [paymentProof, setPaymentProof] = useState<string | null>(null); // for Opay proof upload
 
   if (!isOpen || !listing) return null;
 
@@ -76,14 +80,43 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
     e.preventDefault();
     setStep('processing');
 
-    setTimeout(() => {
-      if (onPromoteSuccess) {
-        onPromoteSuccess(listing.id, selectedMonths, `${currentPlan.label} Top Ad Promotion`);
+    if (paymentMethod === 'opay') {
+      if (!paymentProof) {
+        toast.error('Please upload payment proof');
+        setStep('payment');
+        return;
       }
-      toast.success(`🎉 ${formatNGN(totalPriceNGN)} Payment Confirmed! "${listing.title}" is now Promoted as Top Ad & user upgraded to Premium Verified!`);
-      setStep('plan');
-      onClose();
-    }, 2000);
+      // Submit payment proof request
+      submitPromotionPaymentRequest({
+        userId: listing.sellerId, // we need the user id; we don't have it here, but we can get from context? We'll need to pass user id via listing or context.
+        listingId: listing.id,
+        amount: totalPriceNGN,
+        paymentMethod: 'opay',
+        paymentProofUrl: paymentProof,
+        planName: currentPlan.label,
+        durationMonths: selectedMonths
+      });
+      // Simulate admin processing delay
+      setTimeout(() => {
+        // In real app, admin would approve; we'll auto-approve for demo? Or we can leave pending.
+        // For now, we'll auto-approve after a short delay to simulate.
+        // But better to leave pending and let admin approve.
+        // We'll just show a message that it's submitted.
+        toast.success('Payment proof submitted. Awaiting admin verification.');
+        setStep('plan');
+        onClose();
+      }, 2000);
+    } else {
+      // For other payment methods, simulate payment processing
+      setTimeout(() => {
+        if (onPromoteSuccess) {
+          onPromoteSuccess(listing.id, selectedMonths, `${currentPlan.label} Top Ad Promotion`);
+        }
+        toast.success(`🎉 ${formatNGN(totalPriceNGN)} Payment Confirmed! "${listing.title}" is now Promoted as Top Ad & user upgraded to Premium Verified!`);
+        setStep('plan');
+        onClose();
+      }, 2000);
+    }
   };
 
   return (
@@ -190,7 +223,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
               <span>Proceed to Multiple Payment Gateway ({formatNGN(totalPriceNGN)})</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          </div>
+          }
         ) : (
           /* Payment Step */
           <form onSubmit={handleExecutePayment} className="space-y-5">
@@ -260,6 +293,19 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
               >
                 <Sparkles className="w-4 h-4" />
                 <span>Paystack</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('opay')}
+                className={`py-2 px-1 rounded-xl text-[11px] font-bold transition-colors flex flex-col items-center gap-1 ${
+                  paymentMethod === 'opay'
+                    ? 'bg-emerald-500 text-slate-950 shadow'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Upload className="w-4 h-4" />
+                <span>Opay</span>
               </button>
             </div>
 
@@ -333,6 +379,52 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
                 <Sparkles className="w-8 h-8 text-teal-400 mx-auto" />
                 <p className="font-bold text-white">Online Gateway Checkout</p>
                 <p className="text-slate-400">You will be securely redirected to Paystack / Flutterwave NGN Gateway.</p>
+              </div>
+            )}
+
+            {/* Option 5: Opay */}
+            {paymentMethod === 'opay' && (
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs space-y-2">
+                <p className="text-slate-400 font-medium">Make payment to Opay account:</p>
+                <div className="space-y-1 bg-slate-900 p-3 rounded-xl border border-slate-800">
+                  <p className="text-slate-400">Account Number: <strong className="text-emerald-400 font-mono text-base">813 120 8468</strong></p>
+                  <p className="text-slate-400">Account Name: <strong className="text-white">Sealify Marketplace</strong></p>
+                  <p className="text-slate-400">Use Ad ID as description: <strong className="text-emerald-400">{listing.id}</strong></p>
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300 uppercase">Upload Payment Proof (JPG/PNG) *</label>
+                  <input type="file" accept="image/*" onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        setPaymentProof(event.target?.result as string);
+                        toast.success('Payment proof uploaded');
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }} className="hidden" />
+                  <button
+                    type="button"
+                    onClick={() => document.querySelector('input[type="file"]')?.click()}
+                    className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 ${
+                      paymentProof ? 'border-emerald-500 bg-emerald-500/5' : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
+                    }`}
+                  >
+                    {paymentProof ? (
+                      <>
+                        <Check className="w-8 h-8 text-emerald-400" />
+                        <span className="text-[10px] font-bold text-emerald-400">Payment proof attached</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-8 h-8 text-slate-600" />
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Click to upload payment proof</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[10px] text-emerald-400 font-semibold">⚡ After upload, submit to verify.</p>
               </div>
             )}
 

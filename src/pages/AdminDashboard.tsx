@@ -5,11 +5,11 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
-import { UserProfile, VerificationBadgeType, Listing } from '../types/sealify';
+import { UserProfile, VerificationBadgeType, Listing, PromotionPaymentRequest } from '../types/sealify';
 import { 
   Shield, Package, Activity, Layers, RefreshCw, Edit3, Trash2,
   Search, ShieldCheck, Award, Check, X, Eye,
-  KeyRound, Zap, Crown, Database, Plus, Sparkles
+  KeyRound, Zap, Crown, Database, Plus, Sparkles, Upload
 } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, Tooltip } from 'recharts';
 import { toast } from 'sonner';
@@ -17,10 +17,11 @@ import { toast } from 'sonner';
 export const AdminDashboard: React.FC = () => {
   const { 
     isAdmin, categories, addCategory, deleteCategory, updateCategory, analytics, listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, t,
-    passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest
+    passwordRequests, processPasswordRequest, verificationRequests, processVerificationRequest,
+    promotionPaymentRequests, processPromotionPaymentRequest
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'users' | 'categories' | 'listings' | 'approvals' | 'promotionPayments'>('analytics');
   const [userSearch, setUserSearch] = useState('');
   const [adSearch, setAdSearch] = useState('');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -45,6 +46,7 @@ export const AdminDashboard: React.FC = () => {
 
   const pendingPW = passwordRequests.filter(r => r.status === 'pending');
   const pendingVerif = verificationRequests.filter(r => r.status === 'pending');
+  const pendingPromoPay = promotionPaymentRequests.filter(r => r.status === 'pending');
   const promotedAds = listings.filter(l => l.featured);
 
   const handleUpdateBadge = (userId: string, type: VerificationBadgeType) => {
@@ -141,6 +143,14 @@ export const AdminDashboard: React.FC = () => {
               {(pendingPW.length + pendingVerif.length) > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {pendingPW.length + pendingVerif.length}
+                </span>
+              )}
+            </button>
+            <button onClick={() => setActiveTab('promotionPayments')} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all relative ${activeTab === 'promotionPayments' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:text-white'}`}>
+              PROMOTION PAYMENTS
+              {pendingPromoPay.length > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {pendingPromoPay.length}
                 </span>
               )}
             </button>
@@ -312,7 +322,6 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="px-6 py-4 font-black uppercase text-slate-400">User Profile</th>
                       <th className="px-6 py-4 font-black uppercase text-slate-400">Contact Details</th>
-                      <th className="px-6 py-4 font-black uppercase text-slate-400">Badge & Role</th>
                       <th className="px-6 py-4 font-black uppercase text-slate-400 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -473,6 +482,77 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Tab Content: Promotion Payments */}
+        {activeTab === 'promotionPayments' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black">Promotion Payment Requests</h2>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{pendingPromoPay.length} pending payment proofs</p>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-950 border-b border-slate-800">
+                    <tr>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Promotion Request</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">User / Seller</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400">Details</th>
+                      <th className="px-6 py-4 font-black uppercase text-slate-400 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/50">
+                    {promotionPaymentRequests.map((req) => (
+                      <tr key={req.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            {req.paymentProofUrl && (
+                              <img src={req.paymentProofUrl} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
+                            )}
+                            {!req.paymentProofUrl && (
+                              <div className="w-10 h-10 bg-slate-900 rounded-flex flex items-center justify-center">
+                                <Upload className="w-5 h-5 text-slate-400" />
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <p className="font-bold text-white truncate">Promotion: {req.planName} ({req.durationMonths} months)</p>
+                              <p className="text-[10px] text-emerald-400">Amount: {formatNGN(req.amount)}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-slate-300">{allUsers.find(u => u.id === req.userId)?.fullName || 'Unknown User'}</span>
+                            {allUsers.find(u => u.id === req.userId)?.verified && <VerifiedBadge type={allUsers.find(u => u.id === req.userId)?.verificationType || 'individual'} />}
+                          </div>
+                          <p className="text-[10px] text-slate-500 mt-0.5">{allUsers.find(u => u.id === req.userId)?.email}</p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-1.5"><Eye className="w-3.5 h-3.5 text-slate-400" /><span className="font-bold">{req.id}</span></div>
+                            {req.paymentProofUrl && <span className="bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded text-[9px] font-black uppercase border border-amber-500/20">Proof Uploaded</span>}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button onClick={() => processPromotionPaymentRequest(req.id, 'declined')} className="p-2 bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl transition-all"><Trash2 className="w-4 h-4" /></button>
+                            <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="p-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all"><Check className="w-4 h-4" /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Tab Content: Analytics */}
         {activeTab === 'analytics' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -503,7 +583,7 @@ export const AdminDashboard: React.FC = () => {
                     <Area type="monotone" dataKey="v" stroke="#10b981" strokeWidth={3} fillOpacity={0.1} fill="#10b981" />
                   </AreaChart>
                 </ResponsiveContainer>
-              </div>
+              }
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
@@ -516,7 +596,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="w-8 h-4 bg-emerald-500 rounded-full"></div>
                 </div>
-              </div>
+              }
             </div>
           </div>
         )}
@@ -530,8 +610,8 @@ export const AdminDashboard: React.FC = () => {
                   <Zap className="w-5 h-5 text-amber-400" />
                   Active Promotions ({promotedAds.length})
                 </h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              </div
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {promotedAds.map(ad => (
                   <div key={ad.id} className="bg-slate-950 border border-amber-500/30 p-4 rounded-2xl space-y-3 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 p-2"><Crown className="w-4 h-4 text-amber-400 opacity-20 group-hover:opacity-100 transition-opacity" /></div>
