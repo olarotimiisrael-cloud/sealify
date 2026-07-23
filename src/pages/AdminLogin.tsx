@@ -2,111 +2,62 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
-import MobileNav from '../components/MobileNav';
 import SEO from '../components/SEO';
-import { ShieldAlert, Lock, Mail, ArrowRight, KeyRound, Sparkles } from 'lucide-react';
-import { toast } from 'sonner';
+import { ShieldAlert, Lock, Mail, ArrowRight, Terminal } from 'lucide-react';
 
 export const AdminLogin: React.FC = () => {
   const { adminLogin } = useSealify();
   const navigate = useNavigate();
-
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = adminLogin(email, password);
-    if (success) {
-      navigate('/admin');
-    }
-  };
-
-  const handleFillDefaultAdmin = () => {
-    setEmail('olarotimiisrael@gmail.com');
-    setPassword('Tscw+1234');
-    toast.info('Default Admin credentials loaded');
+    if (adminLogin(email, password)) navigate('/admin');
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
-      <SEO 
-        title="Admin Portal Access — Sealify Nigeria" 
-        description="Restricted administrative dashboard access for Sealify platform security moderators." 
-      />
+    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col font-mono">
+      <SEO title="Secure Admin Access" />
       <Navbar />
-
-      <main className="max-w-md mx-auto w-full px-4 py-12 flex-1 flex flex-col justify-center">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-          <div className="text-center space-y-2">
-            <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30 shadow-lg">
-              <ShieldAlert className="w-7 h-7" />
-            </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Admin Portal Access</h1>
-            <p className="text-xs text-slate-400">
-              Log in with administrator privileges to manage users and platform records.
-            </p>
+      <main className="max-w-md mx-auto w-full px-4 flex-1 flex flex-col justify-center py-12">
+        <div className="bg-slate-900 border-2 border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-8 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/5 rounded-full blur-3xl"></div>
+          
+          <div className="text-center space-y-3">
+            <div className="w-16 h-16 bg-slate-950 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto shadow-inner"><Terminal className="w-8 h-8 text-emerald-500" /></div>
+            <h1 className="text-xl font-black text-white tracking-widest uppercase">Admin Verification</h1>
+            <p className="text-[10px] text-slate-500 uppercase font-bold">Authorized Personnel Only • Secure Session</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Email</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Terminal ID</label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@sealify.ng"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
+                <Mail className="w-4 h-4 text-slate-600 absolute left-4 top-3.5" />
+                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="••••••••••••" className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-3.5 text-xs text-emerald-400 focus:outline-none focus:border-emerald-500 placeholder:text-slate-800" />
               </div>
             </div>
 
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Password</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Access Key</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
-                />
+                <Lock className="w-4 h-4 text-slate-600 absolute left-4 top-3.5" />
+                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••••••" className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-11 pr-4 py-3.5 text-xs text-emerald-400 focus:outline-none focus:border-emerald-500 placeholder:text-slate-800" />
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-2"
-            >
-              <span>Authenticate & Access Dashboard</span>
+            <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+              <span>Execute Authentication</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <div className="pt-3 border-t border-slate-800/80 text-center space-y-2">
-            <button
-              type="button"
-              onClick={handleFillDefaultAdmin}
-              className="w-full py-2 bg-slate-950 hover:bg-slate-800 text-emerald-400 font-bold rounded-xl text-xs border border-slate-800 flex items-center justify-center gap-1.5 transition-colors"
-            >
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>Fill Default Admin Credentials</span>
-            </button>
-            <p className="text-[10px] text-slate-500">
-              Default Admin: <strong className="text-slate-300">olarotimiisrael@gmail.com</strong>
-            </p>
+          <div className="pt-6 border-t border-slate-800 flex items-center justify-center gap-2 opacity-30 group cursor-default">
+             <ShieldAlert className="w-4 h-4" /><span className="text-[9px] font-black uppercase">Encrypted Endpoint Protection Active</span>
           </div>
         </div>
       </main>
-
-      <MobileNav />
     </div>
   );
 };
