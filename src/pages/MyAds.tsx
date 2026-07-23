@@ -32,7 +32,10 @@ import {
   FileText,
   FileSpreadsheet,
   QrCode,
-  Share2
+  Share2,
+  Clock,
+  KeyRound,
+  ShieldCheck
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,7 +43,7 @@ import { toast } from 'sonner';
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, sendMessage } = useSealify();
+  const { user, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, sendMessage, verificationRequests, passwordRequests } = useSealify();
   const navigate = useNavigate();
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
@@ -54,6 +57,10 @@ const MyAds: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
+  
+  // Track my active admin requests
+  const myVerificationReq = verificationRequests.find(r => r.userId === user?.id && r.status === 'pending');
+  const myPasswordReq = passwordRequests.find(r => r.userId === user?.id && r.status === 'pending');
 
   const filteredAds = myAds.filter((ad) => {
     if (statusFilter === 'active') return ad.status === 'active';
@@ -111,6 +118,33 @@ const MyAds: React.FC = () => {
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         
+        {/* Request Status Ticker Row */}
+        {(myVerificationReq || myPasswordReq) && (
+          <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
+             {myVerificationReq && (
+                <div className="bg-amber-500/10 border border-amber-500/30 px-4 py-2 rounded-2xl flex items-center gap-2.5 shrink-0 shadow-lg animate-in fade-in slide-in-from-left-4">
+                   <Award className="w-4 h-4 text-amber-400" />
+                   <div className="text-[10px]">
+                      <p className="text-white font-black uppercase">Badge Verification Pending</p>
+                      <p className="text-amber-400 font-bold">Sealify moderators are reviewing your ID documents.</p>
+                   </div>
+                   <Clock className="w-3.5 h-3.5 text-amber-500 animate-spin-slow ml-2" />
+                </div>
+             )}
+
+             {myPasswordReq && (
+                <div className="bg-blue-500/10 border border-blue-500/30 px-4 py-2 rounded-2xl flex items-center gap-2.5 shrink-0 shadow-lg animate-in fade-in slide-in-from-left-4">
+                   <KeyRound className="w-4 h-4 text-blue-400" />
+                   <div className="text-[10px]">
+                      <p className="text-white font-black uppercase">Password Reset Pending</p>
+                      <p className="text-blue-400 font-bold">Manual NIN verification in progress by security team.</p>
+                   </div>
+                   <ShieldCheck className="w-3.5 h-3.5 text-blue-500 animate-pulse ml-2" />
+                </div>
+             )}
+          </div>
+        )}
+
         {/* Account Restriction Warning Banner */}
         {isRestricted && (
           <div className="bg-rose-500/10 border-2 border-rose-500/30 rounded-3xl p-6 sm:p-8 space-y-5 animate-in slide-in-from-top-4 duration-500 relative overflow-hidden">

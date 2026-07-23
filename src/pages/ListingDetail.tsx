@@ -39,8 +39,8 @@ import {
   Truck,
   CheckSquare,
   TrendingDown,
-  CheckCircle2,
-  Award
+  TrendingUp,
+  Info
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -85,6 +85,11 @@ const ListingDetail: React.FC = () => {
     );
   }
 
+  const categoryAds = listings.filter(l => l.category === listing.category);
+  const avgPrice = categoryAds.reduce((acc, l) => acc + l.price, 0) / categoryAds.length;
+  const isBelowAvg = listing.price < avgPrice;
+  const priceDiffPercent = Math.abs(Math.round(((listing.price - avgPrice) / avgPrice) * 100));
+
   const relatedListings = listings
     .filter((l) => l.category === listing.category && l.id !== listing.id)
     .slice(0, 4);
@@ -107,17 +112,6 @@ const ListingDetail: React.FC = () => {
   const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
     `Hello ${listing.sellerName}, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice}). Is it still available?`
   )}`;
-
-  const getDaysLeft = (): number | null => {
-    if (!listing.promotionEndDate) return null;
-    const end = new Date(listing.promotionEndDate);
-    const now = new Date();
-    const diffTime = end.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  const daysLeft = getDaysLeft();
 
   const handleStartChat = () => {
     if (!isAuthenticated) {
@@ -327,15 +321,9 @@ const ListingDetail: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
               <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800 flex-wrap sm:flex-nowrap">
                 <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
-                      {listing.category}
-                    </span>
-                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <TrendingDown className="w-3 h-3" />
-                      Fair Market Deal
-                    </span>
-                  </div>
+                  <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
+                    {listing.category}
+                  </span>
                   <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
                   <div className="flex items-center gap-4 text-xs text-slate-400 mt-2 flex-wrap">
                     <span className="flex items-center gap-1">
@@ -356,6 +344,26 @@ const ListingDetail: React.FC = () => {
                 <div className="text-left sm:text-right shrink-0">
                   <p className="text-3xl font-black text-emerald-400">{formattedPrice}</p>
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
+                </div>
+              </div>
+
+              {/* Market Comparison Card */}
+              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl border ${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
+                    {isBelowAvg ? <TrendingDown className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white uppercase tracking-widest">Market Comparison</h4>
+                    <p className="text-[11px] text-slate-400 leading-tight">
+                      This item is <strong className={isBelowAvg ? 'text-emerald-400' : 'text-amber-400'}>{priceDiffPercent}% {isBelowAvg ? 'below' : 'above'}</strong> category average in Ogbomoso.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-center shrink-0">
+                  <p className="text-[10px] text-slate-500 font-bold uppercase">Avg Price</p>
+                  <p className="text-sm font-black text-white">{formatNGN(avgPrice)}</p>
                 </div>
               </div>
 
@@ -386,20 +394,6 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
-
-            {listing.featured && (
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-emerald-400">Promotion Active</span>
-                  {daysLeft !== null && (
-                    <span className="text-xs font-bold text-emerald-400">{daysLeft} days left</span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400">
-                  This ad is promoted as a Top Ad for {listing.promotionDurationMonths} month(s).
-                </p>
-              </div>
-            )}
 
             <div className="space-y-2">
               <h3 className="text-sm font-bold text-white uppercase tracking-wider">Safety Tips for Buyers</h3>

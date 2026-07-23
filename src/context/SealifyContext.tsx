@@ -621,21 +621,23 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateListing = (id: string, data: Partial<Listing>) => {
-    setListings(prev => prev.map(l => {
-      if (l.id === id) {
-        // Trigger automatic price drop notification if price was lowered
-        if (data.price && data.price < l.price) {
-          addNotification({
-            type: 'price_drop',
-            title: `💰 Price Drop: ${l.title}`,
-            description: `Great news! The price of ${l.title} has dropped to ₦${data.price.toLocaleString()}`,
-            linkUrl: `/listing/${l.id}`
-          });
-        }
-        return { ...l, ...data, originalPrice: data.price && data.price < l.price ? l.price : l.originalPrice };
-      }
-      return l;
-    }));
+    const currentListing = listings.find(l => l.id === id);
+    const oldPrice = currentListing?.price;
+    const newPrice = data.price;
+
+    setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
+
+    // Automated Price Drop Alert
+    if (oldPrice && newPrice && newPrice < oldPrice) {
+      const dropPercent = Math.round(((oldPrice - newPrice) / oldPrice) * 100);
+      addNotification({
+        type: 'price_drop',
+        title: `🔥 Price Drop: ${currentListing?.title}`,
+        description: `Great news! The price of an item you follow just dropped by ${dropPercent}% (Now ₦${newPrice.toLocaleString()}).`,
+        linkUrl: `/listing/${id}`
+      });
+      addAuditLog('Automated System Notification', `Dispatched price drop alert for listing ID: ${id}`, 'ad');
+    }
   };
 
   const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
@@ -821,6 +823,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (status === 'approved') {
       updateUser(req.userId, { verified: true, verificationType: req.type });
       addAuditLog('Badge Issued', `Granted ${req.type.toUpperCase()} badge to ${req.userName}`, 'verification');
+      
+      addNotification({
+        type: 'verification',
+        title: 'Badge Approved!',
+        description: `Congratulations ${req.userName}! Your ${req.type} badge has been issued and is now visible on all your ads.`,
+        linkUrl: '/my-ads'
+      });
+      
       toast.success(`User ${req.userName} is now ${req.type.toUpperCase()} Verified!`);
     } else {
       addAuditLog('Verification Rejected', `Rejected ${req.type} badge for ${req.userName}`, 'verification');
@@ -867,6 +877,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           : l
       ));
       addAuditLog('Promotion Approved', `Verified payment and boosted listing ID: ${req.listingId}`, 'ad');
+      
+      addNotification({
+        type: 'payment',
+        title: 'Promotion Activated!',
+        description: `Your ad for "${req.listingId}" is now featured as a Top Ad for ${req.durationMonths} month(s).`,
+        linkUrl: '/my-ads'
+      });
+      
       toast.success(`Promotion payment approved for ${req.durationMonths} month(s).`);
     } else {
       setListings(prev => prev.map(l => 
