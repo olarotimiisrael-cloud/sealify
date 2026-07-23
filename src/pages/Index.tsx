@@ -33,11 +33,13 @@ import {
   ArrowRight,
   TrendingUp,
   Scale,
-  Bell
+  Bell,
+  RotateCcw,
+  Search
 } from 'lucide-react';
 
 export const Index: React.FC = () => {
-  const { siteSettings, listings, filters, setFilters, announcements, recentDeals, compareListingIds, t } = useSealify();
+  const { siteSettings, listings, filters, setFilters, resetFilters, announcements, recentDeals, compareListingIds, t } = useSealify();
   const [searchParams] = useSearchParams();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -86,7 +88,7 @@ export const Index: React.FC = () => {
     return true;
   });
 
-  const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.maxPrice !== null;
+  const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.maxPrice !== null || filters.condition !== 'All';
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans pb-16 md:pb-0">
@@ -191,11 +193,57 @@ export const Index: React.FC = () => {
           </div>
         </section>
 
+        {/* Active Filter Bar */}
+        {hasActiveFilters && (
+          <div className="bg-slate-900 border border-emerald-500/30 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-lg animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1 shrink-0">
+                <Search className="w-3.5 h-3.5 text-emerald-400" />
+                Active Filters:
+              </span>
+
+              {filters.searchQuery && (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2.5 py-1 rounded-xl shrink-0">
+                  "{filters.searchQuery}"
+                </span>
+              )}
+
+              {filters.category !== 'All' && (
+                <span className="bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-xl shrink-0">
+                  Category: {filters.category}
+                </span>
+              )}
+
+              {filters.location && (
+                <span className="bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-xl shrink-0 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-emerald-400" />
+                  {filters.location}
+                </span>
+              )}
+
+              {filters.maxPrice !== null && (
+                <span className="bg-slate-800 text-slate-200 border border-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-xl shrink-0">
+                  Under ₦{filters.maxPrice.toLocaleString()}
+                </span>
+              )}
+            </div>
+
+            <button
+              onClick={resetFilters}
+              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1 shrink-0"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Clear All</span>
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-emerald-400" />
             <h2 className="text-xl font-black text-white tracking-tight">
               {filters.category === 'All' ? t('trending') : `${filters.category} Ads`}
+              <span className="text-xs text-slate-500 font-semibold ml-2 font-mono">({filteredListings.length} found)</span>
             </h2>
           </div>
           <div className="flex items-center gap-2">
@@ -220,6 +268,23 @@ export const Index: React.FC = () => {
 
         {viewMode === 'map' ? (
           <MapView listings={filteredListings} />
+        ) : filteredListings.length === 0 ? (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4 max-w-md mx-auto my-8">
+            <div className="w-14 h-14 bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-600">
+              <Search className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-white">No ads found matching your criteria</h3>
+            <p className="text-xs text-slate-400">
+              Try adjusting your search terms, neighborhood filters, or price range.
+            </p>
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs shadow-lg"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset Search Filters</span>
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {filteredListings.map((listing) => (

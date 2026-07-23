@@ -184,7 +184,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
     const baseUsers = saved ? JSON.parse(saved) : ALL_MOCK_USERS;
-    // Ensure default admin is present
     if (!baseUsers.find((u: any) => u.email === DEFAULT_ADMIN.email)) {
        return [DEFAULT_ADMIN, ...baseUsers];
     }
@@ -458,7 +457,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = (email: string, pass: string, pin?: string) => {
     if (email === DEFAULT_ADMIN.email && pass === DEFAULT_ADMIN.password && (!pin || pin === adminPin)) {
-      // Find latest admin state from allUsers
       const latestAdmin = allUsers.find(u => u.email === DEFAULT_ADMIN.email) || DEFAULT_ADMIN;
       setUser(latestAdmin);
       localStorage.setItem('sealify_user', JSON.stringify(latestAdmin));
@@ -560,14 +558,33 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const sendMessage = (listingId: string, receiverId: string, content: string) => {
     if (!user) return;
     const newMsg: Message = { id: 'msg_' + Date.now(), senderId: user.id, receiverId, listingId, content, createdAt: 'Just now' };
+    
     setConversations(prev => {
       const idx = prev.findIndex(c => c.listingId === listingId && (c.otherUser.id === receiverId || c.otherUser.id === user.id));
       if (idx !== -1) {
         const updated = [...prev];
         updated[idx] = { ...updated[idx], lastMessage: content, lastMessageTime: 'Just now', messages: [...updated[idx].messages, newMsg] };
         return updated;
+      } else {
+        const listing = listings.find(l => l.id === listingId);
+        const otherUserObj = allUsers.find(u => u.id === receiverId);
+        const newConv: Conversation = {
+          id: 'conv_' + Date.now(),
+          listingId,
+          listingTitle: listing?.title || 'Classified Item',
+          listingImage: listing?.images[0] || '',
+          listingPrice: listing?.price || 0,
+          otherUser: {
+            id: receiverId,
+            name: otherUserObj?.fullName || listing?.sellerName || 'Seller',
+            avatar: otherUserObj?.avatarUrl || listing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
+          },
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [newMsg],
+        };
+        return [newConv, ...prev];
       }
-      return prev;
     });
   };
 
@@ -597,8 +614,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        updateUser(req.userId, { password: req.newPassword });
     }
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Password request #${id} \${status}`);
-    addAuditLog('Password Request Processed', `Status for #${id} set to \${status}`, 'verification');
+    toast.success(`Password request #${id} ${status}`);
+    addAuditLog('Password Request Processed', `Status for #${id} set to ${status}`, 'verification');
   };
 
   const submitVerificationRequest = (req: any) => setVerificationRequests(prev => [{ ...req, id: 'ver_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
@@ -609,8 +626,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        updateUser(req.userId, { verified: true, verificationType: req.type });
     }
     setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Verification #${id} \${status}`);
-    addAuditLog('Verification Request Processed', `Status for #${id} set to \${status}`, 'verification');
+    toast.success(`Verification #${id} ${status}`);
+    addAuditLog('Verification Request Processed', `Status for #${id} set to ${status}`, 'verification');
   };
 
   const submitPromotionPaymentRequest = (req: any) => setPromotionPaymentRequests(prev => [{ ...req, id: 'ppr_' + Date.now(), status: 'pending', createdAt: new Date().toLocaleString() }, ...prev]);
@@ -621,8 +638,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        promoteListing(req.listingId, req.durationMonths, req.planName);
     }
     setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
-    toast.success(`Payment #${id} \${status}`);
-    addAuditLog('Payment Processed', `Promotion for #${id} \${status}`, 'finance');
+    toast.success(`Payment #${id} ${status}`);
+    addAuditLog('Payment Processed', `Promotion for #${id} ${status}`, 'finance');
   };
 
   const addAnnouncement = (ann: any) => setAnnouncements(prev => [{ ...ann, id: 'ann_' + Date.now(), createdAt: 'Just now' }, ...prev]);
