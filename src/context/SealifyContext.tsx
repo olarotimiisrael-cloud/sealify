@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -106,6 +106,8 @@ interface SealifyContextType {
   addAuditLog: (action: string, details: string, type: AuditLog['type']) => void;
   recentDeals: MarketplaceDeal[];
   sealDeal: (listingId: string, buyerName: string, price: number) => void;
+  intrusionLogs: SecurityIntrusionLog[];
+  recordIntrusion: (email: string, mediaStatus: string) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -251,6 +253,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : INITIAL_AUDITS;
   });
 
+  const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>(() => {
+    const saved = localStorage.getItem('sealify_intrusion_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [language, setLanguage] = useState<SupportedLanguage>(() => {
     return (localStorage.getItem('sealify_lang') as SupportedLanguage) || 'en';
   });
@@ -321,6 +328,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [auditLogs]);
 
   useEffect(() => {
+    localStorage.setItem('sealify_intrusion_logs', JSON.stringify(intrusionLogs));
+  }, [intrusionLogs]);
+
+  useEffect(() => {
     localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
     localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
@@ -338,10 +349,35 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       action,
       details,
       type,
-      createdAt: 'Just now'
+      createdAt: new Date().toLocaleString()
     };
     setAuditLogs(prev => [log, ...prev]);
   }, []);
+
+  const recordIntrusion = useCallback((email: string, mediaStatus: string) => {
+    const intrusion: SecurityIntrusionLog = {
+      id: 'INT-' + Date.now(),
+      timestamp: new Date().toLocaleString(),
+      attemptedEmail: email,
+      deviceInfo: {
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        screenResolution: `${window.screen.width}x${window.screen.height}`,
+        language: navigator.language,
+        cores: navigator.hardwareConcurrency || 0,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      mediaCaptured: mediaStatus.includes('Captured'),
+      mediaStatus,
+      status: 'flagged'
+    };
+
+    setIntrusionLogs(prev => [intrusion, ...prev]);
+    addAuditLog('Critical: Admin Intrusion Attempt', `Unauthorized access attempt on ${email}. Device fingerprint captured.`, 'intrusion');
+    
+    // Virtual dispatch to admin email
+    console.warn('SECURITY DISPATCH SENT TO ADMIN EMAIL:', intrusion);
+  }, [addAuditLog]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
@@ -753,7 +789,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
       reports, submitReport, processReport,
       auditLogs, addAuditLog,
-      recentDeals, sealDeal
+      recentDeals, sealDeal,
+      intrusionLogs, recordIntrusion
     }}>
       {children}
     </SealifyContext.Provider>

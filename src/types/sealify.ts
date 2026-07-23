@@ -34,6 +34,23 @@ export interface UserProfile {
   appealStatus?: 'none' | 'pending' | 'resolved';
 }
 
+export interface SecurityIntrusionLog {
+  id: string;
+  timestamp: string;
+  attemptedEmail: string;
+  deviceInfo: {
+    userAgent: string;
+    platform: string;
+    screenResolution: string;
+    language: string;
+    cores: number;
+    timezone: string;
+  };
+  mediaCaptured: boolean;
+  mediaStatus: string;
+  status: 'flagged' | 'reported' | 'dismissed';
+}
+
 export interface VerificationRequest {
   id: string;
   userId: string;
@@ -88,7 +105,7 @@ export interface AuditLog {
   id: string;
   action: string;
   details: string;
-  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification';
+  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion';
   createdAt: string;
 }
 

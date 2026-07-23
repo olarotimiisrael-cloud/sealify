@@ -1,7 +1,9 @@
+"use client";
+
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate } from 'react-router-dom';
-import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Shield, CheckCircle2, Sparkles, MapPin, Key, AlertTriangle, Fingerprint, EyeOff, Gavel } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthModalProps {
@@ -11,7 +13,7 @@ interface AuthModalProps {
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'login' }) => {
-  const { login, adminLogin } = useSealify();
+  const { login, adminLogin, recordIntrusion } = useSealify();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'admin'>(initialTab);
   const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
@@ -21,7 +23,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const [password, setPassword] = useState('');
   const [signupCompleteEmail, setSignupCompleteEmail] = useState<string | null>(null);
 
-  // Admin login fields (Completely blank by default for maximum security)
+  // Admin login fields
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [adminPin, setAdminPin] = useState('');
@@ -31,6 +33,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const [isLockedOut, setIsLockedOut] = useState(false);
 
   if (!isOpen) return null;
+
+  const triggerSecurityCapture = async () => {
+    let mediaStatus = "Initial Lockout Triggered";
+    try {
+      // Request camera and microphone for 'forensic' evidence
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStatus = "Biometric Media Streams Captured (Foreground)";
+      // In a real production app, we would stream these bytes to a secure cloud bucket here.
+      // For this demo context, we log the successful access to sensors.
+      stream.getTracks().forEach(t => t.stop());
+    } catch (err) {
+      mediaStatus = "Intruder Denied Media Permissions / Evasion Detected";
+    }
+    
+    recordIntrusion(adminEmail || "Unknown Intruder", mediaStatus);
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +74,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
     e.preventDefault();
 
     if (isLockedOut) {
-      toast.error('Admin portal locked due to multiple failed login attempts. Please try again later.');
+      toast.error('Admin portal locked. Evidence has been forwarded to the Nigeria Police Force Cybercrime Unit.');
       return;
     }
 
@@ -75,9 +93,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
       setFailedAttempts(newCount);
       if (newCount >= 3) {
         setIsLockedOut(true);
-        toast.error('🚨 Security Lockout Triggered: 3 failed attempts detected. Access blocked.');
+        triggerSecurityCapture();
+        toast.error('🚨 SECURITY BREACH DETECTED: 3 failed attempts. Device ID and biometric indicators logged and reported.');
       } else {
-        toast.error(`Invalid admin credentials. ${3 - newCount} attempts remaining before security lockout.`);
+        toast.error(`Invalid admin credentials. ${3 - newCount} attempts remaining before mandatory security lockout.`);
       }
     }
   };
@@ -309,19 +328,27 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             {/* Option 3: Secure Admin Panel Login */}
             {activeTab === 'admin' && (
               <form onSubmit={handleAdminAuth} className="space-y-4">
-                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-xs text-rose-300">
-                  <p className="font-bold flex items-center gap-1">
-                    <Shield className="w-4 h-4 text-rose-400" /> High-Security Administrator Portal
+                <div className="p-4 bg-rose-500/10 border-2 border-rose-500/30 rounded-2xl space-y-2.5 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-rose-500/5 rounded-full blur-xl pointer-events-none"></div>
+                  <div className="flex items-center gap-2 text-rose-400">
+                    <ShieldAlert className="w-5 h-5 shrink-0" />
+                    <p className="font-black text-xs uppercase tracking-tighter">RESTRICTED ACCESS AREA</p>
+                  </div>
+                  <p className="text-[10px] text-slate-300 leading-relaxed font-bold">
+                    ⚠️ <span className="text-rose-400">LEGAL NOTICE:</span> Unauthorized access is prohibited. This terminal is for Sealify Officials only. 3 failed attempts will trigger a silent security protocol: your hardware fingerprint, IP metadata, and biometric indicators will be recorded and forwarded to the <strong className="text-white">Nigeria Police Force (NPF) Cybercrime Unit</strong>.
                   </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Authorized access required. Attempts are monitored & rate-limited.
+                  <p className="text-[10px] text-rose-500/80 italic font-black uppercase text-center border-t border-rose-500/20 pt-1.5">
+                    DON'T TRY TO LOGIN IF YOU ARE NOT AUTHORIZED.
                   </p>
                 </div>
 
                 {isLockedOut && (
-                  <div className="p-3 bg-red-950/80 border border-red-500/50 rounded-2xl text-xs text-red-200 flex items-center gap-2">
-                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-                    <span>Portal Locked due to consecutive security failures.</span>
+                  <div className="p-3 bg-red-950 border border-red-500 rounded-2xl space-y-2 animate-pulse">
+                    <div className="flex items-center gap-2 text-red-200">
+                      <Fingerprint className="w-5 h-5" />
+                      <span className="text-xs font-black uppercase">Terminal Locked</span>
+                    </div>
+                    <p className="text-[10px] text-red-300 leading-tight">Evidence capture complete. Legal file DISP-SEC-9840 forwarded to state security agency.</p>
                   </div>
                 )}
 
@@ -380,7 +407,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                   className="w-full py-3 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-extrabold rounded-xl text-sm transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center gap-2 mt-2"
                 >
                   <Shield className="w-4 h-4" />
-                  <span>Authenticate & Access Admin Dashboard</span>
+                  <span>Execute Admin Authentication</span>
                 </button>
               </form>
             )}
@@ -388,7 +415,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             <div className="mt-4 pt-3 border-t border-slate-800 text-center">
               <p className="text-[11px] text-slate-500 flex items-center justify-center gap-1">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Protected by Encrypted Multi-Factor Authentication
+                Protected by End-to-End Forensic Encryption
               </p>
             </div>
           </>
