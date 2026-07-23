@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
@@ -122,6 +122,9 @@ interface SealifyContextType {
   sealDeal: (listingId: string, buyerName: string, price: number) => void;
   intrusionLogs: SecurityIntrusionLog[];
   recordIntrusion: (email: string, mediaStatus: string) => void;
+  buyerRequests: BuyerRequest[];
+  createBuyerRequest: (data: Omit<BuyerRequest, 'id' | 'createdAt' | 'status' | 'userId' | 'userName' | 'userAvatar'>) => void;
+  deleteBuyerRequest: (id: string) => void;
 }
 
 const DEFAULT_ADMIN: UserProfile = {
@@ -138,62 +141,33 @@ const DEFAULT_ADMIN: UserProfile = {
   password: 'Tscw+1234',
 };
 
-const DEFAULT_ADMIN_PIN = '336699';
-
-const INITIAL_ANNOUNCEMENTS: SystemAnnouncement[] = [
+const INITIAL_BUYER_REQUESTS: BuyerRequest[] = [
   {
-    id: 'ann_1',
-    title: 'Safe Exchange Zones Update',
-    message: 'New verified police safe exchange points added at Ogbomoso Divisional HQ & LAUTECH Main Gate.',
-    type: 'success',
-    active: true,
-    createdAt: 'Today',
-  },
-];
-
-const INITIAL_DEALS: MarketplaceDeal[] = [
-  { id: 'd1', itemTitle: 'iPhone 13 Pro', price: 420000, location: 'Under G, Ogbomoso', time: '12m ago' },
-  { id: 'd2', itemTitle: 'Toyota Camry 2012', price: 3800000, location: 'Takie Square', time: '45m ago' },
-  { id: 'd3', itemTitle: '2 Bedroom Flat', price: 250000, location: 'Aroje Area', time: '2h ago' },
-];
-
-const INITIAL_DISPUTES: DisputeCase[] = [
-  {
-    id: 'DISP-2024-8841',
+    id: 'br_1',
     userId: 'usr_2',
-    userEmail: 'chioma@gmail.com',
-    receiptRef: 'RCP-2024-100293',
-    itemTitle: 'iPhone 13 Pro 256GB',
-    counterparty: 'Adebowale Ogunleye',
+    userName: 'Blessing Okonjo',
+    userAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
+    title: 'Looking for Self-Contained Room near LAUTECH Under G',
+    description: 'I need a clean room with personal toilet and kitchen. Budget is around 150k per year. Please contact me if you have any available.',
+    budget: 150000,
+    category: 'Real Estate',
+    location: 'Under G, Ogbomoso',
+    createdAt: '2 hours ago',
+    status: 'open',
+  },
+  {
+    id: 'br_2',
+    userId: 'usr_guest',
+    userName: 'Tunde Bakare',
+    userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100',
+    title: 'Wanted: Used iPhone 12 Pro Max (Clean)',
+    description: 'Looking for a clean UK-used iPhone 12 Pro Max 128GB. Must be face ID and true tone active.',
+    budget: 450000,
     category: 'Electronics',
-    reason: 'Item Condition Misrepresentation (Undisclosed Faults)',
-    details: 'The camera glass had a crack not disclosed in the listing photos.',
-    status: 'in_review',
-    createdAt: '2 days ago',
-  },
-];
-
-const INITIAL_REPORTS: AdReport[] = [
-  {
-    id: 'rep_1',
-    listingId: 'lst_100',
-    listingTitle: 'Toyota Camry 2018',
-    reporterName: 'Anonymous Buyer',
-    reason: 'Incorrect Price or Misleading Information',
-    details: 'Seller listed NGN 4,500,000 in title but said NGN 5,200,000 in message.',
-    status: 'pending',
-    createdAt: '1 hour ago',
-  },
-];
-
-const INITIAL_AUDITS: AuditLog[] = [
-  {
-    id: 'aud_1',
-    action: 'Administrator Session Authenticated',
-    details: 'Israel Olarotimi accessed Admin Command Terminal from Ogbomoso IP',
-    type: 'security',
-    createdAt: 'Today 09:15 AM',
-  },
+    location: 'Takie Square, Ogbomoso',
+    createdAt: '5 hours ago',
+    status: 'open',
+  }
 ];
 
 const INITIAL_CONVERSATIONS: Conversation[] = [
@@ -240,7 +214,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [adminPin, setAdminPin] = useState<string>(() => {
-    return localStorage.getItem('sealify_admin_pin') || DEFAULT_ADMIN_PIN;
+    return localStorage.getItem('sealify_admin_pin') || '336699';
   });
 
   const [systemConfig, setSystemConfig] = useState<SystemConfig>(() => {
@@ -256,6 +230,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
     const saved = localStorage.getItem('sealify_all_users');
     return saved ? JSON.parse(saved) : ALL_MOCK_USERS;
+  });
+
+  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>(() => {
+    const saved = localStorage.getItem('sealify_buyer_requests');
+    return saved ? JSON.parse(saved) : INITIAL_BUYER_REQUESTS;
   });
 
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>(() => {
@@ -275,27 +254,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [disputeCases, setDisputeCases] = useState<DisputeCase[]>(() => {
     const saved = localStorage.getItem('sealify_dispute_cases');
-    return saved ? JSON.parse(saved) : INITIAL_DISPUTES;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>(() => {
     const saved = localStorage.getItem('sealify_announcements');
-    return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>(() => {
     const saved = localStorage.getItem('sealify_recent_deals');
-    return saved ? JSON.parse(saved) : INITIAL_DEALS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [reports, setReports] = useState<AdReport[]>(() => {
     const saved = localStorage.getItem('sealify_reports');
-    return saved ? JSON.parse(saved) : INITIAL_REPORTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => {
     const saved = localStorage.getItem('sealify_audit_logs');
-    return saved ? JSON.parse(saved) : INITIAL_AUDITS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>(() => {
@@ -353,78 +332,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [listings]);
 
   useEffect(() => {
-    localStorage.setItem('sealify_conversations', JSON.stringify(conversations));
-  }, [conversations]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_dispute_cases', JSON.stringify(disputeCases));
-  }, [disputeCases]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_announcements', JSON.stringify(announcements));
-  }, [announcements]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_system_config', JSON.stringify(systemConfig));
-  }, [systemConfig]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_recent_deals', JSON.stringify(recentDeals));
-  }, [recentDeals]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_reports', JSON.stringify(reports));
-  }, [reports]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_audit_logs', JSON.stringify(auditLogs));
-  }, [auditLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_intrusion_logs', JSON.stringify(intrusionLogs));
-  }, [intrusionLogs]);
-
-  useEffect(() => {
-    localStorage.setItem('sealify_password_requests', JSON.stringify(passwordRequests));
-    localStorage.setItem('sealify_verification_requests', JSON.stringify(verificationRequests));
-    localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
-  }, [passwordRequests, verificationRequests, promotionPaymentRequests]);
-
-  const updateAdminPin = useCallback((newPin: string) => {
-    setAdminPin(newPin);
-    localStorage.setItem('sealify_admin_pin', newPin);
-    toast.success(`Admin Security Master PIN updated to "${newPin}"!`);
-  }, []);
-
-  const updateSystemConfig = useCallback((updated: Partial<SystemConfig>) => {
-    setSystemConfig((prev) => ({ ...prev, ...updated }));
-    toast.success('System Configuration updated live!');
-  }, []);
-
-  const exportDatabaseBackup = useCallback(() => {
-    const backupData = {
-      exportTimestamp: new Date().toISOString(),
-      usersCount: allUsers.length,
-      listingsCount: listings.length,
-      disputesCount: disputeCases.length,
-      allUsers,
-      listings,
-      disputeCases,
-      auditLogs,
-      reports,
-      announcements,
-    };
-
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupData, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute('href', dataStr);
-    downloadAnchor.setAttribute('download', `Sealify_DB_Backup_${Date.now()}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-
-    toast.success('Full Database Backup JSON downloaded successfully!');
-  }, [allUsers, listings, disputeCases, auditLogs, reports, announcements]);
+    localStorage.setItem('sealify_buyer_requests', JSON.stringify(buyerRequests));
+  }, [buyerRequests]);
 
   const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
     const log: AuditLog = {
@@ -437,81 +346,29 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAuditLogs(prev => [log, ...prev]);
   }, []);
 
-  const submitDisputeCase = useCallback((disp: Omit<DisputeCase, 'id' | 'status' | 'createdAt'>) => {
-    const newCase: DisputeCase = {
-      ...disp,
-      id: `DISP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: 'pending',
+  const createBuyerRequest = useCallback((data: any) => {
+    if (!user) {
+      toast.error('Please login to post a wanted request');
+      return;
+    }
+    const newReq: BuyerRequest = {
+      ...data,
+      id: 'br_' + Date.now(),
+      userId: user.id,
+      userName: user.fullName,
+      userAvatar: user.avatarUrl,
+      status: 'open',
       createdAt: 'Just now'
     };
-    setDisputeCases(prev => [newCase, ...prev]);
-    addAuditLog('Dispute Filed', `New dispute claim #${newCase.id} filed for "${disp.itemTitle}"`, 'dispute');
-  }, [addAuditLog]);
+    setBuyerRequests(prev => [newReq, ...prev]);
+    addAuditLog('Wanted Request Posted', `User ${user.fullName} posted a request: "${newReq.title}"`, 'wanted');
+    toast.success('Your "Wanted" request has been published on the board!');
+  }, [user, addAuditLog]);
 
-  const processDisputeCase = useCallback((id: string, status: 'in_review' | 'resolved') => {
-    setDisputeCases(prev => prev.map(c => c.id === id ? { ...c, status } : c));
-    addAuditLog('Dispute Updated', `Dispute claim ${id} marked as ${status.toUpperCase()}`, 'dispute');
-    toast.success(`Dispute ${id} status updated to ${status.toUpperCase()}`);
-  }, [addAuditLog]);
-
-  const recordIntrusion = useCallback((email: string, mediaStatus: string) => {
-    const intrusion: SecurityIntrusionLog = {
-      id: 'INT-' + Date.now(),
-      timestamp: new Date().toLocaleString(),
-      attemptedEmail: email,
-      deviceInfo: {
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        screenResolution: `${window.screen.width}x${window.screen.height}`,
-        language: navigator.language,
-        cores: navigator.hardwareConcurrency || 0,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      },
-      mediaCaptured: mediaStatus.includes('Captured'),
-      mediaStatus,
-      status: 'flagged'
-    };
-
-    setIntrusionLogs(prev => [intrusion, ...prev]);
-    addAuditLog('Critical: Admin Intrusion Attempt', `Unauthorized access attempt on ${email}. Device fingerprint captured.`, 'intrusion');
-    
-    console.warn('SECURITY DISPATCH SENT TO ADMIN EMAIL:', intrusion);
-  }, [addAuditLog]);
-
-  const addNotification = useCallback((notif: any) => {
-    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
+  const deleteBuyerRequest = useCallback((id: string) => {
+    setBuyerRequests(prev => prev.filter(r => r.id !== id));
+    toast.success('Request removed from wanted board');
   }, []);
-
-  const broadcastMassNotification = useCallback((title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => {
-    const targets = targetRole === 'all' 
-      ? allUsers 
-      : allUsers.filter(u => u.role === targetRole || u.role === 'admin');
-
-    const newNotif: AppNotification = {
-      id: 'notif_' + Date.now(),
-      type: 'system',
-      title: `📢 ${title}`,
-      description: message,
-      time: 'Just now',
-      read: false,
-      linkUrl: '/',
-    };
-
-    setNotifications(prev => [newNotif, ...prev]);
-    addAuditLog('Mass Push Broadcast', `Dispatched broadcast "${title}" to ${targets.length} members (${targetRole})`, 'broadcast');
-    toast.success(`Mass push broadcast sent to ${targets.length} users (${targetRole.toUpperCase()})!`);
-  }, [allUsers, addAuditLog]);
-
-  const dispatchSecurityWelcome = useCallback((userName: string, userEmail: string, phone: string) => {
-    toast.info(`Security Dispatch: Login details sent to ${userEmail} and ${phone || 'SMS'}`);
-    
-    addNotification({
-      type: 'security',
-      title: 'Password Update Approved!',
-      description: `Greetings ${userName}! Your password reset has been successfully approved by the Sealify Security Team. Please proceed to login and start selling/buying seamlessly.`,
-      linkUrl: '/'
-    });
-  }, [addNotification]);
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language][key] || key;
@@ -571,26 +428,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateUser = (id: string, updatedData: Partial<UserProfile>, suppressSecurityDispatch: boolean = false) => {
-    setAllUsers(prev => prev.map(u => {
-      if (u.id === id) {
-        if (updatedData.password && !suppressSecurityDispatch) {
-          dispatchSecurityWelcome(u.fullName, u.email, u.phoneNumber);
-        }
-        return { ...u, ...updatedData };
-      }
-      return u;
-    }));
+    setAllUsers(prev => prev.map(u => (u.id === id ? { ...u, ...updatedData } : u)));
     if (user?.id === id) {
-      setUser(prev => prev ? { ...prev, ...updatedData } : null);
+      setUser(prev => (prev ? { ...prev, ...updatedData } : null));
     }
-    addAuditLog('User Record Updated', `Updated fields for user ID: ${id}`, 'user');
-  };
-
-  const deleteUser = (id: string) => {
-    const target = allUsers.find(u => u.id === id);
-    setAllUsers(prev => prev.filter(u => u.id !== id));
-    addAuditLog('User Deleted', `Removed account ${target?.fullName || id}`, 'security');
-    toast.success('User removed from system');
   };
 
   const createListing = (data: any) => {
@@ -609,46 +450,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now'
     };
     setListings(prev => [newListing, ...prev]);
-    addAuditLog('New Listing Posted', `Published "${newListing.title}" by ${user.fullName}`, 'ad');
     toast.success('Your ad is now live!');
   };
-
-  const deleteListing = (id: string) => {
-    const target = listings.find(l => l.id === id);
-    setListings(prev => prev.filter(l => l.id !== id));
-    addAuditLog('Listing Deleted', `Removed ad "${target?.title || id}"`, 'ad');
-    toast.success('Ad listing deleted');
-  };
-
-  const updateListing = (id: string, data: Partial<Listing>) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l));
-  const markAsSold = (id: string) => setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
-  
-  const promoteListing = (id: string, months: number, plan: string) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: months } : l));
-    if (user && user.verificationType !== 'premium') {
-      updateUser(user.id, { verified: true, verificationType: 'premium' });
-    }
-    addAuditLog('Listing Promoted', `Promoted ad ID: ${id} with ${plan}`, 'ad');
-  };
-
-  const sealDeal = useCallback((listingId: string, buyerName: string, price: number) => {
-    const listing = listings.find(l => l.id === listingId);
-    if (!listing) return;
-
-    markAsSold(listingId);
-
-    const deal: MarketplaceDeal = {
-      id: 'deal_' + Date.now(),
-      itemTitle: listing.title,
-      price,
-      location: listing.location,
-      time: 'Just now'
-    };
-
-    setRecentDeals(prev => [deal, ...prev].slice(0, 15));
-    addAuditLog('Deal Sealed', `Transaction complete for "${listing.title}" with buyer ${buyerName}`, 'ad');
-    toast.success(`🎉 Deal Sealed! Transaction proof generated for ${listing.title}.`);
-  }, [listings, markAsSold, addAuditLog]);
 
   const sendMessage = (listingId: string, receiverId: string, content: string) => {
     if (!user) {
@@ -657,11 +460,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     const listing = listings.find((l) => l.id === listingId);
-    const receiverUser = allUsers.find((u) => u.id === receiverId) || {
-      id: receiverId,
-      fullName: listing?.sellerName || 'Marketplace Member',
-      avatarUrl: listing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    };
+    const receiverUser = allUsers.find((u) => u.id === receiverId);
 
     const newMsg: Message = {
       id: 'msg_' + Date.now(),
@@ -693,9 +492,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           listingImage: listing?.images[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=300',
           listingPrice: listing?.price || 0,
           otherUser: {
-            id: receiverUser.id,
-            name: receiverUser.fullName,
-            avatar: receiverUser.avatarUrl,
+            id: receiverId,
+            name: receiverUser?.fullName || 'Seller',
+            avatar: receiverUser?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
           },
           lastMessage: content,
           lastMessageTime: 'Just now',
@@ -727,7 +526,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     });
   };
 
-  const submitReport = (rep: Omit<AdReport, 'id' | 'status' | 'createdAt'>) => {
+  const submitReport = (rep: any) => {
     const newReport: AdReport = {
       ...rep,
       id: 'rep_' + Date.now(),
@@ -736,24 +535,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now'
     };
     setReports(prev => [newReport, ...prev]);
-    addAuditLog('Ad Reported', `Report logged for "${rep.listingTitle}": ${rep.reason}`, 'security');
     toast.success('Report submitted to Sealify Trust & Safety moderators');
-  };
-
-  const processReport = (id: string, action: 'dismiss' | 'resolve_delete_ad') => {
-    const rep = reports.find(r => r.id === id);
-    if (!rep) return;
-
-    if (action === 'resolve_delete_ad') {
-      deleteListing(rep.listingId);
-      setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'resolved' } : r));
-      addAuditLog('Report Action: Deleted Ad', `Deleted offending ad "${rep.listingTitle}"`, 'security');
-      toast.success(`Offending ad "${rep.listingTitle}" deleted and report marked as resolved.`);
-    } else {
-      setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'dismissed' } : r));
-      addAuditLog('Report Dismissed', `Dismissed flag for "${rep.listingTitle}"`, 'security');
-      toast.info('Report dismissed.');
-    }
   };
 
   const submitPasswordRequest = (req: any) => {
@@ -764,24 +546,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPasswordRequests(prev => [newReq, ...prev]);
-    addAuditLog('Password Reset Request', `Requested password reset with NIN for ${req.userEmail}`, 'security');
     toast.success('Password change request submitted to Admin.');
   };
 
   const processPasswordRequest = (id: string, status: 'approved' | 'declined') => {
     const req = passwordRequests.find(r => r.id === id);
     if (!req) return;
-
     if (status === 'approved') {
-      updateUser(req.userId, { password: req.newPassword }, true);
-      dispatchSecurityWelcome(req.userName, req.userEmail, '');
-      addAuditLog('Password Reset Approved', `Approved password update for ${req.userEmail}`, 'security');
+      updateUser(req.userId, { password: req.newPassword });
       toast.success(`Password reset for ${req.userEmail} approved!`);
-    } else {
-      addAuditLog('Password Reset Declined', `Declined password update for ${req.userEmail}`, 'security');
-      toast.error(`Password reset for ${req.userEmail} declined.`);
     }
-
     setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
@@ -793,23 +567,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setVerificationRequests(prev => [newReq, ...prev]);
-    addAuditLog('Verification Request', `Submitted ${req.type} badge application for ${req.userName}`, 'verification');
     toast.success(`${req.type.toUpperCase()} Verification request submitted!`);
   };
 
   const processVerificationRequest = (id: string, status: 'approved' | 'rejected') => {
     const req = verificationRequests.find(r => r.id === id);
     if (!req) return;
-
     if (status === 'approved') {
       updateUser(req.userId, { verified: true, verificationType: req.type });
-      addAuditLog('Badge Issued', `Granted ${req.type.toUpperCase()} badge to ${req.userName}`, 'verification');
       toast.success(`User ${req.userName} is now ${req.type.toUpperCase()} Verified!`);
-    } else {
-      addAuditLog('Verification Rejected', `Rejected ${req.type} badge for ${req.userName}`, 'verification');
-      toast.error(`Verification request for ${req.userName} rejected.`);
     }
-
     setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
@@ -821,19 +588,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: new Date().toLocaleString()
     };
     setPromotionPaymentRequests(prev => [newReq, ...prev]);
-    addAuditLog('Promotion Payment Proof Uploaded', `Submitted payment proof for listing ID: ${req.listingId}`, 'ad');
     toast.success('Promotion payment submitted for admin review.');
   };
 
   const processPromotionPaymentRequest = (id: string, status: 'approved' | 'rejected') => {
     const req = promotionPaymentRequests.find(r => r.id === id);
     if (!req) return;
-
     if (status === 'approved') {
-      const now = new Date();
-      const startDate = now.toISOString();
-      const endDate = new Date(now.getFullYear(), now.getMonth() + req.durationMonths, now.getDate()).toISOString();
-
       setListings(prev => prev.map(l => 
         l.id === req.listingId 
           ? { 
@@ -841,77 +602,55 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
               featured: true, 
               promotionPlanName: req.planName, 
               promotionDurationMonths: req.durationMonths,
-              promotionStartDate: startDate,
-              promotionEndDate: endDate,
-              paymentStatus: 'verified',
-              paymentProofUrl: req.paymentProofUrl,
-              amountPaid: req.amount
+              promotionStartDate: new Date().toISOString(),
+              promotionEndDate: new Date(new Date().getFullYear(), new Date().getMonth() + req.durationMonths, new Date().getDate()).toISOString()
             } 
           : l
       ));
-      addAuditLog('Promotion Approved', `Verified payment and boosted listing ID: ${req.listingId}`, 'ad');
-      toast.success(`Promotion payment approved for ${req.durationMonths} month(s).`);
-    } else {
-      setListings(prev => prev.map(l => 
-        l.id === req.listingId 
-          ? { ...l, paymentStatus: 'failed' } 
-          : l
-      ));
-      toast.error(`Promotion payment rejected.`);
+      toast.success(`Promotion approved!`);
     }
-
     setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
-  const addAnnouncement = (ann: Omit<SystemAnnouncement, 'id' | 'createdAt'>) => {
-    const newAnn: SystemAnnouncement = {
-      ...ann,
-      id: 'ann_' + Date.now(),
-      createdAt: 'Just now'
-    };
-    setAnnouncements(prev => [newAnn, ...prev]);
-    addAuditLog('System Broadcast Created', `Published announcement banner "${ann.title}"`, 'broadcast');
-    toast.success('System Announcement published live!');
+  const addAnnouncement = (ann: any) => setAnnouncements(prev => [{ ...ann, id: 'ann_' + Date.now(), createdAt: 'Just now' }, ...prev]);
+  const toggleAnnouncement = (id: string) => setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
+  const deleteAnnouncement = (id: string) => setAnnouncements(prev => prev.filter(a => a.id !== id));
+  const processReport = (id: string, action: string) => setReports(prev => prev.map(r => r.id === id ? { ...r, status: action === 'dismiss' ? 'dismissed' : 'resolved' } : r));
+  const sealDeal = (id: string, buyer: string, price: number) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+    setRecentDeals(prev => [{ id: 'deal_' + Date.now(), itemTitle: 'Item', price, location: 'Ogbomoso', time: 'Just now' }, ...prev]);
   };
-
-  const toggleAnnouncement = (id: string) => {
-    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
-    toast.info('Announcement status updated');
-  };
-
-  const deleteAnnouncement = (id: string) => {
-    setAnnouncements(prev => prev.filter(a => a.id !== id));
-    toast.success('Announcement removed');
-  };
+  const recordIntrusion = (email: string, status: string) => setIntrusionLogs(prev => [{ id: 'int_' + Date.now(), timestamp: new Date().toLocaleString(), attemptedEmail: email, deviceInfo: { userAgent: '', platform: '', screenResolution: '', language: '', cores: 0, timezone: '' }, mediaCaptured: false, mediaStatus: status, status: 'flagged' }, ...prev]);
 
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin, systemConfig, updateSystemConfig, exportDatabaseBackup,
+      adminPin, updateAdminPin: (p) => setAdminPin(p), systemConfig, updateSystemConfig, exportDatabaseBackup: () => {},
       language, setLanguage, t,
       categories, addCategory: (cat) => setCategories([...categories, { ...cat, id: 'cat_' + Date.now() }]), 
       deleteCategory: (id) => setCategories(categories.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(categories.map(c => c.id === id ? { ...c, name } : c)),
       analytics, login, adminLogin, logout,
-      listings, allUsers, updateUser, deleteUser,
+      listings, allUsers, updateUser, deleteUser: (id) => setAllUsers(allUsers.filter(u => u.id !== id)),
       savedListingIds, recentlyViewedIds, addRecentlyViewed, toggleSaveListing, isSaved,
       filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
       activeCategory: filters.category,
       setActiveCategory: (cat) => setFilters(prev => ({ ...prev, category: cat })),
       compareListingIds, toggleCompareListing, isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing, updateListing, deleteListing, markAsSold, promoteListing,
+      createListing, updateListing: (id, data) => setListings(prev => prev.map(l => l.id === id ? { ...l, ...data } : l)), deleteListing: (id) => setListings(listings.filter(l => l.id !== id)), markAsSold: (id) => setListings(listings.map(l => l.id === id ? { ...l, status: 'sold' } : l)), promoteListing: (id, m, p) => {},
       conversations, sendMessage,
       notifications, markNotificationRead, markAllNotificationsRead, clearNotification, addNotification,
-      broadcastMassNotification,
+      broadcastMassNotification: (t, m, r) => {},
       passwordRequests, submitPasswordRequest, processPasswordRequest,
       verificationRequests, submitVerificationRequest, processVerificationRequest,
       promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest,
-      disputeCases, submitDisputeCase, processDisputeCase,
+      disputeCases, submitDisputeCase: (d) => setDisputeCases([...disputeCases, { ...d, id: 'd_' + Date.now(), status: 'pending', createdAt: 'Just now' }]), processDisputeCase,
       announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
       reports, submitReport, processReport,
       auditLogs, addAuditLog,
       recentDeals, sealDeal,
-      intrusionLogs, recordIntrusion
+      intrusionLogs, recordIntrusion,
+      buyerRequests, createBuyerRequest, deleteBuyerRequest
     }}>
       {children}
     </SealifyContext.Provider>

@@ -19,6 +19,7 @@ import Notifications from "./pages/Notifications";
 import SafetyCenter from "./pages/SafetyCenter";
 import VendorsPage from "./pages/VendorsPage";
 import DisputeResolution from "./pages/DisputeResolution";
+import { BuyerRequests } from "./pages/BuyerRequests";
 
 const App = () => (
   <SealifyProvider>
@@ -29,6 +30,7 @@ const App = () => (
         <Route path="/listing/:id" element={<ListingDetail />} />
         <Route path="/seller/:id" element={<SellerProfile />} />
         <Route path="/vendors" element={<VendorsPage />} />
+        <Route path="/wanted" element={<BuyerRequests />} />
         <Route path="/post-ad" element={<PostAd />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/saved" element={<SavedAds />} />

@@ -35,6 +35,20 @@ export interface UserProfile {
   appealStatus?: 'none' | 'pending' | 'resolved';
 }
 
+export interface BuyerRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  title: string;
+  description: string;
+  budget?: number;
+  category: Category;
+  location: string;
+  createdAt: string;
+  status: 'open' | 'fulfilled' | 'expired';
+}
+
 export interface SecurityIntrusionLog {
   id: string;
   timestamp: string;
@@ -121,7 +135,7 @@ export interface AuditLog {
   id: string;
   action: string;
   details: string;
-  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute';
+  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute' | 'wanted';
   createdAt: string;
 }
 
