@@ -348,6 +348,13 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                 </form>
               </div>
+
+              <div className="p-6 bg-slate-900/40 border border-slate-800 rounded-[2rem] flex items-center gap-4">
+                 <ShieldQuestion className="w-10 h-10 text-slate-700" />
+                 <p className="text-[10px] text-slate-500 leading-relaxed font-bold uppercase tracking-tighter">
+                   <span className="text-white">Notice:</span> Updating the Master PIN is a high-level event. All other active admin sessions will be terminated immediately for security synchronization.
+                 </p>
+              </div>
             </div>
           )}
 
