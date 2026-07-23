@@ -5,10 +5,11 @@ import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
 import MobileNav from '../components/MobileNav';
 import SEO from '../components/SEO';
+import ValuationCalculatorModal from '../components/ValuationCalculatorModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Image as ImageIcon, Upload, Flame, 
-  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation
+  Video, FileVideo, Crown, Sparkles, MapPin, Check, Info, Lock, AlertTriangle, Navigation, Calculator
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,6 +51,7 @@ const PostAd: React.FC = () => {
   const videoInputRef = useRef<HTMLInputElement>(null);
 
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isValuationOpen, setIsValuationOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Electronics');
   const [condition, setCondition] = useState<Condition>('Like New');
@@ -160,7 +162,7 @@ const PostAd: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO title="Post Free Classified Ad — Sealify" description="List your items, vehicles, electronics, or services for free in Ogbomosoland and across Nigeria." />
       <Navbar />
 
@@ -329,7 +331,17 @@ const PostAd: React.FC = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN) *</label>
+                      <div className="flex justify-between items-center">
+                        <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN) *</label>
+                        <button
+                          type="button"
+                          onClick={() => setIsValuationOpen(true)}
+                          className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                        >
+                          <Calculator className="w-3 h-3" />
+                          <span>Estimate Worth</span>
+                        </button>
+                      </div>
                       <input
                         type="number"
                         required
@@ -441,6 +453,11 @@ const PostAd: React.FC = () => {
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} initialTab="signup" />
+      <ValuationCalculatorModal
+        isOpen={isValuationOpen}
+        onClose={() => setIsValuationOpen(false)}
+        onApplyPrice={(suggested) => setPrice(suggested.toString())}
+      />
       <MobileNav />
     </div>
   );

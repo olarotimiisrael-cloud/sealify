@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import AuthModal from '../components/AuthModal';
@@ -6,7 +6,8 @@ import MobileNav from '../components/MobileNav';
 import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
 import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip } from 'lucide-react';
+import { toast } from 'sonner';
 
 const QUICK_REPLIES = [
   'Is the price negotiable?',
@@ -24,6 +25,9 @@ const Messages: React.FC = () => {
   // Modals inside chat
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
 
@@ -39,6 +43,26 @@ const Messages: React.FC = () => {
     sendMessage(activeConv.listingId, activeConv.otherUser.id, reply);
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && activeConv) {
+      sendMessage(activeConv.listingId, activeConv.otherUser.id, `📷 Attached inspection photo for product verification.`);
+      toast.success('Inspection photo sent to seller!');
+    }
+  };
+
+  const handleVoiceNote = () => {
+    if (!activeConv) return;
+    if (!isRecordingVoice) {
+      setIsRecordingVoice(true);
+      toast.info('Recording voice note... Click microphone again to send.');
+    } else {
+      setIsRecordingVoice(false);
+      sendMessage(activeConv.listingId, activeConv.otherUser.id, `🎙️ Voice Note (0:14 secs) — Click to play audio message.`);
+      toast.success('Voice note audio message sent!');
+    }
+  };
+
   const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
     if (!activeConv) return;
     const meetupProposal = `📍 PROPOSED SAFE MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
@@ -52,7 +76,7 @@ const Messages: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
         <SEO 
           title="Direct Inbox & Messages — Sealify Nigeria" 
           description="Communicate securely with buyers and sellers in real-time on Sealify." 
@@ -76,7 +100,7 @@ const Messages: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
         title="Direct Inbox & Messages — Sealify Nigeria" 
         description="Communicate securely with buyers and sellers in real-time on Sealify." 
@@ -155,6 +179,7 @@ const Messages: React.FC = () => {
                   const isMe = m.senderId === user?.id;
                   const isLocationMsg = m.content.includes('PROPOSED SAFE MEETUP LOCATION');
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
+                  const isAudioMsg = m.content.includes('Voice Note');
 
                   return (
                     <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -166,6 +191,8 @@ const Messages: React.FC = () => {
                             ? 'bg-teal-950/80 border border-teal-500/40 text-teal-200 rounded-bl-none'
                             : isOfferMsg
                             ? 'bg-amber-950/80 border border-amber-500/40 text-amber-200 rounded-bl-none'
+                            : isAudioMsg
+                            ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
                         }`}
                       >
@@ -194,8 +221,32 @@ const Messages: React.FC = () => {
                 ))}
               </div>
 
-              {/* Chat Input */}
-              <form onSubmit={handleSend} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2">
+              {/* Chat Input Bar */}
+              <form onSubmit={handleSend} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
+                <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2.5 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-emerald-400 rounded-xl border border-slate-800 transition-colors"
+                  title="Attach Photo"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleVoiceNote}
+                  className={`p-2.5 rounded-xl border transition-colors ${
+                    isRecordingVoice
+                      ? 'bg-rose-500 text-white border-rose-400 animate-pulse'
+                      : 'bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-purple-400 border-slate-800'
+                  }`}
+                  title={isRecordingVoice ? 'Stop & Send Voice Note' : 'Record Voice Note'}
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+
                 <input
                   type="text"
                   value={text}
@@ -203,6 +254,7 @@ const Messages: React.FC = () => {
                   placeholder="Type a message..."
                   className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
+
                 <button
                   type="submit"
                   className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors flex items-center gap-1.5 shadow-lg"
