@@ -207,7 +207,7 @@ export const DisputeResolution: React.FC = () => {
                   <input type="file" onChange={handleFileUpload} accept="image/*" className="hidden" id="evidence-upload" />
                   <label
                     htmlFor="evidence-upload"
-                    className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-1.5 cursor-pointer \${
                       evidenceUrl ? 'border-emerald-500 bg-emerald-500/5 text-emerald-400' : 'border-slate-800 bg-slate-950 hover:border-rose-500/50 text-slate-400'
                     }`}
                   >
@@ -260,7 +260,7 @@ export const DisputeResolution: React.FC = () => {
                         <span className="font-mono text-[10px] text-emerald-400 font-bold block">{c.id}</span>
                         <h4 className="font-bold text-xs text-white mt-0.5">{c.itemTitle}</h4>
                       </div>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${
+                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded \${
                         c.status === 'in_review' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
                         c.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'
                       }`}>

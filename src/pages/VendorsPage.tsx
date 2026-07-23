@@ -89,13 +89,13 @@ export const VendorsPage: React.FC = () => {
               <button
                 key={filter}
                 onClick={() => setBadgeFilter(filter)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all shrink-0 ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all shrink-0 \${
                   badgeFilter === filter
                     ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
-                {filter === 'All' ? 'All Vendors' : `${filter} Badge`}
+                {filter === 'All' ? 'All Vendors' : `\${filter} Badge`}
               </button>
             ))}
           </div>
@@ -126,7 +126,7 @@ export const VendorsPage: React.FC = () => {
                         <div className="min-w-0">
                           <h3 className="font-extrabold text-base text-white truncate">{vendor.fullName}</h3>
                           {vendor.businessName && <p className="text-xs font-bold text-emerald-400 truncate">{vendor.businessName}</p>}
-                          <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> {vendor.location}</p>
+                          <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5"><MapPin className="w-3.5 h-3.5" /> {vendor.location}</p>
                         </div>
                       </div>
                       <VerifiedBadge type={vendor.verificationType || 'individual'} />
@@ -145,7 +145,7 @@ export const VendorsPage: React.FC = () => {
                   </div>
 
                   <Link
-                    to={`/seller/${vendor.id}`}
+                    to={`/seller/\${vendor.id}`}
                     className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs text-center flex items-center justify-center gap-1.5 shadow transition-colors"
                   >
                     <span>View Storefront</span>
