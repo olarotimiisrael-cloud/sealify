@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock } from 'lucide-react';
+import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock, Gavel } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import EscrowProtectionModal from './EscrowProtectionModal';
 
@@ -42,9 +42,10 @@ export const Footer: React.FC = () => {
 
           {/* Support */}
           <div className="space-y-4">
-            <h4 className="text-sm font-black text-white uppercase tracking-wider">Support</h4>
+            <h4 className="text-sm font-black text-white uppercase tracking-wider">Support & Safety</h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li><Link to="/faq" className="hover:text-emerald-400 transition-colors">Help & FAQ</Link></li>
+              <li><Link to="/dispute" className="text-rose-400 hover:text-rose-300 font-bold transition-colors flex items-center gap-1"><Gavel className="w-3.5 h-3.5" /> File Trade Dispute</Link></li>
               <li><Link to="/contact" className="hover:text-emerald-400 transition-colors">Contact Support</Link></li>
               <li><Link to="/help-center" className="hover:text-emerald-400 transition-colors">Terms of Service</Link></li>
               <li><Link to="/help-center" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link></li>
