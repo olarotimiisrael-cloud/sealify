@@ -9,6 +9,7 @@ import VerificationModal from '../components/VerificationModal';
 import SoldConfirmationModal from '../components/SoldConfirmationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import TransactionReceiptModal from '../components/TransactionReceiptModal';
+import SalesReportModal from '../components/SalesReportModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
@@ -27,7 +28,8 @@ import {
   Gavel,
   ShieldAlert,
   Send,
-  FileText
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -44,6 +46,7 @@ const MyAds: React.FC = () => {
   const [soldPromptListing, setSoldPromptListing] = useState<Listing | null>(null);
   const [receiptListing, setReceiptListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
@@ -187,6 +190,14 @@ const MyAds: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto">
+            <button
+              onClick={() => setIsSalesReportOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+              <span>Sales Report</span>
+            </button>
+
             <button
               onClick={() => setIsVerificationOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
@@ -396,6 +407,7 @@ const MyAds: React.FC = () => {
       <SoldConfirmationModal isOpen={!!soldPromptListing} onClose={() => setSoldPromptListing(null)} listingTitle={soldPromptListing?.title || ''} onConfirm={() => soldPromptListing && handleConfirmMarkSold(soldPromptListing)} />
       <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
       <TransactionReceiptModal isOpen={!!receiptListing} onClose={() => setReceiptListing(null)} listing={receiptListing} onSendToChat={handleSendReceiptToChat} />
+      <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} sellerName={user?.fullName || 'Seller'} />
       <MobileNav />
     </div>
