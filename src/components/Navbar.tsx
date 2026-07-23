@@ -16,7 +16,9 @@ import {
   ShieldCheck,
   Building2,
   Command,
-  Lock
+  Lock,
+  Settings as SettingsIcon,
+  Package
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -161,6 +163,7 @@ const Navbar: React.FC = () => {
                 <Link 
                   to={isAdmin ? '/admin' : '/my-ads'} 
                   className="flex items-center gap-2 hover:bg-slate-800 p-1.5 rounded-xl border border-slate-800 transition-colors"
+                  title="My Ads & Inventory"
                 >
                   <img 
                     src={user?.avatarUrl} 
@@ -171,6 +174,14 @@ const Navbar: React.FC = () => {
                     }}
                   />
                   <span className="text-xs font-bold hidden xl:inline">{user?.fullName}</span>
+                </Link>
+
+                <Link
+                  to="/settings"
+                  className="p-2.5 text-slate-400 hover:text-emerald-400 hover:bg-slate-800 rounded-xl transition-colors"
+                  title="Account & Storefront Settings"
+                >
+                  <SettingsIcon className="w-5 h-5" />
                 </Link>
                 
                 <button
@@ -215,6 +226,16 @@ const Navbar: React.FC = () => {
               <Link to="/safety" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
                 <ShieldCheck className="w-4 h-4 text-blue-400" /> Safety
               </Link>
+              {isAuthenticated && (
+                <>
+                  <Link to="/my-ads" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                    <Package className="w-4 h-4 text-amber-400" /> My Ads
+                  </Link>
+                  <Link to="/settings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-center gap-2 p-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold">
+                    <SettingsIcon className="w-4 h-4 text-purple-400" /> Settings
+                  </Link>
+                </>
+              )}
             </div>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
               {t('post_free_ad').toUpperCase()}
