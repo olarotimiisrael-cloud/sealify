@@ -32,12 +32,9 @@ import {
 
 const languages: { code: SupportedLanguage; label: string }[] = [
   { code: 'en', label: 'English' },
-  { code: 'en-GB', label: 'British' },
   { code: 'yo', label: 'Yorùbá' },
-  { code: 'pg', label: 'Pidgin' },
   { code: 'ha', label: 'Hausa' },
-  { code: 'ru', label: 'Русский' },
-  { code: 'fr', label: 'Français' },
+  { code: 'ig', label: 'Igbo' },
   { code: 'zh', label: '中文' },
 ];
 
@@ -94,7 +91,7 @@ const Navbar: React.FC = () => {
                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                </span>
                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">
-                 {analytics.visitors} online now
+                 {analytics.visitors} {t('online_now')}
                </span>
             </div>
           </div>
@@ -120,12 +117,12 @@ const Navbar: React.FC = () => {
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>Requests</span>
+              <span>{t('requests')}</span>
             </Link>
 
             <Link to="/market-insights" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors mr-1 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Insights</span>
+              <span>{t('insights')}</span>
             </Link>
 
             <button
@@ -225,7 +222,7 @@ const Navbar: React.FC = () => {
           <div className="lg:hidden flex items-center gap-2">
              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mr-1">
                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-               <span className="text-[9px] font-black text-emerald-400 uppercase">{analytics.visitors} online</span>
+               <span className="text-[9px] font-black text-emerald-400 uppercase">{analytics.visitors} {t('online_now')}</span>
              </div>
             <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
               <Search className="w-6 h-6" />
@@ -246,7 +243,7 @@ const Navbar: React.FC = () => {
                 ))}
              </div>
             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
-              Item Requests
+              {t('requests')}
             </Link>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
               {t('post_free_ad').toUpperCase()}
