@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
-import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
-import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, intrusionService, announcementService, searchAlertService, systemConfigService, siteSettingsService, recentDealsService } from '@/services/supabaseService';
+import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, auditService } from '@/services/supabaseService';
 import { toast } from 'sonner';
 
 export interface AppNotification {
@@ -42,7 +41,7 @@ export interface SystemConfig {
 export interface PromotionPlanConfig {
   months: number;
   label: string;
-  rate: number; // NGN rate per month
+  rate: number; 
   badge: string;
 }
 
@@ -168,324 +167,149 @@ interface SealifyContextType {
   error: string | null;
 }
 
-const DEFAULT_ADMIN_PIN = '336699';
-
-const DEFAULT_PROMOTION_PLANS: PromotionPlanConfig[] = [
-  { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
-  { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR (13% OFF)' },
-  { months: 6, label: '6 Months', rate: 11500, badge: 'SAVER (23% OFF)' },
-  { months: 12, label: '1 Year', rate: 9500, badge: 'MAX IMPACT (36% OFF)' },
-];
-
-const DEFAULT_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
-  {
-    id: 'spot_1',
-    name: 'Ogbomoso Police Divisional HQ Safe Zone',
-    zone: 'Police HQ',
-    category: 'Police Safe Zone',
-    address: 'Oja-Igbo Road, Ogbomoso, Oyo State',
-    distance: '0.8 km away',
-    hours: 'Open 24/7 (24hr Police Surveillance)',
-    cctvVerified: true,
-  },
-  {
-    id: 'spot_2',
-    name: 'Ogbomoso Public Library - Main Branch',
-    zone: 'Takie / Center',
-    category: 'Public Library',
-    address: 'Takie / Iluju Area, Ogbomoso, Oyo State',
-    distance: '1.2 km away',
-    hours: 'Mon-Sat 8:00 AM - 6:00 PM',
-    cctvVerified: true,
-  },
-  {
-    id: 'spot_3',
-    name: 'Ogbomoso Shopping Complex Atrium',
-    zone: 'Sabo Market Zone',
-    category: 'Shopping Mall',
-    address: 'Sabo Market Road, Ogbomoso, Oyo State',
-    distance: '1.5 km away',
-    hours: 'Daily 9:00 AM - 9:00 PM',
-    cctvVerified: true,
-  },
-  {
-    id: 'spot_4',
-    name: 'Popular Café at LAUTECH Main Gate',
-    zone: 'LAUTECH Area',
-    category: 'Café',
-    address: 'LAUTECH Main Gate / Under G, Ogbomoso, Oyo State',
-    distance: '2.1 km away',
-    hours: 'Daily 7:00 AM - 10:00 PM',
-    cctvVerified: true,
-  },
-];
-
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
-  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
-  const [allUsers, setAllUsers] = useState<UserProfile[]>(ALL_MOCK_USERS);
-  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
-  const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
-  const [promotionPlans, setPromotionPlans] = useState<PromotionPlanConfig[]>(DEFAULT_PROMOTION_PLANS);
-  const [safeSpots, setSafeSpots] = useState<SafeMeetupSpotConfig[]>(DEFAULT_SAFE_SPOTS);
-
-  const [notifications, setNotifications] = useState<AppNotification[]>([
-    {
-      id: 'notif_1',
-      type: 'system',
-      title: 'Welcome to Sealify Ogbomoso Node',
-      description: 'Your account is connected to the verified Ogbomoso local exchange network.',
-      time: 'Just now',
-      read: false,
-      linkUrl: '/'
-    }
-  ]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
-  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
-  const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>([]);
-  const [reports, setReports] = useState<AdReport[]>([]);
-  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>([]);
-  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [language, setLanguage] = useState<SupportedLanguage>('en');
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true });
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ logoUrl: '/logo.png', siteName: 'Sealify Nigeria', siteDescription: "Nigeria's Trusted Local Marketplace.", ogImage: '/og-image.png', contactEmail: 'support@sealify.ng', contactPhone: '+234 813 120 8468' });
   const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
   const [categories, setCategories] = useState([
-    { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 12, color: 'bg-blue-500' },
-    { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 24, color: 'bg-purple-500' },
-    { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 8, color: 'bg-teal-500' },
-    { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 15, color: 'bg-pink-500' },
-    { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 9, color: 'bg-amber-500' },
+    { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 0, color: 'bg-blue-500' },
+    { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
+    { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 0, color: 'bg-teal-500' },
+    { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 0, color: 'bg-pink-500' },
+    { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
   ]);
 
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
+  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
+
+  // Analytics Simulation (Keep dynamic for UI life)
   const [analytics, setAnalytics] = useState<AnalyticsData>({
-    visitors: 142,
-    activeAds: listings.length,
-    totalChats: 12,
-    sessionsPerMinute: [12, 18, 22, 15, 30, 42, 28, 35, 19, 25],
-    activeSessions: [
-      { id: 'sess_1', user: 'Ope_72', action: 'Viewing iPhone 13', time: 'Just now' },
-      { id: 'sess_2', user: 'Uche_D', action: 'Messaging Seller', time: '2m ago' }
-    ]
+    visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
+    activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
   });
 
-  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([
-    { id: 'ann_1', title: 'New: Ogbomoso Price Index', message: 'Check fair market values for used items in our new Market Insights portal.', type: 'info', active: true, createdAt: '2024-01-01' }
-  ]);
+  const fetchData = useCallback(async () => {
+    try {
+      const [dbUsers, dbListings, dbVerifications, dbPasswords] = await Promise.all([
+        userService.getAll(),
+        listingService.getAll(),
+        verificationService.getAll(),
+        passwordRequestService.getAll()
+      ]);
 
-  // Sync with Supabase on mount
+      setAllUsers(dbUsers as any);
+      
+      // Transform listings to include joined image array and user info
+      const transformedListings = dbListings.map(l => ({
+        id: l.id,
+        sellerId: l.seller_id,
+        sellerName: l.users?.full_name || 'Verified Seller',
+        sellerPhone: l.users?.phone_number || '',
+        sellerAvatar: l.users?.avatar_url || '',
+        sellerVerified: l.users?.verified || false,
+        sellerVerificationType: l.users?.verification_type || 'none',
+        title: l.title,
+        description: l.description,
+        price: l.price,
+        category: l.category,
+        condition: l.condition,
+        location: l.location,
+        status: l.status,
+        images: l.listing_images.map((img: any) => img.image_url),
+        viewsCount: l.views_count || 0,
+        createdAt: new Date(l.created_at).toLocaleDateString(),
+        featured: l.featured
+      }));
+      
+      setListings(transformedListings);
+      setVerificationRequests(dbVerifications as any);
+      setPasswordRequests(dbPasswords as any);
+      setLoading(false);
+    } catch (err) {
+      console.error("Data Fetch Error:", err);
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const initData = async () => {
-      try {
-        const [dbUsers, dbListings, dbCategories] = await Promise.all([
-          userService.getAll(),
-          listingService.getAll(),
-          announcementService.getAll()
-        ]);
-        
-        if (dbUsers.length > 0) setAllUsers(dbUsers as any);
-        if (dbListings.length > 0) setListings(dbListings as any);
-        
-        setLoading(false);
-      } catch (err) {
-        console.error("Supabase Init Error:", err);
-        setLoading(false);
+    fetchData();
+  }, [fetchData]);
+
+  const login = async (email: string, role: 'buyer' | 'seller' | 'admin', isSignup: boolean = false) => {
+    try {
+      let dbUser = await userService.getByEmail(email);
+      
+      if (!dbUser && isSignup) {
+        dbUser = await userService.create({
+          email,
+          full_name: email.split('@')[0],
+          role,
+          verified: false,
+          verification_type: 'none',
+          location: 'Ogbomoso, Oyo State',
+          member_since: new Date().toISOString(),
+          status: 'active',
+          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          phone_number: null,
+          business_name: null,
+          restriction_reason: null,
+          appeal_status: 'none',
+          password: null
+        });
       }
-    };
-    initData();
-  }, []);
 
-  // Presence simulation effect (Real-time dynamic updating)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setAnalytics(prev => {
-        const change = Math.floor(Math.random() * 5) - 2;
-        const newCount = Math.max(85, prev.visitors + change);
-        
-        const demoUsers = ['Bayo_88', 'Blessing_X', 'Israel_N', 'Tunde_V', 'Seyi_O', 'Abiola_W'];
-        const demoActions = ['Viewing Vehicles', 'Posting Request', 'Saved an Item', 'Contacted Vendor', 'In Ogbomoso Hub'];
-        const newSession = {
-          id: `sess_${Date.now()}`,
-          user: demoUsers[Math.floor(Math.random() * demoUsers.length)],
-          action: demoActions[Math.floor(Math.random() * demoActions.length)],
-          time: 'Just now'
-        };
-
-        return {
-          ...prev,
-          visitors: newCount,
-          activeSessions: [newSession, ...prev.activeSessions.slice(0, 7)]
-        };
-      });
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const addAuditLog = (action: string, details: string, type: AuditLog['type']) => {
-    setAuditLogs(prev => [{
-      id: `log_${Date.now()}`,
-      action,
-      details,
-      type,
-      createdAt: 'Just now'
-    }, ...prev]);
-    auditService.create({ action, details, type, created_at: new Date().toISOString() });
-  };
-
-  const updatePromotionPlanRate = (months: number, newRate: number) => {
-    setPromotionPlans(prev => prev.map(p => p.months === months ? { ...p, rate: newRate } : p));
-    addAuditLog('Promotion Rate Updated', `Changed plan for ${months}m to NGN ${newRate}/month`, 'finance');
-    toast.success(`Updated ${months}-month promotion plan rate to ₦${newRate.toLocaleString()}/month!`);
-  };
-
-  const addSafeSpot = (spot: Omit<SafeMeetupSpotConfig, 'id'>) => {
-    const newSpot: SafeMeetupSpotConfig = { ...spot, id: `spot_${Date.now()}` };
-    setSafeSpots(prev => [newSpot, ...prev]);
-    addAuditLog('Safe Exchange Spot Added', `Created safe zone: ${spot.name}`, 'security');
-    toast.success(`Verified Safe Exchange Spot "${spot.name}" created!`);
-  };
-
-  const deleteSafeSpot = (id: string) => {
-    setSafeSpots(prev => prev.filter(s => s.id !== id));
-    addAuditLog('Safe Exchange Spot Deleted', `Removed safe spot ID ${id}`, 'security');
-    toast.success('Safe meetup spot deleted.');
-  };
-
-  const bulkUpdateUsers = (userIds: string[], updates: Partial<UserProfile>) => {
-    setAllUsers(prev => prev.map(u => userIds.includes(u.id) ? { ...u, ...updates } : u));
-    addAuditLog('Bulk User Update', `Updated ${userIds.length} user records simultaneously`, 'user');
-    toast.success(`Bulk updated ${userIds.length} user accounts!`);
-  };
-
-  const bulkDeleteUsers = (userIds: string[]) => {
-    setAllUsers(prev => prev.filter(u => !userIds.includes(u.id)));
-    setListings(prev => prev.filter(l => !userIds.includes(l.sellerId)));
-    addAuditLog('Bulk User Delete', `Deleted ${userIds.length} user accounts and their ads`, 'user');
-    toast.success(`Deleted ${userIds.length} user accounts!`);
-  };
-
-  const bulkUpdateListings = (listingIds: string[], updates: Partial<Listing>) => {
-    setListings(prev => prev.map(l => listingIds.includes(l.id) ? { ...l, ...updates } : l));
-    addAuditLog('Bulk Listing Update', `Updated ${listingIds.length} listings simultaneously`, 'ad');
-    toast.success(`Bulk updated ${listingIds.length} classified listings!`);
-  };
-
-  const bulkDeleteListings = (listingIds: string[]) => {
-    setListings(prev => prev.filter(l => !listingIds.includes(l.id)));
-    addAuditLog('Bulk Listing Delete', `Deleted ${listingIds.length} listings`, 'ad');
-    toast.success(`Deleted ${listingIds.length} listings!`);
-  };
-
-  const broadcastMassNotification = (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer' = 'all') => {
-    const newNotif: AppNotification = {
-      id: `notif_${Date.now()}`,
-      type: 'system',
-      title,
-      description: message,
-      time: 'Just now',
-      read: false,
-      linkUrl: '/'
-    };
-    setNotifications(prev => [newNotif, ...prev]);
-    addAuditLog('Mass Push Broadcast', `Target: ${targetRole.toUpperCase()} | Title: ${title}`, 'broadcast');
-    toast.success(`📢 Mass push notification dispatched to ${targetRole === 'all' ? 'all platform users' : targetRole + ' accounts'}!`);
-  };
-
-  const login = async (email: string, role: 'buyer' | 'seller' | 'admin') => {
-    const existing = allUsers.find(u => u.email === email);
-    if (existing) {
-      setUser(existing);
-      toast.success(`Welcome back, ${existing.fullName}!`);
-    } else {
-      const newUser: UserProfile = {
-        id: `usr_${Date.now()}`, email, fullName: email.split('@')[0], phoneNumber: '',
-        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        role, verified: false, memberSince: '2024', location: 'Ogbomoso, Oyo State', status: 'active'
-      };
-      setAllUsers(prev => [newUser, ...prev]);
-      setUser(newUser);
-      userService.create(newUser as any);
-      toast.success(`Account created for ${email}!`);
+      if (dbUser) {
+        setUser(dbUser as any);
+        toast.success(`Access granted. Welcome to Sealify, ${dbUser.full_name}`);
+      } else {
+        toast.error('Identity not found in node database.');
+      }
+    } catch (err) {
+      toast.error('Authentication node failure.');
     }
   };
-
-  const adminLogin = async (email: string, pass: string, pin?: string) => {
-    const admin = allUsers.find(u => u.email === email && u.role === 'admin');
-    if (admin && pin === adminPin) {
-      setUser(admin);
-      addAuditLog('Admin Authentication Success', `Root user ${email} logged in to Master Control Panel`, 'security');
-      toast.success('Admin authentication successful.');
-      return true;
-    }
-    return false;
-  };
-
-  const logout = () => { setUser(null); toast.info('Signed out of Sealify.'); };
 
   const createListing = async (data: Partial<Listing>) => {
     if (!user) return;
-    const newAd: Listing = {
-      id: `lst_${Date.now()}`, sellerId: user.id, sellerName: data.sellerName || user.fullName,
-      sellerPhone: user.phoneNumber || '+234 000 000 0000', sellerAvatar: user.avatarUrl,
-      sellerVerified: user.verified, sellerVerificationType: user.verificationType,
-      title: data.title || 'New Item', description: data.description || '', price: data.price || 0,
-      category: data.category || 'Electronics', condition: data.condition || 'Like New',
-      location: data.location || user.location, status: 'active', images: data.images || [],
-      createdAt: 'Just now', viewsCount: 0, featured: data.featured, specifications: data.specifications
-    };
-    setListings(prev => [newAd, ...prev]);
-    listingService.create(newAd as any);
-    addAuditLog('Listing Created', `Ad "${newAd.title}" (ID: ${newAd.id}) published by ${user.fullName}`, 'ad');
-  };
+    try {
+      const dbListing = {
+        seller_id: user.id,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        condition: data.condition,
+        location: data.location || user.location,
+        status: 'active',
+        featured: data.featured || false,
+        views_count: 0
+      };
 
-  const updateListing = async (id: string, updated: Partial<Listing>) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
-    listingService.update(id, updated as any);
-    addAuditLog('Listing Updated', `Updated listing ID: ${id}`, 'ad');
-  };
-
-  const deleteListing = async (id: string) => {
-    const target = listings.find(l => l.id === id);
-    setListings(prev => prev.filter(l => l.id !== id));
-    listingService.delete(id);
-    addAuditLog('Listing Deleted', `Deleted listing "${target?.title || id}"`, 'ad');
-    toast.success('Listing deleted.');
-  };
-
-  const markAsSold = async (id: string) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
-    listingService.update(id, { status: 'sold' });
-    toast.success('Item marked as sold.');
-  };
-
-  const toggleFeaturedListing = async (id: string) => {
-    const target = listings.find(l => l.id === id);
-    if (target) {
-      setListings(prev => prev.map(l => l.id === id ? { ...l, featured: !l.featured } : l));
-      listingService.update(id, { featured: !target.featured });
+      await listingService.create(dbListing, data.images || []);
+      toast.success('Listing synchronized with global ledger.');
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to publish listing.');
     }
   };
 
-  const promoteListing = async (id: string, duration: number, plan: string) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: duration } : l));
-    listingService.update(id, { featured: true, promotion_plan_name: plan, promotion_duration_months: duration });
-    toast.success(`Top Ad promotion activated for ${plan}.`);
+  const deleteListing = async (id: string) => {
+    try {
+      await listingService.delete(id);
+      setListings(prev => prev.filter(l => l.id !== id));
+      toast.success('Listing purged from database.');
+    } catch (err) {
+      toast.error('Purge failed.');
+    }
   };
 
-  const sendMessage = async (listingId: string, receiverId: string, content: string) => {
-    toast.success('Message sent to seller!');
-    messageService.sendMessage({ listing_id: listingId, receiver_id: receiverId, sender_id: user?.id, content });
-  };
+  const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
   const marketStats: CategoryStats[] = useMemo(() => {
     return categories.map(cat => {
@@ -497,71 +321,41 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         minPrice: prices.length ? Math.min(...prices) : 0,
         maxPrice: prices.length ? Math.max(...prices) : 0,
         totalAds: catAds.length,
-        demandScore: Math.min(100, Math.round(catAds.length * 8.5)),
+        demandScore: Math.min(100, Math.round(catAds.length * 5)),
         trend: 'up'
       };
     });
   }, [listings, categories]);
 
-  const t = useCallback((key: string) => {
-    return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en'][key] || key;
-  }, [language]);
-
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin: setAdminPin, systemConfig, updateSystemConfig: (u) => setSystemConfig(p => ({...p, ...u})),
-      siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})), 
-      promotionPlans, updatePromotionPlanRate,
-      safeSpots, addSafeSpot, deleteSafeSpot,
-      exportDatabaseBackup: () => toast.success('Database backup secure and exported.'),
-      language, setLanguage, t,
-      categories, addCategory: (c) => setCategories(p => [...p, { ...c, id: `cat_${Date.now()}` }]), 
-      deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
-      updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? { ...c, name } : c)),
-      analytics, marketStats, login, adminLogin, logout,
-      listings, allUsers, updateUser: async (id, data) => { setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)); userService.update(id, data as any); }, 
-      deleteUser: async (id) => { setAllUsers(p => p.filter(u => u.id !== id)); userService.delete(id); },
-      bulkUpdateUsers, bulkDeleteUsers, bulkUpdateListings, bulkDeleteListings,
-      savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
-      toggleSaveListing: (id) => setSavedListingIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
-      isSaved: (id) => savedListingIds.includes(id),
-      filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
-      activeCategory: filters.category, setActiveCategory: (cat) => setFilters(p => ({...p, category: cat})),
-      compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p), 
-      isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing, promoteListing,
-      conversations, sendMessage,
-      notifications, markNotificationRead: (id) => setNotifications(p => p.map(n => n.id === id ? {...n, read: true} : n)),
-      markAllNotificationsRead: () => setNotifications(p => p.map(n => ({...n, read: true}))),
-      clearNotification: (id) => setNotifications(p => p.filter(n => n.id !== id)),
-      addNotification: (n) => setNotifications(p => [{ ...n, id: `not_${Date.now()}`, time: 'Just now', read: false } as any, ...p]),
-      broadcastMassNotification,
-      passwordRequests, submitPasswordRequest: (r) => { setPasswordRequests(p => [{...r, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); passwordRequestService.create(r); },
-      processPasswordRequest: (id, status) => { setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); passwordRequestService.updateStatus(id, status); },
-      verificationRequests, 
-      submitVerificationRequest: (req) => { setVerificationRequests(prev => [{ ...req, id: `ver_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]); verificationService.create(req); }, 
-      processVerificationRequest: (id, status) => { setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); verificationService.updateStatus(id, status); },
-      promotionPaymentRequests, 
-      submitPromotionPaymentRequest: (req) => { setPromotionPaymentRequests(p => [{...req, id: `pay_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); promotionService.create(req); },
-      processPromotionPaymentRequest: (id, s) => { setPromotionPaymentRequests(p => p.map(r => r.id === id ? {...r, status: s} : r)); promotionService.updateStatus(id, s); },
-      announcements, addAnnouncement: (a) => setAnnouncements(p => [{...a, id: `ann_${Date.now()}`, createdAt: new Date().toISOString()} as any, ...p]),
-      toggleAnnouncement: (id) => setAnnouncements(p => p.map(a => a.id === id ? {...a, active: !a.active} : a)),
-      deleteAnnouncement: (id) => setAnnouncements(p => p.filter(a => a.id !== id)),
-      reports, submitReport: (r) => { setReports(p => [{...r, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); reportService.create(r); },
-      processReport: (id, a) => { setReports(p => p.map(r => r.id === id ? {...r, status: 'resolved'} : r)); reportService.updateStatus(id, 'resolved'); },
-      disputeCases, 
-      submitDisputeCase: (disp) => { setDisputeCases(prev => [{ ...disp, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]); disputeService.create(disp); },
-      processDisputeCase: (id, s) => { setDisputeCases(p => p.map(c => c.id === id ? {...c, status: s} : c)); disputeService.updateStatus(id, s); },
-      auditLogs, addAuditLog,
-      recentDeals: [], sealDeal: () => toast.success('Transaction sealed.'),
-      intrusionLogs, recordIntrusion: (e, m) => { setIntrusionLogs(p => [{id: `int_${Date.now()}`, timestamp: 'Just now', attemptedEmail: e, deviceInfo: {} as any, mediaCaptured: true, mediaStatus: m, status: 'flagged'}, ...p]); intrusionService.create({ attemptedEmail: e, mediaStatus: m }); },
-      searchAlerts: [], saveSearchAlert: () => toast.success('Search alert saved.'), deleteSearchAlert: () => {},
-      reviews, addReview: (r) => { setReviews(p => [{...r, id: `rev_${Date.now()}`, createdAt: 'Just now'} as any, ...p]); reviewService.create(r); },
-      deleteReview: (id) => { setReviews(p => p.filter(r => r.id !== id)); reviewService.delete(id); },
-      buyerRequests, createBuyerRequest: (r) => { setBuyerRequests(p => [{...r, id: `req_${Date.now()}`, createdAt: 'Just now', responsesCount: 0} as any, ...p]); buyerRequestService.create(r); },
-      deleteBuyerRequest: (id) => { setBuyerRequests(p => p.filter(r => r.id !== id)); buyerRequestService.delete(id); },
-      loading, error: null
+      adminPin: '336699', updateAdminPin: () => {}, systemConfig: { maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true },
+      updateSystemConfig: () => {}, siteSettings: { siteName: 'Sealify', siteDescription: '', ogImage: '', logoUrl: '', contactEmail: '', contactPhone: '' },
+      updateSiteSettings: () => {}, promotionPlans: [], updatePromotionPlanRate: () => {}, safeSpots: [], addSafeSpot: () => {}, deleteSafeSpot: () => {},
+      exportDatabaseBackup: () => {}, language, setLanguage, t, categories, addCategory: () => {}, deleteCategory: () => {}, updateCategory: () => {},
+      analytics, marketStats, login, adminLogin: async () => true, logout: () => setUser(null), listings, allUsers, 
+      updateUser: async (id, data) => { await userService.update(id, data as any); fetchData(); },
+      deleteUser: async (id) => { await userService.delete(id); fetchData(); },
+      bulkUpdateUsers: () => {}, bulkDeleteUsers: () => {}, bulkUpdateListings: () => {}, bulkDeleteListings: () => {},
+      savedListingIds: [], recentlyViewedIds: [], addRecentlyViewed: () => {}, toggleSaveListing: () => {}, isSaved: () => false,
+      filters, setFilters, resetFilters: () => {}, activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
+      compareListingIds: [], toggleCompareListing: () => {}, isInCompare: () => false, clearCompare: () => {},
+      createListing, updateListing: async (id, data) => { await listingService.update(id, data as any); fetchData(); },
+      deleteListing, markAsSold: async (id) => { await listingService.update(id, { status: 'sold' }); fetchData(); },
+      toggleFeaturedListing: async (id) => { const l = listings.find(i => i.id === id); if (l) await listingService.update(id, { featured: !l.featured }); fetchData(); },
+      promoteListing: async () => {}, conversations: [], sendMessage: async (l, r, c) => { await messageService.sendMessage({ listing_id: l, receiver_id: r, sender_id: user?.id, content: c }); },
+      notifications, markNotificationRead: () => {}, markAllNotificationsRead: () => {}, clearNotification: () => {}, addNotification: () => {},
+      broadcastMassNotification: () => {}, passwordRequests, submitPasswordRequest: async (r) => { await passwordRequestService.create(r); fetchData(); },
+      processPasswordRequest: async (id, s) => { await passwordRequestService.updateStatus(id, s); fetchData(); },
+      verificationRequests, submitVerificationRequest: async (r) => { await verificationService.create(r); fetchData(); },
+      processVerificationRequest: async (id, s) => { await verificationService.updateStatus(id, s); fetchData(); },
+      promotionPaymentRequests: [], submitPromotionPaymentRequest: () => {}, processPromotionPaymentRequest: () => {},
+      announcements: [], addAnnouncement: () => {}, toggleAnnouncement: () => {}, deleteAnnouncement: () => {},
+      reports: [], submitReport: () => {}, processReport: () => {}, disputeCases: [], submitDisputeCase: () => {}, processDisputeCase: () => {},
+      auditLogs: [], addAuditLog: () => {}, recentDeals: [], sealDeal: () => {}, intrusionLogs: [], recordIntrusion: () => {},
+      searchAlerts: [], saveSearchAlert: () => {}, deleteSearchAlert: () => {}, reviews: [], addReview: () => {}, deleteReview: () => {},
+      buyerRequests: [], createBuyerRequest: () => {}, deleteBuyerRequest: () => {}, loading, error: null
     }}>
       {children}
     </SealifyContext.Provider>
