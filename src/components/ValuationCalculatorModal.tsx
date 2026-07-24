@@ -183,7 +183,7 @@ export const ValuationCalculatorModal: React.FC<ValuationCalculatorModalProps> =
                     onApplyPrice(result.suggestedPrice);
                     onClose();
                   }}
-                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
+                  className="w-full py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors border border-slate-700"
                 >
                   <Check className="w-4 h-4" />
                   <span>Apply ₦{result.suggestedPrice.toLocaleString()} to Ad</span>
