@@ -6,9 +6,7 @@ import SEO from '../components/SEO';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
-import SoldConfirmationModal from '../components/SoldConfirmationModal';
 import AdAnalyticsModal from '../components/AdAnalyticsModal';
-import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import SalesReportModal from '../components/SalesReportModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -44,14 +42,12 @@ import { toast } from 'sonner';
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, sendMessage, verificationRequests, passwordRequests } = useSealify();
+  const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser } = useSealify();
   const navigate = useNavigate();
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
-  const [soldPromptListing, setSoldPromptListing] = useState<Listing | null>(null);
-  const [receiptListing, setReceiptListing] = useState<Listing | null>(null);
   const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
