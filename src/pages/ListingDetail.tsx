@@ -11,6 +11,8 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import PriceHistoryChart from '../components/PriceHistoryChart';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -55,6 +57,7 @@ const ListingDetail: React.FC = () => {
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -126,6 +129,15 @@ const ListingDetail: React.FC = () => {
           </Link>
 
           <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => setIsFlyerOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
+              title="Create Promo Flyer"
+            >
+              <Share2 className="w-4 h-4" />
+              <span className="hidden sm:inline">WhatsApp Flyer</span>
+            </button>
+
             <button
               onClick={() => setIsDeliveryOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
@@ -264,6 +276,9 @@ const ListingDetail: React.FC = () => {
                 </button>
               </div>
             </div>
+
+            {/* Price History Chart Component */}
+            <PriceHistoryChart currentPrice={listing.price} />
           </div>
 
           <div className="space-y-6">
@@ -362,6 +377,20 @@ const ListingDetail: React.FC = () => {
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
+      
+      <StorefrontFlycardModal
+        isOpen={isFlyerOpen}
+        onClose={() => setIsFlyerOpen(false)}
+        title={listing.title}
+        price={listing.price}
+        location={listing.location}
+        image={listing.images[0]}
+        sellerName={listing.sellerName}
+        sellerPhone={listing.sellerPhone}
+        verificationType={listing.sellerVerificationType}
+        itemUrl={window.location.href}
+      />
+
       <MobileNav />
     </div>
   );

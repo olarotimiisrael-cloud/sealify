@@ -102,6 +102,10 @@ export default function Index() {
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button onClick={() => setIsAlertsOpen(true)} className="px-3 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 transition-colors">
+              <Bell className="w-4 h-4 text-emerald-400" />
+              <span>Search Alerts</span>
+            </button>
             <button onClick={() => setIsCompareOpen(true)} className="px-3 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 transition-colors">
               <Scale className="w-4 h-4 text-emerald-400" />
               <span>Compare ({compareListingIds.length})</span>

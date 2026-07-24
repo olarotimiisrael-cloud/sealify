@@ -89,8 +89,6 @@ const MyAds: React.FC = () => {
     }).format(amount);
   };
 
-  const isRestricted = user?.status && user.status !== 'active';
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO title="My Ads & Inventory — Sealify" />
@@ -111,7 +109,17 @@ const MyAds: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                 <h1 className="text-xl sm:text-2xl font-black text-white">{user?.fullName}</h1>
-                <VerifiedBadge type={user?.verificationType || 'individual'} showText />
+                {user?.verified ? (
+                  <VerifiedBadge type={user.verificationType || 'individual'} showText />
+                ) : (
+                  <button
+                    onClick={() => setIsVerificationOpen(true)}
+                    className="text-[10px] font-extrabold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1 transition-colors"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    <span>Get Verified Badge</span>
+                  </button>
+                )}
               </div>
               <p className="text-xs text-slate-400">{user?.email}</p>
               <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start">
@@ -245,6 +253,7 @@ const MyAds: React.FC = () => {
 
       <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
+      <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
       <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
       
       {flycardListing && (
