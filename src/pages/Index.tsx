@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -23,13 +24,16 @@ import {
   Scale,
   Zap,
   CheckCircle2,
-  Package
+  Package,
+  RotateCcw
 } from 'lucide-react';
 
 export default function Index() {
+  const [searchParams] = useSearchParams();
   const { 
     listings, 
     filters, 
+    setFilters,
     activeCategory, 
     announcements, 
     compareListingIds,
@@ -43,6 +47,22 @@ export default function Index() {
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
 
+  // Sync URL search parameters with filter state
+  useEffect(() => {
+    const qParam = searchParams.get('q');
+    const catParam = searchParams.get('category');
+    const locParam = searchParams.get('location');
+
+    if (qParam || catParam || locParam) {
+      setFilters((prev) => ({
+        ...prev,
+        searchQuery: qParam || prev.searchQuery,
+        category: (catParam as any) || prev.category,
+        location: locParam || prev.location,
+      }));
+    }
+  }, [searchParams, setFilters]);
+
   const activeAnnouncements = announcements.filter((a) => a.active);
 
   const filteredListings = listings.filter((item) => {
@@ -51,7 +71,9 @@ export default function Index() {
     if (filters.searchQuery) {
       const query = filters.searchQuery.toLowerCase();
       const matchTitle = item.title.toLowerCase().includes(query);
-      if (!matchTitle) return false;
+      const matchDesc = item.description.toLowerCase().includes(query);
+      const matchCat = item.category.toLowerCase().includes(query);
+      if (!matchTitle && !matchDesc && !matchCat) return false;
     }
     if (filters.location && !item.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
     if (filters.minPrice !== null && item.price < filters.minPrice) return false;
@@ -59,7 +81,11 @@ export default function Index() {
     return true;
   });
 
-  const sortedListings = [...filteredListings].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    if (filters.sortBy === 'price-asc') return a.price - b.price;
+    if (filters.sortBy === 'price-desc') return b.price - a.price;
+    return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+  });
 
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -69,6 +95,8 @@ export default function Index() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.minPrice !== null || filters.maxPrice !== null;
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -126,8 +154,23 @@ export default function Index() {
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{t('marketplace_feed')}</h2>
-              <span className="text-[10px] bg-slate-900 text-emerald-400 font-extrabold px-3 py-1 rounded-full border border-slate-800 shadow">{sortedListings.length} ads</span>
+              <span className="text-[10px] bg-slate-900 text-emerald-400 font-extrabold px-3 py-1 rounded-full border border-slate-800 shadow">
+                {sortedListings.length} ads
+              </span>
+              {hasActiveFilters && (
+                <button
+                  onClick={resetFilters}
+                  className="text-[10px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/20 flex items-center gap-1 transition-colors"
+                >
+                  <RotateCcw className="w-3 h-3" /> Clear Search
+                </button>
+              )}
             </div>
+            {filters.searchQuery && (
+              <p className="text-xs text-slate-400 mt-1">
+                Showing results for "<strong className="text-emerald-400">{filters.searchQuery}</strong>"
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
