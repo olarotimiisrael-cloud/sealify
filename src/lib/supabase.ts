@@ -58,6 +58,7 @@ export interface DbMessage {
   sender_id: string;
   receiver_id: string;
   listing_id: string;
+  conversation_id: string | null;
   content: string;
   read: boolean;
   created_at: string;

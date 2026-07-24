@@ -387,7 +387,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         action,
         details,
         type,
-        created_at: new Date().toISOString(),
       });
       setAuditLogs(prev => [convertDbAuditLog(log), ...prev]);
     } catch (err) {
@@ -856,7 +855,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       buyer_avatar: rev.buyerAvatar,
       rating: rev.rating,
       comment: rev.comment,
-      created_at: new Date().toISOString(),
     }).catch(console.error);
   }, []);
 
@@ -884,7 +882,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       max_budget: req.maxBudget,
       location: req.location,
       description: req.description,
-      created_at: new Date().toISOString(),
     }).catch(console.error);
   }, []);
 
@@ -912,7 +909,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateSiteSettings = useCallback((updated: Partial<SiteSettings>) => {
     setSiteSettings((prev) => ({ ...prev, ...updated }));
     toast.success('Site settings updated!');
-    siteSettingsService.update(updated).catch(console.error);
+    
+    // Map to DbSiteSettings
+    const dbUpdates: any = {};
+    if (updated.logoUrl) dbUpdates.logo_url = updated.logoUrl;
+    if (updated.siteName) dbUpdates.site_name = updated.siteName;
+    if (updated.siteDescription) dbUpdates.site_description = updated.siteDescription;
+    if (updated.ogImage) dbUpdates.og_image = updated.ogImage;
+    if (updated.contactEmail) dbUpdates.contact_email = updated.contactEmail;
+    if (updated.contactPhone) dbUpdates.contact_phone = updated.contactPhone;
+
+    siteSettingsService.update(dbUpdates).catch(console.error);
   }, []);
 
   const exportDatabaseBackup = useCallback(() => {
@@ -963,7 +970,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       message,
       type: 'info',
       active: true,
-      created_at: new Date().toISOString(),
     }).catch(console.error);
   }, [addNotification, addAuditLog]);
 
@@ -1216,19 +1222,19 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       const endDate = new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toISOString();
       
-      await listingService.update(id, { 
-        featured: true, 
-        promotionPlanName: plan, 
-        promotionDurationMonths: months,
-        promotionStartDate: new Date().toISOString(),
-        promotionEndDate: endDate
+      await listingService.update(id, {
+        featured: true,
+        promotion_plan_name: plan,
+        promotion_duration_months: months,
+        promotion_start_date: new Date().toISOString(),
+        promotion_end_date: endDate
       });
 
       setListings(prev => {
-        const updated = prev.map(l => l.id === id ? { 
-          ...l, 
-          featured: true, 
-          promotionPlanName: plan, 
+        const updated = prev.map(l => l.id === id ? {
+          ...l,
+          featured: true,
+          promotionPlanName: plan,
           promotionDurationMonths: months,
           promotionStartDate: new Date().toISOString(),
           promotionEndDate: endDate
@@ -1397,7 +1403,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         reason: rep.reason,
         details: rep.details,
         status: 'pending',
-        created_at: new Date().toISOString(),
       });
       setReports(prev => [convertDbReport(newReport), ...prev]);
     } catch (err) {
@@ -1429,7 +1434,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         details: disp.details,
         evidence_url: disp.evidenceUrl,
         status: 'pending',
-        created_at: new Date().toISOString(),
       });
       setDisputeCases(prev => [convertDbDisputeCase(newCase), ...prev]);
       addAuditLog('Dispute Filed', `New dispute claim #${newCase.id}`, 'dispute');
@@ -1462,7 +1466,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         new_password: req.newPassword,
         reason: req.reason,
         status: 'pending',
-        created_at: new Date().toISOString(),
       });
       setPasswordRequests(prev => [convertDbPasswordRequest(newReq), ...prev]);
     } catch (err) {
@@ -1498,7 +1501,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         doc_number: req.docNumber,
         doc_url: req.docUrl,
         status: 'pending',
-        created_at: new Date().toISOString(),
       });
       setVerificationRequests(prev => [convertDbVerificationRequest(newReq), ...prev]);
     } catch (err) {
@@ -1532,7 +1534,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         payment_method: req.paymentMethod,
         payment_proof_url: req.paymentProofUrl,
         status: 'pending',
-        created_at: new Date().toISOString(),
         plan_name: req.planName,
         duration_months: req.durationMonths,
       });
@@ -1550,7 +1551,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         message: ann.message,
         type: ann.type,
         active: ann.active,
-        created_at: new Date().toISOString(),
       });
       setAnnouncements(prev => [convertDbAnnouncement(newAnn), ...prev]);
     } catch (err) {

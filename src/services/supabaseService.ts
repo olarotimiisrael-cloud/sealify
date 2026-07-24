@@ -688,10 +688,10 @@ export const announcementService = {
     return data || [];
   },
 
-  async create(announcement: Omit<DbAnnouncement, 'id' | 'created_at'>): Promise<DbAnnouncement> {
+  async create(announcement: Omit<DbAnnouncement, 'id' | 'created_at'> & { created_at?: string }): Promise<DbAnnouncement> {
     const { data, error } = await supabase
       .from('announcements')
-      .insert([{ ...announcement, created_at: new Date().toISOString() }])
+      .insert([{ created_at: new Date().toISOString(), ...announcement }])
       .select()
       .single();
     if (error) throw error;
