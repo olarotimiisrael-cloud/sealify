@@ -117,21 +117,37 @@ export const promotionService = {
 
 // Moderation & Support
 export const disputeService = {
+  async getAll(): Promise<DbDisputeCase[]> {
+    const { data } = await supabase.from('disputes').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(disp: any) { await supabase.from('disputes').insert([disp]); },
   async updateStatus(id: string, status: string) { await supabase.from('disputes').update({ status }).eq('id', id); }
 };
 
 export const reportService = {
+  async getAll(): Promise<DbReport[]> {
+    const { data } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(rep: any) { await supabase.from('reports').insert([rep]); },
   async updateStatus(id: string, status: string) { await supabase.from('reports').update({ status }).eq('id', id); }
 };
 
 export const reviewService = {
+  async getAll(): Promise<DbReview[]> {
+    const { data } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(rev: any) { await supabase.from('reviews').insert([rev]); },
   async delete(id: string) { await supabase.from('reviews').delete().eq('id', id); }
 };
 
 export const buyerRequestService = {
+  async getAll(): Promise<DbBuyerRequest[]> {
+    const { data } = await supabase.from('buyer_requests').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(req: any) { await supabase.from('buyer_requests').insert([req]); },
   async delete(id: string) { await supabase.from('buyer_requests').delete().eq('id', id); }
 };
