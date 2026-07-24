@@ -4,7 +4,7 @@ import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
 import ShareQrModal from './ShareQrModal';
-import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag, Calendar, Share2 } from 'lucide-react';
+import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag, Calendar, Share2, Clock } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -51,10 +51,15 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     <>
       <div className="group bg-slate-900 border border-slate-800/90 hover:border-emerald-500/50 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-emerald-950/30 flex flex-col justify-between relative h-full">
         {/* Top Badges overlay */}
-        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start max-w-[55%] pointer-events-none">
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 items-start max-w-[65%] pointer-events-none">
           {listing.featured && (
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md pointer-events-auto">
-              TOP AD
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded shadow-md pointer-events-auto flex items-center gap-1">
+              <span>TOP AD</span>
+              {daysLeft !== null && daysLeft > 0 && (
+                <span className="text-[7px] bg-slate-950/40 text-slate-950 px-1 rounded font-mono">
+                  {daysLeft}d left
+                </span>
+              )}
             </span>
           )}
           {isGreatDeal && (
