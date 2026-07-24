@@ -43,8 +43,6 @@ const Settings: React.FC = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
   const [selectedBanner, setSelectedBanner] = useState(user?.storeBannerUrl || SAMPLE_BANNERS[0]);
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">

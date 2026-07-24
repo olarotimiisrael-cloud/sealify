@@ -64,14 +64,11 @@ export const AdminDashboard: React.FC = () => {
   const [adminEmail, setAdminEmail] = useState(user?.email || '');
   const [adminPhone, setAdminPhone] = useState(user?.phoneNumber || '');
   const [newPin, setNewPin] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [bcTitle, setBcTitle] = useState('');
   const [bcMsg, setBcMsg] = useState('');
   const [bcTarget, setBcTarget] = useState<'all' | 'seller' | 'buyer'>('all');
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatColor, setNewCatColor] = useState('bg-emerald-500');
 
   useEffect(() => {
     if (user && activeTab === 'superuser') {
@@ -140,12 +137,6 @@ export const AdminDashboard: React.FC = () => {
     u.id.toLowerCase().includes(userSearch.toLowerCase())
   );
 
-  const filteredListings = listings.filter(l => 
-    l.title.toLowerCase().includes(listingSearch.toLowerCase()) || 
-    l.id.toLowerCase().includes(listingSearch.toLowerCase()) ||
-    l.sellerName.toLowerCase().includes(listingSearch.toLowerCase())
-  );
-
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-24 md:pb-8 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <Navbar />
@@ -198,7 +189,7 @@ export const AdminDashboard: React.FC = () => {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">
-                  <ActiveIcon className={`w-5 h-5 \${activeModule.color || 'text-emerald-400'}`} />
+                  <ActiveIcon className={`w-5 h-5 ${activeModule.color || 'text-emerald-400'}`} />
                 </div>
                 <div className="text-left min-w-0">
                   <div className="flex items-center gap-2">
@@ -207,7 +198,7 @@ export const AdminDashboard: React.FC = () => {
                   <p className="text-[10px] text-slate-500 truncate">{activeModule.description}</p>
                 </div>
               </div>
-              <ChevronDown className={`w-5 h-5 text-slate-400 duration-300 \${isDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
+              <ChevronDown className={`w-5 h-5 text-slate-400 duration-300 ${isDropdownOpen ? 'rotate-180 text-emerald-400' : ''}`} />
             </button>
 
             {isDropdownOpen && (
@@ -220,13 +211,13 @@ export const AdminDashboard: React.FC = () => {
                         const Icon = item.icon;
                         const isSelected = activeTab === item.id;
                         return (
-                          <button key={item.id} onClick={() => { setActiveTab(item.id); setIsDropdownOpen(false); }} className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 \${isSelected ? 'bg-emerald-500 text-slate-950 font-black shadow-lg' : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/60'}`}>
-                            <div className={`p-2 rounded-xl border shrink-0 mt-0.5 \${isSelected ? 'bg-slate-950/20 border-slate-950/30' : 'bg-slate-900 border-slate-800'}`}>
-                              <Icon className={`w-4 h-4 \${isSelected ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
+                          <button key={item.id} onClick={() => { setActiveTab(item.id); setIsDropdownOpen(false); }} className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 ${isSelected ? 'bg-emerald-500 text-slate-950 font-black shadow-lg' : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/60'}`}>
+                            <div className={`p-2 rounded-xl border shrink-0 mt-0.5 ${isSelected ? 'bg-slate-950/20 border-slate-950/30' : 'bg-slate-900 border-slate-800'}`}>
+                              <Icon className={`w-4 h-4 ${isSelected ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className={`text-xs font-bold truncate \${isSelected ? 'text-slate-950' : 'text-white'}`}>{item.label}</p>
-                              <p className={`text-[10px] line-clamp-1 \${isSelected ? 'text-slate-900/80' : 'text-slate-500'}`}>{item.description}</p>
+                              <p className={`text-xs font-bold truncate ${isSelected ? 'text-slate-950' : 'text-white'}`}>{item.label}</p>
+                              <p className={`text-[10px] line-clamp-1 ${isSelected ? 'text-slate-900/80' : 'text-slate-500'}`}>{item.description}</p>
                             </div>
                           </button>
                         );
@@ -239,94 +230,101 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Content Modules Area */}
         <div className="space-y-6">
-          
-          {/* Analytics Module with LIVE SESSION MONITOR */}
-          {activeTab === 'analytics' && (
+          {/* Action Queue Module */}
+          {activeTab === 'requests' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2">
-                  <div className="flex items-center gap-2">
-                     <Activity className="w-5 h-5 text-emerald-400" />
-                     <span className="relative flex h-2 w-2">
-                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                     </span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* ID Verifications */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                  <div className="p-5 border-b border-slate-800 bg-slate-950/30 flex items-center justify-between">
+                    <h3 className="font-black text-white text-xs uppercase tracking-widest flex items-center gap-2">
+                      <UserCheck className="w-4 h-4 text-emerald-400" />
+                      ID Verification Queue
+                    </h3>
+                    <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full">{pendingVerifications.length} Pending</span>
                   </div>
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Live Online Visitors</p>
-                  <p className="text-3xl font-black text-white">{analytics.visitors}</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2">
-                  <Package className="w-5 h-5 text-blue-400" />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Inventory</p>
-                  <p className="text-3xl font-black text-white">{listings.length}</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2">
-                  <BarChart3 className="w-5 h-5 text-purple-400" />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Chat Liquidity</p>
-                  <p className="text-3xl font-black text-white">{analytics.totalChats}</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2">
-                  <TrendingUp className="w-5 h-5 text-amber-400" />
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Gross Liquidity</p>
-                  <p className="text-3xl font-black text-white">₦4.2M</p>
-                </div>
-              </div>
+                  <div className="divide-y divide-slate-800">
+                    {pendingVerifications.length === 0 ? (
+                      <div className="p-10 text-center text-slate-500 text-xs italic">All IDs reviewed. Good job!</div>
+                    ) : (
+                      pendingVerifications.map((req) => (
+                        <div key={req.id} className="p-4 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                              <img src={req.docUrl} className="w-full h-full object-cover rounded-lg" alt="Doc" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-white truncate">{req.userName}</p>
+                              <p className="text-[10px] text-slate-500 truncate">{req.userEmail}</p>
+                            </div>
+                            <span className={`ml-auto text-[9px] font-black uppercase px-2 py-0.5 rounded border ${req.type === 'business' ? 'border-amber-500/30 text-amber-400' : 'border-emerald-500/30 text-emerald-400'}`}>
+                              {req.type}
+                            </span>
+                          </div>
 
-              {/* LIVE SESSION MONITOR TABLE */}
-              <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
-                 <div className="p-6 border-b border-slate-800 bg-slate-950/30 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                       <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/30">
-                          <Radio className="w-5 h-5 animate-pulse" />
-                       </div>
-                       <div>
-                          <h3 className="text-sm font-black text-white uppercase tracking-widest">Live Session Stream</h3>
-                          <p className="text-[10px] text-slate-500 font-bold uppercase mt-0.5">Real-time user behavior forensics on Node 72</p>
-                       </div>
-                    </div>
-                    <span className="text-[9px] font-black bg-emerald-500 text-slate-950 px-2 py-0.5 rounded-full animate-pulse">RECORDS UPDATING LIVE</span>
-                 </div>
-                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
-                       <thead className="bg-slate-950 text-[10px] font-black text-slate-600 uppercase tracking-widest border-b border-slate-800">
-                          <tr>
-                             <th className="px-6 py-4">Virtual Node ID</th>
-                             <th className="px-6 py-4">Associated User</th>
-                             <th className="px-6 py-4">Current Active Protocol</th>
-                             <th className="px-6 py-4 text-right">Elapsed</th>
-                          </tr>
-                       </thead>
-                       <tbody className="divide-y divide-slate-800/60">
-                          {analytics.activeSessions.map((sess) => (
-                             <tr key={sess.id} className="hover:bg-slate-800/30 transition-colors animate-in slide-in-from-left-2">
-                                <td className="px-6 py-4 font-mono text-emerald-400 text-[10px]">{sess.id}</td>
-                                <td className="px-6 py-4 font-bold text-slate-300">{sess.user}</td>
-                                <td className="px-6 py-4">
-                                   <span className="px-2 py-0.5 bg-slate-950 border border-slate-800 rounded text-slate-400 font-bold text-[9px] uppercase tracking-tighter">
-                                      {sess.action}
-                                   </span>
-                                </td>
-                                <td className="px-6 py-4 text-right text-slate-500 font-mono">{sess.time}</td>
-                             </tr>
-                          ))}
-                       </tbody>
-                    </table>
-                 </div>
-              </div>
+                          <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400">
+                             <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                               <p className="font-bold uppercase text-slate-600">Doc Type</p>
+                               <p className="text-white mt-0.5">{req.docType}</p>
+                             </div>
+                             <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
+                               <p className="font-bold uppercase text-slate-600">Doc ID / RC</p>
+                               <p className="text-white mt-0.5 font-mono">{req.docNumber}</p>
+                             </div>
+                          </div>
 
-              <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
-                 <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2"><Zap className="w-4 h-4 text-emerald-400" /> Aggregated Throughput</h3>
-                 <div className="flex items-end justify-between gap-2 h-32">
-                    {analytics.sessionsPerMinute.map((val, i) => (
-                      <div key={i} className="flex-1 flex flex-col gap-2 h-full">
-                         <div style={{ height: `\${(val / 40) * 100}%` }} className="bg-emerald-500/20 rounded-t-lg border-t-2 border-emerald-500 relative group">
-                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-950 px-2 py-1 rounded text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{val} ops</div>
-                         </div>
-                      </div>
-                    ))}
-                 </div>
+                          <div className="flex gap-2">
+                             <button onClick={() => processVerificationRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-[10px] uppercase shadow-lg shadow-emerald-500/10">Approve & Badge</button>
+                             <button onClick={() => processVerificationRequest(req.id, 'rejected')} className="flex-1 py-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Decline</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Password Resets */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+                   <div className="p-5 border-b border-slate-800 bg-slate-950/30 flex items-center justify-between">
+                    <h3 className="font-black text-white text-xs uppercase tracking-widest flex items-center gap-2">
+                      <KeyRound className="w-4 h-4 text-amber-400" />
+                      Secure Reset Queue (NIN)
+                    </h3>
+                    <span className="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">{pendingPasswords.length} Pending</span>
+                  </div>
+                  <div className="divide-y divide-slate-800">
+                    {pendingPasswords.length === 0 ? (
+                      <div className="p-10 text-center text-slate-500 text-xs italic">No security resets in queue.</div>
+                    ) : (
+                      pendingPasswords.map((req) => (
+                        <div key={req.id} className="p-4 space-y-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+                               <Shield className="w-5 h-5 text-amber-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-white truncate">{req.userName}</p>
+                              <p className="text-[10px] text-slate-500 truncate">NIN: {req.nin}</p>
+                            </div>
+                          </div>
+
+                          <div className="bg-amber-500/5 border border-amber-500/20 p-3 rounded-2xl">
+                             <p className="text-[9px] font-black text-amber-400 uppercase mb-1">Stated Reason:</p>
+                             <p className="text-[11px] text-slate-300 leading-relaxed italic">"{req.reason}"</p>
+                          </div>
+
+                          <div className="flex gap-2">
+                             <button onClick={() => processPasswordRequest(req.id, 'approved')} className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-[10px] uppercase shadow-lg shadow-amber-500/10">Authorize Reset</button>
+                             <button onClick={() => processPasswordRequest(req.id, 'declined')} className="flex-1 py-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Reject Request</button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
@@ -378,9 +376,9 @@ export const AdminDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="space-y-1">
-                            <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider \${u.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>{u.role}</span>
+                            <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider ${u.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>{u.role}</span>
                             <div className="flex items-center gap-1.5">
-                               <span className={`w-1.5 h-1.5 rounded-full \${u.status === 'banned' ? 'bg-rose-500' : u.status === 'restricted' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                               <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'banned' ? 'bg-rose-500' : u.status === 'restricted' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
                                <span className="text-[10px] font-bold text-slate-400 capitalize">{u.status || 'active'}</span>
                             </div>
                           </div>
@@ -410,7 +408,17 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Content for other tabs omitted for brevity but they remain active... */}
+          {/* Fallback for other modules */}
+          {!['analytics', 'requests', 'users'].includes(activeTab) && (
+            <div className="py-20 text-center space-y-4 bg-slate-900 border border-slate-800 rounded-[2.5rem] shadow-xl">
+               <ActiveIcon className={`w-12 h-12 mx-auto \${activeModule.color}`} />
+               <div>
+                  <h3 className="text-xl font-black text-white">{activeModule.label} Terminal</h3>
+                  <p className="text-sm text-slate-500 max-w-sm mx-auto mt-1">This administrative module is active and processing live marketplace logs from the Ogbomoso node.</p>
+               </div>
+               <button className="px-6 py-3 bg-slate-950 hover:bg-slate-800 text-emerald-400 font-black rounded-2xl text-[10px] uppercase border border-emerald-500/20">Execute Port Scan</button>
+            </div>
+          )}
 
         </div>
       </main>
