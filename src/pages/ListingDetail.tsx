@@ -11,12 +11,10 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
-import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
 import TrustScore from '../components/TrustScore';
-import PriceHistoryChart from '../components/PriceHistoryChart';
 import { 
   MapPin, 
   Phone, 
@@ -57,7 +55,6 @@ const ListingDetail: React.FC = () => {
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -130,11 +127,11 @@ const ListingDetail: React.FC = () => {
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => setIsFlyerOpen(true)}
-              className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
+              onClick={() => setIsDeliveryOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
             >
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">WhatsApp Flyer</span>
+              <Truck className="w-4 h-4" />
+              <span className="hidden sm:inline">Dispatch Rates</span>
             </button>
 
             <button
@@ -218,9 +215,9 @@ const ListingDetail: React.FC = () => {
                   </span>
                   <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
                   <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
-                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {listing.location}</span>
-                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {listing.createdAt}</span>
-                    <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {listing.viewsCount} views</span>
+                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-slate-500" /> {listing.location}</span>
+                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-slate-500" /> {listing.createdAt}</span>
+                    <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5 text-slate-500" /> {listing.viewsCount} views</span>
                   </div>
                 </div>
 
@@ -230,14 +227,24 @@ const ListingDetail: React.FC = () => {
                 </div>
               </div>
 
+              {/* Dynamic Specs Table */}
+              {listing.specifications && Object.keys(listing.specifications).length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {Object.entries(listing.specifications).map(([key, val]) => (
+                    <div key={key} className="bg-slate-950/50 border border-slate-800 p-3 rounded-2xl">
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{key}</p>
+                      <p className="text-xs font-bold text-white mt-0.5">{val}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>
                 <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
                   {listing.description}
                 </p>
               </div>
-
-              <PriceHistoryChart currentPrice={listing.price} />
 
               <div className="pt-2 flex justify-between items-center border-t border-slate-800">
                 <button
@@ -355,20 +362,6 @@ const ListingDetail: React.FC = () => {
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
-      {listing && (
-        <StorefrontFlycardModal
-          isOpen={isFlyerOpen}
-          onClose={() => setIsFlyerOpen(false)}
-          title={listing.title}
-          price={listing.price}
-          location={listing.location}
-          image={listing.images[0]}
-          sellerName={listing.sellerName}
-          sellerPhone={listing.sellerPhone}
-          verificationType={listing.sellerVerificationType}
-          itemUrl={window.location.pathname}
-        />
-      )}
       <MobileNav />
     </div>
   );
