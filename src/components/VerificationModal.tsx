@@ -6,22 +6,17 @@ import { toast } from 'sonner';
 interface VerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  sellerName: string;
 }
 
 export const VerificationModal: React.FC<VerificationModalProps> = ({
   isOpen,
   onClose,
-  sellerName,
 }) => {
   const { user, submitVerificationRequest } = useSealify();
   const [applicantType, setApplicantType] = useState<'individual' | 'business' | 'premium'>('individual');
-  const [docType, setDocType] = useState<string>('Government Issued ID / Passport');
-  const [docNumber, setDocNumber] = useState<string>('');
-  const [businessName, setBusinessName] = useState<string>('');
+  const [docNumber, setDocNumber] = useState('');
   const [idDoc, setIdDoc] = useState<string | null>(null);
-  const [step, setStep] = useState<number>(1);
-  const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (!isOpen || !user) return null;
 
@@ -49,7 +44,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
       userName: user.fullName,
       userEmail: user.email,
       type: applicantType,
-      docType: applicantType === 'business' ? 'CAC Certificate / Tax Registration' : docType,
+      docType: applicantType === 'business' ? 'CAC Certificate' : 'Government Issued ID',
       docNumber,
       docUrl: idDoc,
     });
@@ -57,9 +52,8 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
     setIsSubmitted(true);
     setTimeout(() => {
       setIsSubmitted(false);
-      setStep(1);
       onClose();
-    }, 2000);
+    }, 2500);
   };
 
   return (
@@ -80,69 +74,58 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
               </div>
               <h2 className="text-2xl font-black text-white">Apply for Verified Badge</h2>
               <p className="text-xs text-slate-400">
-                Gain up to <strong className="text-emerald-400">5x more buyer trust</strong> with an admin-reviewed badge
+                Verified sellers receive <strong className="text-emerald-400">5x more buyer inquiries</strong>.
               </p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Badge Type</label>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Application Type</label>
+              <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setApplicantType('individual')}
-                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                     applicantType === 'individual'
                       ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-2 ring-emerald-500/30'
-                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      : 'border-slate-800 bg-slate-950 text-slate-400'
                   }`}
                 >
-                  <User className="w-4 h-4" />
-                  <p className="font-bold text-xs text-white">Individual</p>
+                  <User className="w-5 h-5" />
+                  <p className="font-bold text-xs text-white">Individual ID</p>
+                  <p className="text-[10px] opacity-70">NIN, Voter's Card, etc.</p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setApplicantType('business')}
-                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
+                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                     applicantType === 'business'
                       ? 'border-amber-500 bg-amber-500/10 text-amber-400 ring-2 ring-amber-500/30'
-                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
+                      : 'border-slate-800 bg-slate-950 text-slate-400'
                   }`}
                 >
-                  <Building2 className="w-4 h-4" />
-                  <p className="font-bold text-xs text-white">Business</p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setApplicantType('premium')}
-                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col items-start gap-1 ${
-                    applicantType === 'premium'
-                      ? 'border-purple-500 bg-purple-500/10 text-purple-300 ring-2 ring-purple-500/30'
-                      : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  <Crown className="w-4 h-4 text-amber-300" />
-                  <p className="font-bold text-xs text-white">Premium</p>
+                  <Building2 className="w-5 h-5" />
+                  <p className="font-bold text-xs text-white">Registered Business</p>
+                  <p className="text-[10px] opacity-70">CAC Certificate Required</p>
                 </button>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Document ID Number *</label>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">ID / RC Number *</label>
                 <input
                   type="text"
                   required
                   value={docNumber}
                   onChange={(e) => setDocNumber(e.target.value)}
-                  placeholder="e.g. NIN-9840219482"
+                  placeholder="e.g. NIN Number or CAC RC Number"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Upload ID Document (JPG/PNG) *</label>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Upload Verification Document (Photo) *</label>
                 <input type="file" onChange={handleFileUpload} accept="image/*" className="hidden" id="ver-file-input" />
                 <label
                   htmlFor="ver-file-input"
@@ -153,12 +136,12 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
                   {idDoc ? (
                     <>
                       <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase">Document Attached</span>
+                      <span className="text-[10px] font-bold text-emerald-400">ID Photo Attached</span>
                     </>
                   ) : (
                     <>
                       <Upload className="w-8 h-8 text-slate-600" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Click to upload identity document</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Click to upload document</span>
                     </>
                   )}
                 </label>
@@ -166,9 +149,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-colors shadow-lg"
               >
-                Submit Verification Request
+                Submit for Admin Review
               </button>
             </div>
           </form>
@@ -177,9 +160,9 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
             <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto border border-emerald-500/40">
               <ShieldCheck className="w-8 h-8" />
             </div>
-            <h3 className="text-xl font-black text-white">Verification Sent to Admin</h3>
+            <h3 className="text-xl font-black text-white">Verification Request Logged</h3>
             <p className="text-xs text-slate-400 max-w-xs mx-auto leading-relaxed">
-              Sealify administrators will review your documents within 24-48 hours. You will receive an email once your badge is issued.
+              Sealify administrators will review your credentials within 24-48 hours. You will be notified once your badge is active.
             </p>
           </div>
         )}
