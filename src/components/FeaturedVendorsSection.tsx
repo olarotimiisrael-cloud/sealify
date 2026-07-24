@@ -86,11 +86,11 @@ export const FeaturedVendorsSection: React.FC = () => {
 
                   <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-900">
                     <span className="flex items-center gap-1 truncate">
-                      <MapPin className="w-3 h-3 text-slate-500 shrink-0" />
+                      <MapPin className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                       {vendor.location || 'Ogbomoso, Oyo State'}
                     </span>
                     <span className="font-bold text-slate-300 flex items-center gap-1 shrink-0">
-                      <Package className="w-3 h-3 text-emerald-400" />
+                      <Package className="w-3.5 h-3.5 text-emerald-400" />
                       {vendorListings.length} Active Ads
                     </span>
                   </div>
