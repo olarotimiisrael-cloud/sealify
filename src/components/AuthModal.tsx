@@ -72,7 +72,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   return (
     <>
       <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100 font-sans">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100 font-sans overflow-hidden">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
@@ -222,23 +222,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-slate-800 space-y-4">
-            <Link 
-              to="/admin/login" 
-              onClick={onClose}
-              className="w-full p-3 bg-slate-950 border border-slate-800 hover:border-rose-500/50 rounded-2xl flex items-center justify-between group transition-all"
-            >
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-rose-500" />
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-rose-400">Admin Login Terminal</span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-slate-700 group-hover:text-rose-500" />
-            </Link>
-
+          <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-center relative">
             <p className="text-[9px] text-slate-600 flex items-center justify-center gap-1.5 uppercase font-black tracking-widest">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
               Forensic-Grade Node Security
             </p>
+
+            {/* Tiny discrete admin link hidden in the corner */}
+            <Link 
+              to="/admin/login" 
+              onClick={onClose}
+              className="absolute right-0 bottom-0 p-1 opacity-10 hover:opacity-100 transition-opacity"
+              title="Restricted Access"
+            >
+              <Terminal className="w-3 h-3 text-slate-500" />
+            </Link>
           </div>
         </div>
       </div>
