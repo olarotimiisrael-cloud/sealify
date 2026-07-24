@@ -27,7 +27,8 @@ import {
   Shield,
   TrendingUp,
   HelpCircle,
-  Users
+  Users,
+  PlayCircle
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -115,6 +116,11 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/how-it-works" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
+              <PlayCircle className="w-4 h-4" />
+              <span>How it Works</span>
+            </Link>
+
             <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{t('requests')}</span>
@@ -242,6 +248,9 @@ const Navbar: React.FC = () => {
                   </button>
                 ))}
              </div>
+            <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl text-center text-xs">
+              How it Works
+            </Link>
             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
               {t('requests')}
             </Link>

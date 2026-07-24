@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
+import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, intrusionService, announcementService, searchAlertService, systemConfigService, siteSettingsService, recentDealsService } from '@/services/supabaseService';
 import { toast } from 'sonner';
 
 export interface AppNotification {
@@ -222,6 +223,7 @@ const DEFAULT_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
   const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
@@ -280,6 +282,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { id: 'ann_1', title: 'New: Ogbomoso Price Index', message: 'Check fair market values for used items in our new Market Insights portal.', type: 'info', active: true, createdAt: '2024-01-01' }
   ]);
 
+  // Sync with Supabase on mount
+  useEffect(() => {
+    const initData = async () => {
+      try {
+        const [dbUsers, dbListings, dbCategories] = await Promise.all([
+          userService.getAll(),
+          listingService.getAll(),
+          announcementService.getAll()
+        ]);
+        
+        if (dbUsers.length > 0) setAllUsers(dbUsers as any);
+        if (dbListings.length > 0) setListings(dbListings as any);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Supabase Init Error:", err);
+        setLoading(false);
+      }
+    };
+    initData();
+  }, []);
+
   // Presence simulation effect (Real-time dynamic updating)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -315,6 +339,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       type,
       createdAt: 'Just now'
     }, ...prev]);
+    auditService.create({ action, details, type, created_at: new Date().toISOString() });
   };
 
   const updatePromotionPlanRate = (months: number, newRate: number) => {
@@ -344,7 +369,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const bulkDeleteUsers = (userIds: string[]) => {
     setAllUsers(prev => prev.filter(u => !userIds.includes(u.id)));
-    // Also clean up their listings
     setListings(prev => prev.filter(l => !userIds.includes(l.sellerId)));
     addAuditLog('Bulk User Delete', `Deleted ${userIds.length} user accounts and their ads`, 'user');
     toast.success(`Deleted ${userIds.length} user accounts!`);
@@ -390,6 +414,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       };
       setAllUsers(prev => [newUser, ...prev]);
       setUser(newUser);
+      userService.create(newUser as any);
       toast.success(`Account created for ${email}!`);
     }
   };
@@ -419,38 +444,47 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now', viewsCount: 0, featured: data.featured, specifications: data.specifications
     };
     setListings(prev => [newAd, ...prev]);
+    listingService.create(newAd as any);
     addAuditLog('Listing Created', `Ad "${newAd.title}" (ID: ${newAd.id}) published by ${user.fullName}`, 'ad');
   };
 
   const updateListing = async (id: string, updated: Partial<Listing>) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+    listingService.update(id, updated as any);
     addAuditLog('Listing Updated', `Updated listing ID: ${id}`, 'ad');
   };
 
   const deleteListing = async (id: string) => {
     const target = listings.find(l => l.id === id);
     setListings(prev => prev.filter(l => l.id !== id));
+    listingService.delete(id);
     addAuditLog('Listing Deleted', `Deleted listing "${target?.title || id}"`, 'ad');
     toast.success('Listing deleted.');
   };
 
   const markAsSold = async (id: string) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+    listingService.update(id, { status: 'sold' });
     toast.success('Item marked as sold.');
   };
 
   const toggleFeaturedListing = async (id: string) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: !l.featured } : l));
+    const target = listings.find(l => l.id === id);
+    if (target) {
+      setListings(prev => prev.map(l => l.id === id ? { ...l, featured: !l.featured } : l));
+      listingService.update(id, { featured: !target.featured });
+    }
   };
 
   const promoteListing = async (id: string, duration: number, plan: string) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: duration } : l));
+    listingService.update(id, { featured: true, promotion_plan_name: plan, promotion_duration_months: duration });
     toast.success(`Top Ad promotion activated for ${plan}.`);
   };
 
   const sendMessage = async (listingId: string, receiverId: string, content: string) => {
     toast.success('Message sent to seller!');
-    console.log(`Sending message to ${receiverId} about ${listingId}: ${content}`);
+    messageService.sendMessage({ listing_id: listingId, receiver_id: receiverId, sender_id: user?.id, content });
   };
 
   const marketStats: CategoryStats[] = useMemo(() => {
@@ -486,8 +520,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? { ...c, name } : c)),
       analytics, marketStats, login, adminLogin, logout,
-      listings, allUsers, updateUser: async (id, data) => setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)), 
-      deleteUser: async (id) => setAllUsers(p => p.filter(u => u.id !== id)),
+      listings, allUsers, updateUser: async (id, data) => { setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)); userService.update(id, data as any); }, 
+      deleteUser: async (id) => { setAllUsers(p => p.filter(u => u.id !== id)); userService.delete(id); },
       bulkUpdateUsers, bulkDeleteUsers, bulkUpdateListings, bulkDeleteListings,
       savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
       toggleSaveListing: (id) => setSavedListingIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
@@ -503,31 +537,31 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       clearNotification: (id) => setNotifications(p => p.filter(n => n.id !== id)),
       addNotification: (n) => setNotifications(p => [{ ...n, id: `not_${Date.now()}`, time: 'Just now', read: false } as any, ...p]),
       broadcastMassNotification,
-      passwordRequests, submitPasswordRequest: (r) => setPasswordRequests(p => [{...r, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
-      processPasswordRequest: (id, status) => setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)),
+      passwordRequests, submitPasswordRequest: (r) => { setPasswordRequests(p => [{...r, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); passwordRequestService.create(r); },
+      processPasswordRequest: (id, status) => { setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); passwordRequestService.updateStatus(id, status); },
       verificationRequests, 
-      submitVerificationRequest: (req) => setVerificationRequests(prev => [{ ...req, id: `ver_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]), 
-      processVerificationRequest: (id, status) => setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)),
+      submitVerificationRequest: (req) => { setVerificationRequests(prev => [{ ...req, id: `ver_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]); verificationService.create(req); }, 
+      processVerificationRequest: (id, status) => { setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)); verificationService.updateStatus(id, status); },
       promotionPaymentRequests, 
-      submitPromotionPaymentRequest: (req) => setPromotionPaymentRequests(p => [{...req, id: `pay_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
-      processPromotionPaymentRequest: (id, s) => setPromotionPaymentRequests(p => p.map(r => r.id === id ? {...r, status: s} : r)),
+      submitPromotionPaymentRequest: (req) => { setPromotionPaymentRequests(p => [{...req, id: `pay_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); promotionService.create(req); },
+      processPromotionPaymentRequest: (id, s) => { setPromotionPaymentRequests(p => p.map(r => r.id === id ? {...r, status: s} : r)); promotionService.updateStatus(id, s); },
       announcements, addAnnouncement: (a) => setAnnouncements(p => [{...a, id: `ann_${Date.now()}`, createdAt: new Date().toISOString()} as any, ...p]),
       toggleAnnouncement: (id) => setAnnouncements(p => p.map(a => a.id === id ? {...a, active: !a.active} : a)),
       deleteAnnouncement: (id) => setAnnouncements(p => p.filter(a => a.id !== id)),
-      reports, submitReport: (r) => setReports(p => [{...r, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
-      processReport: (id, a) => setReports(p => p.map(r => r.id === id ? {...r, status: 'resolved'} : r)),
+      reports, submitReport: (r) => { setReports(p => [{...r, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]); reportService.create(r); },
+      processReport: (id, a) => { setReports(p => p.map(r => r.id === id ? {...r, status: 'resolved'} : r)); reportService.updateStatus(id, 'resolved'); },
       disputeCases, 
-      submitDisputeCase: (disp) => setDisputeCases(prev => [{ ...disp, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]),
-      processDisputeCase: (id, s) => setDisputeCases(p => p.map(c => c.id === id ? {...c, status: s} : c)),
+      submitDisputeCase: (disp) => { setDisputeCases(prev => [{ ...disp, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]); disputeService.create(disp); },
+      processDisputeCase: (id, s) => { setDisputeCases(p => p.map(c => c.id === id ? {...c, status: s} : c)); disputeService.updateStatus(id, s); },
       auditLogs, addAuditLog,
       recentDeals: [], sealDeal: () => toast.success('Transaction sealed.'),
-      intrusionLogs, recordIntrusion: (e, m) => setIntrusionLogs(p => [{id: `int_${Date.now()}`, timestamp: 'Just now', attemptedEmail: e, deviceInfo: {} as any, mediaCaptured: true, mediaStatus: m, status: 'flagged'}, ...p]),
+      intrusionLogs, recordIntrusion: (e, m) => { setIntrusionLogs(p => [{id: `int_${Date.now()}`, timestamp: 'Just now', attemptedEmail: e, deviceInfo: {} as any, mediaCaptured: true, mediaStatus: m, status: 'flagged'}, ...p]); intrusionService.create({ attemptedEmail: e, mediaStatus: m }); },
       searchAlerts: [], saveSearchAlert: () => toast.success('Search alert saved.'), deleteSearchAlert: () => {},
-      reviews, addReview: (r) => setReviews(p => [{...r, id: `rev_${Date.now()}`, createdAt: 'Just now'} as any, ...p]),
-      deleteReview: (id) => setReviews(p => p.filter(r => r.id !== id)),
-      buyerRequests, createBuyerRequest: (r) => setBuyerRequests(p => [{...r, id: `req_${Date.now()}`, createdAt: 'Just now', responsesCount: 0} as any, ...p]),
-      deleteBuyerRequest: (id) => setBuyerRequests(p => p.filter(r => r.id !== id)),
-      loading: false, error: null
+      reviews, addReview: (r) => { setReviews(p => [{...r, id: `rev_${Date.now()}`, createdAt: 'Just now'} as any, ...p]); reviewService.create(r); },
+      deleteReview: (id) => { setReviews(p => p.filter(r => r.id !== id)); reviewService.delete(id); },
+      buyerRequests, createBuyerRequest: (r) => { setBuyerRequests(p => [{...r, id: `req_${Date.now()}`, createdAt: 'Just now', responsesCount: 0} as any, ...p]); buyerRequestService.create(r); },
+      deleteBuyerRequest: (id) => { setBuyerRequests(p => p.filter(r => r.id !== id)); buyerRequestService.delete(id); },
+      loading, error: null
     }}>
       {children}
     </SealifyContext.Provider>
