@@ -26,7 +26,8 @@ import {
   ChevronDown,
   Shield,
   TrendingUp,
-  HelpCircle
+  HelpCircle,
+  Users
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -50,6 +51,7 @@ const Navbar: React.FC = () => {
     language,
     setLanguage,
     siteSettings,
+    analytics,
     t
   } = useSealify();
 
@@ -80,9 +82,22 @@ const Navbar: React.FC = () => {
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl font-sans">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
-          <Link to="/" className="flex items-center shrink-0">
-            <Logo size="md" />
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="flex items-center shrink-0">
+              <Logo size="md" />
+            </Link>
+
+            {/* LIVE ONLINE INDICATOR */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+               <span className="relative flex h-2 w-2">
+                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+               </span>
+               <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">
+                 {analytics.visitors} online now
+               </span>
+            </div>
+          </div>
 
           <div className="hidden md:flex flex-1 max-w-md">
             <button 
@@ -105,12 +120,12 @@ const Navbar: React.FC = () => {
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
               <HelpCircle className="w-3.5 h-3.5" />
-              <span>Item Requests</span>
+              <span>Requests</span>
             </Link>
 
             <Link to="/market-insights" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors mr-1 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
               <TrendingUp className="w-3.5 h-3.5" />
-              <span>Price Index</span>
+              <span>Insights</span>
             </Link>
 
             <button
@@ -120,16 +135,6 @@ const Navbar: React.FC = () => {
               <Lock className="w-3.5 h-3.5" />
               <span>{t('safe_escrow')}</span>
             </button>
-
-            <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
-              <Building2 className="w-4 h-4 text-emerald-400" />
-              <span>{t('vendors')}</span>
-            </Link>
-
-            <Link to="/safety" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-2">
-              <ShieldCheck className="w-4 h-4" />
-              <span>{t('safety')}</span>
-            </Link>
 
             <div className="relative group">
               <button
@@ -162,10 +167,6 @@ const Navbar: React.FC = () => {
                   {unreadNotifications}
                 </span>
               )}
-            </Link>
-
-            <Link to="/messages" className="p-2.5 hover:bg-slate-800 rounded-xl text-slate-300" title={t('inbox')}>
-              <MessageSquare className="w-5 h-5" />
             </Link>
 
             {isAuthenticated ? (
@@ -222,6 +223,10 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
+             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mr-1">
+               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+               <span className="text-[9px] font-black text-emerald-400 uppercase">{analytics.visitors} online</span>
+             </div>
             <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
               <Search className="w-6 h-6" />
             </button>

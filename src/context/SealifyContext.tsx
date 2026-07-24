@@ -43,6 +43,7 @@ interface AnalyticsData {
   activeAds: number;
   totalChats: number;
   sessionsPerMinute: number[];
+  activeSessions: { id: string, user: string, action: string, time: string }[];
 }
 
 interface SealifyContextType {
@@ -173,9 +174,50 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 15, color: 'bg-pink-500' },
     { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 9, color: 'bg-amber-500' },
   ]);
+
+  const [analytics, setAnalytics] = useState<AnalyticsData>({
+    visitors: 142,
+    activeAds: listings.length,
+    totalChats: 12,
+    sessionsPerMinute: [12, 18, 22, 15, 30, 42, 28, 35, 19, 25],
+    activeSessions: [
+      { id: 'sess_1', user: 'Ope_72', action: 'Viewing iPhone 13', time: 'Just now' },
+      { id: 'sess_2', user: 'Uche_D', action: 'Messaging Seller', time: '2m ago' }
+    ]
+  });
+
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([
     { id: 'ann_1', title: 'New: Ogbomoso Price Index', message: 'Check fair market values for used items in our new Market Insights portal.', type: 'info', active: true, createdAt: '2024-01-01' }
   ]);
+
+  // Presence simulation effect (Real-time dynamic updating)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setAnalytics(prev => {
+        // Randomly fluctuate online visitor count
+        const change = Math.floor(Math.random() * 5) - 2;
+        const newCount = Math.max(85, prev.visitors + change);
+        
+        // Randomly add a new activity session for real-time feel
+        const demoUsers = ['Bayo_88', 'Blessing_X', 'Israel_N', 'Tunde_V', 'Seyi_O', 'Abiola_W'];
+        const demoActions = ['Viewing Vehicles', 'Posting Request', 'Saved an Item', 'Contacted Vendor', 'In Ogbomoso Hub'];
+        const newSession = {
+          id: `sess_${Date.now()}`,
+          user: demoUsers[Math.floor(Math.random() * demoUsers.length)],
+          action: demoActions[Math.floor(Math.random() * demoActions.length)],
+          time: 'Just now'
+        };
+
+        return {
+          ...prev,
+          visitors: newCount,
+          activeSessions: [newSession, ...prev.activeSessions.slice(0, 7)]
+        };
+      });
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const login = async (email: string, role: 'buyer' | 'seller' | 'admin') => {
     const existing = allUsers.find(u => u.email === email);
@@ -244,7 +286,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendMessage = async (listingId: string, receiverId: string, content: string) => {
-    // Explicitly returning void to satisfy TypeScript
     toast.success('Message sent to seller!');
     console.log(`Sending message to ${receiverId} about ${listingId}: ${content}`);
   };
@@ -279,8 +320,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       categories, addCategory: (c) => setCategories(p => [...p, { ...c, id: `cat_${Date.now()}` }]), 
       deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? { ...c, name } : c)),
-      analytics: { visitors: 184, activeAds: listings.length, totalChats: 12, sessionsPerMinute: [12, 18, 22, 15, 30, 42, 28, 35, 19, 25] },
-      marketStats, login, adminLogin, logout,
+      analytics, marketStats, login, adminLogin, logout,
       listings, allUsers, updateUser: async (id, data) => setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)), 
       deleteUser: async (id) => setAllUsers(p => p.filter(u => u.id !== id)),
       savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
