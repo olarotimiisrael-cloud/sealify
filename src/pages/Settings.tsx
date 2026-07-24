@@ -45,13 +45,20 @@ const Settings: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 font-sans">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
         <SEO title="Account Settings — Sealify Nigeria" />
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center max-w-sm w-full space-y-4">
-          <h2 className="text-xl font-bold text-white">Login Required</h2>
-          <p className="text-slate-400 text-xs">Please log in to access account settings and storefront branding.</p>
-          <Link to="/" className="inline-block px-5 py-2.5 bg-emerald-500 text-slate-950 rounded-xl font-bold text-xs transition-colors">Return Home</Link>
-        </div>
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-sm w-full space-y-4 shadow-2xl">
+            <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center mx-auto border border-slate-800">
+              <Lock className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Login Required</h2>
+            <p className="text-slate-400 text-xs">Please log in to access account settings and storefront branding.</p>
+            <Link to="/" className="w-full inline-block px-5 py-3 bg-emerald-500 text-slate-950 rounded-xl font-black text-xs transition-colors shadow-lg">Return Home</Link>
+          </div>
+        </main>
+        <MobileNav />
       </div>
     );
   }
