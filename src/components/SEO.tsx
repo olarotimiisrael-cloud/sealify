@@ -51,6 +51,10 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag('name', 'twitter:title', finalTitle);
     setMetaTag('name', 'twitter:description', finalDescription);
     setMetaTag('name', 'twitter:image', finalImage);
+    
+    // Additional SEO tags
+    setMetaTag('name', 'theme-color', '#059669');
+    setMetaTag('property', 'og:locale', 'en_NG');
   }, [finalTitle, finalDescription, finalImage, url, type, siteSettings.siteName, siteSettings.siteDescription]);
 
   return null;
