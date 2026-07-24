@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Crown, Sparkles, MapPin, Eye, ArrowRight, ChevronLeft, ChevronRight, MessageSquare, Tag } from 'lucide-react';
+import { Crown, Sparkles, MapPin, Eye, ArrowRight, MessageSquare, Tag } from 'lucide-react';
 
 interface PromotedSpotlightBannerProps {
   listings: Listing[];
@@ -13,7 +13,6 @@ export const PromotedSpotlightBanner: React.FC<PromotedSpotlightBannerProps> = (
   const { sendMessage, isAuthenticated } = useSealify();
   const navigate = useNavigate();
 
-  // Filter for active promoted/featured listings
   const promotedAds = listings.filter((l) => l.featured || l.viewsCount > 150);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -48,106 +47,103 @@ export const PromotedSpotlightBanner: React.FC<PromotedSpotlightBannerProps> = (
   };
 
   return (
-    <section className="relative bg-gradient-to-r from-purple-950 via-slate-900 to-emerald-950 border-2 border-amber-500/40 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl overflow-hidden group font-sans">
-      {/* Ambient background glow */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <section className="relative bg-gradient-to-r from-purple-950/90 via-slate-900 to-emerald-950/90 border-2 border-amber-500/40 rounded-3xl sm:rounded-[2.5rem] p-4 sm:p-7 shadow-2xl overflow-hidden group font-sans">
+      <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-8">
         
-        {/* Left Column - Product Image & Badge */}
-        <div className="relative w-full lg:w-1/2 aspect-[16/10] bg-slate-950 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl group/img">
+        {/* Product Image & Badge */}
+        <div className="relative w-full lg:w-1/2 aspect-[16/9] bg-slate-950 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-800 shadow-xl group/img">
           <img
             src={currentAd.images[0]}
             alt={currentAd.title}
             className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80"></div>
 
-          <div className="absolute top-3 left-3 z-10 flex items-center gap-2">
-            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black uppercase tracking-wider px-3 py-1 rounded-xl shadow-lg flex items-center gap-1.5 animate-pulse">
-              <Crown className="w-4 h-4 fill-slate-950" />
+          <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-2">
+            <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[9px] sm:text-xs font-black uppercase tracking-wider px-2.5 py-1 rounded-xl shadow-lg flex items-center gap-1">
+              <Crown className="w-3.5 h-3.5 fill-slate-950" />
               <span>TOP AD SPOTLIGHT</span>
             </span>
           </div>
 
-          <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white z-10">
-            <span className="bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-emerald-400 font-black text-lg">
+          <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between text-xs text-white z-10">
+            <span className="bg-slate-950/90 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-800 text-emerald-400 font-black text-sm sm:text-lg">
               {formatNGN(currentAd.price)}
             </span>
 
-            <span className="bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-800 text-slate-300 font-bold flex items-center gap-1 text-[11px]">
-              <Eye className="w-3.5 h-3.5 text-amber-400" />
-              <span>{currentAd.viewsCount} impressions</span>
+            <span className="bg-slate-950/90 backdrop-blur-md px-2 py-1 rounded-xl border border-slate-800 text-slate-300 font-bold flex items-center gap-1 text-[10px]">
+              <Eye className="w-3 h-3 text-amber-400" />
+              <span>{currentAd.viewsCount} views</span>
             </span>
           </div>
         </div>
 
-        {/* Right Column - Description & Call to Action */}
-        <div className="w-full lg:w-1/2 space-y-5 text-center lg:text-left">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 justify-center lg:justify-start flex-wrap">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-widest bg-amber-500/10 px-3 py-1 rounded-lg border border-amber-500/30">
+        {/* Description & Actions */}
+        <div className="w-full lg:w-1/2 space-y-3 sm:space-y-5 text-left">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
                 {currentAd.category}
               </span>
               <VerifiedBadge type={currentAd.sellerVerificationType || 'individual'} showText />
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight line-clamp-2">
+            <h2 className="text-lg sm:text-2xl font-black text-white leading-snug line-clamp-2">
               {currentAd.title}
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed">
+            <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
               {currentAd.description}
             </p>
           </div>
 
-          <div className="flex items-center gap-4 justify-center lg:justify-start text-xs text-slate-400 font-semibold flex-wrap">
+          <div className="flex items-center gap-3 text-[11px] text-slate-400 font-semibold flex-wrap">
             <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-emerald-400" />
+              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
               {currentAd.location}
             </span>
             <span className="flex items-center gap-1">
-              <Tag className="w-4 h-4 text-purple-400" />
+              <Tag className="w-3.5 h-3.5 text-purple-400" />
               {currentAd.condition}
             </span>
           </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
+          <div className="pt-1 flex items-center gap-2">
             <button
               onClick={handleQuickChat}
-              className="w-full sm:w-auto px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all hover:scale-105"
+              className="flex-1 sm:flex-none px-4 py-2.5 sm:py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Instant Live Chat with Seller</span>
+              <span>Live Chat</span>
             </button>
 
             <Link
               to={`/listing/${currentAd.id}`}
-              className="w-full sm:w-auto px-6 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-2 border border-slate-700 transition-colors"
+              className="flex-1 sm:flex-none px-4 py-2.5 sm:py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition-colors"
             >
-              <span>View Full Listing</span>
+              <span>View Ad</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          {/* Slider controls */}
+          {/* Slider indicators */}
           {promotedAds.length > 1 && (
-            <div className="pt-2 flex items-center justify-center lg:justify-start gap-3">
-              <div className="flex gap-1.5">
+            <div className="pt-1 flex items-center gap-2">
+              <div className="flex gap-1">
                 {promotedAds.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setCurrentIndex(idx)}
-                    className={`h-2 rounded-full transition-all ${
-                      idx === currentIndex ? 'w-8 bg-amber-400' : 'w-2 bg-slate-700'
+                    className={`h-1.5 rounded-full transition-all ${
+                      idx === currentIndex ? 'w-6 bg-amber-400' : 'w-1.5 bg-slate-700'
                     }`}
                   />
                 ))}
               </div>
-
-              <span className="text-[10px] text-slate-500 font-mono font-bold uppercase ml-2">
-                Promoted {currentIndex + 1} of {promotedAds.length}
+              <span className="text-[9px] text-slate-500 font-mono uppercase ml-1">
+                {currentIndex + 1} of {promotedAds.length}
               </span>
             </div>
           )}

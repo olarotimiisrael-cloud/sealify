@@ -31,31 +31,31 @@ export const NeighborhoodFilter: React.FC = () => {
   };
 
   return (
-    <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-4 sm:p-5 shadow-xl space-y-3">
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <section className="bg-slate-900/80 border border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xl space-y-2.5">
+      <div className="flex items-center justify-between flex-wrap gap-2 px-1">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-teal-500/10 text-teal-400 rounded-xl border border-teal-500/20">
-            <MapPin className="w-4 h-4" />
+          <div className="p-1.5 sm:p-2 bg-teal-500/10 text-teal-400 rounded-xl border border-teal-500/20">
+            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
-              Hyper-Local Neighborhood Filter
+              Neighborhood Hubs
             </h3>
-            <p className="text-[10px] text-slate-400">Filter deals by campus zones & neighborhood hubs in Ogbomoso</p>
+            <p className="text-[10px] text-slate-400">Filter by campus zones in Ogbomoso</p>
           </div>
         </div>
 
         {filters.location && (
           <button
             onClick={() => setFilters((prev) => ({ ...prev, location: '' }))}
-            className="text-[10px] font-black uppercase text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-xl hover:bg-rose-500/20 transition-colors"
+            className="text-[9px] font-black uppercase text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg hover:bg-rose-500/20 transition-colors"
           >
-            Clear Zone
+            Clear
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
         {ZONES.map((zone) => {
           const Icon = zone.icon;
           const isSelected = zone.query === '' ? !filters.location : filters.location.toLowerCase().includes(zone.query.toLowerCase());
@@ -68,15 +68,15 @@ export const NeighborhoodFilter: React.FC = () => {
             <button
               key={zone.id}
               onClick={() => handleSelectZone(zone.query)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all shrink-0 ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-[11px] font-bold transition-all shrink-0 active:scale-95 ${
                 isSelected
-                  ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20 scale-105 font-black'
-                  : 'bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-teal-500/40'
+                  ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20 font-black'
+                  : 'bg-slate-950 border border-slate-800 text-slate-300 hover:text-white'
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-slate-950' : 'text-teal-400'}`} />
               <span className="whitespace-nowrap">{zone.name}</span>
-              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
+              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
                 isSelected ? 'bg-slate-950/20 text-slate-950 font-black' : 'bg-slate-900 text-slate-400'
               }`}>
                 {matchingCount}
