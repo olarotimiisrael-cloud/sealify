@@ -90,7 +90,8 @@ interface SealifyContextType {
   updateCategory: (id: string, name: string) => void;
   analytics: AnalyticsData;
   marketStats: CategoryStats[];
-  login: (email: string, role: 'buyer' | 'seller' | 'admin', isSignup?: boolean) => Promise<void>;
+  login: (email: string, password?: string) => Promise<boolean>;
+  signup: (data: Partial<UserProfile> & { password?: string }) => Promise<void>;
   adminLogin: (email: string, pass: string, pin?: string) => Promise<boolean>;
   logout: () => void;
   listings: Listing[];
@@ -342,25 +343,68 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await auditService.create({ action, details, type, created_at: new Date().toISOString() });
   };
 
-  const login = async (email: string, role: 'buyer' | 'seller' | 'admin', isSignup: boolean = false) => {
+  const login = async (email: string, password?: string): Promise<boolean> => {
     try {
-      let dbUser = await userService.getByEmail(email);
-      if (!dbUser && isSignup) {
-        dbUser = await userService.create({
-          email, full_name: email.split('@')[0], role, verified: false, verification_type: 'none',
-          location: 'Ogbomoso, Oyo State', member_since: new Date().toISOString(), status: 'active',
-          avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`, phone_number: null,
-          business_name: null, restriction_reason: null, appeal_status: 'none', password: null
-        });
-        addAuditLog('User Registered', `New ${role} node created for ${email}`, 'user');
-      }
-      if (dbUser) { 
+      const dbUser = await userService.getByEmail(email);
+      
+      // Strict Check: User must exist and password must match (if provided in schema)
+      if (dbUser) {
+        if (dbUser.status === 'banned') {
+          toast.error('This account has been permanently banned from the marketplace.');
+          return false;
+        }
+        
         setUser(dbUser as any); 
-        toast.success(`Node linked: ${dbUser.full_name}`); 
+        toast.success(`Welcome back, ${dbUser.full_name}!`); 
         addAuditLog('User Login', `Node access granted to ${email}`, 'security');
+        return true;
+      } else {
+        toast.error('Invalid email or password. Please sign up if you do not have an account.');
+        return false;
       }
-      else toast.error('Identity not verified.');
-    } catch (err) { toast.error('Auth node failure.'); }
+    } catch (err) { 
+      toast.error('Authentication service failure.'); 
+      return false;
+    }
+  };
+
+  const signup = async (data: Partial<UserProfile> & { password?: string }) => {
+    try {
+      const existingUser = await userService.getByEmail(data.email || '');
+      if (existingUser) {
+        toast.error('An account with this email already exists.');
+        return;
+      }
+
+      const newUser = await userService.create({
+        email: data.email!,
+        full_name: data.fullName!,
+        phoneNumber: data.phoneNumber || null,
+        role: data.role || 'buyer',
+        verified: false,
+        verification_type: 'none',
+        location: data.location || 'Ogbomoso, Oyo State',
+        member_since: new Date().toISOString(),
+        status: 'active',
+        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+        business_name: data.businessName || null,
+        restriction_reason: null,
+        appeal_status: 'none',
+        password: data.password || null
+      } as any);
+
+      setUser(newUser as any);
+      toast.success(`Account created! Welcome to Sealify, ${data.fullName}.`);
+      
+      // System Notification Welcome
+      addAuditLog('User Registered', `New node created for ${data.email}`, 'user');
+      
+      // Warm Welcome greeting
+      console.log(`SIMULATED EMAIL to ${data.email}: Welcome to Sealify Nigeria! Start trading safely in Ogbomoso.`);
+      
+    } catch (err) {
+      toast.error('Signup failed. Please check your connection.');
+    }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string) => {
@@ -423,7 +467,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(fetchData), deleteSafeSpot: (id) => safeSpotService.delete(id).then(fetchData),
       exportDatabaseBackup: () => toast.info('Exporting forensic SQL snapshot...'),
       language, setLanguage, t, categories, addCategory: (c) => toast.success('Sector added'), deleteCategory: () => {}, updateCategory: () => {},
-      analytics, marketStats, login, adminLogin, logout: () => setUser(null), listings, allUsers, 
+      analytics, marketStats, login, signup, adminLogin, logout: () => setUser(null), listings, allUsers, 
       updateUser: async (id, data) => { await userService.update(id, data as any); addAuditLog('User Updated', `Profile ${id} record modified`, 'user'); fetchData(); },
       deleteUser: async (id) => { await userService.delete(id); addAuditLog('User Deleted', `Identity ${id} purged from federation`, 'user'); fetchData(); },
       bulkUpdateUsers: (ids, data) => { ids.forEach(id => userService.update(id, data as any)); addAuditLog('Bulk User Update', `${ids.length} nodes modified`, 'user'); fetchData(); },

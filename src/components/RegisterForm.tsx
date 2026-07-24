@@ -10,17 +10,20 @@ import { useSealify } from "@/context/SealifyContext";
 const RegisterForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useSealify();
+  const { signup } = useSealify();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email address');
+    if (!email || !password) {
+      toast.error('Please enter your email and password');
       return;
     }
     try {
-      await login(email, 'buyer', true);
-      toast.success('Registration successful!');
+      await signup({ 
+        email, 
+        password, 
+        fullName: email.split('@')[0] 
+      });
       setEmail('');
       setPassword('');
     } catch (error) {

@@ -14,15 +14,16 @@ const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
-      toast.error('Please enter your email address');
+    if (!email || !password) {
+      toast.error('Please enter both email and password');
       return;
     }
     try {
-      await login(email, 'buyer', false);
-      toast.success('Login successful!');
-      setEmail('');
-      setPassword('');
+      const success = await login(email, password);
+      if (success) {
+        setEmail('');
+        setPassword('');
+      }
     } catch (error) {
       toast.error('Login failed. Please try again.');
     }
