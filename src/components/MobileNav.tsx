@@ -5,7 +5,7 @@ import { useSealify } from '../context/SealifyContext';
 import AuthModal from './AuthModal';
 
 export const MobileNav: React.FC = () => {
-  const { savedListingIds, conversations, user, isAdmin } = useSealify();
+  const { savedListingIds, conversations, user, isAdmin, t } = useSealify();
   const navigate = useNavigate();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
@@ -35,7 +35,7 @@ export const MobileNav: React.FC = () => {
             }
           >
             <Home className="w-5 h-5 mb-0.5" />
-            <span>Home</span>
+            <span>{t('home')}</span>
           </NavLink>
 
           <NavLink
@@ -47,7 +47,7 @@ export const MobileNav: React.FC = () => {
             }
           >
             <Heart className="w-5 h-5 mb-0.5" />
-            <span>Saved</span>
+            <span>{t('saved')}</span>
             {savedListingIds.length > 0 && (
               <span className="absolute top-0 right-2 bg-emerald-500 text-slate-950 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {savedListingIds.length}
@@ -62,7 +62,7 @@ export const MobileNav: React.FC = () => {
             <div className="w-12 h-12 bg-emerald-500 text-slate-950 rounded-full flex items-center justify-center shadow-lg shadow-emerald-500/30 border-2 border-slate-900 font-black">
               <PlusCircle className="w-7 h-7" />
             </div>
-            <span className="text-[10px] font-extrabold text-emerald-400 mt-0.5">Sell</span>
+            <span className="text-[10px] font-extrabold text-emerald-400 mt-0.5">{t('sell')}</span>
           </NavLink>
 
           <NavLink
@@ -74,7 +74,7 @@ export const MobileNav: React.FC = () => {
             }
           >
             <MessageSquare className="w-5 h-5 mb-0.5" />
-            <span>Inbox</span>
+            <span>{t('inbox')}</span>
             {totalUnreadMessages > 0 && (
               <span className="absolute top-0 right-2 bg-teal-400 text-slate-950 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                 {totalUnreadMessages}
@@ -82,7 +82,6 @@ export const MobileNav: React.FC = () => {
             )}
           </NavLink>
 
-          {/* Prominent Profile Avatar Button */}
           <button
             onClick={handleAccountClick}
             className="flex flex-col items-center py-1 px-3 rounded-lg text-[10px] font-bold transition-colors text-slate-400 hover:text-slate-200"
@@ -100,7 +99,7 @@ export const MobileNav: React.FC = () => {
             ) : (
               <User className="w-5 h-5 mb-0.5" />
             )}
-            <span>{isAdmin ? 'Admin' : user ? 'My Ads' : 'Account'}</span>
+            <span>{isAdmin ? 'Admin' : user ? t('my_ads') : t('account')}</span>
           </button>
         </div>
       </nav>

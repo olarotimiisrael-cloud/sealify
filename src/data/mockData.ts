@@ -14,7 +14,7 @@ export const CATEGORIES = [
 
 const SELLER_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80";
 
-// Item definitions matching titles strictly to Unsplash product photos
+// Detailed catalog items where titles strictly match images
 const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: string; price: number; cond: 'Brand New' | 'Like New' | 'Used - Good' }[]> = {
   'Vehicles': [
     {
@@ -39,7 +39,7 @@ const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: st
       cond: 'Used - Good'
     },
     {
-      title: 'Honda Accord 2018 EX-L',
+      title: 'Honda Accord 2018 EX-L Sedan',
       image: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&auto=format&fit=crop',
       desc: 'Honda Accord 2018 with turbo engine, lane departure alert, touch screen infotainment, and leather seats.',
       price: 11500000,
@@ -62,7 +62,7 @@ const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: st
       cond: 'Like New'
     },
     {
-      title: 'Sony PlayStation 5 Console + 2 Controllers',
+      title: 'Sony PlayStation 5 Gaming Console',
       image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800&auto=format&fit=crop',
       desc: 'PS5 Disc Edition console in mint condition. Comes with 2 DualSense controllers, HDMI 2.1 cable, and FC24 game pre-installed.',
       price: 680000,
@@ -85,7 +85,7 @@ const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: st
       cond: 'Brand New'
     },
     {
-      title: 'Standard 2 Bedroom Apartment for Rent',
+      title: 'Modern 2 Bedroom Apartment Rental',
       image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
       desc: 'Clean 2-bedroom flat with running borehole water, separate prepaid electricity meter, fully tiled rooms in LAUTECH Main Gate area.',
       price: 450000,
@@ -96,6 +96,65 @@ const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: st
       image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
       desc: 'Prime location commercial shop suitable for supermarket, pharmacy, or tech hub located right at Takie Roundabout, Ogbomoso.',
       price: 1200000,
+      cond: 'Brand New'
+    }
+  ],
+  'Fashion': [
+    {
+      title: 'Nike Air Jordan 1 Retro Sneakers',
+      image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop',
+      desc: 'Original Nike Air Jordan 1 high-top sneakers in classic colorway. Available sizes EU 41-45. Perfect for casual wear.',
+      price: 65000,
+      cond: 'Brand New'
+    },
+    {
+      title: 'Men Luxury Designer Wristwatch',
+      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
+      desc: 'Waterproof stainless steel chronograph wristwatch with date display. Comes with luxury gift presentation box.',
+      price: 48000,
+      cond: 'Brand New'
+    }
+  ],
+  'Home & Furniture': [
+    {
+      title: 'Modern L-Shaped Leather Sofa Set',
+      image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop',
+      desc: 'High-density foam 7-seater sectional leather sofa set with throw pillows. Stylish dark grey shade for modern living rooms.',
+      price: 380000,
+      cond: 'Like New'
+    },
+    {
+      title: 'Solid Wood 6-Seater Dining Set',
+      image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&auto=format&fit=crop',
+      desc: 'Handcrafted mahogany wood dining table with 6 comfortable cushioned chairs. Sturdy build for long-lasting dining.',
+      price: 260000,
+      cond: 'Like New'
+    }
+  ],
+  'Services': [
+    {
+      title: 'Solar Inverter System Installation',
+      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop',
+      desc: 'Professional installation of 3.5kVA to 10kVA solar hybrid inverters and lithium batteries across Ogbomoso and Oyo State.',
+      price: 150000,
+      cond: 'Brand New'
+    }
+  ],
+  'Beauty & Health': [
+    {
+      title: 'Organic Skincare & Glowing Serum Set',
+      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop',
+      desc: 'Dermatologist tested organic vitamin C facial serum and moisturising body lotion set. Suitable for all skin types.',
+      price: 25000,
+      cond: 'Brand New'
+    }
+  ],
+  'Utility & Energy': [
+    {
+      title: 'Elepaq Silent Inverter Generator 3.5kVA',
+      image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=800&auto=format&fit=crop',
+      desc: 'Fuel-efficient low noise copper-coil generator capable of running refrigerators, TVs, and computers smoothly.',
+      price: 195000,
       cond: 'Brand New'
     }
   ]

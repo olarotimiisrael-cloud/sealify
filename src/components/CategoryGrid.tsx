@@ -27,13 +27,13 @@ const iconMap: Record<string, React.FC<{ className?: string }>> = {
 };
 
 export const CategoryGrid: React.FC = () => {
-  const { activeCategory, setActiveCategory, categories, listings } = useSealify();
+  const { activeCategory, setActiveCategory, categories, listings, t } = useSealify();
 
   return (
     <section className="py-1">
       <div className="flex items-center justify-between mb-3 px-1">
         <div>
-          <h2 className="text-base sm:text-xl font-black text-white tracking-tight">Browse Categories</h2>
+          <h2 className="text-base sm:text-xl font-black text-white tracking-tight">{t('browse_categories')}</h2>
           <p className="text-[11px] text-slate-400">Discover verified items & local services in Ogbomoso</p>
         </div>
         {activeCategory !== 'All' && (
@@ -41,7 +41,7 @@ export const CategoryGrid: React.FC = () => {
             onClick={() => setActiveCategory('All')}
             className="text-[11px] font-bold text-emerald-400 hover:underline bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20"
           >
-            Reset Filter
+            {t('reset_filter')}
           </button>
         )}
       </div>
