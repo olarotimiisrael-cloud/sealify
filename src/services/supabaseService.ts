@@ -71,8 +71,6 @@ export const listingService = {
 // Messaging
 export const messageService = {
   async getConversations(userId: string): Promise<any[]> {
-    // In a real Supabase app, you might use a view or a complex query
-    // For this implementation, we fetch messages where user is sender or receiver
     const { data, error } = await supabase
       .from('messages')
       .select(`
@@ -148,6 +146,10 @@ export const passwordRequestService = {
 };
 
 export const promotionService = {
+  async getAll(): Promise<DbPromotionPayment[]> {
+    const { data } = await supabase.from('promotion_payments').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(req: any) { await supabase.from('promotion_payments').insert([req]); },
   async updateStatus(id: string, status: string) { await supabase.from('promotion_payments').update({ status }).eq('id', id); }
 };
@@ -191,10 +193,18 @@ export const buyerRequestService = {
 
 // Security & Logs
 export const auditService = {
+  async getAll(): Promise<DbAuditLog[]> {
+    const { data } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(log: any) { await supabase.from('audit_logs').insert([log]); }
 };
 
 export const intrusionService = {
+  async getAll(): Promise<DbIntrusionLog[]> {
+    const { data } = await supabase.from('intrusion_logs').select('*').order('timestamp', { ascending: false });
+    return data || [];
+  },
   async create(log: any) { await supabase.from('intrusion_logs').insert([log]); }
 };
 
@@ -203,22 +213,57 @@ export const announcementService = {
   async getAll(): Promise<DbAnnouncement[]> {
     const { data } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
     return data || [];
-  }
+  },
+  async create(ann: any) { await supabase.from('announcements').insert([ann]); },
+  async delete(id: string) { await supabase.from('announcements').delete().eq('id', id); }
 };
 
 export const searchAlertService = {
+  async getAll(userId: string): Promise<DbSearchAlert[]> {
+    const { data } = await supabase.from('search_alerts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+    return data || [];
+  },
   async create(alert: any) { await supabase.from('search_alerts').insert([alert]); },
   async delete(id: string) { await supabase.from('search_alerts').delete().eq('id', id); }
 };
 
+export const safeSpotService = {
+  async getAll(): Promise<any[]> {
+    const { data } = await supabase.from('safe_spots').select('*');
+    return data || [];
+  },
+  async create(spot: any) { await supabase.from('safe_spots').insert([spot]); },
+  async delete(id: string) { await supabase.from('safe_spots').delete().eq('id', id); }
+};
+
 export const systemConfigService = {
+  async getAll(): Promise<any[]> {
+    const { data } = await supabase.from('system_config').select('*');
+    return data || [];
+  },
   async update(key: string, value: boolean) { await supabase.from('system_config').upsert({ key, value }); }
 };
 
 export const siteSettingsService = {
+  async get(): Promise<DbSiteSettings | null> {
+    const { data } = await supabase.from('site_settings').select('*').maybeSingle();
+    return data;
+  },
   async update(settings: any) { await supabase.from('site_settings').upsert(settings); }
 };
 
+export const promotionPlanService = {
+  async getAll(): Promise<any[]> {
+    const { data } = await supabase.from('promotion_plans').select('*');
+    return data || [];
+  },
+  async updateRate(months: number, rate: number) { await supabase.from('promotion_plans').update({ rate }).eq('months', months); }
+};
+
 export const recentDealsService = {
+  async getAll(): Promise<DbRecentDeal[]> {
+    const { data } = await supabase.from('recent_deals').select('*').order('time', { ascending: false });
+    return data || [];
+  },
   async create(deal: any) { await supabase.from('recent_deals').insert([deal]); }
 };

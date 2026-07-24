@@ -245,7 +245,7 @@ const ListingDetail: React.FC = () => {
                   {Object.entries(listing.specifications).map(([key, val]) => (
                     <div key={key} className="bg-slate-950/50 border border-slate-800 p-3 rounded-2xl">
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{key}</p>
-                      <p className="text-xs font-bold text-white mt-0.5">{val}</p>
+                      <p className="text-xs font-bold text-white mt-0.5">{val as React.ReactNode}</p>
                     </div>
                   ))}
                 </div>

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
-import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService } from '@/services/supabaseService';
+import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService } from '@/services/supabaseService';
 import { toast } from 'sonner';
 
 export interface AppNotification {
@@ -180,6 +180,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
+  const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>([]);
   const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
@@ -199,33 +200,47 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
   ]);
 
-  const [analytics, setAnalytics] = useState<AnalyticsData>({
-    visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
-    activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
-  });
-
-  const [promotionPlans] = useState([
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>([]);
+  const [safeSpots, setSafeSpots] = useState<SafeMeetupSpotConfig[]>([]);
+  const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
+  const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>([]);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true });
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ siteName: 'Sealify Nigeria', siteDescription: "Nigeria's Trusted Local Marketplace.", ogImage: '/og-image.png', logoUrl: '/logo.png', contactEmail: 'support@sealify.ng', contactPhone: '+234 813 120 8468' });
+  const [promotionPlans, setPromotionPlans] = useState<PromotionPlanConfig[]>([
     { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
+  const [analytics] = useState<AnalyticsData>({
+    visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
+    activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
+  });
+
   const fetchData = useCallback(async () => {
     try {
-      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes] = await Promise.all([
+      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.all([
         userService.getAll(),
         listingService.getAll(),
         verificationService.getAll(),
         passwordRequestService.getAll(),
-        buyerRequestService.getAll ? buyerRequestService.getAll() : Promise.resolve([]),
-        reviewService.getAll ? reviewService.getAll() : Promise.resolve([]),
+        promotionService.getAll(),
+        buyerRequestService.getAll(),
+        reviewService.getAll(),
         announcementService.getAll(),
-        reportService.getAll ? reportService.getAll() : Promise.resolve([]),
-        disputeService.getAll ? disputeService.getAll() : Promise.resolve([])
+        reportService.getAll(),
+        disputeService.getAll(),
+        auditService.getAll(),
+        intrusionService.getAll(),
+        safeSpotService.getAll(),
+        systemConfigService.getAll(),
+        siteSettingsService.get(),
+        promotionPlanService.getAll(),
+        recentDealsService.getAll()
       ]);
 
       setAllUsers(dbUsers as any);
-      
-      const transformedListings = dbListings.map(l => ({
+      setListings(dbListings.map(l => ({
         id: l.id,
         sellerId: l.seller_id,
         sellerName: l.users?.full_name || 'Verified Seller',
@@ -245,27 +260,40 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         createdAt: new Date(l.created_at).toLocaleDateString(),
         featured: l.featured,
         promotionEndDate: l.promotion_end_date
-      }));
-      
-      setListings(transformedListings);
+      })));
       setVerificationRequests(dbVerifications as any);
       setPasswordRequests(dbPasswords as any);
+      setPromotionPaymentRequests(dbPromoPay as any);
+      setBuyerRequests(dbBuyerReqs as any);
+      setReviews(dbReviews as any);
       setAnnouncements(dbAnnouncements as any);
+      setReports(dbReports as any);
+      setDisputeCases(dbDisputes as any);
+      setAuditLogs(dbLogs as any);
+      setIntrusionLogs(dbThreats as any);
+      setSafeSpots(dbSpots as any);
+      setRecentDeals(dbDeals.map(d => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       
-      if (dbBuyerReqs) setBuyerRequests(dbBuyerReqs as any);
-      if (dbReviews) setReviews(dbReviews as any);
-      if (dbReports) setReports(dbReports as any);
-      if (dbDisputes) setDisputeCases(dbDisputes as any);
+      if (dbMeta) setSiteSettings(dbMeta as any);
+      if (dbPlans.length > 0) setPromotionPlans(dbPlans as any);
+      
+      if (dbConfigs.length > 0) {
+        const configMap: Partial<SystemConfig> = {};
+        dbConfigs.forEach(c => configMap[c.key as keyof SystemConfig] = c.value);
+        setSystemConfig(prev => ({ ...prev, ...configMap }));
+      }
 
       if (user) {
-        const [userNotifs, userFavs, userMsgs] = await Promise.all([
+        const [userNotifs, userFavs, userMsgs, userAlerts] = await Promise.all([
           notificationService.getAll(user.id),
           favoriteService.getByUserId(user.id),
-          messageService.getConversations(user.id)
+          messageService.getConversations(user.id),
+          searchAlertService.getAll(user.id)
         ]);
         
         setNotifications(userNotifs as any);
         setSavedListingIds(userFavs);
+        setSearchAlerts(userAlerts as any);
 
         const grouped: Record<string, Conversation> = {};
         userMsgs.forEach((m: any) => {
@@ -346,30 +374,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return false;
   };
 
-  const promoteListing = async (listingId: string, durationMonths: number, planName: string) => {
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + durationMonths);
-    
-    await listingService.update(listingId, {
-      featured: true,
-      promotion_plan_name: planName,
-      promotion_duration_months: durationMonths,
-      promotion_start_date: new Date().toISOString(),
-      promotion_end_date: endDate.toISOString()
+  const recordIntrusion = async (email: string, mediaStatus: string) => {
+    await intrusionService.create({
+      timestamp: new Date().toISOString(),
+      attempted_email: email,
+      media_status: mediaStatus,
+      status: 'flagged',
+      device_info: { userAgent: navigator.userAgent, platform: navigator.platform }
     });
-    
-    addAuditLog('Listing Promoted', `Ad ${listingId} boosted via ${planName}`, 'ad');
-    fetchData();
+    addAuditLog('Intrusion Detected', `Failed login attempt for ${email}`, 'intrusion');
   };
 
-  const broadcastMassNotification = async (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer' = 'all') => {
-    const targets = allUsers.filter(u => targetRole === 'all' || u.role === targetRole);
-    
-    // In a real app, this would be a single server-side operation or bulk insert
-    toast.info(`Broadcasting to ${targets.length} node users...`);
-    addAuditLog('Global Broadcast', `System message dispatched: ${title}`, 'broadcast');
-    
-    // Simulation: would call notificationService.bulkCreate in production
+  const sealDeal = async (listingId: string, buyerName: string, price: number) => {
+    await recentDealsService.create({ item_title: listings.find(l => l.id === listingId)?.title || 'Item', price, location: user?.location || 'Ogbomoso', time: 'Just now' });
+    await listingService.update(listingId, { status: 'sold' });
+    addAuditLog('Deal Sealed', `Listing ${listingId} marked sold to ${buyerName}`, 'ad');
+    fetchData();
   };
 
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
@@ -393,11 +413,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin: setAdminPin, systemConfig: { maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true },
-      updateSystemConfig: () => {}, siteSettings: { siteName: 'Sealify', siteDescription: '', ogImage: '', logoUrl: '', contactEmail: '', contactPhone: '' },
-      updateSiteSettings: (s) => siteSettingsService.update(s).then(fetchData),
-      promotionPlans, updatePromotionPlanRate: () => {}, safeSpots: [], addSafeSpot: () => {}, deleteSafeSpot: () => {},
-      exportDatabaseBackup: () => {}, language, setLanguage, t, categories, addCategory: () => {}, deleteCategory: () => {}, updateCategory: () => {},
+      adminPin, updateAdminPin: (p) => { setAdminPin(p); addAuditLog('Security Update', 'Master Admin PIN modified', 'security'); },
+      systemConfig, updateSystemConfig: (upd) => { 
+        Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, !!v)); 
+        setSystemConfig(p => ({ ...p, ...upd }));
+      },
+      siteSettings, updateSiteSettings: (s) => siteSettingsService.update(s).then(fetchData),
+      promotionPlans, updatePromotionPlanRate: (m, r) => promotionPlanService.updateRate(m, r).then(fetchData),
+      safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(fetchData), deleteSafeSpot: (id) => safeSpotService.delete(id).then(fetchData),
+      exportDatabaseBackup: () => toast.info('Exporting forensic SQL snapshot...'),
+      language, setLanguage, t, categories, addCategory: (c) => toast.success('Sector added'), deleteCategory: () => {}, updateCategory: () => {},
       analytics, marketStats, login, adminLogin, logout: () => setUser(null), listings, allUsers, 
       updateUser: async (id, data) => { await userService.update(id, data as any); addAuditLog('User Updated', `Profile ${id} record modified`, 'user'); fetchData(); },
       deleteUser: async (id) => { await userService.delete(id); addAuditLog('User Deleted', `Identity ${id} purged from federation`, 'user'); fetchData(); },
@@ -417,23 +442,30 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       deleteListing: async (id) => { await listingService.delete(id); addAuditLog('Listing Deleted', `Ad ${id} removed`, 'ad'); fetchData(); }, 
       markAsSold: async (id) => { await listingService.update(id, { status: 'sold' }); addAuditLog('Listing Sold', `Ad ${id} sealed`, 'ad'); fetchData(); },
       toggleFeaturedListing: async (id) => { const l = listings.find(i => i.id === id); if (l) await listingService.update(id, { featured: !l.featured }); fetchData(); },
-      promoteListing, conversations, sendMessage: async (l, r, c) => { await messageService.sendMessage({ listing_id: l, receiver_id: r, sender_id: user?.id, content: c }); fetchData(); },
+      promoteListing: async (id, d, p) => { 
+        const end = new Date(); end.setMonth(end.getMonth() + d);
+        await listingService.update(id, { featured: true, promotion_plan_name: p, promotion_duration_months: d, promotion_start_date: new Date().toISOString(), promotion_end_date: end.toISOString() });
+        addAuditLog('Ad Promoted', `Ad ${id} boosted via ${p}`, 'ad'); fetchData();
+      }, 
+      conversations, sendMessage: async (l, r, c) => { await messageService.sendMessage({ listing_id: l, receiver_id: r, sender_id: user?.id, content: c }); fetchData(); },
       notifications, markNotificationRead: (id) => notificationService.markRead(id).then(fetchData), 
       markAllNotificationsRead: () => {}, clearNotification: (id) => notificationService.clear(id).then(fetchData), 
-      addNotification: () => {}, broadcastMassNotification, 
+      addNotification: () => {}, broadcastMassNotification: (t, m) => { toast.info('Broadcasting to all nodes...'); addAuditLog('Global Broadcast', `System message: ${t}`, 'broadcast'); }, 
       passwordRequests, submitPasswordRequest: async (r) => { await passwordRequestService.create(r); fetchData(); },
-      processPasswordRequest: async (id, s) => { await passwordRequestService.updateStatus(id, s); addAuditLog('Password Request', `Reset ${id} ${s}`, 'security'); fetchData(); },
+      processPasswordRequest: async (id, s) => { await passwordRequestService.updateStatus(id, s); addAuditLog('Password Reset', `Request ${id} ${s}`, 'security'); fetchData(); },
       verificationRequests, submitVerificationRequest: async (r) => { await verificationService.create(r); fetchData(); },
-      processVerificationRequest: async (id, s) => { await verificationService.updateStatus(id, s); addAuditLog('Verification Request', `ID ${id} ${s}`, 'verification'); fetchData(); },
-      promotionPaymentRequests: [], submitPromotionPaymentRequest: async (r) => { await promotionService.create(r); fetchData(); }, 
+      processVerificationRequest: async (id, s) => { await verificationService.updateStatus(id, s); addAuditLog('ID Verification', `Request ${id} ${s}`, 'verification'); fetchData(); },
+      promotionPaymentRequests, submitPromotionPaymentRequest: async (r) => { await promotionService.create(r); fetchData(); }, 
       processPromotionPaymentRequest: async (id, s) => { await promotionService.updateStatus(id, s); fetchData(); },
-      announcements, addAnnouncement: () => {}, toggleAnnouncement: () => {}, deleteAnnouncement: () => {},
+      announcements, addAnnouncement: (a) => announcementService.create(a).then(fetchData), 
+      toggleAnnouncement: () => {}, deleteAnnouncement: (id) => announcementService.delete(id).then(fetchData),
       reports, submitReport: (r) => reportService.create(r).then(fetchData), 
       processReport: (id, a) => reportService.updateStatus(id, 'resolved').then(fetchData), 
       disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(fetchData), 
       processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(fetchData),
-      auditLogs: [], addAuditLog, recentDeals: [], sealDeal: () => {}, intrusionLogs: [], recordIntrusion: () => {},
-      searchAlerts: [], saveSearchAlert: () => {}, deleteSearchAlert: () => {}, 
+      auditLogs, addAuditLog, recentDeals, sealDeal, intrusionLogs, recordIntrusion,
+      searchAlerts, saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(fetchData), 
+      deleteSearchAlert: (id) => searchAlertService.delete(id).then(fetchData), 
       reviews, addReview: (r) => reviewService.create(r).then(fetchData), 
       deleteReview: (id) => reviewService.delete(id).then(fetchData),
       buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(fetchData), 

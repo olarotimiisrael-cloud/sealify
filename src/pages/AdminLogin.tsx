@@ -6,8 +6,8 @@ import SEO from '../components/SEO';
 import { ShieldAlert, Lock, Mail, Key, ArrowRight, Terminal, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export const AdminLogin: React.FC = () => {
-  const { adminLogin } = useSealify();
+const AdminLogin: React.FC = () => {
+  const { adminLogin, recordIntrusion } = useSealify();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +15,7 @@ export const AdminLogin: React.FC = () => {
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isLockedOut) {
@@ -23,12 +23,17 @@ export const AdminLogin: React.FC = () => {
       return;
     }
 
-    if (adminLogin(email, password, pin)) {
+    const success = await adminLogin(email, password, pin);
+    if (success) {
       setFailedAttempts(0);
       navigate('/admin');
     } else {
       const newCount = failedAttempts + 1;
       setFailedAttempts(newCount);
+      
+      // Log threat in forensic database
+      recordIntrusion(email, `Failed Access Attempt ${newCount}/3`);
+
       if (newCount >= 3) {
         setIsLockedOut(true);
         toast.error('🚨 Security Lockout: 3 failed attempts. Terminal blocked.');
