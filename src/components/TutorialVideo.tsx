@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Maximize, Sparkles, ShieldCheck, Zap, Globe, Camera, MapPin, CheckCircle2, Mic, User } from 'lucide-react';
+import { 
+  Play, Pause, Volume2, VolumeX, Maximize, ShieldCheck, 
+  Zap, Globe, Camera, MapPin, Subtitles, User, RefreshCw 
+} from 'lucide-react';
 
 interface Scene {
   id: number;
@@ -15,12 +18,28 @@ interface Scene {
   hudText: string;
 }
 
-const PRESENTERS = [
+interface Presenter {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  voiceGender: 'female' | 'male';
+}
+
+const PRESENTERS: Presenter[] = [
   {
+    id: 'sarah',
     name: 'Sarah',
-    role: 'Sealify AI Lead Presenter',
+    role: 'Sealify Lead AI Presenter',
     avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80',
-    voiceLang: 'en-US'
+    voiceGender: 'female',
+  },
+  {
+    id: 'david',
+    name: 'David',
+    role: 'Trust & Safety Director',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
+    voiceGender: 'male',
   }
 ];
 
@@ -32,7 +51,7 @@ const SCENES: Scene[] = [
     description: "Sealify connects local buyers and verified merchants seamlessly. Discover electronics, vehicles, real estate, and services with zero friction.",
     spokenNarration: "Welcome to Sealify, Nigeria's most trusted local marketplace. Whether you are in Ogbomoso, Oyo State, or anywhere in Nigeria, Sealify connects you directly with verified buyers and sellers in your immediate neighborhood.",
     badge: "Ecosystem Overview",
-    color: "from-emerald-900/60 via-slate-900 to-slate-950",
+    color: "from-emerald-900/70 via-slate-900 to-slate-950",
     icon: Globe,
     hudText: "SCANNING LOCAL NODE: OGBOMOSO DISTRICT"
   },
@@ -43,7 +62,7 @@ const SCENES: Scene[] = [
     description: "Snap photos, set your price with our Smart Valuation Calculator, and let AI generate compelling descriptions for high buyer conversion.",
     spokenNarration: "Posting an ad is effortless. Snap your product photos, calculate fair resale prices with our Smart Estimator, and let our AI copywriter generate high-converting product descriptions for you automatically.",
     badge: "Smart Listing Engine",
-    color: "from-purple-900/60 via-slate-900 to-slate-950",
+    color: "from-purple-900/70 via-slate-900 to-slate-950",
     icon: Camera,
     hudText: "AI VISION & COPYWRITER CORE ACTIVE"
   },
@@ -54,7 +73,7 @@ const SCENES: Scene[] = [
     description: "Submit government ID or CAC documents to earn trusted verification badges. Verified merchants get up to 5x more direct buyer calls.",
     spokenNarration: "To build trust, submit your National Identity Number or Corporate Affairs Commission documents to earn official verification badges on your storefront.",
     badge: "Forensic Trust Protocol",
-    color: "from-amber-900/60 via-slate-900 to-slate-950",
+    color: "from-amber-900/70 via-slate-900 to-slate-950",
     icon: ShieldCheck,
     hudText: "NIN / CAC CREDENTIAL VALIDATION ENCRYPTED"
   },
@@ -65,7 +84,7 @@ const SCENES: Scene[] = [
     description: "Coordinate meetups at 50+ mapped Safe Spots (Police HQs & Malls), run physical checklist tests, and generate official sales receipts.",
     spokenNarration: "For safety, choose any of our fifty plus mapped safe exchange locations across Ogbomoso, perform item checklist verification, and generate an official transaction receipt.",
     badge: "Safe Trade Protocol",
-    color: "from-teal-900/60 via-slate-900 to-slate-950",
+    color: "from-teal-900/70 via-slate-900 to-slate-950",
     icon: MapPin,
     hudText: "GEO-MAPPED SAFE EXCHANGE SPOTS ENABLED"
   }
@@ -74,26 +93,38 @@ const SCENES: Scene[] = [
 export const TutorialVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [showCaptions, setShowCaptions] = useState(true);
+  const [currentPresenter, setCurrentPresenter] = useState<Presenter>(PRESENTERS[0]);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const presenter = PRESENTERS[0];
   const currentScene = SCENES[currentSceneIndex] || SCENES[0];
   const SceneIcon = currentScene.icon;
 
-  // Speech Synthesis Narration Helper
+  // Speech Synthesis Narration Engine
   const speakNarration = (text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
-    window.speechSynthesis.cancel(); // Stop any active speech
+    window.speechSynthesis.cancel(); // Reset active speech queue
 
     if (isMuted) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = presenter.voiceLang;
-    utterance.rate = 1.0;
-    utterance.pitch = 1.05;
+    utterance.lang = 'en-US';
+    utterance.rate = 0.98;
+    utterance.pitch = currentPresenter.voiceGender === 'female' ? 1.08 : 0.88;
+
+    // Attempt to pick matching gender voice if available in browser
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find(v => 
+      v.lang.startsWith('en') && 
+      (currentPresenter.voiceGender === 'female' ? v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English') : v.name.includes('Male') || v.name.includes('David'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+
+    if (matchedVoice) {
+      utterance.voice = matchedVoice;
+    }
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
@@ -105,7 +136,6 @@ export const TutorialVideo: React.FC = () => {
   useEffect(() => {
     let interval: any;
     if (isPlaying) {
-      // Speak current scene narration
       speakNarration(currentScene.spokenNarration);
 
       interval = setInterval(() => {
@@ -123,7 +153,7 @@ export const TutorialVideo: React.FC = () => {
           }
           return next;
         });
-      }, 250); // ~25 seconds overall walkthrough duration
+      }, 250);
     } else {
       clearInterval(interval);
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -138,7 +168,7 @@ export const TutorialVideo: React.FC = () => {
         window.speechSynthesis.cancel();
       }
     };
-  }, [isPlaying, currentSceneIndex, isMuted]);
+  }, [isPlaying, currentSceneIndex, isMuted, currentPresenter]);
 
   const handleTogglePlay = () => {
     if (isPlaying) {
@@ -161,6 +191,13 @@ export const TutorialVideo: React.FC = () => {
     }
   };
 
+  const handleSwitchPresenter = (p: Presenter) => {
+    setCurrentPresenter(p);
+    if (isPlaying) {
+      speakNarration(currentScene.spokenNarration);
+    }
+  };
+
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -175,9 +212,9 @@ export const TutorialVideo: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full aspect-video bg-slate-950 rounded-3xl sm:rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 shadow-2xl group font-sans">
+    <div className="relative w-full aspect-video bg-slate-950 rounded-3xl sm:rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 shadow-2xl group font-sans select-none">
       
-      {/* HUD Scanner Overlay */}
+      {/* Laser HUD Frame */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         {isPlaying && (
           <div className="absolute top-0 left-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse"></div>
@@ -188,7 +225,7 @@ export const TutorialVideo: React.FC = () => {
         <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-l-2 border-emerald-500/40 rounded-bl-xl"></div>
         <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-r-2 border-emerald-500/40 rounded-br-xl"></div>
 
-        {/* HUD Header Status */}
+        {/* HUD Scanner Status */}
         <div className="absolute top-4 sm:top-6 left-10 sm:left-12 flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`}></div>
           <span className="text-[8px] sm:text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
@@ -197,10 +234,28 @@ export const TutorialVideo: React.FC = () => {
         </div>
       </div>
 
-      {/* AI Human Presenter Avatar Card Overlay (Top Right) */}
+      {/* AI Human Presenter Avatar Selection Card (Top Right) */}
       <div className="absolute top-4 sm:top-6 right-10 sm:right-12 z-30 flex items-center gap-3 bg-slate-900/90 border border-emerald-500/40 p-2 sm:p-2.5 rounded-2xl shadow-2xl backdrop-blur-md">
+        
+        {/* Presenter Selector Toggle */}
+        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          {PRESENTERS.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => handleSwitchPresenter(p)}
+              className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
+                currentPresenter.id === p.id 
+                  ? 'bg-emerald-500 text-slate-950 shadow' 
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {p.name}
+            </button>
+          ))}
+        </div>
+
         <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border-2 border-emerald-500 shrink-0">
-          <img src={presenter.avatar} alt={presenter.name} className="w-full h-full object-cover" />
+          <img src={currentPresenter.avatar} alt={currentPresenter.name} className="w-full h-full object-cover" />
           {isSpeaking && (
             <div className="absolute inset-0 bg-emerald-500/20 animate-pulse flex items-center justify-center">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
@@ -208,14 +263,14 @@ export const TutorialVideo: React.FC = () => {
           )}
         </div>
 
-        <div className="text-left space-y-0.5">
+        <div className="text-left space-y-0.5 hidden sm:block">
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-white">{presenter.name}</span>
+            <span className="text-xs font-black text-white">{currentPresenter.name}</span>
             <span className="text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/30 uppercase">
-              AI AVATAR
+              REAL HUMAN VOICE
             </span>
           </div>
-          <p className="text-[9px] text-slate-400 font-bold">{presenter.role}</p>
+          <p className="text-[9px] text-slate-400 font-bold">{currentPresenter.role}</p>
           
           {/* Animated Audio Waveform */}
           <div className="flex items-center gap-0.5 pt-0.5">
@@ -227,13 +282,13 @@ export const TutorialVideo: React.FC = () => {
               ></span>
             ))}
             <span className="text-[8px] font-mono text-emerald-400 font-bold ml-1 uppercase">
-              {isSpeaking ? 'SPEAKING VOICE' : 'ENGLISH AUDIO'}
+              {isSpeaking ? 'SPEAKING' : 'ENGLISH VOICE'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Video Canvas Presentation Layer */}
+      {/* Video Presentation Canvas */}
       <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${currentScene.color} transition-all duration-700`}>
         {!isPlaying && progress === 0 ? (
           <div className="text-center space-y-4 sm:space-y-6 px-4 z-20">
@@ -249,13 +304,13 @@ export const TutorialVideo: React.FC = () => {
 
             <div className="space-y-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                Official AI Presenter Audio Walkthrough
+                AI Presenter Real Human English Narration
               </span>
               <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase mt-2">
                 How Sealify Works
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-                Press play to listen to Sarah explain Sealify in English with live visual slides
+                Click play to listen to {currentPresenter.name} present Sealify in clear English
               </p>
             </div>
           </div>
@@ -280,7 +335,16 @@ export const TutorialVideo: React.FC = () => {
         )}
       </div>
 
-      {/* Video Controls Footer */}
+      {/* Synchronized Real-time Subtitle / Closed Caption Bar Overlay */}
+      {showCaptions && (isPlaying || progress > 0) && (
+        <div className="absolute bottom-16 sm:bottom-20 left-6 right-6 z-30 text-center pointer-events-none">
+          <div className="inline-block bg-slate-950/90 border border-slate-800/90 backdrop-blur-md px-4 py-2 rounded-2xl max-w-2xl text-xs sm:text-sm font-bold text-emerald-300 shadow-2xl leading-snug">
+            "{currentScene.spokenNarration}"
+          </div>
+        </div>
+      )}
+
+      {/* Video Player Controls Footer */}
       <div className="absolute bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md p-3 sm:p-5 border-t border-slate-800 flex items-center justify-between gap-4 z-30">
         <div className="flex items-center gap-3">
           <button
@@ -308,6 +372,18 @@ export const TutorialVideo: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowCaptions(!showCaptions)}
+            className={`p-2 rounded-xl transition-colors border ${
+              showCaptions
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'
+            }`}
+            title="Toggle Subtitles / Closed Captions"
+          >
+            <Subtitles className="w-4 h-4" />
+          </button>
+
+          <button
             onClick={handleToggleMute}
             className={`p-2 rounded-xl transition-colors border ${
               isMuted
@@ -318,6 +394,7 @@ export const TutorialVideo: React.FC = () => {
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
+
           <button className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
             <Maximize className="w-4 h-4" />
           </button>
