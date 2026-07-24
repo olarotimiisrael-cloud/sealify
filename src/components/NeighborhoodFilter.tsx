@@ -71,7 +71,7 @@ export const NeighborhoodFilter: React.FC = () => {
               className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl border text-xs font-bold transition-all shrink-0 ${
                 isSelected
                   ? 'bg-teal-500 text-slate-950 border-teal-400 shadow-md shadow-teal-500/20 scale-105 font-black'
-                  : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white hover:border-teal-500/40'
+                  : 'bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-teal-500/40'
               }`}
             >
               <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-slate-950' : 'text-teal-400'}`} />
