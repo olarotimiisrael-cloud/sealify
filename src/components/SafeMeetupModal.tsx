@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, MapPin, Navigation, Clock, Share2, Check, ExternalLink, Building2, Coffee, Shield, Filter } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSealify } from '../context/SealifyContext';
 
 interface SafeMeetupModalProps {
   isOpen: boolean;
@@ -8,82 +9,6 @@ interface SafeMeetupModalProps {
   itemTitle?: string;
   onSelectSpot?: (spotName: string, spotAddress: string) => void;
 }
-
-interface MeetupSpot {
-  id: string;
-  name: string;
-  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
-  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
-  address: string;
-  distance: string;
-  hours: string;
-  cctvVerified: boolean;
-  icon: React.FC<{ className?: string }>;
-  badgeColor: string;
-}
-
-const SAFE_SPOTS: MeetupSpot[] = [
-  {
-    id: 'spot_1',
-    name: 'Ogbomoso Police Divisional HQ Safe Zone',
-    zone: 'Police HQ',
-    category: 'Police Safe Zone',
-    address: 'Oja-Igbo Road, Ogbomoso, Oyo State',
-    distance: '0.8 km away',
-    hours: 'Open 24/7 (24hr Police Surveillance)',
-    cctvVerified: true,
-    icon: Shield,
-    badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  },
-  {
-    id: 'spot_2',
-    name: 'Ogbomoso Public Library - Main Branch',
-    zone: 'Takie / Center',
-    category: 'Public Library',
-    address: 'Takie / Iluju Area, Ogbomoso, Oyo State',
-    distance: '1.2 km away',
-    hours: 'Mon-Sat 8:00 AM - 6:00 PM',
-    cctvVerified: true,
-    icon: Building2,
-    badgeColor: 'bg-teal-500/10 text-teal-400 border-teal-500/30',
-  },
-  {
-    id: 'spot_3',
-    name: 'Ogbomoso Shopping Complex Atrium',
-    zone: 'Sabo Market Zone',
-    category: 'Shopping Mall',
-    address: 'Sabo Market Road, Ogbomoso, Oyo State',
-    distance: '1.5 km away',
-    hours: 'Daily 9:00 AM - 9:00 PM',
-    cctvVerified: true,
-    icon: Building2,
-    badgeColor: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
-  },
-  {
-    id: 'spot_4',
-    name: 'Popular Café at LAUTECH Main Gate',
-    zone: 'LAUTECH Area',
-    category: 'Café',
-    address: 'LAUTECH Main Gate / Under G, Ogbomoso, Oyo State',
-    distance: '2.1 km away',
-    hours: 'Daily 7:00 AM - 10:00 PM',
-    cctvVerified: true,
-    icon: Coffee,
-    badgeColor: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  },
-  {
-    id: 'spot_5',
-    name: 'General Post Office Safe Zone',
-    zone: 'Takie / Center',
-    category: 'Police Safe Zone',
-    address: 'Takie Square, Ogbomoso, Oyo State',
-    distance: '0.5 km away',
-    hours: 'Mon-Sat 8:00 AM - 5:00 PM',
-    cctvVerified: true,
-    icon: Shield,
-    badgeColor: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  },
-];
 
 type ZoneFilter = 'All' | 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
 
@@ -93,14 +18,29 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
   itemTitle,
   onSelectSpot,
 }) => {
-  const [selectedSpotId, setSelectedSpotId] = useState<string>(SAFE_SPOTS[0].id);
+  const { safeSpots } = useSealify();
+  const [selectedSpotId, setSelectedSpotId] = useState<string>(safeSpots[0]?.id || '');
   const [selectedZone, setSelectedZone] = useState<ZoneFilter>('All');
   const [shared, setShared] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
-  const filteredSpots = SAFE_SPOTS.filter(s => selectedZone === 'All' || s.zone === selectedZone);
-  const currentSpot = SAFE_SPOTS.find((s) => s.id === selectedSpotId) || filteredSpots[0] || SAFE_SPOTS[0];
+  const filteredSpots = safeSpots.filter(s => selectedZone === 'All' || s.zone === selectedZone);
+  const currentSpot = safeSpots.find((s) => s.id === selectedSpotId) || filteredSpots[0] || safeSpots[0];
+
+  const getIcon = (category: string) => {
+    if (category === 'Police Safe Zone') return Shield;
+    if (category === 'Public Library') return Building2;
+    if (category === 'Shopping Mall') return Building2;
+    return Coffee;
+  };
+
+  const getBadgeColor = (category: string) => {
+    if (category === 'Police Safe Zone') return 'bg-blue-500/10 text-blue-400 border-blue-500/30';
+    if (category === 'Public Library') return 'bg-teal-500/10 text-teal-400 border-teal-500/30';
+    if (category === 'Shopping Mall') return 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+    return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+  };
 
   const handleShareLocation = () => {
     if (onSelectSpot && currentSpot) {
@@ -115,8 +55,8 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6 font-sans">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
@@ -163,7 +103,7 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
             <div className="py-8 text-center text-xs text-slate-500">No safe spots in this area.</div>
           ) : (
             filteredSpots.map((spot) => {
-              const Icon = spot.icon;
+              const Icon = getIcon(spot.category);
               const isSelected = selectedSpotId === spot.id;
 
               return (
@@ -184,7 +124,7 @@ export const SafeMeetupModal: React.FC<SafeMeetupModalProps> = ({
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-sm text-white truncate">{spot.name}</span>
-                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border ${spot.badgeColor}`}>
+                        <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded border ${getBadgeColor(spot.category)}`}>
                           {spot.category}
                         </span>
                       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   X, Zap, ShieldCheck, Check, Sparkles, CreditCard, 
   Crown, ArrowRight, Upload, ExternalLink, Info, Copy, CheckCircle2
@@ -14,18 +14,11 @@ interface PromoteModalProps {
   onPromoteSuccess?: (listingId: string, durationMonths: number, planName: string) => void;
 }
 
-const DURATION_PLANS = [
-  { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
-  { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR (13% OFF)' },
-  { months: 6, label: '6 Months', rate: 11500, badge: 'SAVER (23% OFF)' },
-  { months: 12, label: '1 Year', rate: 9500, badge: 'MAX IMPACT (36% OFF)' },
-];
-
 export const PromoteModal: React.FC<PromoteModalProps> = ({
   isOpen, onClose, listing, onPromoteSuccess,
 }) => {
-  const { submitPromotionPaymentRequest, user } = useSealify();
-  const [selectedMonths, setSelectedMonths] = useState<number>(1);
+  const { submitPromotionPaymentRequest, user, promotionPlans } = useSealify();
+  const [selectedMonths, setSelectedMonths] = useState<number>(promotionPlans[0]?.months || 1);
   const [paymentMethod, setPaymentMethod] = useState<'gateway' | 'paga'>('gateway');
   const [step, setStep] = useState<'plan' | 'payment' | 'confirmation'>('plan');
   const [receipt, setReceipt] = useState<string | null>(null);
@@ -33,8 +26,8 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
 
   if (!isOpen || !listing) return null;
 
-  const currentPlan = DURATION_PLANS.find(p => p.months === selectedMonths)!;
-  const total = currentPlan.rate * currentPlan.months;
+  const currentPlan = promotionPlans.find(p => p.months === selectedMonths) || promotionPlans[0];
+  const total = currentPlan ? currentPlan.rate * currentPlan.months : 15000;
 
   const handleCopyAdId = () => {
     navigator.clipboard.writeText(listing.id);
@@ -106,7 +99,7 @@ export const PromoteModal: React.FC<PromoteModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {DURATION_PLANS.map((plan) => (
+              {promotionPlans.map((plan) => (
                 <button
                   key={plan.months}
                   type="button"

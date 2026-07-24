@@ -38,6 +38,24 @@ export interface SystemConfig {
   aiSpamFilter: boolean;
 }
 
+export interface PromotionPlanConfig {
+  months: number;
+  label: string;
+  rate: number; // NGN rate per month
+  badge: string;
+}
+
+export interface SafeMeetupSpotConfig {
+  id: string;
+  name: string;
+  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
+  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
+  address: string;
+  distance: string;
+  hours: string;
+  cctvVerified: boolean;
+}
+
 interface AnalyticsData {
   visitors: number;
   activeAds: number;
@@ -57,6 +75,11 @@ interface SealifyContextType {
   updateSystemConfig: (updated: Partial<SystemConfig>) => void;
   siteSettings: SiteSettings;
   updateSiteSettings: (updated: Partial<SiteSettings>) => void;
+  promotionPlans: PromotionPlanConfig[];
+  updatePromotionPlanRate: (months: number, newRate: number) => void;
+  safeSpots: SafeMeetupSpotConfig[];
+  addSafeSpot: (spot: Omit<SafeMeetupSpotConfig, 'id'>) => void;
+  deleteSafeSpot: (id: string) => void;
   exportDatabaseBackup: () => void;
   language: SupportedLanguage;
   setLanguage: (lang: SupportedLanguage) => void;
@@ -74,6 +97,10 @@ interface SealifyContextType {
   allUsers: UserProfile[];
   updateUser: (id: string, updatedData: Partial<UserProfile>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
+  bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => void;
+  bulkDeleteUsers: (userIds: string[]) => void;
+  bulkUpdateListings: (listingIds: string[], updates: Partial<Listing>) => void;
+  bulkDeleteListings: (listingIds: string[]) => void;
   savedListingIds: string[];
   recentlyViewedIds: string[];
   addRecentlyViewed: (id: string) => void;
@@ -142,6 +169,56 @@ interface SealifyContextType {
 
 const DEFAULT_ADMIN_PIN = '336699';
 
+const DEFAULT_PROMOTION_PLANS: PromotionPlanConfig[] = [
+  { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
+  { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR (13% OFF)' },
+  { months: 6, label: '6 Months', rate: 11500, badge: 'SAVER (23% OFF)' },
+  { months: 12, label: '1 Year', rate: 9500, badge: 'MAX IMPACT (36% OFF)' },
+];
+
+const DEFAULT_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
+  {
+    id: 'spot_1',
+    name: 'Ogbomoso Police Divisional HQ Safe Zone',
+    zone: 'Police HQ',
+    category: 'Police Safe Zone',
+    address: 'Oja-Igbo Road, Ogbomoso, Oyo State',
+    distance: '0.8 km away',
+    hours: 'Open 24/7 (24hr Police Surveillance)',
+    cctvVerified: true,
+  },
+  {
+    id: 'spot_2',
+    name: 'Ogbomoso Public Library - Main Branch',
+    zone: 'Takie / Center',
+    category: 'Public Library',
+    address: 'Takie / Iluju Area, Ogbomoso, Oyo State',
+    distance: '1.2 km away',
+    hours: 'Mon-Sat 8:00 AM - 6:00 PM',
+    cctvVerified: true,
+  },
+  {
+    id: 'spot_3',
+    name: 'Ogbomoso Shopping Complex Atrium',
+    zone: 'Sabo Market Zone',
+    category: 'Shopping Mall',
+    address: 'Sabo Market Road, Ogbomoso, Oyo State',
+    distance: '1.5 km away',
+    hours: 'Daily 9:00 AM - 9:00 PM',
+    cctvVerified: true,
+  },
+  {
+    id: 'spot_4',
+    name: 'Popular Café at LAUTECH Main Gate',
+    zone: 'LAUTECH Area',
+    category: 'Café',
+    address: 'LAUTECH Main Gate / Under G, Ogbomoso, Oyo State',
+    distance: '2.1 km away',
+    hours: 'Daily 7:00 AM - 10:00 PM',
+    cctvVerified: true,
+  },
+];
+
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -152,6 +229,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
+  const [promotionPlans, setPromotionPlans] = useState<PromotionPlanConfig[]>(DEFAULT_PROMOTION_PLANS);
+  const [safeSpots, setSafeSpots] = useState<SafeMeetupSpotConfig[]>(DEFAULT_SAFE_SPOTS);
+
   const [notifications, setNotifications] = useState<AppNotification[]>([
     {
       id: 'notif_1',
@@ -235,6 +315,51 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       type,
       createdAt: 'Just now'
     }, ...prev]);
+  };
+
+  const updatePromotionPlanRate = (months: number, newRate: number) => {
+    setPromotionPlans(prev => prev.map(p => p.months === months ? { ...p, rate: newRate } : p));
+    addAuditLog('Promotion Rate Updated', `Changed plan for ${months}m to NGN ${newRate}/month`, 'finance');
+    toast.success(`Updated ${months}-month promotion plan rate to ₦${newRate.toLocaleString()}/month!`);
+  };
+
+  const addSafeSpot = (spot: Omit<SafeMeetupSpotConfig, 'id'>) => {
+    const newSpot: SafeMeetupSpotConfig = { ...spot, id: `spot_${Date.now()}` };
+    setSafeSpots(prev => [newSpot, ...prev]);
+    addAuditLog('Safe Exchange Spot Added', `Created safe zone: ${spot.name}`, 'security');
+    toast.success(`Verified Safe Exchange Spot "${spot.name}" created!`);
+  };
+
+  const deleteSafeSpot = (id: string) => {
+    setSafeSpots(prev => prev.filter(s => s.id !== id));
+    addAuditLog('Safe Exchange Spot Deleted', `Removed safe spot ID ${id}`, 'security');
+    toast.success('Safe meetup spot deleted.');
+  };
+
+  const bulkUpdateUsers = (userIds: string[], updates: Partial<UserProfile>) => {
+    setAllUsers(prev => prev.map(u => userIds.includes(u.id) ? { ...u, ...updates } : u));
+    addAuditLog('Bulk User Update', `Updated ${userIds.length} user records simultaneously`, 'user');
+    toast.success(`Bulk updated ${userIds.length} user accounts!`);
+  };
+
+  const bulkDeleteUsers = (userIds: string[]) => {
+    setAllUsers(prev => prev.filter(u => !userIds.includes(u.id)));
+    // Also clean up their listings
+    setListings(prev => prev.filter(l => !userIds.includes(l.sellerId)));
+    addAuditLog('Bulk User Delete', `Deleted ${userIds.length} user accounts and their ads`, 'user');
+    toast.success(`Deleted ${userIds.length} user accounts!`);
+  };
+
+  const bulkUpdateListings = (listingIds: string[], updates: Partial<Listing>) => {
+    setListings(prev => prev.map(l => listingIds.includes(l.id) ? { ...l, ...updates } : l));
+    addAuditLog('Bulk Listing Update', `Updated ${listingIds.length} listings simultaneously`, 'ad');
+    toast.success(`Bulk updated ${listingIds.length} classified listings!`);
+  };
+
+  const bulkDeleteListings = (listingIds: string[]) => {
+    setListings(prev => prev.filter(l => !listingIds.includes(l.id)));
+    addAuditLog('Bulk Listing Delete', `Deleted ${listingIds.length} listings`, 'ad');
+    toast.success(`Deleted ${listingIds.length} listings!`);
   };
 
   const broadcastMassNotification = (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer' = 'all') => {
@@ -353,6 +478,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
       adminPin, updateAdminPin: setAdminPin, systemConfig, updateSystemConfig: (u) => setSystemConfig(p => ({...p, ...u})),
       siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})), 
+      promotionPlans, updatePromotionPlanRate,
+      safeSpots, addSafeSpot, deleteSafeSpot,
       exportDatabaseBackup: () => toast.success('Database backup secure and exported.'),
       language, setLanguage, t,
       categories, addCategory: (c) => setCategories(p => [...p, { ...c, id: `cat_${Date.now()}` }]), 
@@ -361,6 +488,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       analytics, marketStats, login, adminLogin, logout,
       listings, allUsers, updateUser: async (id, data) => setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)), 
       deleteUser: async (id) => setAllUsers(p => p.filter(u => u.id !== id)),
+      bulkUpdateUsers, bulkDeleteUsers, bulkUpdateListings, bulkDeleteListings,
       savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
       toggleSaveListing: (id) => setSavedListingIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
       isSaved: (id) => savedListingIds.includes(id),

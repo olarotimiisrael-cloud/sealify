@@ -19,7 +19,7 @@ import {
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
   ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
-  Share2, BellRing
+  Share2, BellRing, MapPin
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,7 +44,9 @@ export const AdminDashboard: React.FC = () => {
   const { 
     user, isAdmin, logout, categories, addCategory, deleteCategory, updateCategory,
     listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, toggleFeaturedListing, markAsSold,
-    promotionPaymentRequests, processPromotionPaymentRequest, 
+    bulkUpdateUsers, bulkDeleteUsers, bulkUpdateListings, bulkDeleteListings,
+    promotionPaymentRequests, processPromotionPaymentRequest, promotionPlans, updatePromotionPlanRate,
+    safeSpots, addSafeSpot, deleteSafeSpot,
     verificationRequests, processVerificationRequest,
     passwordRequests, processPasswordRequest,
     auditLogs, analytics, exportDatabaseBackup, broadcastMassNotification,
@@ -60,7 +62,26 @@ export const AdminDashboard: React.FC = () => {
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [userSearch, setUserSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
+
+  // Bulk selection state
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([]);
+
+  // Promotion plan rate editing state
+  const [planRates, setPlanRates] = useState<Record<number, number>>(() => {
+    const map: Record<number, number> = {};
+    promotionPlans.forEach(p => map[p.months] = p.rate);
+    return map;
+  });
   
+  // Safe spot form state
+  const [spotName, setSpotName] = useState('');
+  const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('Takie / Center');
+  const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
+  const [spotAddress, setSpotAddress] = useState('');
+  const [spotDistance, setSpotDistance] = useState('1.0 km away');
+  const [spotHours, setSpotHours] = useState('Mon-Sat 8:00 AM - 6:00 PM');
+
   // Superuser admin identity form
   const [adminFullName, setAdminFullName] = useState(user?.fullName || '');
   const [adminEmail, setAdminEmail] = useState(user?.email || '');
@@ -144,14 +165,14 @@ export const AdminDashboard: React.FC = () => {
         { id: 'buyer_requests', label: 'Buyer Want Board', description: 'Moderate community product requests', icon: HelpCircle, badge: buyerRequests.length, color: 'text-amber-400' },
         { id: 'reviews', label: 'Seller Reviews', description: 'Audit buyer feedback and delete spam', icon: Star, badge: reviews.length, color: 'text-yellow-400' },
         { id: 'requests', label: 'Action Queue', description: 'ID verifications and NIN password resets', icon: BadgeCheck, badge: pendingVerifications.length + pendingPasswords.length, color: 'text-amber-400', badgeBg: 'bg-amber-500 text-slate-950' },
-        { id: 'disputes', label: 'Dispute Center', description: 'Trade arbitration and flagged ad reports', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400', badgeBg: 'bg-rose-600 text-white' },
+        { id: 'disputes', label: 'Dispute & Safe Spot Center', description: 'Trade arbitration, flagged reports & safe exchange spots', icon: Gavel, badge: activeDisputes.length + pendingReports.length, color: 'text-rose-400', badgeBg: 'bg-rose-600 text-white' },
         { id: 'categories', label: 'Market Grid', description: 'Taxonomy sectors and category customization', icon: Layers, color: 'text-purple-400' },
       ]
     },
     {
       groupName: "Treasury & Security",
       items: [
-        { id: 'finance', label: 'Treasury & Revenue', description: 'Ad promotion payments and financial ledger', icon: Wallet, badge: pendingPromoPay.length, color: 'text-emerald-400', badgeBg: 'bg-emerald-500 text-slate-950' },
+        { id: 'finance', label: 'Treasury & Revenue', description: 'Ad promotion plans & payment receipts', icon: Wallet, badge: pendingPromoPay.length, color: 'text-emerald-400', badgeBg: 'bg-emerald-500 text-slate-950' },
         { id: 'security', label: 'Threat Logs', description: 'Forensic intrusion detection and device logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500', badgeBg: 'bg-rose-600 text-white' },
         { id: 'logs', label: 'Audit Trail', description: 'System-wide activity ledger and change log', icon: History, color: 'text-slate-400' },
         { id: 'settings', label: 'Global Metadata & Link Previews', description: 'Social share preview cards, logo & site config', icon: SettingsIcon, color: 'text-cyan-400' },
@@ -174,6 +195,48 @@ export const AdminDashboard: React.FC = () => {
     l.category.toLowerCase().includes(listingSearch.toLowerCase()) ||
     l.sellerName.toLowerCase().includes(listingSearch.toLowerCase())
   );
+
+  // Bulk Selection Handlers
+  const handleToggleSelectUser = (id: string) => {
+    setSelectedUserIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleSelectAllUsers = () => {
+    if (selectedUserIds.length === filteredUsers.length) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(filteredUsers.map(u => u.id));
+    }
+  };
+
+  const handleToggleSelectListing = (id: string) => {
+    setSelectedListingIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleSelectAllListings = () => {
+    if (selectedListingIds.length === filteredListings.length) {
+      setSelectedListingIds([]);
+    } else {
+      setSelectedListingIds(filteredListings.map(l => l.id));
+    }
+  };
+
+  // Safe Spot submit
+  const handleAddSafeSpotSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!spotName.trim() || !spotAddress.trim()) return;
+    addSafeSpot({
+      name: spotName.trim(),
+      zone: spotZone,
+      category: spotCategory,
+      address: spotAddress.trim(),
+      distance: spotDistance,
+      hours: spotHours,
+      cctvVerified: true
+    });
+    setSpotName('');
+    setSpotAddress('');
+  };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -440,6 +503,46 @@ export const AdminDashboard: React.FC = () => {
           {/* Module 2: Finance & Treasury */}
           {activeTab === 'finance' && (
             <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Promotion Plan Pricing Rate Configurator */}
+              <div className="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-xs">
+                    <Crown className="w-4 h-4 text-amber-300" />
+                    <span>Top Ad Promotion Rates Configurator</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase">Real-Time Pricing Matrix</span>
+                </div>
+                <p className="text-xs text-slate-400">Adjust the monthly charge (in ₦ NGN) for sellers promoting ads on Sealify.</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                  {promotionPlans.map((plan) => (
+                    <div key={plan.months} className="bg-slate-950 border border-slate-800 p-4 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="font-black text-white">{plan.label}</span>
+                        <span className="text-[8px] font-black bg-slate-800 px-2 py-0.5 rounded text-amber-300">{plan.badge}</span>
+                      </div>
+                      <div>
+                        <label className="text-[9px] font-bold text-slate-500 uppercase block mb-1">Monthly Rate (₦ NGN)</label>
+                        <input
+                          type="number"
+                          value={planRates[plan.months] !== undefined ? planRates[plan.months] : plan.rate}
+                          onChange={(e) => setPlanRates({ ...planRates, [plan.months]: Number(e.target.value) })}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-extrabold focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
+                      <button
+                        onClick={() => updatePromotionPlanRate(plan.months, planRates[plan.months])}
+                        className="w-full py-2 bg-emerald-500/10 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 font-bold rounded-xl text-[10px] uppercase border border-emerald-500/20 transition-all"
+                      >
+                        Update Plan
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Payment Proofs Queue */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                   <div>
@@ -496,7 +599,7 @@ export const AdminDashboard: React.FC = () => {
                  <div>
                     <h3 className="text-lg font-black text-white flex items-center gap-2 uppercase tracking-tighter">
                        <Users className="w-5 h-5 text-emerald-400" />
-                       Account Federation
+                       Account Federation ({filteredUsers.length})
                     </h3>
                     <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Manage global user identities, passwords, and user-posted ads</p>
                  </div>
@@ -511,11 +614,53 @@ export const AdminDashboard: React.FC = () => {
                     />
                  </div>
               </div>
+
+              {/* Bulk User Actions Toolbar */}
+              {selectedUserIds.length > 0 && (
+                <div className="p-3 bg-emerald-950/80 border-b border-emerald-500/30 flex items-center justify-between gap-4 text-xs">
+                  <span className="font-black text-emerald-300 uppercase">
+                    {selectedUserIds.length} User Accounts Selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => bulkUpdateUsers(selectedUserIds, { verified: true, verificationType: 'individual' })}
+                      className="px-3 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Verify ID
+                    </button>
+                    <button
+                      onClick={() => bulkUpdateUsers(selectedUserIds, { status: 'banned', restrictionReason: 'Administrative bulk security action' })}
+                      className="px-3 py-1.5 bg-amber-500 text-slate-950 font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Ban Users
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete ${selectedUserIds.length} users and all their ads?`)) {
+                          bulkDeleteUsers(selectedUserIds);
+                          setSelectedUserIds([]);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-rose-600 text-white font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Delete
+                    </button>
+                  </div>
+                </div>
+              )}
               
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-950/50 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800">
                     <tr>
+                      <th className="px-4 py-4 w-10 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedUserIds.length === filteredUsers.length && filteredUsers.length > 0}
+                          onChange={handleSelectAllUsers}
+                          className="accent-emerald-500 cursor-pointer"
+                        />
+                      </th>
                       <th className="px-6 py-4">User Identity</th>
                       <th className="px-6 py-4">Role / State</th>
                       <th className="px-6 py-4">User Ads</th>
@@ -526,8 +671,18 @@ export const AdminDashboard: React.FC = () => {
                   <tbody className="divide-y divide-slate-800">
                     {filteredUsers.map((u) => {
                       const userAdsCount = listings.filter((l) => l.sellerId === u.id).length;
+                      const isSelected = selectedUserIds.includes(u.id);
+
                       return (
-                        <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                        <tr key={u.id} className={`transition-colors ${isSelected ? 'bg-emerald-500/10' : 'hover:bg-slate-800/30'}`}>
+                          <td className="px-4 py-4 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectUser(u.id)}
+                              className="accent-emerald-500 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <img src={u.avatarUrl} className="w-9 h-9 rounded-xl object-cover border border-slate-800 bg-slate-950" alt="" />
@@ -587,7 +742,7 @@ export const AdminDashboard: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-black text-white flex items-center gap-2">
                     <Package className="w-5 h-5 text-teal-400" />
-                    Ad Inventory Directory ({listings.length})
+                    Ad Inventory Directory ({filteredListings.length})
                   </h3>
                   <p className="text-xs text-slate-400">Moderate, feature, or delete any active classified posting</p>
                 </div>
@@ -603,34 +758,78 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
+              {/* Bulk Listing Action Toolbar */}
+              {selectedListingIds.length > 0 && (
+                <div className="p-3 bg-teal-950/80 border border-teal-500/30 rounded-2xl flex items-center justify-between gap-4 text-xs">
+                  <span className="font-black text-teal-300 uppercase">
+                    {selectedListingIds.length} Classified Ads Selected
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => bulkUpdateListings(selectedListingIds, { featured: true })}
+                      className="px-3 py-1.5 bg-amber-500 text-slate-950 font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Boost Top Ad
+                    </button>
+                    <button
+                      onClick={() => bulkUpdateListings(selectedListingIds, { status: 'sold' })}
+                      className="px-3 py-1.5 bg-teal-400 text-slate-950 font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Mark Sold
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete ${selectedListingIds.length} listings permanently?`)) {
+                          bulkDeleteListings(selectedListingIds);
+                          setSelectedListingIds([]);
+                        }
+                      }}
+                      className="px-3 py-1.5 bg-rose-600 text-white font-black rounded-lg text-[10px] uppercase shadow"
+                    >
+                      Bulk Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="divide-y divide-slate-800">
-                {filteredListings.map((item) => (
-                  <div key={item.id} className="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
-                    <div className="flex items-center gap-3">
-                      <img src={item.images[0]} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" alt="" />
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-white text-sm">{item.title}</p>
-                          {item.featured && <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded">TOP AD</span>}
+                {filteredListings.map((item) => {
+                  const isSelected = selectedListingIds.includes(item.id);
+
+                  return (
+                    <div key={item.id} className={`py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs p-2 rounded-2xl transition-colors ${isSelected ? 'bg-teal-500/10' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelectListing(item.id)}
+                          className="accent-emerald-500 cursor-pointer shrink-0"
+                        />
+                        <img src={item.images[0]} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" alt="" />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-white text-sm">{item.title}</p>
+                            {item.featured && <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded">TOP AD</span>}
+                          </div>
+                          <p className="text-emerald-400 font-extrabold">₦{item.price.toLocaleString()} • <span className="text-slate-400 font-normal">{item.category} ({item.location})</span></p>
+                          <p className="text-[10px] text-slate-500">Seller: {item.sellerName}</p>
                         </div>
-                        <p className="text-emerald-400 font-extrabold">₦{item.price.toLocaleString()} • <span className="text-slate-400 font-normal">{item.category} ({item.location})</span></p>
-                        <p className="text-[10px] text-slate-500">Seller: {item.sellerName}</p>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <button onClick={() => toggleFeaturedListing(item.id)} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all ${item.featured ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-amber-400'}`}>
+                          {item.featured ? 'Unfeature' : 'Boost Top Ad'}
+                        </button>
+                        <button onClick={() => markAsSold(item.id)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 font-bold rounded-xl text-[10px] uppercase">
+                          Mark Sold
+                        </button>
+                        <button onClick={() => deleteListing(item.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors" title="Delete listing">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <button onClick={() => toggleFeaturedListing(item.id)} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all ${item.featured ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:text-amber-400'}`}>
-                        {item.featured ? 'Unfeature' : 'Boost Top Ad'}
-                      </button>
-                      <button onClick={() => markAsSold(item.id)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 font-bold rounded-xl text-[10px] uppercase">
-                        Mark Sold
-                      </button>
-                      <button onClick={() => deleteListing(item.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors" title="Delete listing">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -733,72 +932,142 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Module 6: Dispute & Flagged Reports Center */}
+          {/* Module 6: Dispute & Flagged Reports & Safe Meetup Spots Center */}
           {activeTab === 'disputes' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in duration-300">
+            <div className="space-y-6 animate-in fade-in duration-300">
               
-              {/* Disputes List */}
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <h3 className="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
-                  <Gavel className="w-4 h-4" />
-                  Active Dispute Claims ({disputeCases.length})
-                </h3>
-
-                {disputeCases.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">No active dispute claims filed.</div>
-                ) : (
-                  <div className="space-y-3">
-                    {disputeCases.map((c) => (
-                      <div key={c.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
-                        <div className="flex justify-between items-start">
-                          <p className="font-bold text-white">{c.itemTitle}</p>
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${c.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{c.status}</span>
-                        </div>
-                        <p className="text-slate-400">Claim by <strong className="text-slate-200">{c.userEmail}</strong> against <strong className="text-slate-200">{c.counterparty}</strong></p>
-                        <p className="text-[11px] text-slate-300 italic bg-slate-900 p-2.5 rounded-xl border border-slate-800">"{c.details}"</p>
-                        {c.status !== 'resolved' && (
-                          <div className="pt-2 flex gap-2">
-                            <button onClick={() => processDisputeCase(c.id, 'resolved')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase">Resolve Claim</button>
-                            <button onClick={() => processDisputeCase(c.id, 'in_review')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Mark In Review</button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+              {/* Verified Safe Meetup Spots Management */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-white flex items-center gap-2">
+                      <MapPin className="w-5 h-5 text-emerald-400" />
+                      Verified Safe Exchange Spot Manager ({safeSpots.length})
+                    </h3>
+                    <p className="text-xs text-slate-400">Configure safe meeting locations across Ogbomoso for in-person item inspections</p>
                   </div>
-                )}
+                </div>
+
+                {/* Add spot form */}
+                <form onSubmit={handleAddSafeSpotSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Safe Spot Name (e.g. Takie Post Office)"
+                    value={spotName}
+                    onChange={(e) => setSpotName(e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                  />
+                  <select value={spotZone} onChange={(e) => setSpotZone(e.target.value as any)} className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
+                    <option value="Takie / Center">Takie / Center</option>
+                    <option value="LAUTECH Area">LAUTECH Area</option>
+                    <option value="Sabo Market Zone">Sabo Market Zone</option>
+                    <option value="Police HQ">Police HQ</option>
+                  </select>
+                  <select value={spotCategory} onChange={(e) => setSpotCategory(e.target.value as any)} className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none">
+                    <option value="Police Safe Zone">Police Safe Zone</option>
+                    <option value="Public Library">Public Library</option>
+                    <option value="Shopping Mall">Shopping Mall</option>
+                    <option value="Café">Café / Restaurant</option>
+                  </select>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Full Address..."
+                    value={spotAddress}
+                    onChange={(e) => setSpotAddress(e.target.value)}
+                    className="sm:col-span-2 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                  />
+                  <button type="submit" className="py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl shadow flex items-center justify-center gap-1">
+                    <Plus className="w-4 h-4" /> Add Safe Spot
+                  </button>
+                </form>
+
+                {/* Safe spots list */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {safeSpots.map((spot) => (
+                    <div key={spot.id} className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl flex items-start justify-between gap-3 text-xs">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-white truncate">{spot.name}</p>
+                          <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded">{spot.zone}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 truncate">{spot.address}</p>
+                        <p className="text-[10px] text-slate-500">{spot.hours}</p>
+                      </div>
+                      <button onClick={() => deleteSafeSpot(spot.id)} className="p-1.5 bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded-lg shrink-0">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Reported Ads */}
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
-                  <ShieldAlert className="w-4 h-4" />
-                  Flagged Ad Reports ({pendingReports.length})
-                </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Disputes List */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-rose-400 flex items-center gap-2">
+                    <Gavel className="w-4 h-4" />
+                    Active Dispute Claims ({disputeCases.length})
+                  </h3>
 
-                {reports.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-xs italic">No flagged ad reports.</div>
-                ) : (
-                  <div className="space-y-3">
-                    {reports.map((r) => (
-                      <div key={r.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
-                        <div className="flex justify-between items-start">
-                          <p className="font-bold text-white">{r.listingTitle}</p>
-                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${r.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{r.status}</span>
-                        </div>
-                        <p className="text-amber-400 font-semibold">Reason: {r.reason}</p>
-                        {r.details && <p className="text-slate-400 text-[11px]">{r.details}</p>}
-                        {r.status === 'pending' && (
-                          <div className="pt-2 flex gap-2">
-                            <button onClick={() => processReport(r.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase">Delete Ad & Resolve</button>
-                            <button onClick={() => processReport(r.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Dismiss Flag</button>
+                  {disputeCases.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-xs italic">No active dispute claims filed.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {disputeCases.map((c) => (
+                        <div key={c.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                          <div className="flex justify-between items-start">
+                            <p className="font-bold text-white">{c.itemTitle}</p>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${c.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{c.status}</span>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                          <p className="text-slate-400">Claim by <strong className="text-slate-200">{c.userEmail}</strong> against <strong className="text-slate-200">{c.counterparty}</strong></p>
+                          <p className="text-[11px] text-slate-300 italic bg-slate-900 p-2.5 rounded-xl border border-slate-800">"{c.details}"</p>
+                          {c.status !== 'resolved' && (
+                            <div className="pt-2 flex gap-2">
+                              <button onClick={() => processDisputeCase(c.id, 'resolved')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase">Resolve Claim</button>
+                              <button onClick={() => processDisputeCase(c.id, 'in_review')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Mark In Review</button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
+                {/* Reported Ads */}
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4" />
+                    Flagged Ad Reports ({pendingReports.length})
+                  </h3>
+
+                  {reports.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-xs italic">No flagged ad reports.</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {reports.map((r) => (
+                        <div key={r.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                          <div className="flex justify-between items-start">
+                            <p className="font-bold text-white">{r.listingTitle}</p>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${r.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{r.status}</span>
+                          </div>
+                          <p className="text-amber-400 font-semibold">Reason: {r.reason}</p>
+                          {r.details && <p className="text-slate-400 text-[11px]">{r.details}</p>}
+                          {r.status === 'pending' && (
+                            <div className="pt-2 flex gap-2">
+                              <button onClick={() => processReport(r.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase">Delete Ad & Resolve</button>
+                              <button onClick={() => processReport(r.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Dismiss Flag</button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+              </div>
             </div>
           )}
 
