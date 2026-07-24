@@ -14,25 +14,18 @@ import SEO from '../components/SEO';
 import { 
   MapPin, 
   Calendar, 
-  ArrowLeft, 
-  Eye, 
   MessageSquare, 
   MessageCircle,
   Package, 
   Star, 
   Award, 
-  ShieldCheck, 
   Phone,
   Plus,
-  UserCheck,
   Bell,
   Check,
   Share2,
   Clock,
-  Truck,
-  CreditCard,
-  Building2,
-  Shield
+  Building2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -122,14 +115,6 @@ const SellerProfile: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Back to Marketplace</span>
-        </Link>
-
         {/* Profile Banner & Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
           <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden">
@@ -157,7 +142,7 @@ const SellerProfile: React.FC = () => {
                 </div>
 
                 {sellerUser?.businessName && (
-                  <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1">
+                  <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
                     <Building2 className="w-3.5 h-3.5" />
                     <span>{sellerUser.businessName}</span>
                   </p>

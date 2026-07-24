@@ -23,11 +23,8 @@ import {
   MessageSquare, 
   MessageCircle,
   Heart, 
-  ArrowLeft, 
   Calendar,
   Eye,
-  ChevronLeft,
-  ChevronRight,
   ShieldAlert,
   ExternalLink,
   Tag,
@@ -119,15 +116,7 @@ const ListingDetail: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Marketplace</span>
-          </Link>
-
+        <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setIsFlyerOpen(true)}
