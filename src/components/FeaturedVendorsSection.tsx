@@ -2,10 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Building2, ArrowRight, MapPin, Package, Star, Award } from 'lucide-react';
+import { Building2, ArrowRight, MapPin, Package } from 'lucide-react';
 
 export const FeaturedVendorsSection: React.FC = () => {
-  const { allUsers, listings } = useSealify();
+  const { allUsers, listings, t } = useSealify();
 
   // Find top verified sellers or admins
   const topVendors = allUsers
@@ -15,7 +15,7 @@ export const FeaturedVendorsSection: React.FC = () => {
   if (topVendors.length === 0) return null;
 
   return (
-    <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-4 shadow-xl relative overflow-hidden">
+    <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-4 shadow-xl relative overflow-hidden font-sans">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
@@ -23,12 +23,12 @@ export const FeaturedVendorsSection: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">Verified Local Merchants</h2>
+              <h2 className="text-base sm:text-lg font-black text-white tracking-tight">{t('verified_merchants')}</h2>
               <span className="text-[9px] font-black uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-                CAC & ID Verified
+                {t('cac_verified')}
               </span>
             </div>
-            <p className="text-xs text-slate-400">Discover trusted stores & vendors operating in Ogbomosoland</p>
+            <p className="text-xs text-slate-400">{t('verified_merchants_desc')}</p>
           </div>
         </div>
 
@@ -36,7 +36,7 @@ export const FeaturedVendorsSection: React.FC = () => {
           to="/vendors"
           className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
         >
-          <span>View All Directory ({allUsers.filter((u) => u.verified).length})</span>
+          <span>{t('view_all')} ({allUsers.filter((u) => u.verified).length})</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -91,7 +91,7 @@ export const FeaturedVendorsSection: React.FC = () => {
                     </span>
                     <span className="font-bold text-slate-300 flex items-center gap-1 shrink-0">
                       <Package className="w-3.5 h-3.5 text-emerald-400" />
-                      {vendorListings.length} Active Ads
+                      {vendorListings.length} {t('active_ads_count')}
                     </span>
                   </div>
                 </div>
@@ -102,7 +102,7 @@ export const FeaturedVendorsSection: React.FC = () => {
                   to={`/seller/${vendor.id}`}
                   className="w-full py-2 bg-slate-900 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 font-extrabold rounded-xl text-xs text-center flex items-center justify-center gap-1.5 border border-slate-800 transition-all"
                 >
-                  <span>Visit Storefront</span>
+                  <span>{t('visit_storefront')}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>

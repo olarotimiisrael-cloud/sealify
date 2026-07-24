@@ -20,17 +20,9 @@ import {
   MapPin, 
   SlidersHorizontal, 
   Sparkles, 
-  TrendingUp, 
   Bell, 
-  Scale, 
-  Layers, 
-  Search,
-  ShieldCheck,
-  Zap,
-  ArrowRight,
-  Filter
+  Scale 
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export default function Index() {
   const { 
@@ -96,7 +88,7 @@ export default function Index() {
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">Marketplace Feed</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{t('marketplace_feed')}</h2>
               <span className="text-[10px] bg-slate-900 text-emerald-400 font-extrabold px-3 py-1 rounded-full border border-slate-800 shadow">{sortedListings.length} ads</span>
             </div>
           </div>
@@ -104,15 +96,15 @@ export default function Index() {
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <button onClick={() => setIsAlertsOpen(true)} className="px-3 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 transition-colors">
               <Bell className="w-4 h-4 text-emerald-400" />
-              <span>Search Alerts</span>
+              <span>{t('search_alerts')}</span>
             </button>
             <button onClick={() => setIsCompareOpen(true)} className="px-3 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 transition-colors">
               <Scale className="w-4 h-4 text-emerald-400" />
-              <span>Compare ({compareListingIds.length})</span>
+              <span>{t('compare')} ({compareListingIds.length})</span>
             </button>
             <button onClick={() => setIsFilterOpen(true)} className="px-3 py-2 bg-slate-900 text-slate-300 rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 transition-colors">
               <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
-              <span>Filters</span>
+              <span>{t('filters')}</span>
             </button>
             <div className="bg-slate-900 p-1 rounded-xl border border-slate-800 flex items-center gap-1 shrink-0">
               <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-lg ${viewMode === 'grid' ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'}`}><Grid className="w-4 h-4" /></button>

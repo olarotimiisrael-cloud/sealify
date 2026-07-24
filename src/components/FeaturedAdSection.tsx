@@ -3,14 +3,14 @@ import { Link } from 'react-router-dom';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Flame, MapPin, Eye, Heart, ArrowRight, Crown, Sparkles, Clock } from 'lucide-react';
+import { MapPin, Eye, Heart, ArrowRight, Crown, Sparkles } from 'lucide-react';
 
 interface FeaturedAdSectionProps {
   listings: Listing[];
 }
 
 export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }) => {
-  const { toggleSaveListing, isSaved } = useSealify();
+  const { toggleSaveListing, isSaved, t } = useSealify();
 
   // Sort and filter for featured/promoted ads
   const featuredListings = listings
@@ -29,7 +29,7 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
   };
 
   return (
-    <section className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-purple-900/20 border-2 border-amber-500/40 rounded-[2.5rem] p-5 sm:p-7 space-y-5 shadow-2xl relative overflow-hidden">
+    <section className="bg-gradient-to-r from-amber-500/15 via-slate-900 to-purple-900/20 border-2 border-amber-500/40 rounded-[2.5rem] p-5 sm:p-7 space-y-5 shadow-2xl relative overflow-hidden font-sans">
       <div className="absolute top-0 right-0 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="flex items-center justify-between flex-wrap gap-2 relative z-10">
@@ -39,12 +39,12 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">Promoted Top Advertisements</h2>
+              <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">{t('top_ads')}</h2>
               <span className="text-[9px] font-black uppercase bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 px-2 py-0.5 rounded-full font-mono shadow-md">
-                5X BOOST ACTIVE
+                {t('boost_active')}
               </span>
             </div>
-            <p className="text-xs text-slate-400">Handpicked, admin-approved verified deals broadcasted across Sealify</p>
+            <p className="text-xs text-slate-400">{t('top_ads_desc')}</p>
           </div>
         </div>
 
@@ -52,7 +52,7 @@ export const FeaturedAdSection: React.FC<FeaturedAdSectionProps> = ({ listings }
           to="/"
           className="text-xs font-black text-amber-400 hover:text-amber-300 flex items-center gap-1.5 transition-colors bg-amber-500/10 px-3.5 py-1.5 rounded-xl border border-amber-500/30"
         >
-          <span>Explore All Promoted</span>
+          <span>{t('explore_promoted')}</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

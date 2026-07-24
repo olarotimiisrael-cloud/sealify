@@ -21,7 +21,7 @@ const ZONES: NeighborhoodZone[] = [
 ];
 
 export const NeighborhoodFilter: React.FC = () => {
-  const { filters, setFilters, listings } = useSealify();
+  const { filters, setFilters, listings, t } = useSealify();
 
   const handleSelectZone = (query: string) => {
     setFilters((prev) => ({
@@ -31,7 +31,7 @@ export const NeighborhoodFilter: React.FC = () => {
   };
 
   return (
-    <section className="bg-slate-900/80 border border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xl space-y-2.5">
+    <section className="bg-slate-900/80 border border-slate-800 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xl space-y-2.5 font-sans">
       <div className="flex items-center justify-between flex-wrap gap-2 px-1">
         <div className="flex items-center gap-2">
           <div className="p-1.5 sm:p-2 bg-teal-500/10 text-teal-400 rounded-xl border border-teal-500/20">
@@ -39,9 +39,9 @@ export const NeighborhoodFilter: React.FC = () => {
           </div>
           <div>
             <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
-              Neighborhood Hubs
+              {t('neighborhood_hubs')}
             </h3>
-            <p className="text-[10px] text-slate-400">Filter by campus zones in Ogbomoso</p>
+            <p className="text-[10px] text-slate-400">{t('neighborhood_desc')}</p>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ export const NeighborhoodFilter: React.FC = () => {
             onClick={() => setFilters((prev) => ({ ...prev, location: '' }))}
             className="text-[9px] font-black uppercase text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded-lg hover:bg-rose-500/20 transition-colors"
           >
-            Clear
+            {t('clear')}
           </button>
         )}
       </div>
