@@ -1567,7 +1567,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const addAuditLog = async (action: string, details: string, type: AuditLog['type']) => {
+  const addAuditLog = useCallback(async (action: string, details: string, type: AuditLog['type']) => {
     try {
       const log = await auditService.create({
         action,
@@ -1579,7 +1579,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (err) {
       console.error('Add audit log error:', err);
     }
-  };
+  }, []);
 
   const marketStats: CategoryStats[] = useMemo(() => {
     const categoriesList: Category[] = ['Vehicles', 'Electronics', 'Real Estate', 'Fashion', 'Home & Furniture', 'Services', 'Jobs', 'Beauty & Health', 'Utility & Energy'];
