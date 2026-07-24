@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import SEO from '../components/SEO';
@@ -38,26 +38,15 @@ import {
   Video,
   Share2,
   Truck,
-  CheckSquare,
-  TrendingDown,
-  TrendingUp,
-  Info,
-  Zap,
-  CheckCircle2,
-  X,
-  Sliders
+  CheckSquare
 } from 'lucide-react';
-import { toast } from 'sonner';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed, addAuditLog } = useSealify();
+  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed } = useSealify();
   
   const listing = listings.find((l) => l.id === id);
-  const isFromFlyer = searchParams.get('ref') === 'flyer';
-  
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -69,28 +58,22 @@ const ListingDetail: React.FC = () => {
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isFlyerOpen, setIsFlyerOpen] = useState(false);
-  const [showReferralWelcome, setShowReferralWelcome] = useState(isFromFlyer);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
   useEffect(() => {
     if (listing?.id) {
       addRecentlyViewed(listing.id);
-      
-      if (isFromFlyer) {
-        addAuditLog('Viral View', `Item "${listing.title}" viewed via social flyer referral`, 'ad');
-      }
     }
-  }, [listing?.id, isFromFlyer]);
+  }, [listing?.id]);
 
   if (!listing) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
-        <SEO title="Listing Not Found — Sealify" description="This classified item is no longer available on Sealify." />
+        <SEO title="Listing Not Found — Sealify" />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
-          <p className="text-slate-400 text-xs mb-6">This item may have been removed or sold by the owner.</p>
           <Link to="/" className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs">
             Back to Home
           </Link>
@@ -99,12 +82,6 @@ const ListingDetail: React.FC = () => {
       </div>
     );
   }
-
-  // AI Market Comparison Logic
-  const categoryAds = listings.filter(l => l.category === listing.category);
-  const avgPrice = categoryAds.reduce((acc, l) => acc + l.price, 0) / (categoryAds.length || 1);
-  const isBelowAvg = listing.price < avgPrice;
-  const priceDiffPercent = Math.abs(Math.round(((listing.price - avgPrice) / (avgPrice || 1)) * 100));
 
   const relatedListings = listings
     .filter((l) => l.category === listing.category && l.id !== listing.id)
@@ -123,10 +100,8 @@ const ListingDetail: React.FC = () => {
 
   const formattedPrice = formatNGN(listing.price);
 
-  const cleanPhone = listing.sellerPhone.replace(/[^0-9]/g, '');
-  const formattedWhatsappPhone = cleanPhone.startsWith('0') ? `234${cleanPhone.slice(1)}` : cleanPhone;
-  const whatsappUrl = `https://wa.me/${formattedWhatsappPhone}?text=${encodeURIComponent(
-    `Hello ${listing.sellerName}, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice}). Is it still available?`
+  const whatsappUrl = `https://wa.me/${listing.sellerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+    `Hello, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice})`
   )}`;
 
   const handleStartChat = () => {
@@ -138,82 +113,16 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
-  const handleSendOffer = (offerPrice: number, offerMsg: string) => {
-    if (!isAuthenticated) {
-      setIsAuthOpen(true);
-      return;
-    }
-    sendMessage(listing.id, listing.sellerId, offerMsg);
-    navigate('/messages');
-  };
-
-  const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
-    const meetupProposal = `📍 PROPOSED MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
-    if (!isAuthenticated) {
-      setIsAuthOpen(true);
-      return;
-    }
-    sendMessage(listing.id, listing.sellerId, meetupProposal);
-    navigate('/messages');
-  };
-
-  const handleSendDeliveryEstimate = (estimateMsg: string) => {
-    if (!isAuthenticated) {
-      setIsAuthOpen(true);
-      return;
-    }
-    sendMessage(listing.id, listing.sellerId, estimateMsg);
-    navigate('/messages');
-  };
-
-  const handleSendInspectionReport = (reportMsg: string) => {
-    if (!isAuthenticated) {
-      setIsAuthOpen(true);
-      return;
-    }
-    sendMessage(listing.id, listing.sellerId, reportMsg);
-    navigate('/messages');
-  };
-
-  const specsList = listing.specifications ? Object.entries(listing.specifications) : [];
-
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
-      <SEO 
-        title={`${listing.title} — ${formattedPrice} | Sealify Nigeria`} 
-        description={`${listing.description.substring(0, 160)}... Available in ${listing.location}.`}
-        image={listing.images[0]}
-        url={window.location.href}
-      />
+      <SEO title={`${listing.title} — ${formattedPrice} | Sealify`} />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
-        
-        {/* Social Referral Welcome Banner */}
-        {showReferralWelcome && (
-          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500 shadow-xl shadow-emerald-500/5">
-             <div className="flex items-center gap-3.5 text-center sm:text-left">
-                <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl border border-emerald-500/30 shrink-0">
-                   <Zap className="w-5 h-5 fill-emerald-400" />
-                </div>
-                <div>
-                   <h2 className="text-base font-black text-white">Welcome! You discovered this item via Social Share</h2>
-                   <p className="text-[11px] text-slate-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5 uppercase tracking-widest font-black">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      Sealify Secure Protocol Active
-                   </p>
-                </div>
-             </div>
-             <div className="flex items-center gap-3">
-                <button onClick={() => setShowReferralWelcome(false)} className="p-2 text-slate-500 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-             </div>
-          </div>
-        )}
-
         <div className="flex items-center justify-between flex-wrap gap-2">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Marketplace</span>
@@ -223,7 +132,6 @@ const ListingDetail: React.FC = () => {
             <button
               onClick={() => setIsFlyerOpen(true)}
               className="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="Generate Status Flyer"
             >
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">WhatsApp Flyer</span>
@@ -232,19 +140,17 @@ const ListingDetail: React.FC = () => {
             <button
               onClick={() => setIsInspectionOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-purple-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="Interactive Inspection Checklist"
             >
               <CheckSquare className="w-4 h-4" />
-              <span className="hidden sm:inline">Testing Checklist</span>
+              <span className="hidden sm:inline">Checklist</span>
             </button>
 
             <button
               onClick={() => setIsMeetupOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-teal-400 hover:text-white flex items-center gap-1 text-xs font-bold"
-              title="Find Safe Meetup Spot"
             >
               <Shield className="w-4 h-4" />
-              <span className="hidden sm:inline">Safe Exchange Zone</span>
+              <span className="hidden sm:inline">Safe Meetup</span>
             </button>
 
             <button
@@ -265,155 +171,64 @@ const ListingDetail: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden p-3 space-y-3 relative group">
               <div className="relative aspect-[16/10] bg-slate-950 rounded-2xl overflow-hidden flex items-center justify-center">
                 {viewMode === 'video' && listing.videoUrl ? (
-                  <video 
-                    src={listing.videoUrl} 
-                    className="w-full h-full bg-black object-contain" 
-                    controls 
-                    autoPlay 
-                  />
+                  <video src={listing.videoUrl} className="w-full h-full bg-black object-contain" controls />
                 ) : (
-                  <div
+                  <img
+                    src={listing.images[activeImageIndex]}
+                    alt={listing.title}
+                    className="w-full h-full object-contain hover:scale-105 transition-transform duration-300 cursor-pointer"
                     onClick={() => setIsLightboxOpen(true)}
-                    className="w-full h-full cursor-pointer relative"
-                  >
-                    <img
-                      src={listing.images[activeImageIndex]}
-                      alt={listing.title}
-                      className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsLightboxOpen(true);
-                      }}
-                      className="absolute top-3 right-3 p-2 bg-slate-950/80 text-white rounded-xl backdrop-blur-md opacity-80 hover:opacity-100 transition-opacity"
-                      title="View Fullscreen Photo"
-                    >
-                      <Maximize2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  />
                 )}
-
-                {viewMode === 'image' && listing.images.length > 1 && (
-                  <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImageIndex((prev) => (prev === 0 ? listing.images.length - 1 : prev - 1));
-                      }}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveImageIndex((prev) => (prev === listing.images.length - 1 ? 0 : prev + 1));
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-slate-950/70 text-white rounded-full backdrop-blur hover:bg-slate-950"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </>
-                )}
+                
+                <button
+                  onClick={() => setIsLightboxOpen(true)}
+                  className="absolute top-3 right-3 p-2 bg-slate-950/80 text-white rounded-xl backdrop-blur-md"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
               </div>
 
               <div className="flex gap-2 overflow-x-auto pb-1 items-center">
                 {listing.images.map((img, idx) => (
                   <button
                     key={idx}
-                    onClick={() => {
-                      setViewMode('image');
-                      setActiveImageIndex(idx);
-                    }}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 transition-all ${
-                      viewMode === 'image' && activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800 opacity-60'
-                    }`}
+                    onClick={() => { setViewMode('image'); setActiveImageIndex(idx); }}
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 ${activeImageIndex === idx ? 'border-emerald-500 scale-105' : 'border-slate-800'}`}
                   >
                     <img src={img} className="w-full h-full object-cover" />
                   </button>
                 ))}
-
                 {listing.videoUrl && (
                   <button
                     onClick={() => setViewMode('video')}
-                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 transition-all ${
-                      viewMode === 'video' ? 'border-purple-500 scale-105' : 'border-slate-800 opacity-60'
-                    }`}
+                    className={`relative w-20 h-16 rounded-xl overflow-hidden border-2 shrink-0 flex items-center justify-center bg-slate-800 ${viewMode === 'video' ? 'border-purple-500' : 'border-slate-800'}`}
                   >
                     <Video className="w-6 h-6 text-purple-400" />
-                    <div className="absolute inset-0 bg-purple-500/10"></div>
-                    <span className="absolute bottom-1 right-1 text-[8px] font-black text-white bg-purple-600 px-1 rounded">VIDEO</span>
                   </button>
                 )}
               </div>
             </div>
 
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
-              <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800 flex-wrap sm:flex-nowrap">
+              <div className="flex justify-between items-start gap-4 pb-4 border-b border-slate-800">
                 <div>
                   <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md">
                     {listing.category}
                   </span>
                   <h1 className="text-2xl font-black text-white mt-2 leading-tight">{listing.title}</h1>
-                  <div className="flex items-center gap-4 text-xs text-slate-400 mt-2 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                      {listing.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                      {listing.createdAt}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Eye className="w-3.5 h-3.5 text-slate-500" />
-                      {listing.viewsCount} views
-                    </span>
+                  <div className="flex items-center gap-4 text-xs text-slate-400 mt-2">
+                    <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {listing.location}</span>
+                    <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {listing.createdAt}</span>
+                    <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {listing.viewsCount} views</span>
                   </div>
                 </div>
 
-                <div className="text-left sm:text-right shrink-0">
+                <div className="text-right shrink-0">
                   <p className="text-3xl font-black text-emerald-400">{formattedPrice}</p>
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
                 </div>
               </div>
-
-              {/* Specs and Market Comparison Badge */}
-              <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl border ${isBelowAvg ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-amber-500/10 text-amber-400 border-amber-500/30'}`}>
-                    {isBelowAvg ? <TrendingDown className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-black text-white uppercase tracking-widest">Market Comparison</h4>
-                    <p className="text-[11px] text-slate-400 leading-tight">
-                      This item is <strong className={isBelowAvg ? 'text-emerald-400' : 'text-amber-400'}>{priceDiffPercent}% {isBelowAvg ? 'below' : 'above'}</strong> category average in Ogbomoso.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-slate-900 px-4 py-2 rounded-xl border border-slate-800 text-center shrink-0">
-                  <p className="text-[10px] text-slate-500 font-bold uppercase">Avg Price</p>
-                  <p className="text-sm font-black text-white">{formatNGN(avgPrice)}</p>
-                </div>
-              </div>
-
-              {specsList.length > 0 && (
-                <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
-                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-wider flex items-center gap-2">
-                    <Sliders className="w-4 h-4 text-emerald-400" />
-                    Key Specifications
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {specsList.map(([key, value]) => (
-                      <div key={key} className="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-0.5">
-                        <span className="text-[10px] text-slate-500 font-bold uppercase block">{key}</span>
-                        <strong className="text-xs text-white font-extrabold block truncate">{value}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>
@@ -424,7 +239,7 @@ const ListingDetail: React.FC = () => {
 
               <PriceHistoryChart currentPrice={listing.price} />
 
-              <div className="pt-2 flex justify-between items-center border-t border-slate-800/80">
+              <div className="pt-2 flex justify-between items-center border-t border-slate-800">
                 <button
                   onClick={() => setIsOfferOpen(true)}
                   className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30"
@@ -438,7 +253,7 @@ const ListingDetail: React.FC = () => {
                   className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-400 transition-colors"
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>Report suspicious ad</span>
+                  <span>Report Ad</span>
                 </button>
               </div>
             </div>
@@ -450,43 +265,25 @@ const ListingDetail: React.FC = () => {
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <img
-                    src={listing.sellerAvatar}
-                    alt={listing.sellerName}
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500"
-                  />
+                  <img src={listing.sellerAvatar} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500" />
                   <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
+                    <div className="flex items-center gap-1.5">
                       <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
-                      {listing.sellerVerified && (
-                        <VerifiedBadge type={listing.sellerVerificationType || 'individual'} showText />
-                      )}
+                      {listing.sellerVerified && <VerifiedBadge type="individual" />}
                     </div>
                     <p className="text-[11px] text-slate-500">Member since 2023</p>
                   </div>
                 </div>
-
-                <Link
-                  to={`/seller/${listing.sellerId}`}
-                  className="p-2 bg-slate-800 hover:bg-slate-750 rounded-xl text-slate-300 hover:text-white"
-                  title="View Seller Profile"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                </Link>
+                <Link to={`/seller/${listing.sellerId}`} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300"><ExternalLink className="w-4 h-4" /></Link>
               </div>
 
-              <TrustScore 
-                score={98} 
-                responseTime="< 2 hours" 
-                verified={listing.sellerVerified} 
-                salesCount={listing.viewsCount > 100 ? 12 : 3} 
-              />
+              <TrustScore score={98} responseTime="< 2 hours" verified={listing.sellerVerified} salesCount={12} />
 
               <div className="space-y-3 pt-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button
                     onClick={() => setShowPhone(!showPhone)}
-                    className="py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition-colors"
+                    className="py-3 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-slate-700"
                   >
                     <Phone className="w-3.5 h-3.5 text-emerald-400" />
                     <span>{showPhone ? listing.sellerPhone : 'Show Phone'}</span>
@@ -496,10 +293,10 @@ const ListingDetail: React.FC = () => {
                     href={whatsappUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md transition-colors"
+                    className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
-                    <span>Chat WhatsApp</span>
+                    <span>WhatsApp</span>
                   </a>
                 </div>
 
@@ -513,7 +310,7 @@ const ListingDetail: React.FC = () => {
                   />
                   <button
                     onClick={handleStartChat}
-                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-colors"
+                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-sm flex items-center justify-center gap-2 shadow-lg"
                   >
                     <MessageSquare className="w-4 h-4" />
                     <span>Start Live Chat</span>
@@ -521,18 +318,26 @@ const ListingDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
+              <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Safety Checklist
+              </h4>
+              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
+                <li>Meet in a public, well-lit area.</li>
+                <li>Inspect item thoroughly before paying.</li>
+                <li>Avoid wire transfers or advance deposits.</li>
+              </ul>
+            </div>
           </div>
         </div>
 
         {relatedListings.length > 0 && (
           <div className="space-y-4 pt-6 border-t border-slate-800">
-            <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-emerald-400" />
-              <h2 className="text-xl font-bold text-white">
-                Similar Classifieds in {listing.category}
-              </h2>
-            </div>
-
+              Similar Ads in {listing.category}
+            </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
               {relatedListings.map((rel) => (
                 <ListingCard key={rel.id} listing={rel} />
@@ -544,48 +349,12 @@ const ListingDetail: React.FC = () => {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} />
-      <OfferModal
-        isOpen={isOfferOpen}
-        onClose={() => setIsOfferOpen(false)}
-        listingTitle={listing.title}
-        originalPrice={listing.price}
-        onSendOffer={handleSendOffer}
-      />
-      <ShareQrModal
-        isOpen={isQrOpen}
-        onClose={() => setIsQrOpen(false)}
-        listingTitle={listing.title}
-        listingPrice={listing.price}
-        listingUrl={window.location.href}
-      />
-      <SafeMeetupModal
-        isOpen={isMeetupOpen}
-        onClose={() => setIsMeetupOpen(false)}
-        itemTitle={listing.title}
-        onSelectSpot={handleSelectMeetupSpot}
-      />
-      <DeliveryEstimatorModal
-        isOpen={isDeliveryOpen}
-        onClose={() => setIsDeliveryOpen(false)}
-        itemTitle={listing.title}
-        itemLocation={listing.location}
-        onSendEstimateToChat={handleSendDeliveryEstimate}
-      />
-      <InspectionChecklistModal
-        isOpen={isInspectionOpen}
-        onClose={() => setIsInspectionOpen(false)}
-        category={listing.category}
-        itemTitle={listing.title}
-        onSendChecklistToChat={handleSendInspectionReport}
-      />
-      <LightboxModal
-        isOpen={isLightboxOpen}
-        onClose={() => setIsLightboxOpen(false)}
-        images={listing.images}
-        currentIndex={activeImageIndex}
-        onIndexChange={setActiveImageIndex}
-        title={listing.title}
-      />
+      <OfferModal isOpen={isOfferOpen} onClose={() => setIsOfferOpen(false)} listingTitle={listing.title} originalPrice={listing.price} onSendOffer={() => {}} />
+      <ShareQrModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} listingTitle={listing.title} listingPrice={listing.price} listingUrl={window.location.href} />
+      <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} />
+      <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} />
+      <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} />
+      <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
       {listing && (
         <StorefrontFlycardModal
           isOpen={isFlyerOpen}
