@@ -19,7 +19,7 @@ import {
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
   ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
-  Share2
+  Share2, BellRing
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -79,6 +79,11 @@ export const AdminDashboard: React.FC = () => {
   const [metaLogoUrl, setMetaLogoUrl] = useState(siteSettings.logoUrl || '/logo.png');
   const [metaContactEmail, setMetaContactEmail] = useState(siteSettings.contactEmail || 'support@sealify.ng');
   const [metaContactPhone, setMetaContactPhone] = useState(siteSettings.contactPhone || '+234 813 120 8468');
+
+  // Broadcast Notification Form
+  const [bcTitle, setBcTitle] = useState('');
+  const [bcMsg, setBcMsg] = useState('');
+  const [bcTarget, setBcTarget] = useState<'all' | 'seller' | 'buyer'>('all');
 
   // Category creation form
   const [newCatName, setNewCatName] = useState('');
@@ -219,6 +224,14 @@ export const AdminDashboard: React.FC = () => {
     setAnnTitle('');
     setAnnMessage('');
     toast.success('Live announcement broadcasted!');
+  };
+
+  const handleSendMassPushBroadcast = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bcTitle.trim() || !bcMsg.trim()) return;
+    broadcastMassNotification(bcTitle.trim(), bcMsg.trim(), bcTarget);
+    setBcTitle('');
+    setBcMsg('');
   };
 
   const handleUpdateSiteMetadata = (e: React.FormEvent) => {
@@ -904,6 +917,63 @@ export const AdminDashboard: React.FC = () => {
           {activeTab === 'settings' && (
             <div className="space-y-6 animate-in fade-in duration-300">
               
+              {/* Mass Push Broadcast Dispatcher */}
+              <div className="bg-slate-900 border-2 border-emerald-500/30 rounded-3xl p-6 space-y-4 shadow-2xl relative overflow-hidden">
+                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-xs">
+                  <BellRing className="w-4 h-4" />
+                  <span>Mass Push Notification & Broadcast Dispatcher</span>
+                </div>
+                <p className="text-xs text-slate-400">Send direct platform notifications to users across Ogbomoso & Nigeria.</p>
+
+                <form onSubmit={handleSendMassPushBroadcast} className="space-y-3 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Notification Title *</label>
+                      <input
+                        type="text"
+                        required
+                        value={bcTitle}
+                        onChange={(e) => setBcTitle(e.target.value)}
+                        placeholder="e.g. 🚀 Ogbomoso Market Update"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Target Audience</label>
+                      <select
+                        value={bcTarget}
+                        onChange={(e) => setBcTarget(e.target.value as any)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 capitalize"
+                      >
+                        <option value="all">All Users (Global)</option>
+                        <option value="seller">Sellers & Merchants Only</option>
+                        <option value="buyer">Buyers Only</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Notification Message Body *</label>
+                    <textarea
+                      rows={2}
+                      required
+                      value={bcMsg}
+                      onChange={(e) => setBcMsg(e.target.value)}
+                      placeholder="Write alert text to broadcast to user notification drawers..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>Dispatch Mass Push Notification</span>
+                  </button>
+                </form>
+              </div>
+
               {/* Public Metadata & Social Preview Card Editor */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
                 <div className="flex items-center gap-2 text-cyan-400 font-black uppercase tracking-widest text-xs">

@@ -101,7 +101,7 @@ interface SealifyContextType {
   markAllNotificationsRead: () => void;
   clearNotification: (id: string) => void;
   addNotification: (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => void;
-  broadcastMassNotification: (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer') => void;
+  broadcastMassNotification: (title: string, message: string, targetRole?: 'all' | 'seller' | 'buyer') => void;
   passwordRequests: PasswordChangeRequest[];
   submitPasswordRequest: (req: Omit<PasswordChangeRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPasswordRequest: (id: string, status: 'approved' | 'declined') => void;
@@ -152,7 +152,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([
+    {
+      id: 'notif_1',
+      type: 'system',
+      title: 'Welcome to Sealify Ogbomoso Node',
+      description: 'Your account is connected to the verified Ogbomoso local exchange network.',
+      time: 'Just now',
+      read: false,
+      linkUrl: '/'
+    }
+  ]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
@@ -194,11 +204,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     const interval = setInterval(() => {
       setAnalytics(prev => {
-        // Randomly fluctuate online visitor count
         const change = Math.floor(Math.random() * 5) - 2;
         const newCount = Math.max(85, prev.visitors + change);
         
-        // Randomly add a new activity session for real-time feel
         const demoUsers = ['Bayo_88', 'Blessing_X', 'Israel_N', 'Tunde_V', 'Seyi_O', 'Abiola_W'];
         const demoActions = ['Viewing Vehicles', 'Posting Request', 'Saved an Item', 'Contacted Vendor', 'In Ogbomoso Hub'];
         const newSession = {
@@ -218,6 +226,31 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return () => clearInterval(interval);
   }, []);
+
+  const addAuditLog = (action: string, details: string, type: AuditLog['type']) => {
+    setAuditLogs(prev => [{
+      id: `log_${Date.now()}`,
+      action,
+      details,
+      type,
+      createdAt: 'Just now'
+    }, ...prev]);
+  };
+
+  const broadcastMassNotification = (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer' = 'all') => {
+    const newNotif: AppNotification = {
+      id: `notif_${Date.now()}`,
+      type: 'system',
+      title,
+      description: message,
+      time: 'Just now',
+      read: false,
+      linkUrl: '/'
+    };
+    setNotifications(prev => [newNotif, ...prev]);
+    addAuditLog('Mass Push Broadcast', `Target: ${targetRole.toUpperCase()} | Title: ${title}`, 'broadcast');
+    toast.success(`📢 Mass push notification dispatched to ${targetRole === 'all' ? 'all platform users' : targetRole + ' accounts'}!`);
+  };
 
   const login = async (email: string, role: 'buyer' | 'seller' | 'admin') => {
     const existing = allUsers.find(u => u.email === email);
@@ -240,6 +273,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const admin = allUsers.find(u => u.email === email && u.role === 'admin');
     if (admin && pin === adminPin) {
       setUser(admin);
+      addAuditLog('Admin Authentication Success', `Root user ${email} logged in to Master Control Panel`, 'security');
       toast.success('Admin authentication successful.');
       return true;
     }
@@ -260,14 +294,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createdAt: 'Just now', viewsCount: 0, featured: data.featured, specifications: data.specifications
     };
     setListings(prev => [newAd, ...prev]);
+    addAuditLog('Listing Created', `Ad "${newAd.title}" (ID: ${newAd.id}) published by ${user.fullName}`, 'ad');
   };
 
   const updateListing = async (id: string, updated: Partial<Listing>) => {
     setListings(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+    addAuditLog('Listing Updated', `Updated listing ID: ${id}`, 'ad');
   };
 
   const deleteListing = async (id: string) => {
+    const target = listings.find(l => l.id === id);
     setListings(prev => prev.filter(l => l.id !== id));
+    addAuditLog('Listing Deleted', `Deleted listing "${target?.title || id}"`, 'ad');
     toast.success('Listing deleted.');
   };
 
@@ -336,7 +374,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       markAllNotificationsRead: () => setNotifications(p => p.map(n => ({...n, read: true}))),
       clearNotification: (id) => setNotifications(p => p.filter(n => n.id !== id)),
       addNotification: (n) => setNotifications(p => [{ ...n, id: `not_${Date.now()}`, time: 'Just now', read: false } as any, ...p]),
-      broadcastMassNotification: (t, m) => toast.success('Broadcast dispatched to all nodes.'),
+      broadcastMassNotification,
       passwordRequests, submitPasswordRequest: (r) => setPasswordRequests(p => [{...r, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
       processPasswordRequest: (id, status) => setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)),
       verificationRequests, 
@@ -353,7 +391,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       disputeCases, 
       submitDisputeCase: (disp) => setDisputeCases(prev => [{ ...disp, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]),
       processDisputeCase: (id, s) => setDisputeCases(p => p.map(c => c.id === id ? {...c, status: s} : c)),
-      auditLogs, addAuditLog: (a, d, t) => setAuditLogs(p => [{id: `log_${Date.now()}`, action: a, details: d, type: t, createdAt: 'Just now'}, ...p]),
+      auditLogs, addAuditLog,
       recentDeals: [], sealDeal: () => toast.success('Transaction sealed.'),
       intrusionLogs, recordIntrusion: (e, m) => setIntrusionLogs(p => [{id: `int_${Date.now()}`, timestamp: 'Just now', attemptedEmail: e, deviceInfo: {} as any, mediaCaptured: true, mediaStatus: m, status: 'flagged'}, ...p]),
       searchAlerts: [], saveSearchAlert: () => toast.success('Search alert saved.'), deleteSearchAlert: () => {},
