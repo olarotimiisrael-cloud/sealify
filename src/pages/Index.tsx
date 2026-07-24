@@ -36,11 +36,12 @@ import {
   Scale,
   Bell,
   RotateCcw,
-  Search
+  Search,
+  Clock
 } from 'lucide-react';
 
 export const Index: React.FC = () => {
-  const { siteSettings, listings, filters, setFilters, resetFilters, announcements, recentDeals, compareListingIds, t } = useSealify();
+  const { siteSettings, listings, filters, setFilters, resetFilters, announcements, recentDeals, compareListingIds, recentlyViewedIds, t } = useSealify();
   const [searchParams] = useSearchParams();
 
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -71,6 +72,8 @@ export const Index: React.FC = () => {
     .slice()
     .sort(() => 0.5 - Math.random())
     .slice(0, 4);
+
+  const recentlyViewed = listings.filter((l) => recentlyViewedIds.includes(l.id));
 
   const filteredListings = listings.filter((item) => {
     if (filters.searchQuery) {
@@ -178,6 +181,22 @@ export const Index: React.FC = () => {
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-12">
         <PromotedSpotlightBanner listings={listings} />
+        
+        {/* Recently Viewed Persistent Row */}
+        {recentlyViewed.length > 0 && (
+          <section className="space-y-4">
+             <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg border border-emerald-500/20"><Clock className="w-4 h-4" /></div>
+                <h3 className="text-base sm:text-lg font-black text-white tracking-tight">Jump Back In (Recent)</h3>
+             </div>
+             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+                {recentlyViewed.slice(0, 4).map(listing => (
+                  <ListingCard key={listing.id} listing={listing} />
+                ))}
+             </div>
+          </section>
+        )}
+
         <CategoryGrid />
         <NeighborhoodFilter />
         <FeaturedVendorsSection />

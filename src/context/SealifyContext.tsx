@@ -346,7 +346,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const saved = localStorage.getItem('sealify_saved_ids');
     return saved ? JSON.parse(saved) : [];
   });
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('sealify_recent_viewed');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
   const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -363,12 +366,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_promotion_payment_requests', JSON.stringify(promotionPaymentRequests));
     localStorage.setItem('sealify_disputeCases', JSON.stringify(disputeCases));
     localStorage.setItem('sealify_saved_ids', JSON.stringify(savedListingIds));
+    localStorage.setItem('sealify_recent_viewed', JSON.stringify(recentlyViewedIds));
     localStorage.setItem('sealify_reviews', JSON.stringify(reviews));
     localStorage.setItem('sealify_search_alerts', JSON.stringify(searchAlerts));
     localStorage.setItem('sealify_system_config', JSON.stringify(systemConfig));
     localStorage.setItem('sealify_site_settings', JSON.stringify(siteSettings));
     localStorage.setItem('sealify_buyer_requests', JSON.stringify(buyerRequests));
-  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, reviews, searchAlerts, systemConfig, siteSettings, buyerRequests]);
+  }, [allUsers, listings, categories, recentDeals, auditLogs, passwordRequests, verificationRequests, promotionPaymentRequests, disputeCases, savedListingIds, recentlyViewedIds, reviews, searchAlerts, systemConfig, siteSettings, buyerRequests]);
 
   const addNotification = useCallback((notif: any) => {
     setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);

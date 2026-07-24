@@ -558,7 +558,7 @@ const PostAd: React.FC = () => {
                           className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
                             location === nh
                               ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                              : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                              : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
                           }`}
                         >
                           {nh.split(',')[0]}

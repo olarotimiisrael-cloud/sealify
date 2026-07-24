@@ -58,7 +58,7 @@ const SellerProfile: React.FC = () => {
   const [showPhone, setShowPhone] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const sellerReviews = reviews.filter(r => r.sellerId === id);
@@ -68,7 +68,7 @@ const SellerProfile: React.FC = () => {
   const handleToggleFollow = () => {
     if (!isAuthenticated) {
       toast.error('Please log in to follow storefronts');
-      setIsAuthModalOpen(true);
+      setIsAuthOpen(true);
       return;
     }
     const nextState = !isFollowing;
@@ -83,7 +83,7 @@ const SellerProfile: React.FC = () => {
   const handleOpenReviewModal = () => {
     if (!isAuthenticated) {
       toast.error('Please log in to leave a review');
-      setIsAuthModalOpen(true);
+      setIsAuthOpen(true);
       return;
     }
     setIsReviewModalOpen(true);
@@ -410,8 +410,8 @@ const SellerProfile: React.FC = () => {
       />
 
       <AuthModal
-        isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
       />
 
       <Footer />
