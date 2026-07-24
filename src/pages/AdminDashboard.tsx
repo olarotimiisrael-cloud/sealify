@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import AdminEditUserModal from '../components/AdminEditUserModal';
-import { UserProfile, Listing, Category } from '../types/sealify';
+import { UserProfile, Listing, Category, VerificationBadgeType } from '../types/sealify';
 import { 
   Shield, Package, Activity, RefreshCw, Edit3, Trash2,
   Database, Megaphone, LogOut, Download, 
@@ -18,7 +18,8 @@ import {
   Wallet, FileText, Check, X, ShieldX, ToggleLeft, ToggleRight,
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
-  ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star
+  ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
+  Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -60,11 +61,24 @@ export const AdminDashboard: React.FC = () => {
   const [userSearch, setUserSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
   
-  // Superuser form
+  // Superuser admin identity form
   const [adminFullName, setAdminFullName] = useState(user?.fullName || '');
   const [adminEmail, setAdminEmail] = useState(user?.email || '');
   const [adminPhone, setAdminPhone] = useState(user?.phoneNumber || '');
+  const [adminBusinessName, setAdminBusinessName] = useState(user?.businessName || '');
+  const [adminAvatar, setAdminAvatar] = useState(user?.avatarUrl || '');
+  const [adminBanner, setAdminBanner] = useState(user?.storeBannerUrl || '');
+  const [adminBadge, setAdminBadge] = useState<VerificationBadgeType>(user?.verificationType || 'premium');
+  const [adminPassword, setAdminPassword] = useState(user?.password || '');
   const [newPin, setNewPin] = useState('');
+
+  // SEO & Social Link Preview Metadata Form
+  const [metaSiteName, setMetaSiteName] = useState(siteSettings.siteName || 'Sealify Nigeria');
+  const [metaDescription, setMetaDescription] = useState(siteSettings.siteDescription || "Nigeria's Trusted Local Marketplace.");
+  const [metaOgImage, setMetaOgImage] = useState(siteSettings.ogImage || '/og-image.png');
+  const [metaLogoUrl, setMetaLogoUrl] = useState(siteSettings.logoUrl || '/logo.png');
+  const [metaContactEmail, setMetaContactEmail] = useState(siteSettings.contactEmail || 'support@sealify.ng');
+  const [metaContactPhone, setMetaContactPhone] = useState(siteSettings.contactPhone || '+234 813 120 8468');
 
   // Category creation form
   const [newCatName, setNewCatName] = useState('');
@@ -74,17 +88,20 @@ export const AdminDashboard: React.FC = () => {
   const [annTitle, setAnnTitle] = useState('');
   const [annMessage, setAnnMessage] = useState('');
 
-  // Broadcast form
-  const [bcTitle, setBcTitle] = useState('');
-  const [bcMsg, setBcMsg] = useState('');
-
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user && activeTab === 'superuser') {
        setAdminFullName(user.fullName);
        setAdminEmail(user.email);
        setAdminPhone(user.phoneNumber || '');
+       setAdminBusinessName(user.businessName || '');
+       setAdminAvatar(user.avatarUrl);
+       setAdminBanner(user.storeBannerUrl || '');
+       setAdminBadge(user.verificationType || 'premium');
+       setAdminPassword(user.password || '');
     }
   }, [user, activeTab]);
 
@@ -111,13 +128,13 @@ export const AdminDashboard: React.FC = () => {
       groupName: "Overview & Root",
       items: [
         { id: 'analytics', label: 'Vitals & Stats', description: 'Real-time metrics, node traffic, gross liquidity', icon: Activity, color: 'text-emerald-400' },
-        { id: 'superuser', label: 'Master Profile', description: 'Configure master identity and root authentication', icon: Fingerprint, color: 'text-emerald-400' },
+        { id: 'superuser', label: 'Master Admin Identity', description: 'Configure public name, photos, badge & login details', icon: Fingerprint, color: 'text-emerald-400' },
       ]
     },
     {
       groupName: "Management & Moderation",
       items: [
-        { id: 'users', label: 'User Directory', description: 'Account permissions, bans, and profile editing', icon: Users, badge: allUsers.length, color: 'text-blue-400' },
+        { id: 'users', label: 'User Directory', description: 'Account permissions, bans, user ads & profile editing', icon: Users, badge: allUsers.length, color: 'text-blue-400' },
         { id: 'listings', label: 'Ad Inventory', description: 'Audit, feature, mark sold, and purge ads', icon: Package, badge: listings.length, color: 'text-teal-400' },
         { id: 'buyer_requests', label: 'Buyer Want Board', description: 'Moderate community product requests', icon: HelpCircle, badge: buyerRequests.length, color: 'text-amber-400' },
         { id: 'reviews', label: 'Seller Reviews', description: 'Audit buyer feedback and delete spam', icon: Star, badge: reviews.length, color: 'text-yellow-400' },
@@ -132,7 +149,7 @@ export const AdminDashboard: React.FC = () => {
         { id: 'finance', label: 'Treasury & Revenue', description: 'Ad promotion payments and financial ledger', icon: Wallet, badge: pendingPromoPay.length, color: 'text-emerald-400', badgeBg: 'bg-emerald-500 text-slate-950' },
         { id: 'security', label: 'Threat Logs', description: 'Forensic intrusion detection and device logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500', badgeBg: 'bg-rose-600 text-white' },
         { id: 'logs', label: 'Audit Trail', description: 'System-wide activity ledger and change log', icon: History, color: 'text-slate-400' },
-        { id: 'settings', label: 'Global Config', description: 'System protocols and broadcast alerts', icon: SettingsIcon, color: 'text-cyan-400' },
+        { id: 'settings', label: 'Global Metadata & Link Previews', description: 'Social share preview cards, logo & site config', icon: SettingsIcon, color: 'text-cyan-400' },
       ]
     }
   ];
@@ -152,6 +169,30 @@ export const AdminDashboard: React.FC = () => {
     l.category.toLowerCase().includes(listingSearch.toLowerCase()) ||
     l.sellerName.toLowerCase().includes(listingSearch.toLowerCase())
   );
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setAdminAvatar(ev.target?.result as string);
+        toast.success('Admin avatar photo uploaded!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setAdminBanner(ev.target?.result as string);
+        toast.success('Admin cover banner uploaded!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddCategorySubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,13 +221,17 @@ export const AdminDashboard: React.FC = () => {
     toast.success('Live announcement broadcasted!');
   };
 
-  const handleSendBroadcast = (e: React.FormEvent) => {
+  const handleUpdateSiteMetadata = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bcTitle.trim() || !bcMsg.trim()) return;
-    broadcastMassNotification(bcTitle.trim(), bcMsg.trim(), 'all');
-    setBcTitle('');
-    setBcMsg('');
-    toast.success('Push notification sent to all active users!');
+    updateSiteSettings({
+      siteName: metaSiteName,
+      siteDescription: metaDescription,
+      ogImage: metaOgImage,
+      logoUrl: metaLogoUrl,
+      contactEmail: metaContactEmail,
+      contactPhone: metaContactPhone,
+    });
+    toast.success('🎉 Social preview metadata and public site info updated!');
   };
 
   const handleUpdateSuperuser = (e: React.FormEvent) => {
@@ -195,7 +240,14 @@ export const AdminDashboard: React.FC = () => {
       fullName: adminFullName,
       email: adminEmail,
       phoneNumber: adminPhone,
+      businessName: adminBusinessName || undefined,
+      avatarUrl: adminAvatar || user.avatarUrl,
+      storeBannerUrl: adminBanner || user.storeBannerUrl,
+      verified: adminBadge !== 'none',
+      verificationType: adminBadge,
+      password: adminPassword || undefined,
     });
+
     if (newPin) {
       if (newPin.length < 4) {
         toast.error('PIN should be at least 4 digits');
@@ -205,7 +257,7 @@ export const AdminDashboard: React.FC = () => {
       setNewPin('');
       toast.success('Master Security PIN updated!');
     }
-    toast.success('Admin identity settings saved!');
+    toast.success('Admin identity, photos, badge and login details updated successfully!');
   };
 
   return (
@@ -224,7 +276,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-2">
-                Sealify Master Control
+                {user.fullName} Admin Panel
                 <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/20">GODMODE</span>
               </h1>
               <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1.5 mt-0.5">
@@ -253,7 +305,7 @@ export const AdminDashboard: React.FC = () => {
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
         
-        {/* Module Selector Dropdown / Grid Bar */}
+        {/* Module Selector Dropdown */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-4 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 relative z-20">
           
           <div className="relative flex-1" ref={dropdownRef}>
@@ -433,7 +485,7 @@ export const AdminDashboard: React.FC = () => {
                        <Users className="w-5 h-5 text-emerald-400" />
                        Account Federation
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Manage global user identities and security states</p>
+                    <p className="text-[10px] text-slate-500 font-bold uppercase mt-1">Manage global user identities, passwords, and user-posted ads</p>
                  </div>
                  <div className="relative w-full sm:w-72">
                     <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
@@ -453,50 +505,62 @@ export const AdminDashboard: React.FC = () => {
                     <tr>
                       <th className="px-6 py-4">User Identity</th>
                       <th className="px-6 py-4">Role / State</th>
+                      <th className="px-6 py-4">User Ads</th>
                       <th className="px-6 py-4">Verification</th>
                       <th className="px-6 py-4 text-right">Administrative Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {filteredUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <img src={u.avatarUrl} className="w-9 h-9 rounded-xl object-cover border border-slate-800" alt="" />
-                            <div className="min-w-0">
-                              <p className="font-bold text-white truncate">{u.fullName}</p>
-                              <p className="text-[10px] text-slate-500 font-mono truncate">{u.email}</p>
+                    {filteredUsers.map((u) => {
+                      const userAdsCount = listings.filter((l) => l.sellerId === u.id).length;
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <img src={u.avatarUrl} className="w-9 h-9 rounded-xl object-cover border border-slate-800 bg-slate-950" alt="" />
+                              <div className="min-w-0">
+                                <p className="font-bold text-white truncate">{u.fullName}</p>
+                                <p className="text-[10px] text-slate-500 font-mono truncate">{u.email}</p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="space-y-1">
-                            <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider ${u.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>{u.role}</span>
-                            <div className="flex items-center gap-1.5">
-                               <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'banned' ? 'bg-rose-500' : u.status === 'restricted' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
-                               <span className="text-[10px] font-bold text-slate-400 capitalize">{u.status || 'active'}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="space-y-1">
+                              <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase tracking-wider ${u.role === 'admin' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'}`}>{u.role}</span>
+                              <div className="flex items-center gap-1.5">
+                                 <span className={`w-1.5 h-1.5 rounded-full ${u.status === 'banned' ? 'bg-rose-500' : u.status === 'restricted' ? 'bg-amber-500' : 'bg-emerald-500'}`}></span>
+                                 <span className="text-[10px] font-bold text-slate-400 capitalize">{u.status || 'active'}</span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                           {u.verified ? (
-                             <div className="flex items-center gap-1 text-emerald-400 font-black text-[10px] uppercase">
-                               <ShieldCheck className="w-3.5 h-3.5" /> {u.verificationType}
-                             </div>
-                           ) : <span className="text-slate-600 font-bold text-[10px] uppercase">Unverified</span>}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => setEditingUser(u)} className="p-2 bg-slate-950 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 rounded-xl transition-all border border-slate-800">
-                              <Edit3 className="w-3.5 h-3.5" />
+                          </td>
+                          <td className="px-6 py-4">
+                            <button
+                              onClick={() => setEditingUser(u)}
+                              className="px-2.5 py-1 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-teal-400 rounded-lg text-[10px] font-bold flex items-center gap-1"
+                            >
+                              <Package className="w-3 h-3" /> {userAdsCount} Ads
                             </button>
-                            <button onClick={() => deleteUser(u.id)} className="p-2 bg-slate-950 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl transition-all border border-slate-800">
-                              <UserMinus className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="px-6 py-4">
+                             {u.verified ? (
+                               <div className="flex items-center gap-1 text-emerald-400 font-black text-[10px] uppercase">
+                                 <ShieldCheck className="w-3.5 h-3.5" /> {u.verificationType}
+                               </div>
+                             ) : <span className="text-slate-600 font-bold text-[10px] uppercase">Unverified</span>}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button onClick={() => setEditingUser(u)} className="p-2 bg-slate-950 hover:bg-emerald-500 hover:text-slate-950 text-emerald-400 rounded-xl transition-all border border-slate-800" title="Edit user info & manage ads">
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button onClick={() => deleteUser(u.id)} className="p-2 bg-slate-950 hover:bg-rose-500 hover:text-white text-rose-500 rounded-xl transition-all border border-slate-800" title="Delete user profile">
+                                <UserMinus className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -512,7 +576,7 @@ export const AdminDashboard: React.FC = () => {
                     <Package className="w-5 h-5 text-teal-400" />
                     Ad Inventory Directory ({listings.length})
                   </h3>
-                  <p className="text-xs text-slate-400">Moderate and feature active classified postings</p>
+                  <p className="text-xs text-slate-400">Moderate, feature, or delete any active classified posting</p>
                 </div>
                 <div className="relative w-full sm:w-72">
                   <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
@@ -548,7 +612,7 @@ export const AdminDashboard: React.FC = () => {
                       <button onClick={() => markAsSold(item.id)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 font-bold rounded-xl text-[10px] uppercase">
                         Mark Sold
                       </button>
-                      <button onClick={() => deleteListing(item.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors">
+                      <button onClick={() => deleteListing(item.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors" title="Delete listing">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -836,9 +900,100 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Module 10: Global Config & Broadcasts */}
+          {/* Module 10: Global Config & Social Metadata Link Previews */}
           {activeTab === 'settings' && (
             <div className="space-y-6 animate-in fade-in duration-300">
+              
+              {/* Public Metadata & Social Preview Card Editor */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5 shadow-xl">
+                <div className="flex items-center gap-2 text-cyan-400 font-black uppercase tracking-widest text-xs">
+                  <Share2 className="w-4 h-4" />
+                  <span>Public Website Link Preview & SEO Metadata</span>
+                </div>
+                <p className="text-xs text-slate-400">Configure how Sealify appears when shared on WhatsApp, Facebook, X, and search engines.</p>
+
+                <form onSubmit={handleUpdateSiteMetadata} className="space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Site Display Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={metaSiteName}
+                        onChange={(e) => setMetaSiteName(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Logo Image URL</label>
+                      <input
+                        type="text"
+                        required
+                        value={metaLogoUrl}
+                        onChange={(e) => setMetaLogoUrl(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Meta Description (Social & Search Snippet)</label>
+                    <textarea
+                      rows={3}
+                      required
+                      value={metaDescription}
+                      onChange={(e) => setMetaDescription(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-cyan-500 leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">OpenGraph Link Preview Image URL (OG Banner)</label>
+                    <input
+                      type="text"
+                      required
+                      value={metaOgImage}
+                      onChange={(e) => setMetaOgImage(e.target.value)}
+                      placeholder="/og-image.png or https://..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Public Support Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={metaContactEmail}
+                        onChange={(e) => setMetaContactEmail(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500 font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-300 uppercase">Public Support Phone</label>
+                      <input
+                        type="text"
+                        required
+                        value={metaContactPhone}
+                        onChange={(e) => setMetaContactPhone(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Save Public Site Metadata & Link Cards</span>
+                  </button>
+                </form>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
                 {/* System Config Toggles */}
@@ -930,43 +1085,120 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Module 11: Master Profile & Superuser */}
+          {/* Module 11: Master Profile & Superuser Identity Customizer */}
           {activeTab === 'superuser' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-xl mx-auto space-y-5 shadow-2xl animate-in fade-in duration-300">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6 shadow-2xl animate-in fade-in duration-300">
               <div className="text-center space-y-1">
-                <div className="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
-                  <Fingerprint className="w-6 h-6" />
+                <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
+                  <Fingerprint className="w-7 h-7" />
                 </div>
-                <h3 className="text-xl font-black text-white">Root Admin Profile Settings</h3>
-                <p className="text-xs text-slate-400">Configure master administrative identity and PIN access</p>
+                <h3 className="text-2xl font-black text-white">Root Admin Profile Settings</h3>
+                <p className="text-xs text-slate-400">Update your public display name, verification badge, login email, password, and photos</p>
+              </div>
+
+              {/* Cover & Avatar Preview Box */}
+              <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 h-36">
+                <img src={adminBanner || user.storeBannerUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80'} className="w-full h-full object-cover opacity-70" />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                
+                <div className="absolute bottom-3 left-4 flex items-center gap-3">
+                  <div className="relative">
+                    <img src={adminAvatar || user.avatarUrl} className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-500 bg-slate-900 shadow-xl" />
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 text-slate-950 rounded-lg shadow">
+                      <Camera className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-white">{adminFullName || user.fullName}</h4>
+                    <span className="text-[10px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                      {adminBadge} Badge
+                    </span>
+                  </div>
+                </div>
               </div>
 
               <form onSubmit={handleUpdateSuperuser} className="space-y-4 text-xs">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300 uppercase">Master Admin Name *</label>
-                  <input type="text" required value={adminFullName} onChange={(e) => setAdminFullName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Public Display Name *</label>
+                    <input type="text" required value={adminFullName} onChange={(e) => setAdminFullName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Business / Store Name</label>
+                    <input type="text" value={adminBusinessName} onChange={(e) => setAdminBusinessName(e.target.value)} placeholder="e.g. Sealify Global Executive" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300 uppercase">Master Admin Email *</label>
-                  <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Login Email ID *</label>
+                    <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Contact Phone Number</label>
+                    <input type="tel" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-300 uppercase">Phone Number</label>
-                  <input type="tel" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Verification Badge Tier</label>
+                    <select
+                      value={adminBadge}
+                      onChange={(e) => setAdminBadge(e.target.value as VerificationBadgeType)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 capitalize"
+                    >
+                      <option value="premium">Premium Verified (Top Vendor)</option>
+                      <option value="business">Verified Business (CAC)</option>
+                      <option value="individual">Verified Individual ID</option>
+                      <option value="none">Unverified / None</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Account Login Password</label>
+                    <input
+                      type="text"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Overwrite current password..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1 pt-2 border-t border-slate-800">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Profile Avatar Photo (URL or Upload)</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={adminAvatar} onChange={(e) => setAdminAvatar(e.target.value)} placeholder="https://..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
+                      <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Upload</button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-300 uppercase">Cover Banner (URL or Upload)</label>
+                    <div className="flex gap-2">
+                      <input type="text" value={adminBanner} onChange={(e) => setAdminBanner(e.target.value)} placeholder="https://..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
+                      <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
+                      <button type="button" onClick={() => bannerInputRef.current?.click()} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Upload</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-3 border-t border-slate-800">
                   <label className="font-bold text-amber-400 uppercase flex items-center gap-1.5">
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>Change Master Security PIN (6-Digit)</span>
                   </label>
-                  <input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Enter new PIN..." maxLength={6} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" />
+                  <input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Enter new security PIN..." maxLength={6} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" />
                 </div>
 
-                <button type="submit" className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg">
-                  Save Root Credentials
+                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-xl transition-all hover:scale-[1.01]">
+                  Save Root Credentials & Profile Details
                 </button>
               </form>
             </div>

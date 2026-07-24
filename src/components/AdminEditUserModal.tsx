@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { UserProfile, VerificationBadgeType, UserStatus } from '../types/sealify';
-import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound } from 'lucide-react';
+import { UserProfile, VerificationBadgeType, UserStatus, Listing } from '../types/sealify';
+import { useSealify } from '../context/SealifyContext';
+import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound, Package, Trash2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminEditUserModalProps {
@@ -14,6 +15,8 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const { listings, deleteListing } = useSealify();
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -27,6 +30,8 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   // Moderation state
   const [status, setStatus] = useState<UserStatus>('active');
   const [restrictionReason, setRestrictionReason] = useState('');
+
+  const userAds = user ? listings.filter((l) => l.sellerId === user.id) : [];
 
   useEffect(() => {
     if (user) {
@@ -69,13 +74,21 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       password: password.trim() || undefined
     });
 
-    toast.success(`User record and password for "${fullName}" updated!`);
+    toast.success(`User record for "${fullName}" updated!`);
     onClose();
   };
 
+  const handleDeleteAllUserAds = () => {
+    if (userAds.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ALL ${userAds.length} ads posted by ${user.fullName}?`)) {
+      userAds.forEach((ad) => deleteListing(ad.id));
+      toast.success(`Purged all ${userAds.length} ads posted by ${user.fullName}`);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+      <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto space-y-6">
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all"
@@ -87,7 +100,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
           <img
             src={avatarUrl || user.avatarUrl}
             alt={user.fullName}
-            className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0"
+            className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0 bg-slate-950"
             onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
               e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
             }}
@@ -99,7 +112,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                 {user.id}
               </span>
             </div>
-            <p className="text-xs text-slate-400">Modify profile, permissions, and security</p>
+            <p className="text-xs text-slate-400">Modify profile, permissions, authentication & inspect ads</p>
           </div>
         </div>
 
@@ -143,10 +156,9 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                     required
                     value={restrictionReason}
                     onChange={(e) => setRestrictionReason(e.target.value)}
-                    placeholder="Enter warning for user. They will see this on their profile..."
+                    placeholder="Enter warning for user..."
                     className="w-full bg-slate-900 border border-rose-500/40 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
                   />
-                  <p className="text-[10px] text-slate-500 italic">This message will be permanently visible to the user until status is reset to Active.</p>
                 </div>
              )}
           </div>
@@ -155,7 +167,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
           <div className="p-4 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-3">
              <div className="flex items-center gap-2 text-emerald-400 font-extrabold uppercase tracking-widest">
                 <Lock className="w-4 h-4" />
-                <span>Security & Authentication</span>
+                <span>Security & Login Credentials</span>
              </div>
 
              <div className="space-y-1">
@@ -170,7 +182,6 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                   placeholder="Enter new password to overwrite"
                   className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"
                 />
-                <p className="text-[10px] text-slate-500 italic mt-1">Leave unchanged to keep current user password. This will update the user's login credentials instantly.</p>
              </div>
           </div>
 
@@ -295,6 +306,63 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
               placeholder="https://..."
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-emerald-500"
             />
+          </div>
+
+          {/* User's Posted Classified Ads Section */}
+          <div className="p-4 bg-slate-950 border border-teal-500/30 rounded-2xl space-y-3 pt-3">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-teal-400 font-extrabold uppercase tracking-widest">
+                   <Package className="w-4 h-4" />
+                   <span>Ads Posted by User ({userAds.length})</span>
+                </div>
+                {userAds.length > 0 && (
+                   <button
+                     type="button"
+                     onClick={handleDeleteAllUserAds}
+                     className="px-2.5 py-1 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white font-bold rounded-lg text-[10px] uppercase border border-rose-500/20 transition-all flex items-center gap-1"
+                   >
+                     <Trash2 className="w-3 h-3" /> Purge All {userAds.length} Ads
+                   </button>
+                )}
+             </div>
+
+             {userAds.length === 0 ? (
+                <p className="text-slate-500 text-[11px] italic py-2">No classified ads posted by this user yet.</p>
+             ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                   {userAds.map((ad) => (
+                      <div key={ad.id} className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+                         <div className="flex items-center gap-2.5 min-w-0">
+                            <img src={ad.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-800 shrink-0" />
+                            <div className="min-w-0">
+                               <p className="font-bold text-white truncate text-xs">{ad.title}</p>
+                               <p className="text-[10px] text-emerald-400 font-extrabold">₦{ad.price.toLocaleString()} • {ad.category}</p>
+                            </div>
+                         </div>
+
+                         <div className="flex items-center gap-1.5 shrink-0">
+                            <a
+                              href={`/listing/${ad.id}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg"
+                              title="View Ad"
+                            >
+                               <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => deleteListing(ad.id)}
+                              className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
+                              title="Delete this ad"
+                            >
+                               <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+             )}
           </div>
 
           <div className="pt-3 border-t border-slate-800 flex gap-2">
