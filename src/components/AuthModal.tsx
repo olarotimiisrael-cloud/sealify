@@ -222,22 +222,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-center relative">
+          <div className="mt-6 pt-4 border-t border-slate-800 flex items-center justify-center">
             <p className="text-[9px] text-slate-600 flex items-center justify-center gap-1.5 uppercase font-black tracking-widest">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500/50" />
               Forensic-Grade Node Security
             </p>
-
-            {/* Tiny discrete admin link hidden in the corner */}
-            <Link 
-              to="/admin/login" 
-              onClick={onClose}
-              className="absolute right-0 bottom-0 p-1 opacity-10 hover:opacity-100 transition-opacity"
-              title="Restricted Access"
-            >
-              <Terminal className="w-3 h-3 text-slate-500" />
-            </Link>
           </div>
+
+          {/* The Hidden Secret Door */}
+          <Link 
+            to="/admin/login" 
+            onClick={onClose}
+            className="absolute bottom-2 right-2 p-1 opacity-20 hover:opacity-100 hover:text-emerald-500 transition-all cursor-pointer"
+            title="Secure Root Access"
+          >
+            <Terminal className="w-3 h-3 text-slate-700" />
+          </Link>
         </div>
       </div>
 
