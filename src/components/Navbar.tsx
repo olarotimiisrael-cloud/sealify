@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
 import EscrowProtectionModal from './EscrowProtectionModal';
@@ -28,7 +28,8 @@ import {
   TrendingUp,
   HelpCircle,
   Users,
-  PlayCircle
+  PlayCircle,
+  ArrowLeft
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -54,6 +55,8 @@ const Navbar: React.FC = () => {
   } = useSealify();
 
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  
   const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
   const [isEscrowOpen, setIsEscrowOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -75,12 +78,24 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  const isHome = pathname === '/';
+
   return (
     <>
       <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl font-sans">
         <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
+            {!isHome && (
+              <button 
+                onClick={() => navigate(-1)}
+                className="p-2 hover:bg-slate-800 rounded-xl text-slate-300 hover:text-emerald-400 transition-all shrink-0"
+                title="Go Back"
+              >
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+
             <Link to="/" className="flex items-center shrink-0">
               <Logo size="md" />
             </Link>
