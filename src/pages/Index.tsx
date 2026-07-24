@@ -22,7 +22,8 @@ import {
   Bell, 
   Scale,
   Zap,
-  CheckCircle2
+  CheckCircle2,
+  Package
 } from 'lucide-react';
 
 export default function Index() {
@@ -33,6 +34,7 @@ export default function Index() {
     announcements, 
     compareListingIds,
     recentDeals,
+    resetFilters,
     t
   } = useSealify();
 
@@ -150,11 +152,27 @@ export default function Index() {
 
         {viewMode === 'map' ? (
           <MapView listings={sortedListings} />
-        ) : (
+        ) : sortedListings.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
             {sortedListings.map((item) => (
               <ListingCard key={item.id} listing={item} />
             ))}
+          </div>
+        ) : (
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs my-6 space-y-4 shadow-xl">
+            <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center mx-auto border border-slate-800">
+              <Package className="w-8 h-8 text-slate-600" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-white">No ads found matching your criteria</h3>
+              <p className="text-slate-500 max-w-sm mx-auto">Try clearing your search keyword, category, or location filters to view all listings.</p>
+            </div>
+            <button
+              onClick={resetFilters}
+              className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-emerald-400 transition-colors shadow-lg"
+            >
+              Reset All Filters
+            </button>
           </div>
         )}
       </main>
