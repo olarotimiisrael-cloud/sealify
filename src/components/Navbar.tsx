@@ -50,7 +50,6 @@ const Navbar: React.FC = () => {
     language,
     setLanguage,
     siteSettings,
-    analytics,
     t
   } = useSealify();
 
@@ -99,17 +98,6 @@ const Navbar: React.FC = () => {
             <Link to="/" className="flex items-center shrink-0">
               <Logo size="md" />
             </Link>
-
-            {/* LIVE ONLINE INDICATOR */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-               <span className="relative flex h-2 w-2">
-                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-               </span>
-               <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter">
-                 {analytics.visitors} {t('online_now')}
-               </span>
-            </div>
           </div>
 
           <div className="hidden md:flex flex-1 max-w-md">
@@ -169,7 +157,7 @@ const Navbar: React.FC = () => {
                     <button
                       key={lang.code}
                       onClick={() => { setLanguage(lang.code); setShowLangMenu(false); }}
-                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors \${language === lang.code ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-colors ${language === lang.code ? 'bg-emerald-500 text-slate-950' : 'text-slate-300 hover:bg-slate-800'}`}
                     >
                       {lang.label}
                     </button>
@@ -241,10 +229,6 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
-             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full mr-1">
-               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-               <span className="text-[9px] font-black text-emerald-400 uppercase">{analytics.visitors} {t('online_now')}</span>
-             </div>
             <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
               <Search className="w-6 h-6" />
             </button>
@@ -258,7 +242,7 @@ const Navbar: React.FC = () => {
           <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {languages.map(l => (
-                  <button key={l.code} onClick={() => { setLanguage(l.code); setIsMobileMenuOpen(false); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 \${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
+                  <button key={l.code} onClick={() => { setLanguage(l.code); setIsMobileMenuOpen(false); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 ${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
                     {l.label}
                   </button>
                 ))}

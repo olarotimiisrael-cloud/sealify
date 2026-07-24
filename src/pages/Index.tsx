@@ -10,7 +10,6 @@ import ListingCard from '../components/ListingCard';
 import PromotedSpotlightBanner from '../components/PromotedSpotlightBanner';
 import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
 import MapView from '../components/MapView';
-import LiveActivityToast from '../components/LiveActivityToast';
 import FilterDrawer from '../components/FilterDrawer';
 import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
@@ -162,7 +161,6 @@ export default function Index() {
 
       <Footer />
       <MobileNav />
-      <LiveActivityToast />
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
       <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
