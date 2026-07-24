@@ -27,7 +27,7 @@ const Contact: React.FC = () => {
     setStatus('sending');
     
     setTimeout(() => {
-      toast.success('Message sent successfully! Our support team will respond within 24 hours.');
+      toast.success('Message sent successfully! Our support team will respond within 24 within 24 hours.');
       setFormData({ name: user?.fullName || '', email: user?.email || '', subject: '', message: '' });
       setStatus('sent');
     }, 1000);
@@ -44,7 +44,7 @@ const Contact: React.FC = () => {
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
           <div className="text-center space-y-2">
-            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3.5 py-1 rounded-full">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-3.5 py=1 rounded-full">
               <Mail className="w-4 h-4" />
               <span>Contact Support</span>
             </div>
@@ -130,7 +130,7 @@ const Contact: React.FC = () => {
 
             <div className="lg:col-span-5 space-y-6">
               <div className="bg-slate-950 border border-slate-800 rounded-3xl p-5 space-y-4">
-                <h3 className="text-xs font-black text-white uppercase tracking-widest">Real-time Channels</h3>
+                <h3 className="text-xs font-bold text-white uppercase tracking-widest">Real-time Channels</h3>
                 
                 <a 
                   href="https://chat.whatsapp.com/F0iRCn1r1z2JQuKLoRhmw4?s=cl&p=a&ilr=1" 

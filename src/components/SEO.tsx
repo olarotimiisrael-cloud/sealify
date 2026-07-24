@@ -45,7 +45,8 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag('property', 'og:image', finalImage);
     setMetaTag('property', 'og:url', url);
     setMetaTag('property', 'og:site_name', siteSettings.siteName);
-
+    setMetaTag('property', 'og:locale', 'en_NG'); // Important for Nigeria
+    
     // Twitter
     setMetaTag('name', 'twitter:card', 'summary_large_image');
     setMetaTag('name', 'twitter:title', finalTitle);
@@ -54,7 +55,6 @@ export const SEO: React.FC<SEOProps> = ({
     
     // Additional SEO tags
     setMetaTag('name', 'theme-color', '#059669');
-    setMetaTag('property', 'og:locale', 'en_NG');
   }, [finalTitle, finalDescription, finalImage, url, type, siteSettings.siteName, siteSettings.siteDescription]);
 
   return null;
