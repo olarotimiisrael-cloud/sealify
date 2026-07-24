@@ -261,7 +261,7 @@ export default function Index() {
 
             {filters.location && (
               <span className="bg-slate-950 text-teal-400 px-2.5 py-1 rounded-lg border border-slate-800 flex items-center gap-1 font-semibold">
-                <MapPin className="w-3 h-3" /> {filters.location}
+                <MapPin className="w-3.5 h-3.5" /> {filters.location}
               </span>
             )}
 
@@ -293,7 +293,7 @@ export default function Index() {
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 onClick={resetFilters}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs transition-colors"
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-xl text-xs transition-colors"
               >
                 Reset Search
               </button>
