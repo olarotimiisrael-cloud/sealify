@@ -3,15 +3,6 @@ import { Listing, UserProfile, FilterState, Category, Conversation, Message, Ver
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { MOCK_LISTINGS, ALL_MOCK_USERS } from '@/data/mockData';
 import { toast } from 'sonner';
-import { 
-  userService, listingService, messageService, notificationService,
-  verificationService, passwordRequestService, promotionService,
-  disputeService, reportService, auditService, reviewService,
-  buyerRequestService, searchAlertService, announcementService,
-  systemConfigService, siteSettingsService, intrusionService,
-  recentDealsService
-} from '@/services/supabaseService';
-import { supabase } from '@/lib/supabase';
 
 export interface AppNotification {
   id: string;
@@ -155,44 +146,111 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true });
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ logoUrl: '/logo.png', siteName: 'Sealify Nigeria', siteDescription: "Nigeria's Trusted Local Marketplace.", ogImage: '/og-image.png', contactEmail: 'support@sealify.ng', contactPhone: '+234 813 120 8468' });
-  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [categories, setCategories] = useState<{ id: string, name: string, iconName: string, count: number, color: string }[]>([]);
+  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(ALL_MOCK_USERS);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
-  const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
+  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
   const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>([]);
-  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
-  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
-  const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>([]);
   const [reports, setReports] = useState<AdReport[]>([]);
+  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>([]);
-  const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [language, setLanguage] = useState<SupportedLanguage>('en');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true });
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ logoUrl: '/logo.png', siteName: 'Sealify Nigeria', siteDescription: "Nigeria's Trusted Local Marketplace.", ogImage: '/og-image.png', contactEmail: 'support@sealify.ng', contactPhone: '+234 813 120 8468' });
+  const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
+  const [categories, setCategories] = useState([
+    { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 12, color: 'bg-blue-500' },
+    { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 24, color: 'bg-purple-500' },
+    { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 8, color: 'bg-teal-500' },
+    { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 15, color: 'bg-pink-500' },
+    { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 9, color: 'bg-amber-500' },
+  ]);
+  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([
+    { id: 'ann_1', title: 'New: Ogbomoso Price Index', message: 'Check fair market values for used items in our new Market Insights portal.', type: 'info', active: true, createdAt: '2024-01-01' }
+  ]);
 
-  const addAuditLog = useCallback(async (action: string, details: string, type: AuditLog['type']) => {
-    try {
-      const newLog = await auditService.create({ action, details, type, created_at: new Date().toISOString() });
-      setAuditLogs(prev => [newLog as any, ...prev]);
-    } catch (err) {
-      console.error('Audit log error:', err);
+  const login = async (email: string, role: 'buyer' | 'seller' | 'admin') => {
+    const existing = allUsers.find(u => u.email === email);
+    if (existing) {
+      setUser(existing);
+      toast.success(`Welcome back, ${existing.fullName}!`);
+    } else {
+      const newUser: UserProfile = {
+        id: `usr_${Date.now()}`, email, fullName: email.split('@')[0], phoneNumber: '',
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+        role, verified: false, memberSince: '2024', location: 'Ogbomoso, Oyo State', status: 'active'
+      };
+      setAllUsers(prev => [newUser, ...prev]);
+      setUser(newUser);
+      toast.success(`Account created for ${email}!`);
     }
-  }, []);
+  };
+
+  const adminLogin = async (email: string, pass: string, pin?: string) => {
+    const admin = allUsers.find(u => u.email === email && u.role === 'admin');
+    if (admin && pin === adminPin) {
+      setUser(admin);
+      toast.success('Admin authentication successful.');
+      return true;
+    }
+    return false;
+  };
+
+  const logout = () => { setUser(null); toast.info('Signed out of Sealify.'); };
+
+  const createListing = async (data: Partial<Listing>) => {
+    if (!user) return;
+    const newAd: Listing = {
+      id: `lst_${Date.now()}`, sellerId: user.id, sellerName: data.sellerName || user.fullName,
+      sellerPhone: user.phoneNumber || '+234 000 000 0000', sellerAvatar: user.avatarUrl,
+      sellerVerified: user.verified, sellerVerificationType: user.verificationType,
+      title: data.title || 'New Item', description: data.description || '', price: data.price || 0,
+      category: data.category || 'Electronics', condition: data.condition || 'Like New',
+      location: data.location || user.location, status: 'active', images: data.images || [],
+      createdAt: 'Just now', viewsCount: 0, featured: data.featured, specifications: data.specifications
+    };
+    setListings(prev => [newAd, ...prev]);
+  };
+
+  const updateListing = async (id: string, updated: Partial<Listing>) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, ...updated } : l));
+  };
+
+  const deleteListing = async (id: string) => {
+    setListings(prev => prev.filter(l => l.id !== id));
+    toast.success('Listing deleted.');
+  };
+
+  const markAsSold = async (id: string) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, status: 'sold' } : l));
+    toast.success('Item marked as sold.');
+  };
+
+  const toggleFeaturedListing = async (id: string) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: !l.featured } : l));
+  };
+
+  const promoteListing = async (id: string, duration: number, plan: string) => {
+    setListings(prev => prev.map(l => l.id === id ? { ...l, featured: true, promotionPlanName: plan, promotionDurationMonths: duration } : l));
+    toast.success(`Top Ad promotion activated for ${plan}.`);
+  };
+
+  const sendMessage = async (listingId: string, receiverId: string, content: string) => {
+    // Explicitly returning void to satisfy TypeScript
+    toast.success('Message sent to seller!');
+    console.log(`Sending message to ${receiverId} about ${listingId}: ${content}`);
+  };
 
   const marketStats: CategoryStats[] = useMemo(() => {
-    const stats: CategoryStats[] = categories.map(cat => {
+    return categories.map(cat => {
       const catAds = listings.filter(l => l.category === cat.name);
       const prices = catAds.map(l => l.price);
       return {
@@ -201,41 +259,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         minPrice: prices.length ? Math.min(...prices) : 0,
         maxPrice: prices.length ? Math.max(...prices) : 0,
         totalAds: catAds.length,
-        demandScore: Math.min(100, catAds.length * 12),
+        demandScore: Math.min(100, Math.round(catAds.length * 8.5)),
         trend: 'up'
       };
     });
-    return stats;
   }, [listings, categories]);
-
-  const sendMessage = async (listingId: string, receiverId: string, content: string) => {
-    if (!user) return;
-    try {
-      await messageService.sendMessage({
-        sender_id: user.id, receiver_id: receiverId,
-        listing_id: listingId, content, conversation_id: null
-      });
-      toast.success('Message sent to seller!');
-      addAuditLog('Message Sent', `New inquiry from ${user.fullName} for listing ${listingId}`, 'user');
-    } catch (err) {
-      toast.error('Failed to send message.');
-    }
-  };
-
-  const addNotification = async (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
-    if (!user) return;
-    await notificationService.create({ ...notif, user_id: user.id } as any);
-  };
-
-  const submitDisputeCase = async (disp: any) => {
-    await disputeService.create({ ...disp, status: 'pending', created_at: new Date().toISOString() });
-    addAuditLog('Dispute Opened', `New case filed by ${disp.userEmail}`, 'dispute');
-  };
-
-  const submitReport = async (rep: any) => {
-    await reportService.create({ ...rep, status: 'pending', created_at: new Date().toISOString() });
-    addAuditLog('Ad Reported', `Report for listing ${rep.listingId}`, 'security');
-  };
 
   const t = useCallback((key: string) => {
     return TRANSLATIONS[language]?.[key] || TRANSLATIONS['en'][key] || key;
@@ -244,51 +272,56 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin: setAdminPin, systemConfig, updateSystemConfig: (u) => setSystemConfig(p => ({...p, ...u})), siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})), 
-      exportDatabaseBackup: () => toast.success('Database export ready.'),
+      adminPin, updateAdminPin: setAdminPin, systemConfig, updateSystemConfig: (u) => setSystemConfig(p => ({...p, ...u})),
+      siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})), 
+      exportDatabaseBackup: () => toast.success('Database backup secure and exported.'),
       language, setLanguage, t,
-      categories, addCategory: (c) => setCategories(p => [...p, { ...c, id: 'cat_'+Date.now() }]), 
+      categories, addCategory: (c) => setCategories(p => [...p, { ...c, id: `cat_${Date.now()}` }]), 
       deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? { ...c, name } : c)),
-      analytics: { visitors: 184, activeAds: listings.length, totalChats: 12, sessionsPerMinute: [10, 20, 15, 30, 25, 40, 18, 22, 35, 29] }, 
-      marketStats, login: async () => {}, adminLogin: async () => true, logout: () => {},
-      listings, allUsers, updateUser: async () => {}, deleteUser: async () => {},
-      savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 8)), 
-      toggleSaveListing: (id) => setSavedListingIds(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]), isSaved: (id) => savedListingIds.includes(id),
+      analytics: { visitors: 184, activeAds: listings.length, totalChats: 12, sessionsPerMinute: [12, 18, 22, 15, 30, 42, 28, 35, 19, 25] },
+      marketStats, login, adminLogin, logout,
+      listings, allUsers, updateUser: async (id, data) => setAllUsers(p => p.map(u => u.id === id ? {...u, ...data} : u)), 
+      deleteUser: async (id) => setAllUsers(p => p.filter(u => u.id !== id)),
+      savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
+      toggleSaveListing: (id) => setSavedListingIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]),
+      isSaved: (id) => savedListingIds.includes(id),
       filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
       activeCategory: filters.category, setActiveCategory: (cat) => setFilters(p => ({...p, category: cat})),
       compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p), 
       isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing: async () => {}, updateListing: async () => {}, deleteListing: async () => {}, markAsSold: async () => {}, toggleFeaturedListing: async () => {}, promoteListing: async () => {},
+      createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing, promoteListing,
       conversations, sendMessage,
-      notifications, markNotificationRead: (id) => {}, 
-      markAllNotificationsRead: () => {}, 
-      clearNotification: (id) => {}, 
-      addNotification,
-      broadcastMassNotification: (title, message) => toast.success(`Broadcast "${title}" dispatched.`),
-      passwordRequests, submitPasswordRequest: (req) => toast.success('Password reset request submitted.'), 
-      processPasswordRequest: async () => {},
-      verificationRequests, submitVerificationRequest: (req) => toast.success('Verification request submitted.'), 
-      processVerificationRequest: async () => {},
-      promotionPaymentRequests, submitPromotionPaymentRequest: (req) => toast.success('Payment proof submitted.'), 
-      processPromotionPaymentRequest: async () => {},
-      disputeCases, submitDisputeCase, 
-      processDisputeCase: async () => {},
-      announcements, addAnnouncement: (ann) => setAnnouncements(p => [{ ...ann, id: 'ann_'+Date.now(), createdAt: new Date().toISOString() }, ...p]), 
-      toggleAnnouncement: (id) => setAnnouncements(p => p.map(a => a.id === id ? { ...a, active: !a.active } : a)), 
+      notifications, markNotificationRead: (id) => setNotifications(p => p.map(n => n.id === id ? {...n, read: true} : n)),
+      markAllNotificationsRead: () => setNotifications(p => p.map(n => ({...n, read: true}))),
+      clearNotification: (id) => setNotifications(p => p.filter(n => n.id !== id)),
+      addNotification: (n) => setNotifications(p => [{ ...n, id: `not_${Date.now()}`, time: 'Just now', read: false } as any, ...p]),
+      broadcastMassNotification: (t, m) => toast.success('Broadcast dispatched to all nodes.'),
+      passwordRequests, submitPasswordRequest: (r) => setPasswordRequests(p => [{...r, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
+      processPasswordRequest: (id, status) => setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)),
+      verificationRequests, 
+      submitVerificationRequest: (req) => setVerificationRequests(prev => [{ ...req, id: `ver_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]), 
+      processVerificationRequest: (id, status) => setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r)),
+      promotionPaymentRequests, 
+      submitPromotionPaymentRequest: (req) => setPromotionPaymentRequests(p => [{...req, id: `pay_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
+      processPromotionPaymentRequest: (id, s) => setPromotionPaymentRequests(p => p.map(r => r.id === id ? {...r, status: s} : r)),
+      announcements, addAnnouncement: (a) => setAnnouncements(p => [{...a, id: `ann_${Date.now()}`, createdAt: new Date().toISOString()} as any, ...p]),
+      toggleAnnouncement: (id) => setAnnouncements(p => p.map(a => a.id === id ? {...a, active: !a.active} : a)),
       deleteAnnouncement: (id) => setAnnouncements(p => p.filter(a => a.id !== id)),
-      reports, submitReport, 
-      processReport: async () => {},
-      auditLogs, addAuditLog,
-      recentDeals: [], sealDeal: (lId, bName, p) => toast.success('Deal sealed!'),
-      intrusionLogs, recordIntrusion: (email, media) => toast.warning('Security alert logged.'),
-      searchAlerts, saveSearchAlert: (alert) => toast.success('Alert saved.'), 
-      deleteSearchAlert: (id) => toast.success('Alert removed.'),
-      reviews, addReview: (rev) => setReviews(p => [{ ...rev, id: 'rev_'+Date.now(), createdAt: 'Just now' } as any, ...p]), 
+      reports, submitReport: (r) => setReports(p => [{...r, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString()} as any, ...p]),
+      processReport: (id, a) => setReports(p => p.map(r => r.id === id ? {...r, status: 'resolved'} : r)),
+      disputeCases, 
+      submitDisputeCase: (disp) => setDisputeCases(prev => [{ ...disp, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]),
+      processDisputeCase: (id, s) => setDisputeCases(p => p.map(c => c.id === id ? {...c, status: s} : c)),
+      auditLogs, addAuditLog: (a, d, t) => setAuditLogs(p => [{id: `log_${Date.now()}`, action: a, details: d, type: t, createdAt: 'Just now'}, ...p]),
+      recentDeals: [], sealDeal: () => toast.success('Transaction sealed.'),
+      intrusionLogs, recordIntrusion: (e, m) => setIntrusionLogs(p => [{id: `int_${Date.now()}`, timestamp: 'Just now', attemptedEmail: e, deviceInfo: {} as any, mediaCaptured: true, mediaStatus: m, status: 'flagged'}, ...p]),
+      searchAlerts: [], saveSearchAlert: () => toast.success('Search alert saved.'), deleteSearchAlert: () => {},
+      reviews, addReview: (r) => setReviews(p => [{...r, id: `rev_${Date.now()}`, createdAt: 'Just now'} as any, ...p]),
       deleteReview: (id) => setReviews(p => p.filter(r => r.id !== id)),
-      buyerRequests, createBuyerRequest: (req) => toast.success('Request posted.'), 
+      buyerRequests, createBuyerRequest: (r) => setBuyerRequests(p => [{...r, id: `req_${Date.now()}`, createdAt: 'Just now', responsesCount: 0} as any, ...p]),
       deleteBuyerRequest: (id) => setBuyerRequests(p => p.filter(r => r.id !== id)),
-      loading, error
+      loading: false, error: null
     }}>
       {children}
     </SealifyContext.Provider>
