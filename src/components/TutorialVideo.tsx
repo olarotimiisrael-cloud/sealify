@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Play, Pause, Volume2, VolumeX, Maximize, ShieldCheck, 
-  Zap, Globe, Camera, MapPin, Subtitles, User, RefreshCw 
+  Zap, Globe, Camera, MapPin, Subtitles, Download, Sparkles,
+  CheckCircle2, RefreshCw, MessageSquare
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Scene {
   id: number;
@@ -14,79 +16,49 @@ interface Scene {
   spokenNarration: string;
   badge: string;
   color: string;
-  icon: React.FC<{ className?: string }>;
   hudText: string;
 }
-
-interface Presenter {
-  id: string;
-  name: string;
-  role: string;
-  avatar: string;
-  voiceGender: 'female' | 'male';
-}
-
-const PRESENTERS: Presenter[] = [
-  {
-    id: 'sarah',
-    name: 'Sarah',
-    role: 'Sealify Lead AI Presenter',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500&auto=format&fit=crop&q=80',
-    voiceGender: 'female',
-  },
-  {
-    id: 'david',
-    name: 'David',
-    role: 'Trust & Safety Director',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80',
-    voiceGender: 'male',
-  }
-];
 
 const SCENES: Scene[] = [
   {
     id: 1,
     title: "1. Welcome to Sealify Nigeria",
     subtitle: "Ogbomoso & Oyo State Hyperlocal Marketplace",
-    description: "Sealify connects local buyers and verified merchants seamlessly. Discover electronics, vehicles, real estate, and services with zero friction.",
-    spokenNarration: "Welcome to Sealify, Nigeria's most trusted local marketplace. Whether you are in Ogbomoso, Oyo State, or anywhere in Nigeria, Sealify connects you directly with verified buyers and sellers in your immediate neighborhood.",
-    badge: "Ecosystem Overview",
-    color: "from-emerald-900/70 via-slate-900 to-slate-950",
-    icon: Globe,
-    hudText: "SCANNING LOCAL NODE: OGBOMOSO DISTRICT"
+    description: "Connect directly with verified local buyers and merchants in Ogbomosoland, LAUTECH campus, Takie Square, and across Oyo State.",
+    spokenNarration: "E kaabo! Welcome to Sealify, Nigeria's most trusted local marketplace. Whether you are at LAUTECH Under G, Takie Square, Sabo Market, or anywhere in Oyo State, Sealify connects you directly with verified buyers and sellers right in your area.",
+    badge: "Ogbomoso Marketplace Overview",
+    color: "from-emerald-950 via-slate-900 to-slate-950",
+    hudText: "AI PRESENTER: AMINA (OGBOMOSO NODE)"
   },
   {
     id: 2,
-    title: "2. List Items in 60 Seconds",
-    subtitle: "AI Assistant & Price Valuation",
-    description: "Snap photos, set your price with our Smart Valuation Calculator, and let AI generate compelling descriptions for high buyer conversion.",
-    spokenNarration: "Posting an ad is effortless. Snap your product photos, calculate fair resale prices with our Smart Estimator, and let our AI copywriter generate high-converting product descriptions for you automatically.",
+    title: "2. Post Ads & Instant Valuation",
+    subtitle: "Smart Price Estimator & AI Copywriter",
+    description: "Snap product photos, use our Smart Valuation Calculator to set prices in Naira (NGN), and let AI generate attractive ad descriptions.",
+    spokenNarration: "Posting your ad is very simple. Snap clear photos of your phone, car, or item, check the fair resale price with our smart Naira estimator, and let our AI copywriter write a catchy description for you automatically.",
     badge: "Smart Listing Engine",
-    color: "from-purple-900/70 via-slate-900 to-slate-950",
-    icon: Camera,
-    hudText: "AI VISION & COPYWRITER CORE ACTIVE"
+    color: "from-purple-950 via-slate-900 to-slate-950",
+    hudText: "AI SPEECH & VISION CORE: ACTIVE"
   },
   {
     id: 3,
-    title: "3. Identity & CAC Verification",
-    subtitle: "Verified Badges for Sellers",
-    description: "Submit government ID or CAC documents to earn trusted verification badges. Verified merchants get up to 5x more direct buyer calls.",
-    spokenNarration: "To build trust, submit your National Identity Number or Corporate Affairs Commission documents to earn official verification badges on your storefront.",
-    badge: "Forensic Trust Protocol",
-    color: "from-amber-900/70 via-slate-900 to-slate-950",
-    icon: ShieldCheck,
-    hudText: "NIN / CAC CREDENTIAL VALIDATION ENCRYPTED"
+    title: "3. Get Verified with NIN or CAC",
+    subtitle: "Official Trust Badges for Merchants",
+    description: "Submit your National ID (NIN) or CAC document to earn verified badges and receive 5x more direct buyer calls.",
+    spokenNarration: "To make buyers trust you 100%, submit your NIN card or CAC business registration. You will get an official verified badge on your storefront, which gives you five times more buyer calls and messages.",
+    badge: "Identity Trust Protocol",
+    color: "from-amber-950 via-slate-900 to-slate-950",
+    hudText: "NIN / CAC CREDENTIAL ENCRYPTED"
   },
   {
     id: 4,
-    title: "4. Safe Meetup & Settlement",
-    subtitle: "CCTV Spots & Digital Receipts",
-    description: "Coordinate meetups at 50+ mapped Safe Spots (Police HQs & Malls), run physical checklist tests, and generate official sales receipts.",
-    spokenNarration: "For safety, choose any of our fifty plus mapped safe exchange locations across Ogbomoso, perform item checklist verification, and generate an official transaction receipt.",
+    title: "4. Safe Exchange Spots & Receipts",
+    subtitle: "Police HQ CCTV Zones & Digital Invoices",
+    description: "Meet up at mapped safe exchange spots (Ogbomoso Police HQ or Malls), run item physical tests, and issue digital invoices.",
+    spokenNarration: "Always trade safely! Choose any of our verified safe meetup spots like the Ogbomoso Divisional Police HQ or CCTV-monitored centers. Test the item thoroughly, then generate an official digital transaction receipt right inside the chat.",
     badge: "Safe Trade Protocol",
-    color: "from-teal-900/70 via-slate-900 to-slate-950",
-    icon: MapPin,
-    hudText: "GEO-MAPPED SAFE EXCHANGE SPOTS ENABLED"
+    color: "from-teal-950 via-slate-900 to-slate-950",
+    hudText: "SAFE EXCHANGE SPOTS: MAPPED"
   }
 ];
 
@@ -94,36 +66,36 @@ export const TutorialVideo: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showCaptions, setShowCaptions] = useState(true);
-  const [currentPresenter, setCurrentPresenter] = useState<Presenter>(PRESENTERS[0]);
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const currentScene = SCENES[currentSceneIndex] || SCENES[0];
-  const SceneIcon = currentScene.icon;
 
-  // Speech Synthesis Narration Engine
+  // African Lady Presenter Image / Video Motion Simulation Loop
+  const presenterAvatarUrl = "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&auto=format&fit=crop&q=80";
+
+  // Speech Synthesis Narration Engine tuned for African / Nigerian English
   const speakNarration = (text: string) => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
-    window.speechSynthesis.cancel(); // Reset active speech queue
+    window.speechSynthesis.cancel();
 
     if (isMuted) return;
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    utterance.rate = 0.98;
-    utterance.pitch = currentPresenter.voiceGender === 'female' ? 1.08 : 0.88;
+    // Priority targeting Nigerian/African English speech accent
+    utterance.lang = 'en-NG'; 
+    utterance.rate = 0.95; // Steady, natural African speech pace
+    utterance.pitch = 1.05; // Friendly female presenter pitch
 
-    // Attempt to pick matching gender voice if available in browser
     const voices = window.speechSynthesis.getVoices();
-    const matchedVoice = voices.find(v => 
-      v.lang.startsWith('en') && 
-      (currentPresenter.voiceGender === 'female' ? v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English') : v.name.includes('Male') || v.name.includes('David'))
-    ) || voices.find(v => v.lang.startsWith('en'));
+    const africanVoice = voices.find(v => v.lang === 'en-NG' || v.lang === 'en_NG' || v.lang.includes('NG')) || 
+                         voices.find(v => v.lang.startsWith('en') && (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Google US English'))) ||
+                         voices.find(v => v.lang.startsWith('en'));
 
-    if (matchedVoice) {
-      utterance.voice = matchedVoice;
+    if (africanVoice) {
+      utterance.voice = africanVoice;
     }
 
     utterance.onstart = () => setIsSpeaking(true);
@@ -153,7 +125,7 @@ export const TutorialVideo: React.FC = () => {
           }
           return next;
         });
-      }, 250);
+      }, 260);
     } else {
       clearInterval(interval);
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -168,7 +140,7 @@ export const TutorialVideo: React.FC = () => {
         window.speechSynthesis.cancel();
       }
     };
-  }, [isPlaying, currentSceneIndex, isMuted, currentPresenter]);
+  }, [isPlaying, currentSceneIndex, isMuted]);
 
   const handleTogglePlay = () => {
     if (isPlaying) {
@@ -191,11 +163,36 @@ export const TutorialVideo: React.FC = () => {
     }
   };
 
-  const handleSwitchPresenter = (p: Presenter) => {
-    setCurrentPresenter(p);
-    if (isPlaying) {
-      speakNarration(currentScene.spokenNarration);
-    }
+  const handleDownloadVideo = () => {
+    const videoSummaryText = `SEALIFY NIGERIA — PLATFORM VIDEO BRIEFING (AFRICAN ENGLISH)
+Presenter: Amina (AI Official Spokesperson)
+Region: Ogbomoso, Oyo State Hub
+
+------------------------------------------------
+1. OVERVIEW:
+${SCENES[0].spokenNarration}
+
+2. LISTING & AI ESTIMATOR:
+${SCENES[1].spokenNarration}
+
+3. IDENTITY VERIFICATION:
+${SCENES[2].spokenNarration}
+
+4. SAFE MEETUP & RECEIPTS:
+${SCENES[3].spokenNarration}
+------------------------------------------------
+Official Video Briefing generated by Sealify Nigeria Trust Protocol.`;
+
+    const blob = new Blob([videoSummaryText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Sealify_Video_Guide_Amina_Ogbomoso_${Date.now()}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success('📹 Video Transcript & Offline Briefing downloaded to your device!');
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -212,140 +209,119 @@ export const TutorialVideo: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full aspect-video bg-slate-950 rounded-3xl sm:rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/30 shadow-2xl group font-sans select-none">
+    <div className="relative w-full aspect-[16/9] sm:aspect-[16/9] min-h-[380px] bg-slate-950 rounded-3xl sm:rounded-[2.5rem] overflow-hidden border-2 border-emerald-500/40 shadow-2xl group font-sans select-none flex flex-col justify-between">
       
-      {/* Laser HUD Frame */}
+      {/* HUD Scanner Border Overlay */}
       <div className="absolute inset-0 z-10 pointer-events-none">
         {isPlaying && (
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse"></div>
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-emerald-400 shadow-[0_0_20px_rgba(16,185,129,1)] animate-pulse"></div>
         )}
 
-        <div className="absolute top-4 sm:top-6 left-4 sm:left-6 w-8 h-8 sm:w-12 sm:h-12 border-t-2 border-l-2 border-emerald-500/40 rounded-tl-xl"></div>
-        <div className="absolute top-4 sm:top-6 right-4 sm:right-6 w-8 h-8 sm:w-12 sm:h-12 border-t-2 border-r-2 border-emerald-500/40 rounded-tr-xl"></div>
-        <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-l-2 border-emerald-500/40 rounded-bl-xl"></div>
-        <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-6 w-8 h-8 sm:w-12 sm:h-12 border-b-2 border-r-2 border-emerald-500/40 rounded-br-xl"></div>
+        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 w-8 h-8 border-t-2 border-l-2 border-emerald-500/50 rounded-tl-xl"></div>
+        <div className="absolute top-4 right-4 sm:top-6 sm:right-6 w-8 h-8 border-t-2 border-r-2 border-emerald-500/50 rounded-tr-xl"></div>
+        <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 w-8 h-8 border-b-2 border-l-2 border-emerald-500/50 rounded-bl-xl"></div>
+        <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 w-8 h-8 border-b-2 border-r-2 border-emerald-500/50 rounded-br-xl"></div>
 
-        {/* HUD Scanner Status */}
-        <div className="absolute top-4 sm:top-6 left-10 sm:left-12 flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${isPlaying ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`}></div>
-          <span className="text-[8px] sm:text-[10px] font-mono font-black text-emerald-400 uppercase tracking-widest bg-slate-950/80 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+        {/* HUD Scanner Header Text */}
+        <div className="absolute top-4 left-10 sm:top-6 sm:left-12 flex items-center gap-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${isPlaying ? 'bg-emerald-500 animate-ping' : 'bg-amber-500'}`}></div>
+          <span className="text-[9px] sm:text-xs font-mono font-black text-emerald-400 uppercase tracking-widest bg-slate-950/90 px-3 py-1 rounded-full border border-emerald-500/30 backdrop-blur-md shadow-lg">
             {currentScene.hudText}
           </span>
         </div>
       </div>
 
-      {/* AI Human Presenter Avatar Selection Card (Top Right) */}
-      <div className="absolute top-4 sm:top-6 right-10 sm:right-12 z-30 flex items-center gap-3 bg-slate-900/90 border border-emerald-500/40 p-2 sm:p-2.5 rounded-2xl shadow-2xl backdrop-blur-md">
+      {/* Main Visual Stage: AI African Presenter Video Canvas */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${currentScene.color} flex flex-col md:flex-row items-center justify-between p-6 sm:p-12 gap-6 z-0 transition-all duration-700`}>
         
-        {/* Presenter Selector Toggle */}
-        <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
-          {PRESENTERS.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => handleSwitchPresenter(p)}
-              className={`px-2 py-1 rounded-lg text-[9px] font-black uppercase transition-all ${
-                currentPresenter.id === p.id 
-                  ? 'bg-emerald-500 text-slate-950 shadow' 
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              {p.name}
-            </button>
-          ))}
-        </div>
+        {/* Left Side: Animated AI African Lady Presenter Card */}
+        <div className="relative w-36 h-36 sm:w-56 sm:h-56 md:w-64 md:h-64 rounded-3xl overflow-hidden border-4 border-emerald-500/60 shadow-2xl shrink-0 group/presenter">
+          <img 
+            src={presenterAvatarUrl} 
+            alt="Amina — AI African Presenter" 
+            className={`w-full h-full object-cover transition-transform duration-500 ${isSpeaking ? 'scale-105' : 'scale-100'}`}
+          />
+          
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-90"></div>
 
-        <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden border-2 border-emerald-500 shrink-0">
-          <img src={currentPresenter.avatar} alt={currentPresenter.name} className="w-full h-full object-cover" />
+          {/* Lip-Sync Sound Wave & Motion Animation Overlay */}
           {isSpeaking && (
-            <div className="absolute inset-0 bg-emerald-500/20 animate-pulse flex items-center justify-center">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <div className="absolute bottom-3 left-3 right-3 bg-slate-950/85 backdrop-blur-md px-3 py-1.5 rounded-xl border border-emerald-500/40 flex items-center justify-between shadow-lg animate-in fade-in">
+              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                AMINA SPEAKING
+              </span>
+
+              {/* Dynamic Animated Speech Wavebars */}
+              <div className="flex items-center gap-0.5">
+                {[12, 20, 8, 18, 14, 24, 10].map((h, i) => (
+                  <span
+                    key={i}
+                    style={{ height: isSpeaking ? `${Math.floor(Math.random() * 16) + 6}px` : '4px' }}
+                    className="w-1 bg-emerald-400 rounded-full transition-all duration-100 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+                  ></span>
+                ))}
+              </div>
             </div>
           )}
-        </div>
 
-        <div className="text-left space-y-0.5 hidden sm:block">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-black text-white">{currentPresenter.name}</span>
-            <span className="text-[8px] font-mono font-bold bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded border border-emerald-500/30 uppercase">
-              REAL HUMAN VOICE
-            </span>
-          </div>
-          <p className="text-[9px] text-slate-400 font-bold">{currentPresenter.role}</p>
-          
-          {/* Animated Audio Waveform */}
-          <div className="flex items-center gap-0.5 pt-0.5">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <span
-                key={i}
-                style={{ height: isSpeaking ? `${Math.floor(Math.random() * 10) + 4}px` : '3px' }}
-                className={`w-1 rounded-full transition-all duration-150 ${isSpeaking ? 'bg-emerald-400' : 'bg-slate-700'}`}
-              ></span>
-            ))}
-            <span className="text-[8px] font-mono text-emerald-400 font-bold ml-1 uppercase">
-              {isSpeaking ? 'SPEAKING' : 'ENGLISH VOICE'}
-            </span>
+          <div className="absolute top-2.5 left-2.5 bg-slate-950/85 backdrop-blur-md px-2 py-0.5 rounded-lg border border-slate-800 text-[9px] font-black text-white flex items-center gap-1">
+            <Sparkles className="w-3 h-3 text-amber-300 fill-amber-300" />
+            <span>AI PRESENTATION HOST</span>
           </div>
         </div>
-      </div>
 
-      {/* Video Presentation Canvas */}
-      <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${currentScene.color} transition-all duration-700`}>
-        {!isPlaying && progress === 0 ? (
-          <div className="text-center space-y-4 sm:space-y-6 px-4 z-20">
-            <button
-              onClick={handleTogglePlay}
-              className="relative group/play inline-block focus:outline-none"
-            >
-              <div className="absolute inset-0 bg-emerald-500/30 blur-2xl rounded-full group-hover/play:bg-emerald-500/50 transition-colors"></div>
-              <div className="w-16 h-16 sm:w-24 sm:h-24 bg-slate-900 border-2 border-emerald-500/50 rounded-full flex items-center justify-center relative z-10 shadow-2xl transform group-hover/play:scale-110 transition-transform">
-                <Play className="w-6 h-6 sm:w-10 sm:h-10 text-emerald-400 fill-emerald-400 ml-1" />
-              </div>
-            </button>
-
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                AI Presenter Real Human English Narration
+        {/* Right Side: Scene Presentation Content */}
+        <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left z-20 min-w-0">
+          {!isPlaying && progress === 0 ? (
+            <div className="space-y-4">
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-500/30">
+                AFRICAN ENGLISH NARRATION BY AMINA
               </span>
-              <h3 className="text-xl sm:text-3xl font-black text-white tracking-tight uppercase mt-2">
-                How Sealify Works
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-                Click play to listen to {currentPresenter.name} present Sealify in clear English
+              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight uppercase leading-tight">
+                How Sealify Works in Ogbomoso
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-lg leading-relaxed font-medium">
+                Watch Amina explain ad posting, NIN verification, and safe meetup spots in clear African English.
               </p>
+              
+              <button
+                onClick={handleTogglePlay}
+                className="px-6 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs sm:text-sm shadow-xl shadow-emerald-500/20 inline-flex items-center gap-2 transition-transform active:scale-95"
+              >
+                <Play className="w-5 h-5 fill-current" />
+                <span>Play Live Video Presentation</span>
+              </button>
             </div>
-          </div>
-        ) : (
-          <div className="w-full max-w-xl p-6 sm:p-12 text-center space-y-4 sm:space-y-6 z-20 animate-in fade-in zoom-in-95 duration-500">
-            <div className="w-14 h-14 sm:w-18 sm:h-18 bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl flex items-center justify-center mx-auto shadow-2xl text-emerald-400">
-              <SceneIcon className="w-7 h-7 sm:w-9 sm:h-9 animate-bounce" />
-            </div>
-
-            <div className="space-y-2">
+          ) : (
+            <div className="space-y-3 animate-in fade-in zoom-in-95 duration-300">
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/20 px-3 py-1 rounded-full border border-emerald-500/30">
                 {currentScene.badge}
               </span>
               <h3 className="text-xl sm:text-3xl font-black text-white leading-tight">
                 {currentScene.title}
               </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg mx-auto font-medium">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium max-w-xl">
                 {currentScene.description}
               </p>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
 
-      {/* Synchronized Real-time Subtitle / Closed Caption Bar Overlay */}
+      {/* Live Synchronized Subtitles / Captions Bar */}
       {showCaptions && (isPlaying || progress > 0) && (
-        <div className="absolute bottom-16 sm:bottom-20 left-6 right-6 z-30 text-center pointer-events-none">
-          <div className="inline-block bg-slate-950/90 border border-slate-800/90 backdrop-blur-md px-4 py-2 rounded-2xl max-w-2xl text-xs sm:text-sm font-bold text-emerald-300 shadow-2xl leading-snug">
+        <div className="absolute bottom-16 sm:bottom-20 left-4 right-4 sm:left-8 sm:right-8 z-30 text-center pointer-events-none">
+          <div className="inline-block bg-slate-950/95 border-2 border-emerald-500/40 backdrop-blur-xl px-4 py-2.5 rounded-2xl max-w-2xl text-xs sm:text-sm font-bold text-emerald-300 shadow-2xl leading-snug">
+            <span className="text-amber-300 font-black mr-1.5">Amina:</span>
             "{currentScene.spokenNarration}"
           </div>
         </div>
       )}
 
-      {/* Video Player Controls Footer */}
-      <div className="absolute bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md p-3 sm:p-5 border-t border-slate-800 flex items-center justify-between gap-4 z-30">
+      {/* Video Player Controls Footer Bar */}
+      <div className="absolute bottom-0 left-0 right-0 bg-slate-950/90 backdrop-blur-md p-3 sm:p-4 border-t border-slate-800 flex items-center justify-between gap-4 z-30">
         <div className="flex items-center gap-3">
           <button
             onClick={handleTogglePlay}
@@ -356,8 +332,8 @@ export const TutorialVideo: React.FC = () => {
 
           <div
             onClick={handleSeek}
-            className="h-2 w-28 sm:w-64 bg-slate-800 rounded-full overflow-hidden cursor-pointer relative"
-            title="Click to seek"
+            className="h-2 w-24 sm:w-64 bg-slate-800 rounded-full overflow-hidden cursor-pointer relative"
+            title="Click to jump scene"
           >
             <div
               className="h-full bg-emerald-500 transition-all duration-300"
@@ -371,6 +347,16 @@ export const TutorialVideo: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Download Video Offline Summary Button */}
+          <button
+            onClick={handleDownloadVideo}
+            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-emerald-400 font-bold rounded-xl text-xs border border-slate-800 flex items-center gap-1.5 transition-colors shadow"
+            title="Download Video Briefing & Script"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Download Video</span>
+          </button>
+
           <button
             onClick={() => setShowCaptions(!showCaptions)}
             className={`p-2 rounded-xl transition-colors border ${
@@ -378,7 +364,7 @@ export const TutorialVideo: React.FC = () => {
                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
                 : 'bg-slate-900 text-slate-500 border-slate-800 hover:text-white'
             }`}
-            title="Toggle Subtitles / Closed Captions"
+            title="Toggle Subtitles"
           >
             <Subtitles className="w-4 h-4" />
           </button>
@@ -390,13 +376,9 @@ export const TutorialVideo: React.FC = () => {
                 ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
                 : 'bg-slate-900 text-emerald-400 border-slate-800 hover:text-white'
             }`}
-            title={isMuted ? 'Unmute AI Voice' : 'Mute Voice'}
+            title={isMuted ? 'Unmute Speech' : 'Mute Voice'}
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-          </button>
-
-          <button className="p-2 hover:bg-slate-800 rounded-xl text-slate-400 hover:text-white transition-colors">
-            <Maximize className="w-4 h-4" />
           </button>
         </div>
       </div>
