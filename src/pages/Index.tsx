@@ -21,7 +21,9 @@ import {
   SlidersHorizontal, 
   Sparkles, 
   Bell, 
-  Scale 
+  Scale,
+  Zap,
+  CheckCircle2
 } from 'lucide-react';
 
 export default function Index() {
@@ -31,6 +33,7 @@ export default function Index() {
     activeCategory, 
     announcements, 
     compareListingIds,
+    recentDeals,
     t
   } = useSealify();
 
@@ -57,6 +60,15 @@ export default function Index() {
 
   const sortedListings = [...filteredListings].sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
 
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SEO 
@@ -81,6 +93,30 @@ export default function Index() {
         )}
 
         <PromotedSpotlightBanner listings={listings} />
+
+        {/* Recent Market Activity Ticker */}
+        {recentDeals.length > 0 && (activeCategory === 'All') && (
+          <section className="bg-slate-900/40 border-y border-slate-800/50 py-3 -mx-4 sm:-mx-8 overflow-hidden">
+            <div className="flex items-center gap-4 px-4 whitespace-nowrap">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20 text-[10px] font-black uppercase shrink-0">
+                <Zap className="w-3 h-3 fill-current" />
+                <span>Recent Deals</span>
+              </div>
+              <div className="flex items-center gap-8 animate-marquee">
+                {recentDeals.concat(recentDeals).map((deal, idx) => (
+                  <div key={`${deal.id}-${idx}`} className="flex items-center gap-2 text-xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    <span className="text-slate-400">Sold:</span>
+                    <span className="font-bold text-white">{deal.itemTitle}</span>
+                    <span className="text-emerald-400 font-black">{formatNGN(deal.price)}</span>
+                    <span className="text-slate-500 text-[10px]">{deal.location}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
         <CategoryGrid />
         <NeighborhoodFilter />
         <FeaturedVendorsSection />
