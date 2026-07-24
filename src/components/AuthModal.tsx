@@ -233,10 +233,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
           <Link 
             to="/admin/login" 
             onClick={onClose}
-            className="absolute bottom-2 right-2 p-1 opacity-20 hover:opacity-100 hover:text-emerald-500 transition-all cursor-pointer"
+            className="absolute bottom-4 right-4 p-2 opacity-50 hover:opacity-100 hover:text-emerald-400 transition-all cursor-pointer bg-slate-950/50 rounded-lg border border-slate-800/50"
             title="Secure Root Access"
           >
-            <Terminal className="w-3 h-3 text-slate-700" />
+            <Terminal className="w-4 h-4 text-slate-600" />
           </Link>
         </div>
       </div>
