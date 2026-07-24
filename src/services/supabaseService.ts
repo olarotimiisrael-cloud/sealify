@@ -70,14 +70,51 @@ export const listingService = {
 
 // Messaging
 export const messageService = {
-  async getByListing(listingId: string): Promise<DbMessage[]> {
-    const { data } = await supabase.from('messages').select('*').eq('listing_id', listingId).order('created_at', { ascending: true });
+  async getConversations(userId: string): Promise<any[]> {
+    // In a real Supabase app, you might use a view or a complex query
+    // For this implementation, we fetch messages where user is sender or receiver
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        listings(title, price, listing_images(image_url)),
+        sender:users!sender_id(full_name, avatar_url),
+        receiver:users!receiver_id(full_name, avatar_url)
+      `)
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
     return data || [];
   },
   async sendMessage(msg: any) {
     const { data, error } = await supabase.from('messages').insert([msg]).select().single();
     if (error) throw error;
     return data;
+  }
+};
+
+// Favorites / Saved Items
+export const favoriteService = {
+  async getByUserId(userId: string): Promise<string[]> {
+    const { data } = await supabase.from('favorites').select('listing_id').eq('user_id', userId);
+    return data?.map(f => f.listing_id) || [];
+  },
+  async toggle(userId: string, listingId: string) {
+    const { data: existing } = await supabase
+      .from('favorites')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('listing_id', listingId)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase.from('favorites').delete().eq('id', existing.id);
+      return false;
+    } else {
+      await supabase.from('favorites').insert([{ user_id: userId, listing_id: listingId }]);
+      return true;
+    }
   }
 };
 
