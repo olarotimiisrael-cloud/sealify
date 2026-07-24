@@ -377,6 +377,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     responsesCount: db.responses_count,
   });
 
+  const addNotification = useCallback((notif: any) => {
+    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
+  }, []);
+
+  const addAuditLog = useCallback(async (action: string, details: string, type: AuditLog['type']) => {
+    try {
+      const log = await auditService.create({
+        action,
+        details,
+        type,
+        created_at: new Date().toISOString(),
+      });
+      setAuditLogs(prev => [convertDbAuditLog(log), ...prev]);
+    } catch (err) {
+      console.error('Add audit log error:', err);
+    }
+  }, []);
+
   // Initialize data from Supabase
   useEffect(() => {
     const initializeApp = async () => {
@@ -811,10 +829,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       supabase.removeChannel(systemConfigChannel);
     };
   };
-
-  const addNotification = useCallback((notif: any) => {
-    setNotifications(prev => [{ ...notif, id: 'notif_' + Date.now(), time: 'Just now', read: false }, ...prev]);
-  }, []);
 
   const saveSearchAlert = useCallback((alert: any) => {
     if (!user) return;
@@ -1566,20 +1580,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       toast.error('Failed to delete announcement');
     }
   };
-
-  const addAuditLog = useCallback(async (action: string, details: string, type: AuditLog['type']) => {
-    try {
-      const log = await auditService.create({
-        action,
-        details,
-        type,
-        created_at: new Date().toISOString(),
-      });
-      setAuditLogs(prev => [convertDbAuditLog(log), ...prev]);
-    } catch (err) {
-      console.error('Add audit log error:', err);
-    }
-  }, []);
 
   const marketStats: CategoryStats[] = useMemo(() => {
     const categoriesList: Category[] = ['Vehicles', 'Electronics', 'Real Estate', 'Fashion', 'Home & Furniture', 'Services', 'Jobs', 'Beauty & Health', 'Utility & Energy'];
