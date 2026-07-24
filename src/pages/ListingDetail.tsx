@@ -12,6 +12,7 @@ import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -35,7 +36,8 @@ import {
   Video,
   Share2,
   Truck,
-  CheckSquare
+  CheckSquare,
+  Volume2
 } from 'lucide-react';
 
 const ListingDetail: React.FC = () => {
@@ -55,6 +57,7 @@ const ListingDetail: React.FC = () => {
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isFlyerOpen, setIsFlyerOpen] = useState(false);
+  const [isVoiceTourOpen, setIsVoiceTourOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -118,6 +121,17 @@ const ListingDetail: React.FC = () => {
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
         <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
+            
+            {/* AI Voice Tour Trigger */}
+            <button
+              onClick={() => setIsVoiceTourOpen(true)}
+              className="p-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1.5 text-xs font-black shadow-lg hover:scale-105 transition-all"
+              title="Listen to AI Spoken Audio Briefing"
+            >
+              <Volume2 className="w-4 h-4 animate-pulse" />
+              <span>AI Voice Tour</span>
+            </button>
+
             <button
               onClick={() => setIsFlyerOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
@@ -367,6 +381,12 @@ const ListingDetail: React.FC = () => {
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
       
+      <AiVoiceOverviewModal
+        isOpen={isVoiceTourOpen}
+        onClose={() => setIsVoiceTourOpen(false)}
+        listing={listing}
+      />
+
       <StorefrontFlycardModal
         isOpen={isFlyerOpen}
         onClose={() => setIsFlyerOpen(false)}
