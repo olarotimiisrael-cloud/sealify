@@ -91,7 +91,7 @@ const TutorialVideo: React.FC = () => {
             {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
           </button>
           <div className="h-1 w-48 bg-slate-800 rounded-full overflow-hidden">
-             <div className={`h-full bg-emerald-500 transition-all duration-300 ${isPlaying ? 'w-1/3' : 'w-0'}`}></div>
+             <div className={`h-full bg-emerald-500 transition-all duration-300 \${isPlaying ? 'w-1/3' : 'w-0'}`}></div>
           </div>
           <span className="text-[10px] font-mono text-slate-500">01:42 / 03:00</span>
         </div>

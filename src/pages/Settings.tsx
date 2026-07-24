@@ -170,7 +170,7 @@ const Settings: React.FC = () => {
                 <label className="font-bold text-slate-200 block">Avatar Selection</label>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                   {SAMPLE_AVATARS.map((avUrl, i) => (
-                    <button key={i} onClick={() => setSelectedAvatar(avUrl)} className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-transform ${selectedAvatar === avUrl ? 'border-emerald-500 scale-110' : 'border-slate-800 opacity-60'}`}><img src={avUrl} className="w-full h-full object-cover" /></button>
+                    <button key={i} onClick={() => setSelectedAvatar(avUrl)} className={`w-12 h-12 rounded-xl overflow-hidden border-2 shrink-0 transition-transform \${selectedAvatar === avUrl ? 'border-emerald-500 scale-110' : 'border-slate-800 opacity-60'}`}><img src={avUrl} className="w-full h-full object-cover" /></button>
                   ))}
                 </div>
                 <input type="file" ref={fileInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
@@ -180,7 +180,7 @@ const Settings: React.FC = () => {
                 <label className="font-bold text-slate-200 block">Cover Banner Selection</label>
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                   {SAMPLE_BANNERS.map((bannerUrl, i) => (
-                    <button key={i} onClick={() => setSelectedBanner(bannerUrl)} className={`w-16 h-10 rounded-xl overflow-hidden border-2 shrink-0 transition-transform ${selectedBanner === bannerUrl ? 'border-emerald-500 scale-110' : 'border-slate-800 opacity-60'}`}><img src={bannerUrl} className="w-full h-full object-cover" /></button>
+                    <button key={i} onClick={() => setSelectedBanner(bannerUrl)} className={`w-16 h-10 rounded-xl overflow-hidden border-2 shrink-0 transition-transform \${selectedBanner === bannerUrl ? 'border-emerald-500 scale-110' : 'border-slate-800 opacity-60'}`}><img src={bannerUrl} className="w-full h-full object-cover" /></button>
                   ))}
                 </div>
                 <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
