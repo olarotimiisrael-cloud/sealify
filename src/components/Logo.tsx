@@ -31,36 +31,47 @@ const Logo: React.FC<LogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-full drop-shadow-lg"
         >
-          {/* Outer Shield / Seal Shape */}
+          {/* Shopping Bag Body */}
           <path 
-            d="M50 5L15 20V45C15 67.5 30 88 50 95C70 88 85 67.5 85 45V20L50 5Z" 
-            fill="url(#logo-gradient)" 
+            d="M20 30C20 27.2386 22.2386 25 25 25H75C77.7614 25 80 27.2386 80 30V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V30Z" 
+            fill="#1e3a8a" 
           />
           
-          {/* Inner Stylized 'S' for Sealify */}
+          {/* Left Side Highlight (Teal) */}
           <path 
-            d="M65 35H42C38 35 35 38 35 42C35 46 38 49 42 49H58C62 49 65 52 65 56C65 60 62 63 58 63H35M65 35V28M35 63V70" 
-            stroke="white" 
-            strokeWidth="8" 
-            strokeLinecap="round" 
-            strokeLinejoin="round" 
-          />
-          
-          {/* Gloss/Highlight Effect */}
-          <path 
-            d="M50 15L75 25V45C75 58 68 70 58 78" 
-            stroke="white" 
-            strokeOpacity="0.2" 
-            strokeWidth="2" 
-            strokeLinecap="round"
+            d="M20 30C20 27.2386 22.2386 25 25 25H30V95H25C22.2386 95 20 92.7614 20 90V30Z" 
+            fill="#0d9488" 
           />
 
-          <defs>
-            <linearGradient id="logo-gradient" x1="15" y1="5" x2="85" y2="95" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#10b981" /> {/* Emerald 500 */}
-              <stop offset="1" stopColor="#0d9488" /> {/* Teal 600 */}
-            </linearGradient>
-          </defs>
+          {/* Bag Handles */}
+          <path 
+            d="M35 25C35 16.7157 41.7157 10 50 10C58.2843 10 65 16.7157 65 25" 
+            stroke="#0d9488" 
+            strokeWidth="4" 
+            strokeLinecap="round" 
+          />
+          <circle cx="35" cy="25" r="3" fill="white" />
+          <circle cx="65" cy="25" r="3" fill="white" />
+
+          {/* Stylized 'S' with Arrow */}
+          <path 
+            d="M32 75C45 75 55 65 65 60M65 35C45 35 35 45 35 55" 
+            stroke="white" 
+            strokeWidth="10" 
+            strokeLinecap="round" 
+          />
+          
+          {/* Golden Arrow Part of 'S' */}
+          <path 
+            d="M35 75L62 55L58 48L35 75Z" 
+            fill="#fbbf24" 
+          />
+          <path 
+            d="M62 55L50 58" 
+            stroke="#fbbf24" 
+            strokeWidth="4" 
+            strokeLinecap="round" 
+          />
         </svg>
       </div>
       
