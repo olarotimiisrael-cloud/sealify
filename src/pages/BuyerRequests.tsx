@@ -113,7 +113,7 @@ export const BuyerRequests: React.FC = () => {
       setIsAuthOpen(true);
       return;
     }
-    const promptMsg = `Hi! I saw your item request for "${reqTitle}" on the Sealify Want Board. I have an item that matches what you are looking for!`;
+    const promptMsg = `Hi! I saw your item request for "\${reqTitle}" on the Sealify Want Board. I have an item that matches what you are looking for!`;
     sendMessage('lst_custom', reqUserId, promptMsg);
     toast.success('Chat initiated with buyer!');
     navigate('/messages');
@@ -175,7 +175,7 @@ export const BuyerRequests: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCat(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap \${
                   selectedCat === cat
                     ? 'bg-emerald-500 text-slate-950 font-black shadow'
                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
