@@ -10,156 +10,150 @@ import type {
 // User Service
 export const userService = {
   async getAll(): Promise<DbUser[]> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      console.warn('Fallback: users table not found or restricted. Verify SQL schema.');
-      return [];
-    }
+    const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
     return data || [];
   },
-
   async getByEmail(email: string): Promise<DbUser | null> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .maybeSingle();
-    if (error) return null;
+    const { data, error } = await supabase.from('users').select('*').eq('email', email).maybeSingle();
     return data;
   },
-
   async create(user: Omit<DbUser, 'id' | 'created_at' | 'updated_at'>): Promise<DbUser> {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{ 
-        ...user, 
-        id: crypto.randomUUID(), 
-        created_at: new Date().toISOString(), 
-        updated_at: new Date().toISOString() 
-      }])
-      .select()
-      .single();
+    const { data, error } = await supabase.from('users').insert([{ ...user, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]).select().single();
     if (error) throw error;
     return data;
   },
-
   async update(id: string, updates: Partial<DbUser>): Promise<DbUser> {
-    const { data, error } = await supabase
-      .from('users')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
     if (error) throw error;
     return data;
   },
-
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('users')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    await supabase.from('users').delete().eq('id', id);
   }
 };
 
 // Listing Service
 export const listingService = {
   async getAll(): Promise<DbListing[]> {
-    const { data, error } = await supabase
-      .from('listings')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) return [];
+    const { data, error } = await supabase.from('listings').select('*').order('created_at', { ascending: false });
     return data || [];
   },
-
   async create(listing: Omit<DbListing, 'id' | 'created_at' | 'updated_at'>): Promise<DbListing> {
-    const { data, error } = await supabase
-      .from('listings')
-      .insert([{ 
-        ...listing, 
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(), 
-        updated_at: new Date().toISOString() 
-      }])
-      .select()
-      .single();
+    const { data, error } = await supabase.from('listings').insert([{ ...listing, id: crypto.randomUUID(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() }]).select().single();
     if (error) throw error;
     return data;
   },
-
   async update(id: string, updates: Partial<DbListing>): Promise<DbListing> {
-    const { data, error } = await supabase
-      .from('listings')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('listings').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().single();
     if (error) throw error;
     return data;
   },
-
   async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('listings')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    await supabase.from('listings').delete().eq('id', id);
   }
 };
 
-// Announcement Service
-export const announcementService = {
-  async getAll(): Promise<DbAnnouncement[]> {
-    const { data, error } = await supabase
-      .from('announcements')
-      .select('*');
+// Request Management Services
+export const verificationService = {
+  async getAll(): Promise<DbVerificationRequest[]> {
+    const { data } = await supabase.from('verification_requests').select('*').order('created_at', { ascending: false });
     return data || [];
   },
-  async create(ann: any) {
-    const { data, error } = await supabase.from('announcements').insert([ann]).select().single();
-    return data;
-  },
-  async update(id: string, updates: any) {
-    await supabase.from('announcements').update(updates).eq('id', id);
-  },
-  async delete(id: string) {
-    await supabase.from('announcements').delete().eq('id', id);
+  async updateStatus(id: string, status: string) {
+    await supabase.from('verification_requests').update({ status }).eq('id', id);
   }
 };
 
-// Audit Service
+export const passwordRequestService = {
+  async getAll(): Promise<DbPasswordRequest[]> {
+    const { data } = await supabase.from('password_change_requests').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async updateStatus(id: string, status: string) {
+    await supabase.from('password_change_requests').update({ status }).eq('id', id);
+  }
+};
+
+export const promotionService = {
+  async getAll(): Promise<DbPromotionPayment[]> {
+    const { data } = await supabase.from('promotion_payments').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async updateStatus(id: string, status: string) {
+    await supabase.from('promotion_payments').update({ status }).eq('id', id);
+  }
+};
+
+export const disputeService = {
+  async getAll(): Promise<DbDisputeCase[]> {
+    const { data } = await supabase.from('dispute_cases').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async updateStatus(id: string, status: string) {
+    await supabase.from('dispute_cases').update({ status }).eq('id', id);
+  }
+};
+
+export const reportService = {
+  async getAll(): Promise<DbReport[]> {
+    const { data } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async updateStatus(id: string, status: string) {
+    await supabase.from('reports').update({ status }).eq('id', id);
+  }
+};
+
+// Audit & Metadata
 export const auditService = {
   async getAll(): Promise<DbAuditLog[]> {
-    const { data, error } = await supabase
-      .from('audit_logs')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
     return data || [];
   },
   async create(log: any) {
-    const { data, error } = await supabase.from('audit_logs').insert([log]).select().single();
+    const { data } = await supabase.from('audit_logs').insert([log]).select().single();
     return data;
   }
 };
 
-// Other services kept as placeholders or minimal implementations for system flow
-export const messageService = { async sendMessage(m: any) { return { id: 'msg_'+Date.now() }; } };
+export const reviewService = {
+  async getAll(): Promise<DbReview[]> {
+    const { data } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async delete(id: string) {
+    await supabase.from('reviews').delete().eq('id', id);
+  }
+};
+
+export const buyerRequestService = {
+  async getAll(): Promise<DbBuyerRequest[]> {
+    const { data } = await supabase.from('buyer_requests').select('*').order('created_at', { ascending: false });
+    return data || [];
+  },
+  async delete(id: string) {
+    await supabase.from('buyer_requests').delete().eq('id', id);
+  }
+};
+
+export const intrusionService = {
+  async getAll(): Promise<DbIntrusionLog[]> {
+    const { data } = await supabase.from('intrusion_logs').select('*').order('timestamp', { ascending: false });
+    return data || [];
+  }
+};
+
+export const announcementService = {
+  async getAll(): Promise<DbAnnouncement[]> {
+    const { data } = await supabase.from('announcements').select('*');
+    return data || [];
+  }
+};
+
+// Stubs for message/notification flow
+export const messageService = { async sendMessage(m: any) {} };
 export const notificationService = { async create(n: any) {} };
-export const verificationService = { async getAll() { return []; }, async create(r: any) { return r; }, async updateStatus(id: string, s: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const passwordRequestService = { async getAll() { return []; }, async create(r: any) { return r; }, async updateStatus(id: string, s: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const promotionService = { async getAll() { return []; }, async create(p: any) { return p; }, async updateStatus(id: string, s: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const disputeService = { async getAll() { return []; }, async create(d: any) { return d; }, async updateStatus(id: string, s: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const reportService = { async getAll() { return []; }, async create(r: any) { return r; }, async updateStatus(id: string, s: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const reviewService = { async getAll() { return []; }, async create(r: any) { return r; }, async delete(id: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const buyerRequestService = { async getAll() { return []; }, async create(r: any) { return r; }, async delete(id: string) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
 export const searchAlertService = { async create(a: any) {}, async delete(id: string) {} };
-export const systemConfigService = { async getAll() { return []; }, async update(k: string, v: boolean) {}, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
+export const systemConfigService = { async getAll() { return []; }, async update(k: string, v: boolean) {} };
 export const siteSettingsService = { async get() { return null; }, async update(s: any) {} };
-export const intrusionService = { async getAll() { return []; }, async create(l: any) { return l; }, subscribeToChanges(c: any) { return { unsubscribe: () => {} }; } };
-export const recentDealsService = { async getAll() { return []; }, async create(d: any) { return d; } };
-export const adminStatsService = { async getDashboardStats() { return {}; } };
+export const recentDealsService = { async getAll() { return []; } };
