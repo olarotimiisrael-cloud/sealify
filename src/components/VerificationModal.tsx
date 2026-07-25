@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Crown } from 'lucide-react';
+import { X, ShieldCheck, CheckCircle2, Upload, Smartphone, Building2, User, Lock, Crown, GraduationCap } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import { toast } from 'sonner';
 
@@ -13,7 +13,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
   onClose,
 }) => {
   const { user, submitVerificationRequest } = useSealify();
-  const [applicantType, setApplicantType] = useState<'individual' | 'business' | 'premium'>('individual');
+  const [applicantType, setApplicantType] = useState<'individual' | 'business' | 'student'>('individual');
   const [docNumber, setDocNumber] = useState('');
   const [idDoc, setIdDoc] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -44,7 +44,7 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
       userName: user.fullName,
       userEmail: user.email,
       type: applicantType,
-      docType: applicantType === 'business' ? 'CAC Certificate' : 'Government Issued ID',
+      docType: applicantType === 'business' ? 'CAC Certificate' : applicantType === 'student' ? 'School ID Card' : 'Government Issued ID',
       docNumber,
       docUrl: idDoc,
     });
@@ -80,46 +80,60 @@ export const VerificationModal: React.FC<VerificationModalProps> = ({
 
             <div className="space-y-3">
               <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Application Type</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setApplicantType('individual')}
-                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                     applicantType === 'individual'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 ring-2 ring-emerald-500/30'
+                      ? 'border-emerald-500 bg-emerald-500/10 text-white ring-2 ring-emerald-500/30'
                       : 'border-slate-800 bg-slate-950 text-slate-400'
                   }`}
                 >
-                  <User className="w-5 h-5" />
-                  <p className="font-bold text-xs text-white">Individual ID</p>
-                  <p className="text-[10px] opacity-70">NIN, Voter's Card, etc.</p>
+                  <User className="w-4 h-4" />
+                  <p className="font-bold text-[10px]">Individual ID</p>
+                  <p className="text-[8px] opacity-60">NIN, Voter's Card</p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setApplicantType('student')}
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                    applicantType === 'student'
+                      ? 'border-blue-500 bg-blue-500/10 text-white ring-2 ring-blue-500/30'
+                      : 'border-slate-800 bg-slate-950 text-slate-400'
+                  }`}
+                >
+                  <GraduationCap className="w-4 h-4" />
+                  <p className="font-bold text-[10px]">Student ID</p>
+                  <p className="text-[8px] opacity-60">Campus Community</p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setApplicantType('business')}
-                  className={`p-4 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                  className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                     applicantType === 'business'
-                      ? 'border-amber-500 bg-amber-500/10 text-amber-400 ring-2 ring-amber-500/30'
+                      ? 'border-amber-500 bg-amber-500/10 text-white ring-2 ring-amber-500/30'
                       : 'border-slate-800 bg-slate-950 text-slate-400'
                   }`}
                 >
-                  <Building2 className="w-5 h-5" />
-                  <p className="font-bold text-xs text-white">Registered Business</p>
-                  <p className="text-[10px] opacity-70">CAC Certificate Required</p>
+                  <Building2 className="w-4 h-4" />
+                  <p className="font-bold text-[10px]">Business (CAC)</p>
+                  <p className="text-[8px] opacity-60">Store Registration</p>
                 </button>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">ID / RC Number *</label>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">ID / RC / Matric Number *</label>
                 <input
                   type="text"
                   required
                   value={docNumber}
                   onChange={(e) => setDocNumber(e.target.value)}
-                  placeholder="e.g. NIN Number or CAC RC Number"
+                  placeholder="Enter identification number"
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>

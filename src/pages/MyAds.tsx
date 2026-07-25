@@ -8,6 +8,7 @@ import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
 import SalesReportModal from '../components/SalesReportModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
@@ -25,7 +26,8 @@ import {
   LogOut,
   User,
   Wallet as WalletIcon,
-  ChevronRight
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,6 +42,7 @@ const MyAds: React.FC = () => {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
+  const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -258,6 +261,11 @@ const MyAds: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
+                  <button onClick={() => setAnalyticsListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-blue-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    <span>Stats</span>
+                  </button>
+
                   <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
                     <Share2 className="w-3.5 h-3.5" />
                     <span>Flyer</span>
@@ -296,6 +304,7 @@ const MyAds: React.FC = () => {
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
       <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
+      <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
       
       {flycardListing && (
         <StorefrontFlycardModal
