@@ -66,11 +66,11 @@ const ListingDetail: React.FC = () => {
     if (listing?.id) {
       addRecentlyViewed(listing.id);
     }
-  }, [listing?.id]);
+  }, [listing?.id, addRecentlyViewed]);
 
   if (!listing) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0">
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
         <SEO title="Listing Not Found — Sealify" />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
@@ -284,18 +284,6 @@ const ListingDetail: React.FC = () => {
                 </div>
               </div>
 
-              {/* Dynamic Specs Table */}
-              {listing.specifications && Object.keys(listing.specifications).length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {Object.entries(listing.specifications).map(([key, val]) => (
-                    <div key={key} className="bg-slate-950/50 border border-slate-800 p-3 rounded-2xl">
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{key}</p>
-                      <p className="text-xs font-bold text-white mt-0.5">{val as React.ReactNode}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>
                 <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-line">
@@ -332,7 +320,7 @@ const ListingDetail: React.FC = () => {
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <img src={listing.sellerAvatar} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500" />
+                  <img src={listing.sellerAvatar} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500" alt={listing.sellerName} />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>

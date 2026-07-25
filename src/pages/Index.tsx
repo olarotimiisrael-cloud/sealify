@@ -25,7 +25,8 @@ import {
   Zap,
   CheckCircle2,
   Package,
-  RotateCcw
+  RotateCcw,
+  History
 } from 'lucide-react';
 
 export default function Index() {
@@ -39,6 +40,7 @@ export default function Index() {
     compareListingIds,
     recentDeals,
     resetFilters,
+    recentlyViewedIds,
     t
   } = useSealify();
 
@@ -80,6 +82,8 @@ export default function Index() {
     if (filters.maxPrice !== null && item.price > filters.maxPrice) return false;
     return true;
   });
+
+  const recentlyViewed = listings.filter(l => recentlyViewedIds.includes(l.id));
 
   const sortedListings = [...filteredListings].sort((a, b) => {
     if (filters.sortBy === 'price-asc') return a.price - b.price;
@@ -146,6 +150,23 @@ export default function Index() {
           </section>
         )}
 
+        {/* Recently Viewed */}
+        {recentlyViewed.length > 0 && activeCategory === 'All' && !hasActiveFilters && (
+          <section className="space-y-4 animate-in fade-in slide-in-from-left-4">
+             <div className="flex items-center gap-2 px-1">
+                <History className="w-5 h-5 text-emerald-400" />
+                <h2 className="text-lg font-black text-white">Recently Viewed</h2>
+             </div>
+             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
+                {recentlyViewed.map(item => (
+                  <div key={item.id} className="min-w-[200px] w-48 shrink-0">
+                     <ListingCard listing={item} />
+                  </div>
+                ))}
+             </div>
+          </section>
+        )}
+
         <CategoryGrid />
         <NeighborhoodFilter />
         <FeaturedVendorsSection />
@@ -162,7 +183,7 @@ export default function Index() {
                   onClick={resetFilters}
                   className="text-[10px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/20 flex items-center gap-1 transition-colors"
                 >
-                  <RotateCcw className="w-3 h-3" /> Clear Search
+                  <circle cx="5" cy="5" r="4" /><RotateCcw className="w-3 h-3" /> Clear Search
                 </button>
               )}
             </div>
