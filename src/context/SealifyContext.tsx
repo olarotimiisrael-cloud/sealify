@@ -187,7 +187,28 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<UserProfile | null>(null);
+
+  // Persistent User Session Initialization from LocalStorage
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem('sealify_active_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  // Sync user state to localStorage on any profile change
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('sealify_active_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('sealify_active_user');
+    }
+  }, [user]);
 
   // AI & Personalization State
   const [userInterests, setUserInterests] = useState<Record<string, number>>(() => {
@@ -296,7 +317,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (profile) {
           setUser(profile as any);
         } else {
-          setUser({
+          setUser(prev => prev || {
             id: session.user.id,
             email: session.user.email || '',
             fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
@@ -421,7 +442,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return false; 
       }
       const profile = await userService.getProfile(data.user.id);
-      if (profile) setUser(profile as any);
+      if (profile) {
+        setUser(profile as any);
+      } else {
+        const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+        setUser(found || {
+          id: data.user.id,
+          email,
+          fullName: email.split('@')[0],
+          phoneNumber: '',
+          avatarUrl: '/logo.png',
+          role: 'buyer',
+          verified: false,
+          memberSince: new Date().toISOString(),
+          location: 'Ogbomoso, Oyo State'
+        });
+      }
       toast.success('Welcome back to Sealify!');
       fetchData();
       return true;
@@ -432,7 +468,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const dispatchWelcomeGreetingEmail = (userEmail: string, userName: string) => {
-    // System notification
     notificationService.create({
       user_id: userEmail,
       type: 'system',
@@ -462,17 +497,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success(`📧 Promotional digest dispatched to all ${allUsers.length} user accounts!`);
   }, [listings, allUsers, addAuditLog]);
 
-  // Periodic newsletter interval (simulated every 24 hours or triggered by admin)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (allUsers.length > 0 && listings.length > 0) {
-        console.log('Automated Sealify periodic promotional digest cycle active.');
-      }
-    }, 86400000); // 24 hours
-
-    return () => clearInterval(interval);
-  }, [allUsers.length, listings.length]);
-
   const signup = async (data: Partial<UserProfile> & { password?: string }) => {
     try {
       const { data: authData, error } = await supabase.auth.signUp({ 
@@ -495,7 +519,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       await userService.create(newProfile);
       
-      setUser({
+      const newUserProfile: UserProfile = {
         id: newProfile.id,
         email: data.email!,
         fullName: data.fullName!,
@@ -505,8 +529,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         verified: false,
         memberSince: new Date().toISOString(),
         location: 'Ogbomoso, Oyo State'
-      });
+      };
 
+      setUser(newUserProfile);
       dispatchWelcomeGreetingEmail(data.email!, data.fullName!);
       toast.success(`Account created! Welcome greeting sent to ${data.email}`);
       fetchData();
@@ -526,16 +551,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return false;
   };
 
-  const logout = () => { setUser(null); supabase.auth.signOut(); toast.info('Disconnected.'); };
+  const logout = () => { 
+    setUser(null); 
+    localStorage.removeItem('sealify_active_user');
+    supabase.auth.signOut(); 
+    toast.info('Logged out successfully.'); 
+  };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
     const updated = await userService.update(id, data);
-    if (user?.id === id && updated) setUser(updated as any);
+    if (user?.id === id) {
+      setUser(prev => prev ? ({ ...prev, ...data, ...(updated || {}) }) : null);
+    }
     addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
     fetchData();
   };
 
-  const deleteUser = async (id: string) => { await userService.delete(id); addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user'); fetchData(); };
+  const deleteUser = async (id: string) => { 
+    if (user?.id === id) logout();
+    await userService.delete(id); 
+    addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user'); 
+    fetchData(); 
+  };
 
   const checkSearchAlertsForListing = useCallback((listing: Listing) => {
     searchAlerts.forEach(alert => {
