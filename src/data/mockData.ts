@@ -1,4 +1,4 @@
-import { Category, Listing, UserProfile } from '@/types/sealify';
+import { Category, Listing, UserProfile, Conversation } from '@/types/sealify';
 
 export const CATEGORIES = [
   { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 3, color: 'bg-blue-500' },
@@ -290,12 +290,12 @@ export const MOCK_LISTINGS: Listing[] = Object.keys(CATALOG_DATA).flatMap((catKe
   const items = CATALOG_DATA[catKey as Category];
   return items.map((item, itemIdx) => ({
     id: `lst_${catKey.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${itemIdx + 1}`,
-    sellerId: 'usr_admin_default',
-    sellerName: 'Sealify Official',
-    sellerPhone: '+234 813 120 8468',
-    sellerAvatar: '/logo.png',
+    sellerId: 'usr_1',
+    sellerName: 'Adebowale Ogunleye',
+    sellerPhone: '+234 803 000 0000',
+    sellerAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop',
     sellerVerified: true,
-    sellerVerificationType: 'premium',
+    sellerVerificationType: 'business',
     title: item.title,
     description: item.desc,
     price: item.price,
@@ -344,4 +344,72 @@ export const ALL_MOCK_USERS: UserProfile[] = [
 ];
 
 export const MOCK_USER = ALL_MOCK_USERS[0];
+
+export const MOCK_CONVERSATIONS: Conversation[] = [
+  {
+    id: 'conv_1',
+    listingId: 'lst_vehicles_1',
+    listingTitle: 'Qlink Target 200cc Motorbike (Strong Engine)',
+    listingImage: 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?w=800&auto=format&fit=crop',
+    listingPrice: 485000,
+    otherUser: {
+      id: 'usr_1',
+      name: 'Adebowale Ogunleye',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop',
+    },
+    lastMessage: 'Is the motorbike available for inspection at Takie today?',
+    lastMessageTime: '10:42 AM',
+    messages: [
+      {
+        id: 'msg_1',
+        senderId: 'usr_1',
+        receiverId: 'usr_admin_default',
+        listingId: 'lst_vehicles_1',
+        content: 'Hello, I saw your Qlink Target bike listing on Sealify!',
+        createdAt: '10:30 AM',
+      },
+      {
+        id: 'msg_2',
+        senderId: 'usr_admin_default',
+        receiverId: 'usr_1',
+        listingId: 'lst_vehicles_1',
+        content: 'Hi Adebowale! Yes, it is in excellent condition and ready for test ride.',
+        createdAt: '10:35 AM',
+      },
+      {
+        id: 'msg_3',
+        senderId: 'usr_1',
+        receiverId: 'usr_admin_default',
+        listingId: 'lst_vehicles_1',
+        content: 'Is the motorbike available for inspection at Takie today?',
+        createdAt: '10:42 AM',
+      },
+    ],
+  },
+  {
+    id: 'conv_2',
+    listingId: 'lst_electronics_1',
+    listingTitle: 'HP EliteBook 840 G5 (Student/Work Laptop)',
+    listingImage: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop',
+    listingPrice: 245000,
+    otherUser: {
+      id: 'usr_1',
+      name: 'Adebowale Ogunleye',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop',
+    },
+    lastMessage: 'What is your final price for student pickup?',
+    lastMessageTime: 'Yesterday',
+    messages: [
+      {
+        id: 'msg_4',
+        senderId: 'usr_1',
+        receiverId: 'usr_admin_default',
+        listingId: 'lst_electronics_1',
+        content: 'What is your final price for student pickup?',
+        createdAt: 'Yesterday',
+      },
+    ],
+  },
+];
+
 export const MOCK_MESSAGES: any[] = [];

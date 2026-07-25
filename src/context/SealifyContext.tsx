@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest, Wallet, Transaction } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
-import { ALL_MOCK_USERS, MOCK_LISTINGS } from '@/data/mockData';
+import { ALL_MOCK_USERS, MOCK_LISTINGS, MOCK_CONVERSATIONS } from '@/data/mockData';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -205,7 +205,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        // Anti-Tamper Protection: If user role is admin, verify session token in sessionStorage
         if (parsed.role === 'admin') {
           const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
           const expectedToken = generateAdminSessionToken(adminEmail);
@@ -254,7 +253,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_admin_password', newPassword);
     localStorage.setItem('sealify_admin_pin', newPin);
 
-    // Re-issue session token if current user is admin
     if (user?.role === 'admin') {
       const newToken = generateAdminSessionToken(newEmail);
       sessionStorage.setItem('sealify_admin_session_token', newToken);
@@ -275,7 +273,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
   const [reports, setReports] = useState<AdReport[]>([]);
   const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
   const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
@@ -576,7 +574,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (email.toLowerCase().trim() === adminEmail.toLowerCase().trim() && pass === adminPassword && pin === adminPin) {
       const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
       
-      // Issue session token to sessionStorage
       const sessionToken = generateAdminSessionToken(adminEmail);
       sessionStorage.setItem('sealify_admin_session_token', sessionToken);
 
@@ -643,6 +640,56 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const markAsSold = async (id: string) => { await listingService.update(id, { status: 'sold' }); fetchData(); };
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
+  const sendMessage = async (lId: string, rId: string, content: string) => {
+    const targetListing = listings.find(l => l.id === lId);
+    const recipientUser = allUsers.find(u => u.id === rId);
+
+    const newMsg: Message = {
+      id: `msg_${Date.now()}`,
+      senderId: user?.id || 'usr_guest',
+      receiverId: rId,
+      listingId: lId,
+      content,
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+
+    // Instant local conversation state synchronization
+    setConversations(prev => {
+      const existingConvIndex = prev.findIndex(c => c.listingId === lId && (c.otherUser.id === rId || c.otherUser.id === user?.id));
+
+      if (existingConvIndex !== -1) {
+        const updated = [...prev];
+        const conv = updated[existingConvIndex];
+        updated[existingConvIndex] = {
+          ...conv,
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [...conv.messages, newMsg]
+        };
+        return updated;
+      } else {
+        const newConv: Conversation = {
+          id: `conv_${Date.now()}`,
+          listingId: lId,
+          listingTitle: targetListing?.title || 'Classified Ad Inquiry',
+          listingImage: targetListing?.images[0] || '/logo.png',
+          listingPrice: targetListing?.price || 0,
+          otherUser: {
+            id: rId,
+            name: recipientUser?.fullName || targetListing?.sellerName || 'Verified Merchant',
+            avatar: recipientUser?.avatarUrl || targetListing?.sellerAvatar || '/logo.png'
+          },
+          lastMessage: content,
+          lastMessageTime: 'Just now',
+          messages: [newMsg]
+        };
+        return [newConv, ...prev];
+      }
+    });
+
+    await messageService.sendMessage({ sender_id: user?.id || 'usr_guest', receiver_id: rId, listing_id: lId, content });
+  };
+
   const marketStats: CategoryStats[] = useMemo(() => {
     return categories.map(cat => {
       const catAds = listings.filter(l => l.category === cat.name);
@@ -677,7 +724,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
       isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
       createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
-      conversations, sendMessage: async (lId, rId, content) => { await messageService.sendMessage({ sender_id: user?.id, receiver_id: rId, listing_id: lId, content }); fetchData(); },
+      conversations, sendMessage,
       notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
       markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
