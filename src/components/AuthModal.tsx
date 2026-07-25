@@ -52,21 +52,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
       return;
     }
     
-    // Stage 1: Trigger Phone Verification
+    // Stage 1: Trigger Real Phone Verification via context
     setIsOtpOpen(true);
   };
 
   const handleOtpVerified = async () => {
-    await signup({
-      email,
-      password,
-      fullName,
-      phoneNumber: phone,
-      role
-    });
-    setIsOtpOpen(false);
-    onClose();
-    navigate('/my-ads');
+    try {
+      await signup({
+        email,
+        password,
+        fullName,
+        phoneNumber: phone,
+        role
+      });
+      setIsOtpOpen(false);
+      onClose();
+      toast.success(`Welcome to the Sealify Node, ${fullName}!`);
+      navigate('/my-ads');
+    } catch (e) {
+      toast.error("Registration failed. Please try again.");
+    }
   };
 
   return (
@@ -218,7 +223,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                 </button>
               </div>
 
-              <button type="submit" className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95">Create Global Account</button>
+              <button type="submit" className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95">Send Verification Code</button>
             </form>
           )}
 

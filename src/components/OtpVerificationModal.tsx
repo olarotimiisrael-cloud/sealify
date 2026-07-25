@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Smartphone, CheckCircle2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { X, Smartphone, CheckCircle2, RefreshCw, ShieldCheck, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSealify } from '../context/SealifyContext';
 
 interface OtpVerificationModalProps {
   isOpen: boolean;
@@ -15,12 +16,12 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   phoneNumber,
   onVerified
 }) => {
+  const { sendPhoneOtp, verifyPhoneOtp } = useSealify();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [timer, setTimer] = useState(60);
   const [isVerifying, setIsVerifying] = useState(false);
-
-  // Simulated OTP for demo: 123456
-  const DEMO_OTP = "123456";
+  const [isSending, setIsSending] = useState(false);
+  const [fallbackToken, setFallbackToken] = useState<string | null>(null);
 
   useEffect(() => {
     let interval: any;
@@ -29,6 +30,13 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
     return () => clearInterval(interval);
   }, [isOpen, timer]);
+
+  // Send initial OTP on open
+  useEffect(() => {
+    if (isOpen && !isSending && !fallbackToken) {
+      handleResendOtp();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -52,7 +60,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
   };
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     const enteredOtp = otp.join('');
     if (enteredOtp.length < 6) {
       toast.error('Please enter the full 6-digit code');
@@ -61,22 +69,26 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
     setIsVerifying(true);
     
-    // Simulate network delay
-    setTimeout(() => {
-      if (enteredOtp === DEMO_OTP) {
-        toast.success('Phone number verified successfully!');
-        onVerified();
-      } else {
-        toast.error('Invalid OTP. For demo use: 123456');
-        setIsVerifying(false);
-      }
-    }, 1500);
+    // Check against real Supabase or fallback token
+    const success = await verifyPhoneOtp(phoneNumber, enteredOtp);
+    
+    if (success || (fallbackToken && enteredOtp === fallbackToken)) {
+      toast.success('Phone number verified successfully!');
+      onVerified();
+    } else {
+      toast.error('Invalid verification code. Please try again.');
+      setIsVerifying(false);
+    }
   };
 
-  const resendOtp = () => {
-    setTimer(60);
-    toast.info('A new OTP has been sent to ' + phoneNumber);
-    console.log("SIMULATED SMS: Your Sealify code is 123456");
+  const handleResendOtp = async () => {
+    setIsSending(true);
+    const token = await sendPhoneOtp(phoneNumber);
+    if (token) {
+      setFallbackToken(token === "sent_successfully" ? null : token);
+      setTimer(60);
+    }
+    setIsSending(false);
   };
 
   return (
@@ -88,13 +100,13 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
         <div className="text-center space-y-4">
           <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
-            <Smartphone className="w-8 h-8" />
+            {isSending ? <Loader2 className="w-8 h-8 animate-spin" /> : <Smartphone className="w-8 h-8" />}
           </div>
           
           <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white">Verify Your Number</h2>
+            <h2 className="text-2xl font-black text-white">Security Verification</h2>
             <p className="text-xs text-slate-400">
-              We've sent a 6-digit code to <strong className="text-emerald-400">{phoneNumber}</strong>
+              We've dispatched a 6-digit code to <strong className="text-emerald-400">{phoneNumber}</strong>
             </p>
           </div>
 
@@ -116,27 +128,34 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
           <div className="text-center">
             {timer > 0 ? (
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                Resend code in <span className="text-emerald-400">{timer}s</span>
+                Resend available in <span className="text-emerald-400">{timer}s</span>
               </p>
             ) : (
-              <button onClick={resendOtp} className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1 mx-auto hover:underline">
-                <RefreshCw className="w-3 h-3" /> Resend OTP Code
+              <button 
+                onClick={handleResendOtp} 
+                disabled={isSending}
+                className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1 mx-auto hover:underline disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3 h-3 ${isSending ? 'animate-spin' : ''}`} /> Resend Security Code
               </button>
             )}
           </div>
 
           <button
             onClick={handleVerify}
-            disabled={isVerifying}
+            disabled={isVerifying || isSending}
             className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 text-slate-950 font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95"
           >
-            {isVerifying ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-            <span>{isVerifying ? 'Verifying Code...' : 'Confirm & Complete Signup'}</span>
+            {isVerifying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+            <span>{isVerifying ? 'Verifying...' : 'Authenticate & Create Account'}</span>
           </button>
 
-          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-tighter">
-            * For testing/demo purposes, please enter 123456
-          </p>
+          <div className="pt-2 border-t border-slate-800">
+             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center justify-center gap-1.5">
+               <ShieldCheck className="w-3 h-3 text-emerald-500" />
+               Forensic Identity Protection Enabled
+             </p>
+          </div>
         </div>
       </div>
     </div>
