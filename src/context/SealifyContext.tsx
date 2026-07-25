@@ -185,13 +185,11 @@ interface SealifyContextType {
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
-// Helper function to generate an admin session verification token
 const generateAdminSessionToken = (email: string) => {
   const salt = 'SEALIFY_HARDENED_ROOT_KEY_2024';
   return btoa(`${email.toLowerCase()}:${salt}:${new Date().toDateString()}`);
 };
 
-// Local storage helpers for listings persistence
 const getStoredCustomListings = (): Listing[] => {
   try {
     const saved = localStorage.getItem('sealify_custom_listings');
@@ -212,12 +210,10 @@ const saveStoredCustomListings = (customListings: Listing[]) => {
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  // Editable Admin Credentials
   const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
   const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
   const [adminPin, setAdminPin] = useState<string>(() => localStorage.getItem('sealify_admin_pin') || '336699');
 
-  // Persistent User Session Initialization with Security Checks
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('sealify_active_user');
     if (saved) {
@@ -227,7 +223,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
           const expectedToken = generateAdminSessionToken(adminEmail);
           if (!sessionToken || sessionToken !== expectedToken) {
-            console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected. Revoking admin status.');
+            console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected.');
             return { ...parsed, role: 'buyer' };
           }
         }
@@ -239,7 +235,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return null;
   });
 
-  // Verify Admin Session state whenever user changes or on component mount
   const isAdmin = useMemo(() => {
     if (!user || user.role !== 'admin') return false;
     const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
@@ -247,7 +242,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return sessionToken === expectedToken;
   }, [user, adminEmail]);
 
-  // Sync user state to localStorage on any profile change
   useEffect(() => {
     if (user) {
       localStorage.setItem('sealify_active_user', JSON.stringify(user));
@@ -257,7 +251,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  // AI & Personalization State
   const [userInterests, setUserInterests] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('sealify_interests');
     return saved ? JSON.parse(saved) : {};
@@ -279,7 +272,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('🔒 Official Admin Credentials updated successfully!');
   };
   
-  // App Data State initialized with stored local listings merged with mocks
   const [listings, setListings] = useState<Listing[]>(() => {
     const localCustom = getStoredCustomListings();
     const mockIds = new Set(MOCK_LISTINGS.map(l => l.id));
@@ -454,12 +446,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           specifications: l.specifications
         }));
 
-        // Merge DB listings with stored local listings (deduplicate by ID)
         const dbIds = new Set(fetchedFromDb.map(item => item.id));
         const uniqueLocal = localCustom.filter(item => !dbIds.has(item.id));
         setListings([...uniqueLocal, ...fetchedFromDb]);
       } else {
-        // Fallback: merge stored local custom listings with MOCK_LISTINGS
         const mockIds = new Set(MOCK_LISTINGS.map(item => item.id));
         const uniqueLocal = localCustom.filter(item => !mockIds.has(item.id));
         setListings([...uniqueLocal, ...MOCK_LISTINGS]);
@@ -677,10 +667,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         uploadedUrls = ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80'];
       }
 
+      const sellerId = user?.id || 'usr_1';
+      const sellerName = data.sellerName || user?.fullName || 'Verified Seller';
+      const sellerPhone = user?.phoneNumber || '+234 813 120 8468';
+      const sellerAvatar = user?.avatarUrl || '/logo.png';
+      const sellerVerified = user?.verified || false;
+      const sellerVerificationType = user?.verificationType || 'none';
+
+      // 1. Instantly attempt database creation (handles seller registration if needed)
       let dbResult: any = null;
       try {
         dbResult = await listingService.create({
-          seller_id: user?.id || 'usr_1',
+          seller_id: sellerId,
           title: data.title,
           description: data.description,
           price: data.price,
@@ -689,20 +687,26 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           location: data.location || 'Ogbomoso, Oyo State',
           status: 'active',
           featured: data.featured || false,
-          specifications: data.specifications || {}
+          specifications: data.specifications || {},
+          sellerName,
+          sellerEmail: user?.email,
+          sellerPhone,
+          sellerAvatar,
+          sellerVerified,
+          sellerVerificationType
         }, uploadedUrls);
       } catch (e) {
-        console.warn('Listing DB create failed, using state & localStorage fallback', e);
+        console.warn('Listing DB insert notice:', e);
       }
 
       const newListing: Listing = {
         id: dbResult?.id || `lst_user_${Date.now()}`,
-        sellerId: user?.id || 'usr_1',
-        sellerName: data.sellerName || user?.fullName || 'Verified Seller',
-        sellerPhone: user?.phoneNumber || '+234 813 120 8468',
-        sellerAvatar: user?.avatarUrl || '/logo.png',
-        sellerVerified: user?.verified || false,
-        sellerVerificationType: user?.verificationType || 'none',
+        sellerId,
+        sellerName,
+        sellerPhone,
+        sellerAvatar,
+        sellerVerified,
+        sellerVerificationType,
         title: data.title || 'Untitled Ad',
         description: data.description || '',
         price: Number(data.price) || 0,
@@ -718,10 +722,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         specifications: data.specifications
       };
 
-      // Store new listing in localStorage so it persists upon page reloads!
+      // 2. Store instantly in localStorage for immediate zero-latency persistence
       const currentStored = getStoredCustomListings();
       saveStoredCustomListings([newListing, ...currentStored]);
 
+      // 3. Update active React state
       setListings(prev => [newListing, ...prev]);
       checkSearchAlertsForListing(newListing);
       addAuditLog('Listing Created', `Published new ad: "${newListing.title}"`, 'ad');
@@ -736,7 +741,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateListing = async (id: string, updatedData: Partial<Listing>) => { 
     setListings(prev => prev.map(item => item.id === id ? { ...item, ...updatedData } : item));
     
-    // Update local storage if present
     const currentStored = getStoredCustomListings();
     const updatedStored = currentStored.map(item => item.id === id ? { ...item, ...updatedData } : item);
     saveStoredCustomListings(updatedStored);
@@ -749,7 +753,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const deleteListing = async (id: string) => { 
     setListings(prev => prev.filter(item => item.id !== id));
     
-    // Remove from local storage
     const currentStored = getStoredCustomListings();
     const updatedStored = currentStored.filter(item => item.id !== id);
     saveStoredCustomListings(updatedStored);

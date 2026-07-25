@@ -47,6 +47,31 @@ export const userService = {
   async getProfile(id: string) { 
     return await handleResponse(supabase.from('users').select('*').eq('id', id).maybeSingle()); 
   },
+  async ensureUserExists(userProfile: any) {
+    if (!userProfile || !userProfile.id) return null;
+    try {
+      const existing = await handleResponse(supabase.from('users').select('id').eq('id', userProfile.id).maybeSingle());
+      if (!existing) {
+        return await handleResponse(
+          supabase.from('users').upsert([{
+            id: userProfile.id,
+            email: userProfile.email || `${userProfile.id}@sealify.ng`,
+            full_name: userProfile.fullName || userProfile.full_name || 'Verified Seller',
+            phone_number: userProfile.phoneNumber || userProfile.phone_number || '',
+            avatar_url: userProfile.avatarUrl || userProfile.avatar_url || '',
+            role: userProfile.role || 'seller',
+            verified: userProfile.verified || false,
+            verification_type: userProfile.verificationType || userProfile.verification_type || 'none',
+            location: userProfile.location || 'Ogbomoso, Oyo State'
+          }]).select().maybeSingle()
+        );
+      }
+      return existing;
+    } catch (e) {
+      console.warn('ensureUserExists error:', e);
+      return null;
+    }
+  },
   async update(id: string, updates: any) { 
     return await handleResponse(supabase.from('users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().maybeSingle()); 
   },
@@ -69,9 +94,30 @@ export const listingService = {
     )) || [];
   },
   async create(listing: any, imageUrls: string[]) {
-    const data: any = await handleResponse(supabase.from('listings').insert([listing]).select().single());
-    if (data?.id && imageUrls.length > 0) {
-      const imgRows = imageUrls.map(url => ({ listing_id: data.id, image_url: url }));
+    // 1. Ensure seller row exists in Supabase public.users to satisfy Foreign Key constraints
+    if (listing.seller_id) {
+      await userService.ensureUserExists({
+        id: listing.seller_id,
+        fullName: listing.sellerName,
+        email: listing.sellerEmail,
+        phoneNumber: listing.sellerPhone,
+        avatarUrl: listing.sellerAvatar,
+        verified: listing.sellerVerified,
+        verificationType: listing.sellerVerificationType
+      });
+    }
+
+    // 2. Insert post row into listings table
+    const { data, error } = await supabase.from('listings').insert([listing]).select().single();
+    if (error) {
+      console.warn('Supabase Listing Create Warning:', error.message || error);
+    }
+
+    const createdId = data?.id;
+
+    // 3. Insert images into listing_images table if createdId exists
+    if (createdId && imageUrls.length > 0) {
+      const imgRows = imageUrls.map(url => ({ listing_id: createdId, image_url: url }));
       await supabase.from('listing_images').insert(imgRows);
     }
     return data;
