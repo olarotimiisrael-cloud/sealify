@@ -29,7 +29,8 @@ import {
   User,
   Layout,
   Camera,
-  Edit3
+  Edit3,
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,6 +51,7 @@ const SellerProfile: React.FC = () => {
   const businessName = sellerUser?.businessName || (sellerUser?.role === 'admin' ? 'Sealify Official Hub' : `${sellerName}'s Store`);
   const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || '';
   const sellerBanner = sellerUser?.storeBannerUrl || '';
+  const sellerBio = sellerUser?.bio || 'Verified merchant operating on the Sealify Ogbomoso Local Marketplace Network.';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
   const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'premium';
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
@@ -290,6 +292,16 @@ const SellerProfile: React.FC = () => {
               </a>
             </div>
           </div>
+
+          {/* Store Bio Section */}
+          {sellerBio && (
+            <div className="px-6 sm:px-8 pb-4">
+              <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs text-slate-300 leading-relaxed font-medium flex items-start gap-2.5">
+                <FileText className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <p>{sellerBio}</p>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center gap-2 border-t border-slate-800/80 p-4 bg-slate-950/60 overflow-x-auto no-scrollbar">
             <button

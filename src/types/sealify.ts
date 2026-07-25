@@ -87,6 +87,7 @@ export interface UserProfile {
   phoneNumber: string;
   avatarUrl: string;
   storeBannerUrl?: string;
+  bio?: string;
   role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
   verificationType?: VerificationBadgeType;
