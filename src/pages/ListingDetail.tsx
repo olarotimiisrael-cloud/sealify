@@ -14,6 +14,7 @@ import LightboxModal from '../components/LightboxModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
 import PriceDropAlertModal from '../components/PriceDropAlertModal';
+import SwapProposalModal from '../components/SwapProposalModal';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -40,7 +41,8 @@ import {
   CheckSquare,
   Volume2,
   TrendingDown,
-  Bell
+  Bell,
+  ArrowRightLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +57,7 @@ const ListingDetail: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
+  const [isSwapOpen, setIsSwapOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
@@ -128,6 +131,16 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
+  const handleSendSwapFromModal = (swapMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, swapMsg);
+    toast.success(`Swap deal proposal sent to ${listing.sellerName}!`);
+    navigate('/messages');
+  };
+
   const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
     if (!isAuthenticated) {
       setIsAuthOpen(true);
@@ -176,6 +189,15 @@ const ListingDetail: React.FC = () => {
             >
               <Volume2 className="w-4 h-4 animate-pulse" />
               <span>AI Voice Tour</span>
+            </button>
+
+            <button
+              onClick={() => setIsSwapOpen(true)}
+              className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-black shadow-lg hover:scale-105 transition-all"
+              title="Propose Item Trade-In or Swap"
+            >
+              <ArrowRightLeft className="w-4 h-4" />
+              <span>Swap / Trade-In</span>
             </button>
 
             <button
@@ -304,14 +326,24 @@ const ListingDetail: React.FC = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex justify-between items-center border-t border-slate-800">
-                <button
-                  onClick={() => setIsOfferOpen(true)}
-                  className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30"
-                >
-                  <Tag className="w-4 h-4" />
-                  <span>Make an Offer</span>
-                </button>
+              <div className="pt-2 flex justify-between items-center border-t border-slate-800 flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsOfferOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-extrabold text-emerald-400 hover:underline bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30"
+                  >
+                    <Tag className="w-4 h-4" />
+                    <span>Make Price Offer</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsSwapOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-extrabold text-amber-400 hover:underline bg-amber-500/10 px-3 py-1.5 rounded-xl border border-amber-500/30"
+                  >
+                    <ArrowRightLeft className="w-4 h-4" />
+                    <span>Propose Item Swap</span>
+                  </button>
+                </div>
 
                 <button
                   onClick={() => setIsReportOpen(true)}
@@ -418,6 +450,7 @@ const ListingDetail: React.FC = () => {
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} listingId={listing.id} />
       <OfferModal isOpen={isOfferOpen} onClose={() => setIsOfferOpen(false)} listingTitle={listing.title} originalPrice={listing.price} onSendOffer={handleSendOfferFromModal} />
+      <SwapProposalModal isOpen={isSwapOpen} onClose={() => setIsSwapOpen(false)} targetItemTitle={listing.title} targetItemPrice={listing.price} sellerName={listing.sellerName} onSendSwapToChat={handleSendSwapFromModal} />
       <ShareQrModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} listingTitle={listing.title} listingPrice={listing.price} listingUrl={window.location.href} />
       <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} onSelectSpot={handleSelectMeetupSpot} />
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
