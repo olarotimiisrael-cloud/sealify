@@ -81,7 +81,11 @@ const AdminDashboard: React.FC = () => {
     processDisputeCase,
     reports,
     processReport,
-    auditLogs
+    auditLogs,
+    bulkUpdateUsers,
+    bulkDeleteUsers,
+    bulkUpdateListings,
+    bulkDeleteListings
   } = useSealify();
   
   const { isInstallable, install } = usePwaInstall();
