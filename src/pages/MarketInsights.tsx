@@ -4,14 +4,16 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import { 
   TrendingUp, 
   TrendingDown, 
-  BarChart3, 
   Search,
   ArrowUpRight,
   Calculator,
-  Filter
+  Filter,
+  BarChart3,
+  CheckCircle2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -35,6 +37,15 @@ export const MarketInsights: React.FC = () => {
     return stat.totalAds > 0;
   });
 
+  const chartData = marketStats
+    .filter(s => s.totalAds > 0)
+    .map(s => ({
+      name: s.category,
+      avg: s.avgPrice,
+      ads: s.totalAds
+    }))
+    .slice(0, 6);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
@@ -55,7 +66,7 @@ export const MarketInsights: React.FC = () => {
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Ogbomoso Price Index</h1>
                 <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-                   Stop overpaying and start selling smarter. Our AI analyzes thousands of local listings to give you the most accurate fair-market value for items in the Ogbomoso district.
+                   Stop overpaying and start selling smarter. Our AI analyzes local inventory to give you the most accurate fair-market value for items in the Ogbomoso district.
                 </p>
              </div>
 
@@ -69,6 +80,42 @@ export const MarketInsights: React.FC = () => {
                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Analyzed Ads</p>
                 </div>
              </div>
+          </div>
+        </div>
+
+        {/* Price Distribution Chart */}
+        <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 uppercase tracking-tight">
+              <BarChart3 className="w-5 h-5 text-emerald-400" />
+              Category Resale Benchmark
+            </h3>
+            <span className="text-[10px] font-black bg-slate-950 text-slate-500 px-3 py-1 rounded-full border border-slate-800">Avg. Listing Value (NGN)</span>
+          </div>
+
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
+                />
+                <YAxis hide />
+                <Tooltip 
+                  contentStyle={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '11px' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                  formatter={(value: number) => [formatNGN(value), 'Market Average']}
+                />
+                <Bar dataKey="avg" radius={[8, 8, 0, 0]} barSize={40}>
+                   {chartData.map((entry, index) => (
+                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#3b82f6'} />
+                   ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
