@@ -421,14 +421,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
-    // Fail-safe check for primary admin account if DB is empty or during network sync
     if (email === 'admin@sealify.ng' && pin === adminPin) {
-       // Look for existing user record to attach session, otherwise create a session stub
        const dbUser = await userService.getByEmail(email);
        if (dbUser) {
           setUser(dbUser as any);
        } else {
-          // Virtual session for initial setup
           setUser({
              id: 'usr_root_fallback',
              email: 'admin@sealify.ng',
@@ -447,7 +444,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
        return true;
     }
 
-    // Standard database lookup for other admins
     try {
       const dbUser = await userService.getByEmail(email);
       if (dbUser && dbUser.role === 'admin' && pin === adminPin) {
@@ -480,6 +476,29 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }, data.images || []);
       
       if (result) {
+        // Trigger Search Alert Matches
+        const allAlerts = await supabase.from('search_alerts').select('*');
+        if (allAlerts.data) {
+           const matches = allAlerts.data.filter(alert => {
+              const qMatch = data.title?.toLowerCase().includes(alert.query.toLowerCase()) || data.description?.toLowerCase().includes(alert.query.toLowerCase());
+              const catMatch = alert.category === 'All' || alert.category === data.category;
+              const priceMatch = !alert.max_price || (data.price && data.price <= alert.max_price);
+              return qMatch && catMatch && priceMatch;
+           });
+
+           if (matches.length > 0) {
+              const notifs = matches.map(m => ({
+                 user_id: m.user_id,
+                 type: 'alert_match',
+                 title: 'New Search Alert Match!',
+                 description: `A new "${data.title}" has been posted in Ogbomoso that matches your saved alert for "${m.query}".`,
+                 link_url: `/listing/${result.id}`,
+                 read: false
+              }));
+              await supabase.from('notifications').insert(notifs);
+           }
+        }
+
         await fetchData();
         return true;
       }
@@ -660,7 +679,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         minPrice: prices.length ? Math.min(...prices) : 0,
         maxPrice: prices.length ? Math.max(...prices) : 0,
         totalAds: catAds.length,
-        demandScore: Math.min(100, Math.round(catAds.length * 5)),
+        demandScore: Math.min(100, Math.round(catAds.length * 15)), // Improved demand velocity logic
         trend: 'up'
       };
     });
@@ -718,7 +737,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       processReport: (id, a) => reportService.updateStatus(id, 'resolved').then(fetchData),
       disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(fetchData),
       processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(fetchData),
-      auditLogs, addAuditLog, recentDeals, sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location, time: 'Just now' }).then(fetchData),
+      auditLogs, addAuditLog, recentDeals, sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location || 'Ogbomoso', time: 'Just now' }).then(fetchData),
       intrusionLogs, recordIntrusion: (e, m) => intrusionService.create({ attempted_email: e, media_status: m, status: 'flagged' }).then(fetchData),
       searchAlerts, saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(fetchData),
       deleteSearchAlert: (id) => searchAlertService.delete(id).then(fetchData),

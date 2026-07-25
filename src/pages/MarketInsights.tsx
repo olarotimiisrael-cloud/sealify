@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, PieChart, Pie } from 'recharts';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -13,7 +13,8 @@ import {
   Calculator,
   Filter,
   BarChart3,
-  CheckCircle2
+  CheckCircle2,
+  PieChart as PieIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -45,6 +46,13 @@ export const MarketInsights: React.FC = () => {
       ads: s.totalAds
     }))
     .slice(0, 6);
+
+  const demandData = marketStats
+    .filter(s => s.totalAds > 0)
+    .map(s => ({
+      name: s.category,
+      value: s.demandScore
+    }));
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
@@ -83,39 +91,75 @@ export const MarketInsights: React.FC = () => {
           </div>
         </div>
 
-        {/* Price Distribution Chart */}
-        <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 uppercase tracking-tight">
-              <BarChart3 className="w-5 h-5 text-emerald-400" />
-              Category Resale Benchmark
-            </h3>
-            <span className="text-[10px] font-black bg-slate-950 text-slate-500 px-3 py-1 rounded-full border border-slate-800">Avg. Listing Value (NGN)</span>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Price Distribution Chart */}
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 uppercase tracking-tight">
+                <BarChart3 className="w-5 h-5 text-emerald-400" />
+                Resale Benchmark
+              </h3>
+              <span className="text-[10px] font-black bg-slate-950 text-slate-500 px-3 py-1 rounded-full border border-slate-800">Avg. Value (NGN)</span>
+            </div>
+
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 9, fontWeight: 'bold' }} 
+                  />
+                  <YAxis hide />
+                  <Tooltip 
+                    contentStyle={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '11px' }}
+                    itemStyle={{ fontWeight: 'bold' }}
+                    formatter={(value: number) => [formatNGN(value), 'Market Average']}
+                  />
+                  <Bar dataKey="avg" radius={[8, 8, 0, 0]} barSize={30}>
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#3b82f6'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#64748b', fontSize: 10, fontWeight: 'bold' }} 
-                />
-                <YAxis hide />
-                <Tooltip 
-                  contentStyle={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '11px' }}
-                  itemStyle={{ fontWeight: 'bold' }}
-                  formatter={(value: number) => [formatNGN(value), 'Market Average']}
-                />
-                <Bar dataKey="avg" radius={[8, 8, 0, 0]} barSize={40}>
-                   {chartData.map((entry, index) => (
-                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#3b82f6'} />
-                   ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          {/* Demand Score Chart */}
+          <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
+             <div className="flex items-center justify-between">
+                <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2 uppercase tracking-tight">
+                  <PieIcon className="w-5 h-5 text-purple-400" />
+                  Demand Velocity
+                </h3>
+                <span className="text-[10px] font-black bg-slate-950 text-slate-500 px-3 py-1 rounded-full border border-slate-800">Top Categories</span>
+             </div>
+
+             <div className="h-64 w-full flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                   <PieChart>
+                      <Pie
+                        data={demandData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                         {demandData.map((entry, index) => (
+                           <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'][index % 5]} />
+                         ))}
+                      </Pie>
+                      <Tooltip 
+                         contentStyle={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '11px' }}
+                      />
+                   </PieChart>
+                </ResponsiveContainer>
+             </div>
           </div>
         </div>
 
