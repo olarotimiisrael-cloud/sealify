@@ -61,6 +61,10 @@ export const userService = {
       instagramHandle: u.instagram_handle,
       twitterHandle: u.twitter_handle,
       whatsappNumber: u.whatsapp_number,
+      emailNotifications: u.email_notifications ?? true,
+      whatsappNotifications: u.whatsapp_notifications ?? true,
+      hidePhonePublicly: u.hide_phone_publicly ?? false,
+      hideLocationPublicly: u.hide_location_publicly ?? false,
       memberSince: u.member_since,
       location: u.location,
       status: u.status,
@@ -92,6 +96,10 @@ export const userService = {
       instagramHandle: u.instagram_handle,
       twitterHandle: u.twitter_handle,
       whatsappNumber: u.whatsapp_number,
+      emailNotifications: u.email_notifications ?? true,
+      whatsappNotifications: u.whatsapp_notifications ?? true,
+      hidePhonePublicly: u.hide_phone_publicly ?? false,
+      hideLocationPublicly: u.hide_location_publicly ?? false,
       memberSince: u.member_since,
       location: u.location,
       status: u.status
@@ -121,6 +129,10 @@ export const userService = {
       instagramHandle: u.instagram_handle,
       twitterHandle: u.twitter_handle,
       whatsappNumber: u.whatsapp_number,
+      emailNotifications: u.email_notifications ?? true,
+      whatsappNotifications: u.whatsapp_notifications ?? true,
+      hidePhonePublicly: u.hide_phone_publicly ?? false,
+      hideLocationPublicly: u.hide_location_publicly ?? false,
       memberSince: u.member_since,
       location: u.location,
       status: u.status
@@ -171,6 +183,10 @@ export const userService = {
     if (updates.instagramHandle !== undefined) dbUpdates.instagram_handle = updates.instagramHandle;
     if (updates.twitterHandle !== undefined) dbUpdates.twitter_handle = updates.twitterHandle;
     if (updates.whatsappNumber !== undefined) dbUpdates.whatsapp_number = updates.whatsappNumber;
+    if (updates.emailNotifications !== undefined) dbUpdates.email_notifications = updates.emailNotifications;
+    if (updates.whatsappNotifications !== undefined) dbUpdates.whatsapp_notifications = updates.whatsappNotifications;
+    if (updates.hidePhonePublicly !== undefined) dbUpdates.hide_phone_publicly = updates.hidePhonePublicly;
+    if (updates.hideLocationPublicly !== undefined) dbUpdates.hide_location_publicly = updates.hideLocationPublicly;
     if (updates.location !== undefined) dbUpdates.location = updates.location;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
 

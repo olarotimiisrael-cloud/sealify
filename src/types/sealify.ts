@@ -106,6 +106,12 @@ export interface UserProfile {
   twitterHandle?: string;
   whatsappNumber?: string;
 
+  // Communication & Privacy Preferences
+  emailNotifications?: boolean;
+  whatsappNotifications?: boolean;
+  hidePhonePublicly?: boolean;
+  hideLocationPublicly?: boolean;
+
   memberSince: string;
   location: string;
   password?: string;
