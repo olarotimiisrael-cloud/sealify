@@ -224,10 +224,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const expectedToken = generateAdminSessionToken(adminEmail);
           if (!sessionToken || sessionToken !== expectedToken) {
             console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected.');
-            return { ...parsed, role: 'buyer' };
+            return { ...parsed, role: 'buyer', status: 'active' };
           }
         }
-        return parsed;
+        return { ...parsed, status: 'active' }; // Guarantee unrestricted access
       } catch (e) {
         return null;
       }
@@ -244,7 +244,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('sealify_active_user', JSON.stringify(user));
+      localStorage.setItem('sealify_active_user', JSON.stringify({ ...user, status: 'active' }));
     } else {
       localStorage.removeItem('sealify_active_user');
       sessionStorage.removeItem('sealify_admin_session_token');
@@ -361,15 +361,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (session?.user) {
         const profile = await userService.getProfile(session.user.id);
         if (profile) {
-          setUser(profile as any);
+          setUser({ ...profile, status: 'active' } as any);
         } else {
           setUser(prev => prev || {
             id: session.user.id,
             email: session.user.email || '',
             fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
             phoneNumber: session.user.user_metadata?.phone || '',
-            avatarUrl: session.user.user_metadata?.avatar_url || '',
+            avatarUrl: session.user.user_metadata?.avatar_url || '/logo.png',
             role: 'buyer',
+            status: 'active',
             verified: false,
             memberSince: new Date().toISOString(),
             location: 'Ogbomoso, Oyo State'
@@ -385,7 +386,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
     if (user) {
-      notificationService.create({ user_id: user.id, ...n }).then(() => fetchData());
+      const newNotif: AppNotification = {
+        id: `notif_${Date.now()}`,
+        ...n,
+        time: 'Just now',
+        read: false
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+      notificationService.create({ user_id: user.id, ...n }).catch(() => {});
     }
   }, [user]);
 
@@ -499,16 +507,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       const profile = await userService.getProfile(data.user.id);
       if (profile) {
-        setUser(profile as any);
+        setUser({ ...profile, status: 'active' } as any);
       } else {
         const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-        setUser(found || {
+        setUser(found ? { ...found, status: 'active' } : {
           id: data.user.id,
           email,
           fullName: email.split('@')[0],
           phoneNumber: '',
           avatarUrl: '/logo.png',
           role: 'buyer',
+          status: 'active',
           verified: false,
           memberSince: new Date().toISOString(),
           location: 'Ogbomoso, Oyo State'
@@ -523,16 +532,29 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const dispatchWelcomeGreetingEmail = (userEmail: string, userName: string) => {
-    notificationService.create({
-      user_id: userEmail,
+  const dispatchWelcomeGreetingEmail = (userId: string, userEmail: string, userName: string) => {
+    const welcomeNotif: AppNotification = {
+      id: `notif_welcome_${Date.now()}`,
       type: 'system',
       title: '🎉 Welcome to Sealify Nigeria!',
-      description: `Hi ${userName}! We're thrilled to have you onboard. Browse deals in Ogbomoso or post your first free ad today.`,
-      link_url: '/post-ad'
-    });
+      description: `Welcome to Sealify, ${userName}! Your account is 100% active and unrestricted. Explore local deals in Ogbomoso, post free ads, or chat directly with verified sellers.`,
+      time: 'Just now',
+      read: false,
+      linkUrl: '/how-it-works'
+    };
 
-    addAuditLog('Welcome Email Dispatched', `Welcome email & onboarding briefing sent to ${userEmail}`, 'user');
+    setNotifications(prev => [welcomeNotif, ...prev]);
+
+    // Save notification to DB mapped properly to the user's UUID
+    notificationService.create({
+      user_id: userId,
+      type: 'system',
+      title: '🎉 Welcome to Sealify Nigeria!',
+      description: `Welcome to Sealify, ${userName}! Your account is 100% active and unrestricted. Explore local deals in Ogbomoso, post free ads, or chat directly with verified sellers.`,
+      link_url: '/how-it-works'
+    }).catch(() => {});
+
+    addAuditLog('Welcome Onboarding Dispatched', `Welcome message & Sealify onboarding dispatched to ${userEmail} (${userName})`, 'user');
   };
 
   const dispatchPromotionalEmailDigest = useCallback(() => {
@@ -558,15 +580,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { data: authData, error } = await supabase.auth.signUp({ 
         email: data.email!, 
         password: data.password!,
-        options: { data: { full_name: data.fullName, phone: data.phoneNumber } }
+        options: { 
+          data: { 
+            full_name: data.fullName, 
+            phone: data.phoneNumber,
+            site_name: 'Sealify Nigeria',
+            site_url: window.location.origin
+          } 
+        }
       });
       
+      const newUserId = authData?.user?.id || `usr_${Date.now()}`;
+
       const newProfile = {
-        id: authData?.user?.id || `usr_${Date.now()}`,
-        email: data.email,
-        full_name: data.fullName,
-        phone_number: data.phoneNumber,
+        id: newUserId,
+        email: data.email!,
+        full_name: data.fullName!,
+        phone_number: data.phoneNumber!,
         role: data.role || 'buyer',
+        status: 'active', // Explicitly UNRESTRICTED
         location: 'Ogbomoso, Oyo State',
         verified: false,
         verification_type: 'none'
@@ -579,20 +611,21 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       
       const newUserProfile: UserProfile = {
-        id: newProfile.id,
+        id: newUserId,
         email: data.email!,
         fullName: data.fullName!,
         phoneNumber: data.phoneNumber!,
         avatarUrl: '/logo.png',
         role: (data.role as any) || 'buyer',
+        status: 'active', // Unrestricted account state
         verified: false,
         memberSince: new Date().toISOString(),
         location: 'Ogbomoso, Oyo State'
       };
 
       setUser(newUserProfile);
-      dispatchWelcomeGreetingEmail(data.email!, data.fullName!);
-      toast.success(`Account created! Welcome greeting sent to ${data.email}`);
+      dispatchWelcomeGreetingEmail(newUserId, data.email!, data.fullName!);
+      toast.success(`🎉 Welcome to Sealify, ${data.fullName}! Your account is active and unrestricted.`, { duration: 6000 });
       fetchData();
     } catch (err: any) { 
       toast.error(err.message || "Signup failed."); 
@@ -601,7 +634,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
     if (email.toLowerCase().trim() === adminEmail.toLowerCase().trim() && pass === adminPassword && pin === adminPin) {
-      const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
+      const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', status: 'active', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
       
       const sessionToken = generateAdminSessionToken(adminEmail);
       sessionStorage.setItem('sealify_admin_session_token', sessionToken);
@@ -674,7 +707,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const sellerVerified = user?.verified || false;
       const sellerVerificationType = user?.verificationType || 'none';
 
-      // 1. Instantly attempt database creation (handles seller registration if needed)
       let dbResult: any = null;
       try {
         dbResult = await listingService.create({
@@ -722,11 +754,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         specifications: data.specifications
       };
 
-      // 2. Store instantly in localStorage for immediate zero-latency persistence
       const currentStored = getStoredCustomListings();
       saveStoredCustomListings([newListing, ...currentStored]);
 
-      // 3. Update active React state
       setListings(prev => [newListing, ...prev]);
       checkSearchAlertsForListing(newListing);
       addAuditLog('Listing Created', `Published new ad: "${newListing.title}"`, 'ad');
