@@ -219,7 +219,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
-  // Handle Session Persistence via Local Storage for Auth state only
+  // Session Persistence
   useEffect(() => {
     const stored = localStorage.getItem('sealify_session');
     if (stored) {
@@ -235,7 +235,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  // Master Data Fetcher from Supabase
+  // Central Database Sync
   const fetchData = useCallback(async () => {
     try {
       const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.all([
@@ -260,7 +260,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setAllUsers(dbUsers as any);
 
-      if (dbListings.length > 0) {
+      if (dbListings) {
         setListings(dbListings.map(l => ({
           id: l.id,
           sellerId: l.seller_id,
@@ -299,15 +299,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setRecentDeals(dbDeals.map(d => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       
       if (dbMeta) setSiteSettings(dbMeta as any);
-      if (dbPlans.length > 0) setPromotionPlans(dbPlans as any);
+      if (dbPlans && dbPlans.length > 0) setPromotionPlans(dbPlans as any);
       
-      if (dbConfigs.length > 0) {
+      if (dbConfigs && dbConfigs.length > 0) {
         const configMap: Partial<SystemConfig> = {};
         dbConfigs.forEach(c => configMap[c.key as keyof SystemConfig] = c.value);
         setSystemConfig(prev => ({ ...prev, ...configMap }));
       }
 
-      // Fetch user-specific data if logged in
       if (user) {
         const [userNotifs, userFavs, userMsgs, userAlerts] = await Promise.all([
           notificationService.getAll(user.id),
@@ -367,9 +366,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       await auditService.create({ action, details, type, created_at: new Date().toISOString() });
       fetchData();
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const login = async (email: string, password?: string): Promise<boolean> => {
@@ -377,19 +374,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const dbUser = await userService.getByEmail(email);
       if (dbUser) {
         if (dbUser.status === 'banned') {
-          toast.error('This account is permanently banned.');
+          toast.error('Account Access Denied: User is banned.');
           return false;
         }
         setUser(dbUser as any);
-        toast.success(`Welcome back, \${dbUser.full_name}!`);
-        addAuditLog('User Login', `Node access granted to \${email}`, 'security');
+        toast.success(`Access Granted: \${dbUser.full_name}`);
+        addAuditLog('User Login', `Node access to \${email}`, 'security');
         return true;
-      } else {
-        toast.error('Account not found.');
-        return false;
       }
+      toast.error('Invalid credentials.');
+      return false;
     } catch (err) {
-      toast.error('Authentication service failure.');
+      toast.error('Auth service failure.');
       return false;
     }
   };
@@ -408,21 +404,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         status: 'active',
         password: data.password || null
       });
-
       setUser(newUser as any);
-      toast.success('Account created successfully!');
-      addAuditLog('User Registered', `New identity created for \${data.email}`, 'user');
+      toast.success('Node Identity Created.');
+      addAuditLog('Registration', `New user \${data.email}`, 'user');
       fetchData();
-    } catch (err) {
-      toast.error('Signup failed.');
-    }
+    } catch (err) { toast.error('Signup failed.'); }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string) => {
     const dbUser = await userService.getByEmail(email);
     if (dbUser && dbUser.role === 'admin' && pin === adminPin) {
        setUser(dbUser as any);
-       addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
+       addAuditLog('Admin Elevation', 'Godmode activated', 'security');
        toast.success('Admin Terminal Access Granted.');
        return true;
     }
@@ -431,7 +424,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createListing = async (data: Partial<Listing>) => {
     try {
-      const dbListing = {
+      await listingService.create({
         seller_id: user?.id,
         title: data.title,
         description: data.description,
@@ -443,43 +436,30 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         video_url: data.videoUrl || null,
         featured: data.featured || false,
         specifications: data.specifications || null,
-      };
-      await listingService.create(dbListing, data.images || []);
-      toast.success('Listing published successfully!');
+      }, data.images || []);
       fetchData();
-    } catch (e) {
-      toast.error('Failed to create listing.');
-    }
+    } catch (e) { toast.error('Creation failed.'); }
   };
 
   const updateListing = async (id: string, updatedData: Partial<Listing>) => {
     try {
       await listingService.update(id, updatedData as any);
-      toast.success('Listing updated.');
       fetchData();
-    } catch (e) {
-      toast.error('Failed to update listing.');
-    }
+    } catch (e) { toast.error('Update failed.'); }
   };
 
   const deleteListing = async (id: string) => {
     try {
       await listingService.delete(id);
-      toast.success('Listing removed.');
       fetchData();
-    } catch (e) {
-      toast.error('Failed to delete listing.');
-    }
+    } catch (e) { toast.error('Removal failed.'); }
   };
 
   const markAsSold = async (id: string) => {
     try {
       await listingService.update(id, { status: 'sold' });
-      toast.success('Marked as sold.');
       fetchData();
-    } catch (e) {
-      toast.error('Failed to update status.');
-    }
+    } catch (e) { toast.error('Status update failed.'); }
   };
 
   const toggleFeaturedListing = async (id: string) => {
@@ -488,9 +468,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       await listingService.update(id, { featured: !target.featured });
       fetchData();
-    } catch (e) {
-      toast.error('Failed to toggle feature state.');
-    }
+    } catch (e) { toast.error('Feature toggle failed.'); }
   };
 
   const promoteListing = async (id: string, durationMonths: number, planName: string) => {
@@ -504,46 +482,30 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         promotion_start_date: new Date().toISOString(),
         promotion_end_date: end.toISOString()
       } as any);
-      toast.success('Ad promoted successfully!');
       fetchData();
-    } catch (e) {
-      toast.error('Promotion update failed.');
-    }
+    } catch (e) { toast.error('Promotion failed.'); }
   };
 
   const sendMessage = async (listingId: string, receiverId: string, content: string) => {
     try {
-      await messageService.sendMessage({
-        listing_id: listingId,
-        receiver_id: receiverId,
-        sender_id: user?.id,
-        content
-      });
+      await messageService.sendMessage({ listing_id: listingId, receiver_id: receiverId, sender_id: user?.id, content });
       fetchData();
-    } catch (e) {
-      toast.error('Failed to send message.');
-    }
+    } catch (e) { toast.error('Message failed.'); }
   };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
     try {
       const updated = await userService.update(id, data as any);
       if (user?.id === id) setUser(updated as any);
-      toast.success('Profile updated.');
       fetchData();
-    } catch (e) {
-      toast.error('Update failed.');
-    }
+    } catch (e) { toast.error('Update failed.'); }
   };
 
   const deleteUser = async (id: string) => {
     try {
       await userService.delete(id);
-      toast.success('User purged.');
       fetchData();
-    } catch (e) {
-      toast.error('Purge failed.');
-    }
+    } catch (e) { toast.error('Deletion failed.'); }
   };
 
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
