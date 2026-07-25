@@ -19,11 +19,25 @@ import {
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
   ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
-  Share2, BellRing, MapPin, Upload, User
+  Share2, BellRing, MapPin, Upload, User, Sliders
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-type AdminTab = 'analytics' | 'finance' | 'users' | 'listings' | 'requests' | 'security' | 'settings' | 'superuser' | 'disputes' | 'buyer_requests' | 'reviews';
+type AdminTab = 
+  | 'analytics' 
+  | 'finance' 
+  | 'users' 
+  | 'listings' 
+  | 'requests' 
+  | 'security' 
+  | 'settings' 
+  | 'superuser' 
+  | 'disputes' 
+  | 'buyer_requests' 
+  | 'reviews'
+  | 'announcements'
+  | 'categories'
+  | 'audit_logs';
 
 interface ModuleItem {
   id: AdminTab;
@@ -42,8 +56,9 @@ interface ModuleGroup {
 
 export const AdminDashboard: React.FC = () => {
   const { 
-    user, isAdmin, logout, categories,
+    user, isAdmin, logout, categories, addCategory, deleteCategory,
     listings, allUsers, updateUser, deleteUser, updateListing, deleteListing, toggleFeaturedListing, markAsSold,
+    bulkUpdateUsers, bulkDeleteUsers, bulkUpdateListings, bulkDeleteListings,
     promotionPaymentRequests, processPromotionPaymentRequest, promotionPlans, updatePromotionPlanRate,
     safeSpots, addSafeSpot, deleteSafeSpot,
     verificationRequests, processVerificationRequest,
@@ -60,8 +75,14 @@ export const AdminDashboard: React.FC = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  
+  // Search & Filter
   const [userSearch, setUserSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
+
+  // Bulk Selection States
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [selectedListingIds, setSelectedListingIds] = useState<string[]>([]);
 
   // Superuser Form State
   const [adminFullName, setAdminFullName] = useState('');
@@ -87,6 +108,11 @@ export const AdminDashboard: React.FC = () => {
   const [annMessage, setAnnMessage] = useState('');
   const [annType, setAnnType] = useState<'info' | 'warning' | 'success' | 'alert'>('info');
 
+  // New Category Form State
+  const [newCatName, setNewCatName] = useState('');
+  const [newCatIcon, setNewCatIcon] = useState('LayoutGrid');
+  const [newCatColor, setNewCatColor] = useState('bg-emerald-500');
+
   // New Safe Spot Form State
   const [spotName, setSpotName] = useState('');
   const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('LAUTECH Area');
@@ -94,11 +120,10 @@ export const AdminDashboard: React.FC = () => {
   const [spotAddress, setSpotAddress] = useState('');
 
   // Treasury Rates
-  const [customRates, setPlanRates] = useState<Record<number, number>>({});
+  const [plan1Rate, setPlan1Rate] = useState<number>(15000);
+  const [plan3Rate, setPlan3Rate] = useState<number>(13000);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const superuserAvatarRef = useRef<HTMLInputElement>(null);
-  const superuserBannerRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && (!isAdmin || !user)) {
@@ -125,10 +150,11 @@ export const AdminDashboard: React.FC = () => {
       setMetaContactEmail(siteSettings.contactEmail || '');
       setMetaContactPhone(siteSettings.contactPhone || '');
     }
-    if (promotionPlans) {
-      const rateMap: Record<number, number> = {};
-      promotionPlans.forEach(p => { rateMap[p.months] = p.rate; });
-      setPlanRates(rateMap);
+    if (promotionPlans && promotionPlans.length > 0) {
+      const p1 = promotionPlans.find(p => p.months === 1);
+      const p3 = promotionPlans.find(p => p.months === 3);
+      if (p1) setPlan1Rate(p1.rate);
+      if (p3) setPlan3Rate(p3.rate);
     }
   }, [user, activeTab, siteSettings, promotionPlans]);
 
@@ -187,6 +213,20 @@ export const AdminDashboard: React.FC = () => {
     toast.success('System Announcement broadcasted to all users!');
   };
 
+  const handleAddCategorySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCatName.trim()) return;
+    addCategory({
+      id: newCatName.toLowerCase().replace(/\s+/g, '_'),
+      name: newCatName.trim(),
+      iconName: newCatIcon,
+      count: 0,
+      color: newCatColor
+    });
+    setNewCatName('');
+    toast.success(`Category "${newCatName}" added!`);
+  };
+
   const handleAddSafeSpotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!spotName.trim() || !spotAddress.trim()) return;
@@ -204,6 +244,61 @@ export const AdminDashboard: React.FC = () => {
     toast.success('New Verified Safe Spot added!');
   };
 
+  const handleSaveTreasuryRates = () => {
+    updatePromotionPlanRate(1, plan1Rate);
+    updatePromotionPlanRate(3, plan3Rate);
+    toast.success('Promotion plan monthly rates updated!');
+  };
+
+  // Bulk Actions
+  const handleToggleSelectAllUsers = () => {
+    if (selectedUserIds.length === filteredUsers.length) {
+      setSelectedUserIds([]);
+    } else {
+      setSelectedUserIds(filteredUsers.map(u => u.id));
+    }
+  };
+
+  const handleBulkUserStatus = (status: UserStatus) => {
+    if (selectedUserIds.length === 0) return;
+    bulkUpdateUsers(selectedUserIds, { status });
+    toast.success(`Updated ${selectedUserIds.length} user accounts to ${status}!`);
+    setSelectedUserIds([]);
+  };
+
+  const handleBulkDeleteUsersAction = () => {
+    if (selectedUserIds.length === 0) return;
+    if (window.confirm(`Are you sure you want to delete ${selectedUserIds.length} users?`)) {
+      bulkDeleteUsers(selectedUserIds);
+      toast.success(`Deleted ${selectedUserIds.length} user accounts.`);
+      setSelectedUserIds([]);
+    }
+  };
+
+  const handleToggleSelectAllListings = () => {
+    if (selectedListingIds.length === filteredListings.length) {
+      setSelectedListingIds([]);
+    } else {
+      setSelectedListingIds(filteredListings.map(l => l.id));
+    }
+  };
+
+  const handleBulkListingFeature = (featured: boolean) => {
+    if (selectedListingIds.length === 0) return;
+    bulkUpdateListings(selectedListingIds, { featured });
+    toast.success(`Updated Top Ad Boost status for ${selectedListingIds.length} ads!`);
+    setSelectedListingIds([]);
+  };
+
+  const handleBulkDeleteListingsAction = () => {
+    if (selectedListingIds.length === 0) return;
+    if (window.confirm(`Are you sure you want to purge ${selectedListingIds.length} listings?`)) {
+      bulkDeleteListings(selectedListingIds);
+      toast.success(`Purged ${selectedListingIds.length} classified ads.`);
+      setSelectedListingIds([]);
+    }
+  };
+
   const pendingVerifications = verificationRequests.filter(r => r.status === 'pending');
   const pendingPasswords = passwordRequests.filter(r => r.status === 'pending');
   const activeDisputes = disputeCases.filter(c => c.status !== 'resolved');
@@ -216,6 +311,8 @@ export const AdminDashboard: React.FC = () => {
       items: [
         { id: 'analytics', label: 'Vitals & Stats', description: 'Real-time metrics, node traffic, gross liquidity', icon: Activity, color: 'text-emerald-400' },
         { id: 'superuser', label: 'Master Admin Identity', description: 'Configure public name, photos, badge & login details', icon: Fingerprint, color: 'text-emerald-400' },
+        { id: 'announcements', label: 'Global Announcements', description: 'Broadcast banner notices to all marketplace visitors', icon: Megaphone, badge: announcements.filter(a => a.active).length, color: 'text-yellow-400' },
+        { id: 'categories', label: 'Market Categories', description: 'Manage category taxonomy and icons', icon: Layers, badge: categories.length, color: 'text-purple-400' },
       ]
     },
     {
@@ -234,7 +331,8 @@ export const AdminDashboard: React.FC = () => {
       items: [
         { id: 'finance', label: 'Treasury & Revenue', description: 'Ad promotion plans & payment receipts', icon: Wallet, badge: pendingPromoPay.length, color: 'text-emerald-400', badgeBg: 'bg-emerald-500 text-slate-950' },
         { id: 'security', label: 'Threat Logs', description: 'Forensic intrusion detection and device logs', icon: ShieldAlert, badge: intrusionLogs.length, color: 'text-rose-500', badgeBg: 'bg-rose-600 text-white' },
-        { id: 'settings', label: 'Global Metadata & Link Previews', description: 'Social share preview cards, logo & site config', icon: SettingsIcon, color: 'text-cyan-400' },
+        { id: 'audit_logs', label: 'Audit Trail Logs', description: 'Complete system action history log', icon: History, badge: auditLogs.length, color: 'text-indigo-400' },
+        { id: 'settings', label: 'Global Settings & Features', description: 'Social share preview cards, logo & system toggles', icon: SettingsIcon, color: 'text-cyan-400' },
       ]
     }
   ];
@@ -324,8 +422,15 @@ export const AdminDashboard: React.FC = () => {
                         return (
                           <button key={item.id} onClick={() => { setActiveTab(item.id); setIsDropdownOpen(false); }} className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 ${activeTab === item.id ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/60'}`}>
                             <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${activeTab === item.id ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
-                            <div className="min-w-0">
-                               <p className="text-xs font-bold truncate">{item.label}</p>
+                            <div className="min-w-0 flex-1">
+                               <div className="flex items-center justify-between gap-1">
+                                 <p className="text-xs font-bold truncate">{item.label}</p>
+                                 {item.badge !== undefined && item.badge > 0 && (
+                                   <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-extrabold ${item.badgeBg || 'bg-slate-800 text-slate-300'}`}>
+                                     {item.badge}
+                                   </span>
+                                 )}
+                               </div>
                                <p className="text-[10px] opacity-70 truncate">{item.description}</p>
                             </div>
                           </button>
@@ -430,20 +535,114 @@ export const AdminDashboard: React.FC = () => {
             </form>
           )}
 
+          {/* TAB: Global Announcements Manager */}
+          {activeTab === 'announcements' && (
+            <div className="space-y-6 animate-in fade-in">
+              <form onSubmit={handleAddAnnouncementSubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl">
+                <h3 className="font-black text-white text-lg uppercase flex items-center gap-2">
+                  <Megaphone className="w-5 h-5 text-yellow-400" /> Broadcast New System Notice
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <input type="text" required placeholder="Announcement Title" value={annTitle} onChange={e => setAnnTitle(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none" />
+                  <input type="text" required placeholder="Banner Message Details" value={annMessage} onChange={e => setAnnMessage(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none sm:col-span-2" />
+                </div>
+                <div className="flex justify-between items-center pt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-bold uppercase">Notice Type:</span>
+                    {(['info', 'warning', 'success', 'alert'] as const).map(type => (
+                      <button key={type} type="button" onClick={() => setAnnType(type)} className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase ${annType === type ? 'bg-yellow-400 text-slate-950' : 'bg-slate-950 text-slate-400 border border-slate-800'}`}>
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                  <button type="submit" className="px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5">
+                    <Send className="w-3.5 h-3.5" /> Broadcast Banner
+                  </button>
+                </div>
+              </form>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">
+                <h4 className="font-black text-white text-sm uppercase">Active Announcements ({announcements.length})</h4>
+                <div className="space-y-2">
+                  {announcements.map((ann) => (
+                    <div key={ann.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-4 text-xs">
+                      <div>
+                        <p className="font-bold text-white">{ann.title}</p>
+                        <p className="text-slate-400">{ann.message}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => deleteAnnouncement(ann.id)} className="p-2 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-xl transition-all">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: Categories Manager */}
+          {activeTab === 'categories' && (
+            <div className="space-y-6 animate-in fade-in">
+              <form onSubmit={handleAddCategorySubmit} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl">
+                <h3 className="font-black text-white text-lg uppercase flex items-center gap-2">
+                  <Layers className="w-5 h-5 text-purple-400" /> Create Market Category
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <input type="text" required placeholder="Category Name" value={newCatName} onChange={e => setNewCatName(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none" />
+                  <select value={newCatColor} onChange={e => setNewCatColor(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-white focus:outline-none">
+                    <option value="bg-blue-500">Blue Accent</option>
+                    <option value="bg-purple-500">Purple Accent</option>
+                    <option value="bg-teal-500">Teal Accent</option>
+                    <option value="bg-amber-500">Amber Accent</option>
+                    <option value="bg-rose-500">Rose Accent</option>
+                  </select>
+                  <button type="submit" className="bg-emerald-500 text-slate-950 font-black rounded-xl text-xs py-3">Add Category</button>
+                </div>
+              </form>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {categories.map((cat) => (
+                  <div key={cat.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${cat.color}`}></div>
+                      <span className="font-bold text-white truncate">{cat.name}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* TAB 3: Users */}
           {activeTab === 'users' && (
-             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-               <div className="p-6 border-b border-slate-800 bg-slate-950/30 flex justify-between items-center gap-4">
+             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-4">
+               <div className="p-6 border-b border-slate-800 bg-slate-950/30 flex flex-col sm:flex-row justify-between items-center gap-4">
                   <h3 className="font-black text-white text-lg uppercase">Account Directory ({filteredUsers.length})</h3>
-                  <div className="relative w-64">
+                  <div className="relative w-full sm:w-64">
                      <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                      <input type="text" placeholder="Filter users..." value={userSearch} onChange={e => setUserSearch(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none" />
                   </div>
                </div>
+
+               {selectedUserIds.length > 0 && (
+                 <div className="mx-6 p-3 bg-slate-950 border border-blue-500/30 rounded-2xl flex items-center justify-between text-xs animate-in fade-in">
+                   <span className="font-bold text-blue-400">{selectedUserIds.length} users selected</span>
+                   <div className="flex items-center gap-2">
+                     <button onClick={() => handleBulkUserStatus('active')} className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-lg font-bold">Unban / Activate</button>
+                     <button onClick={() => handleBulkUserStatus('suspended')} className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Suspend</button>
+                     <button onClick={() => handleBulkUserStatus('banned')} className="px-3 py-1 bg-rose-500/20 text-rose-400 rounded-lg font-bold">Ban Users</button>
+                     <button onClick={handleBulkDeleteUsersAction} className="px-3 py-1 bg-rose-600 text-white rounded-lg font-black">Delete</button>
+                   </div>
+                 </div>
+               )}
+
                <div className="overflow-x-auto">
                  <table className="w-full text-xs text-left">
                    <thead className="bg-slate-950 text-[10px] font-black text-slate-500 uppercase border-b border-slate-800">
                      <tr>
+                        <th className="px-4 py-4"><input type="checkbox" onChange={handleToggleSelectAllUsers} checked={selectedUserIds.length > 0 && selectedUserIds.length === filteredUsers.length} className="rounded" /></th>
                         <th className="px-6 py-4">Identity</th>
                         <th className="px-6 py-4">Status</th>
                         <th className="px-6 py-4">Role</th>
@@ -453,6 +652,9 @@ export const AdminDashboard: React.FC = () => {
                    <tbody className="divide-y divide-slate-800">
                      {filteredUsers.map((u) => (
                        <tr key={u.id} className="hover:bg-slate-800/30 transition-colors">
+                         <td className="px-4 py-4">
+                           <input type="checkbox" checked={selectedUserIds.includes(u.id)} onChange={() => setSelectedUserIds(prev => prev.includes(u.id) ? prev.filter(i => i !== u.id) : [...prev, u.id])} className="rounded" />
+                         </td>
                          <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                                {u.avatarUrl ? <img src={u.avatarUrl} className="w-8 h-8 rounded-xl object-cover" alt="" /> : <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center"><User className="w-4 h-4" /></div>}
@@ -476,19 +678,31 @@ export const AdminDashboard: React.FC = () => {
 
           {/* TAB 4: Ad Inventory */}
           {activeTab === 'listings' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-slate-800 bg-slate-950/30 flex justify-between items-center gap-4">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl space-y-4">
+              <div className="p-6 border-b border-slate-800 bg-slate-950/30 flex flex-col sm:flex-row justify-between items-center gap-4">
                 <h3 className="font-black text-white text-lg uppercase">Ad Inventory ({filteredListings.length})</h3>
-                <div className="relative w-64">
+                <div className="relative w-full sm:w-64">
                    <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
                    <input type="text" placeholder="Filter ads..." value={listingSearch} onChange={e => setListingSearch(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none" />
                 </div>
               </div>
 
+              {selectedListingIds.length > 0 && (
+                 <div className="mx-6 p-3 bg-slate-950 border border-teal-500/30 rounded-2xl flex items-center justify-between text-xs animate-in fade-in">
+                   <span className="font-bold text-teal-400">{selectedListingIds.length} ads selected</span>
+                   <div className="flex items-center gap-2">
+                     <button onClick={() => handleBulkListingFeature(true)} className="px-3 py-1 bg-amber-500/20 text-amber-400 rounded-lg font-bold">Boost Top Ad</button>
+                     <button onClick={() => handleBulkListingFeature(false)} className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg font-bold">Unboost</button>
+                     <button onClick={handleBulkDeleteListingsAction} className="px-3 py-1 bg-rose-600 text-white rounded-lg font-black">Purge Ads</button>
+                   </div>
+                 </div>
+               )}
+
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-950 text-[10px] font-black text-slate-500 uppercase border-b border-slate-800">
                     <tr>
+                      <th className="px-4 py-4"><input type="checkbox" onChange={handleToggleSelectAllListings} checked={selectedListingIds.length > 0 && selectedListingIds.length === filteredListings.length} className="rounded" /></th>
                       <th className="px-6 py-4">Item Title</th>
                       <th className="px-6 py-4">Price</th>
                       <th className="px-6 py-4">Seller</th>
@@ -499,6 +713,9 @@ export const AdminDashboard: React.FC = () => {
                   <tbody className="divide-y divide-slate-800">
                     {filteredListings.map((ad) => (
                       <tr key={ad.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="px-4 py-4">
+                          <input type="checkbox" checked={selectedListingIds.includes(ad.id)} onChange={() => setSelectedListingIds(prev => prev.includes(ad.id) ? prev.filter(i => i !== ad.id) : [...prev, ad.id])} className="rounded" />
+                        </td>
                         <td className="px-6 py-4 font-bold text-white flex items-center gap-3">
                           <img src={ad.images[0]} className="w-10 h-10 rounded-xl object-cover bg-slate-950 shrink-0" alt="" />
                           <span className="truncate max-w-xs">{ad.title}</span>
@@ -679,6 +896,26 @@ export const AdminDashboard: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Promotion Pricing Rates Controls */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <h3 className="font-black text-white text-base uppercase flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-emerald-400" /> Promotion Plan Rates
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-bold uppercase">1 Month Plan Rate (₦ / mo)</label>
+                    <input type="number" value={plan1Rate} onChange={e => setPlan1Rate(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono font-bold" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-bold uppercase">3 Months Plan Rate (₦ / mo)</label>
+                    <input type="number" value={plan3Rate} onChange={e => setPlan3Rate(Number(e.target.value))} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono font-bold" />
+                  </div>
+                </div>
+                <button onClick={handleSaveTreasuryRates} className="px-6 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs">
+                  Save Plan Rates
+                </button>
+              </div>
             </div>
           )}
 
@@ -702,34 +939,105 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 11: Settings */}
+          {/* TAB: Audit Logs Trail */}
+          {activeTab === 'audit_logs' && (
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl">
+              <h3 className="font-black text-white text-lg uppercase flex items-center gap-2">
+                <History className="w-5 h-5 text-indigo-400" /> Audit Trail Logs ({auditLogs.length})
+              </h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {auditLogs.map((log) => (
+                  <div key={log.id} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between text-xs font-mono">
+                    <div>
+                      <p className="font-bold text-emerald-400">{log.action}</p>
+                      <p className="text-slate-400 text-[11px]">{log.details}</p>
+                    </div>
+                    <span className="text-[9px] text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 11: Settings & System Config */}
           {activeTab === 'settings' && (
-            <form onSubmit={handleUpdateSiteMetadata} className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl animate-in fade-in">
-              <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-xs border-b border-slate-800 pb-4">
-                <Globe className="w-4 h-4" />
-                <span>Marketplace Global Metadata & SEO Settings</span>
-              </div>
+            <div className="space-y-6">
+              {/* System Config Switches */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-2xl">
+                <h3 className="font-black text-white text-lg uppercase flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-cyan-400" /> System Governance & Feature Switches
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Maintenance Mode</p>
+                      <p className="text-[10px] text-slate-500">Lock non-admin access</p>
+                    </div>
+                    <button onClick={() => updateSystemConfig({ maintenanceMode: !systemConfig.maintenanceMode })} className="text-2xl">
+                      {systemConfig.maintenanceMode ? <ToggleRight className="w-8 h-8 text-emerald-400" /> : <ToggleLeft className="w-8 h-8 text-slate-600" />}
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-300 uppercase">Marketplace Instance Name</label>
-                  <input type="text" value={metaSiteName} onChange={e => setMetaSiteName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Auto-Approve Ads</p>
+                      <p className="text-[10px] text-slate-500">Instant publishing on post</p>
+                    </div>
+                    <button onClick={() => updateSystemConfig({ autoApproveAds: !systemConfig.autoApproveAds })} className="text-2xl">
+                      {systemConfig.autoApproveAds ? <ToggleRight className="w-8 h-8 text-emerald-400" /> : <ToggleLeft className="w-8 h-8 text-slate-600" />}
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Require ID for Posting</p>
+                      <p className="text-[10px] text-slate-500">Mandate NIN verification before listing</p>
+                    </div>
+                    <button onClick={() => updateSystemConfig({ requireIdForPosting: !systemConfig.requireIdForPosting })} className="text-2xl">
+                      {systemConfig.requireIdForPosting ? <ToggleRight className="w-8 h-8 text-emerald-400" /> : <ToggleLeft className="w-8 h-8 text-slate-600" />}
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">AI Spam Filter</p>
+                      <p className="text-[10px] text-slate-500">Automated content screening</p>
+                    </div>
+                    <button onClick={() => updateSystemConfig({ aiSpamFilter: !systemConfig.aiSpamFilter })} className="text-2xl">
+                      {systemConfig.aiSpamFilter ? <ToggleRight className="w-8 h-8 text-emerald-400" /> : <ToggleLeft className="w-8 h-8 text-slate-600" />}
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="font-bold text-slate-300 uppercase">Support Contact Email</label>
-                  <input type="email" value={metaContactEmail} onChange={e => setMetaContactEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
+              </div>
+
+              {/* Site Metadata Settings */}
+              <form onSubmit={handleUpdateSiteMetadata} className="bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl animate-in fade-in">
+                <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-xs border-b border-slate-800 pb-4">
+                  <Globe className="w-4 h-4" />
+                  <span>Marketplace Global Metadata & SEO Settings</span>
                 </div>
-              </div>
 
-              <div className="space-y-2 text-xs">
-                <label className="font-bold text-slate-300 uppercase">Global Social Description (SEO)</label>
-                <textarea rows={3} value={metaDescription} onChange={e => setMetaDescription(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-emerald-500" />
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+                  <div className="space-y-2">
+                    <label className="font-bold text-slate-300 uppercase">Marketplace Instance Name</label>
+                    <input type="text" value={metaSiteName} onChange={e => setMetaSiteName(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="font-bold text-slate-300 uppercase">Support Contact Email</label>
+                    <input type="email" value={metaContactEmail} onChange={e => setMetaContactEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500" />
+                  </div>
+                </div>
 
-              <button type="submit" className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-500/10 transition-all flex items-center gap-2">
-                 <CheckCircle2 className="w-4 h-4" /> Save Global Config
-              </button>
-            </form>
+                <div className="space-y-2 text-xs">
+                  <label className="font-bold text-slate-300 uppercase">Global Social Description (SEO)</label>
+                  <textarea rows={3} value={metaDescription} onChange={e => setMetaDescription(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none focus:border-emerald-500" />
+                </div>
+
+                <button type="submit" className="px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-500/10 transition-all flex items-center gap-2">
+                   <CheckCircle2 className="w-4 h-4" /> Save Global Config
+                </button>
+              </form>
+            </div>
           )}
 
         </div>
