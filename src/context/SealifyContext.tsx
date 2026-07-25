@@ -180,7 +180,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<UserProfile | null>(null);
   const [adminPin, setAdminPin] = useState<string>('336699');
   
-  // App Data State (Empty initial, filled by DB)
+  // App Data State
   const [listings, setListings] = useState<Listing[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -198,7 +198,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
   const [language, setLanguage] = useState<SupportedLanguage>('en');
   const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
-  
   const [categories, setCategories] = useState([
     { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 0, color: 'bg-blue-500' },
     { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
@@ -283,7 +282,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (dbLogs.status === 'fulfilled') setAuditLogs(dbLogs.value as any);
       if (dbThreats.status === 'fulfilled') setIntrusionLogs(dbThreats.value as any);
       if (dbSpots.status === 'fulfilled') setSafeSpots(dbSpots.value as any);
-      if (dbDeals.status === 'fulfilled') setRecentDeals(dbDeals.value as any);
+      if (dbDeals.status === 'fulfilled') setRecentDeals(dbDeals.value.map((d: any) => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       
       if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
       
@@ -351,7 +350,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setLoading(false);
     } catch (err) {
-      console.error("Fetch Error:", err);
       setLoading(false);
     }
   }, [user]);
@@ -362,138 +360,59 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
-      const dbUser = await userService.getByEmail(email);
-      if (dbUser) {
-        if (dbUser.status === 'banned') {
-          toast.error('Account Banned: Access denied.');
-          return false;
-        }
-        setUser(dbUser as any);
-        toast.success(`Welcome back, ${dbUser.full_name}`);
-        return true;
-      } else {
-        toast.error("User record not found in database. Please register first.");
-        return false;
-      }
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || 'password123' });
+      if (error) { toast.error(error.message); return false; }
+      const profile = await userService.getProfile(data.user.id);
+      setUser(profile as any);
+      toast.success('Access Granted.');
+      return true;
     } catch (err) {
-      toast.error("Database connection failure. Check console or verify SQL setup.");
+      toast.error('Auth failure.');
       return false;
     }
   };
 
   const signup = async (data: Partial<UserProfile> & { password?: string }) => {
     try {
-      const newUser = await userService.create({
-        email: data.email!,
-        full_name: data.fullName!,
-        phone_number: data.phoneNumber || null,
-        role: data.role || 'buyer',
-        verified: false,
-        verification_type: 'none',
-        location: data.location || 'Ogbomoso, Oyo State',
-        member_since: new Date().toISOString(),
-        status: 'active'
-      });
-      setUser(newUser as any);
-      toast.success('Account created and verified on node.');
-      fetchData();
-    } catch (err) {
-      toast.error("Signup failed. Ensure the 'users' table exists in your Supabase database.");
-    }
+      const { data: authData, error } = await supabase.auth.signUp({ email: data.email!, password: data.password! });
+      if (error) throw error;
+      if (authData.user) {
+        await userService.create({ id: authData.user.id, email: data.email, full_name: data.fullName, role: data.role || 'buyer' });
+        toast.success('Node Identity Created.');
+        fetchData();
+      }
+    } catch (err) { toast.error("Signup failed."); }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
-    try {
-      const dbUser = await userService.getByEmail(email);
-      if (dbUser && dbUser.role === 'admin' && pin === adminPin) {
-         setUser(dbUser as any);
-         toast.success('Admin Session Authenticated.');
-         return true;
-      }
-      // Demo fallback only for specific dev email
-      if (email === 'admin@sealify.ng' && pin === adminPin) {
-        toast.warning("Table lookup failed, using root bypass.");
-        return true;
-      }
-    } catch (e) {}
-    toast.error("Access denied. Root credentials or PIN mismatch.");
+    const success = await login(email, pass);
+    if (success && user?.role === 'admin' && pin === adminPin) return true;
     return false;
   };
 
-  const logout = () => {
-    setUser(null);
-    toast.info('Session disconnected.');
-  };
+  const logout = () => { setUser(null); supabase.auth.signOut(); toast.info('Disconnected.'); };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
-    try {
-      const updated = await userService.update(id, data as any);
-      if (user?.id === id) setUser(updated as any);
-      fetchData();
-    } catch (e) {
-      toast.error("Failed to update remote user record.");
-    }
+    const updated = await userService.update(id, data);
+    if (user?.id === id) setUser(updated as any);
+    fetchData();
   };
 
-  const deleteUser = async (id: string) => {
-    try {
-      await userService.delete(id);
-      fetchData();
-    } catch (e) {
-      toast.error("Deletion failed.");
-    }
-  };
+  const deleteUser = async (id: string) => { await userService.delete(id); fetchData(); };
 
   const createListing = async (data: Partial<Listing>): Promise<boolean> => {
     try {
-      await listingService.create({
-        seller_id: user?.id,
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        category: data.category,
-        condition: data.condition,
-        location: data.location,
-        status: 'active',
-        video_url: data.videoUrl || null,
-        featured: data.featured || false,
-        specifications: data.specifications || null,
-      }, data.images || []);
-      
-      await fetchData();
+      await listingService.create({ seller_id: user?.id, ...data }, data.images || []);
+      fetchData();
       return true;
-    } catch (e: any) {
-      toast.error("Could not write listing to database.");
-      return false;
-    }
+    } catch (e) { return false; }
   };
 
-  const updateListing = async (id: string, updatedData: Partial<Listing>) => {
-    try {
-      await listingService.update(id, updatedData as any);
-      fetchData();
-    } catch (e) {
-      toast.error("Update failed.");
-    }
-  };
+  const updateListing = async (id: string, updatedData: Partial<Listing>) => { await listingService.update(id, updatedData); fetchData(); };
 
-  const deleteListing = async (id: string) => {
-    try {
-      await listingService.delete(id);
-      fetchData();
-    } catch (e) {
-      toast.error("Delete failed.");
-    }
-  };
+  const deleteListing = async (id: string) => { await listingService.delete(id); fetchData(); };
 
-  const markAsSold = async (id: string) => {
-    try {
-      await listingService.update(id, { status: 'sold' });
-      fetchData();
-    } catch (e) {
-      toast.error("Action failed.");
-    }
-  };
+  const markAsSold = async (id: string) => { await listingService.update(id, { status: 'sold' }); fetchData(); };
 
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
@@ -521,9 +440,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       totalRevenue: promotionPaymentRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0),
       userGrowth: Math.round((allUsers.length / 10) * 100) / 10,
       categoryDistribution: categories.map(c => ({ name: c.name, count: listings.filter(l => l.category === c.name).length, color: c.color })),
-      activeSessions: [
-        { id: 'sess_1', user: 'Ope_72', action: 'Viewing Electronics', time: 'Just now' }
-      ]
+      activeSessions: [{ id: 'sess_1', user: 'Guest_Node', action: 'Searching', time: 'Just now' }]
     };
   }, [listings, allUsers, conversations, promotionPaymentRequests, categories]);
 
@@ -535,13 +452,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})),
       promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
       safeSpots, addSafeSpot: (s) => setSafeSpots(p => [...p, {...s, id: `spot_${Date.now()}`}]), deleteSafeSpot: (id) => setSafeSpots(p => p.filter(s => s.id !== id)),
-      exportDatabaseBackup: () => toast.info('Exporting database...'),
+      exportDatabaseBackup: () => toast.info('Backup initiated.'),
       language, setLanguage, t, categories, 
       addCategory: (c) => setCategories(prev => [...prev, c]), 
       deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
       updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? {...c, name} : c)),
       analytics, marketStats, login, signup, 
-      sendPhoneOtp: async () => "sent_successfully", 
+      sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), 
       verifyPhoneOtp: async () => true, 
       adminLogin, logout, listings, allUsers, updateUser, deleteUser,
       bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)),
@@ -580,7 +497,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       deleteAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()),
       reports, 
       submitReport: (r) => reportService.create(r).then(() => fetchData()),
-      processReport: (id, action) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
+      processReport: (id) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
       disputeCases, 
       submitDisputeCase: (d) => disputeService.create(d).then(() => fetchData()),
       processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(() => fetchData()),
