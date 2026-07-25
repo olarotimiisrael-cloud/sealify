@@ -9,7 +9,7 @@ import SEO from '../components/SEO';
 import { 
   ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image as ImageIcon, Check, Upload, 
   KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap, Building2, MapPin, Sparkles,
-  Phone, AlertTriangle, Layout, Shield, ArrowRight, User
+  Phone, AlertTriangle, Layout, Shield, ArrowRight, User, ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -176,13 +176,24 @@ const Settings: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => avatarInputRef.current?.click()}
-              className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-xl transition-all"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Upload Profile Picture</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end">
+              <Link
+                to={`/seller/${user.id}`}
+                className="px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs flex items-center gap-2 border border-slate-700 shadow"
+              >
+                <span>View My Public Storefront</span>
+                <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-xl transition-all"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Upload Photo</span>
+              </button>
+            </div>
           </div>
         </div>
 

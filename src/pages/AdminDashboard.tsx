@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -13,7 +13,7 @@ import {
   Globe, Settings as SettingsIcon, Search, ShieldAlert, 
   CheckCircle2, History, Zap, KeyRound, Radio, Clock, 
   Wallet, Check, X, ShieldCheck, Award, Layers, ChevronDown, BellRing, Monitor, Smartphone, Globe2,
-  User, Cpu
+  User, Cpu, ExternalLink, Camera, Layout, Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -113,17 +113,13 @@ export const AdminDashboard: React.FC = () => {
   const [newCatIcon, setNewCatIcon] = useState('LayoutGrid');
   const [newCatColor, setNewCatColor] = useState('bg-emerald-500');
 
-  // New Safe Spot Form State
-  const [spotName, setSpotName] = useState('');
-  const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('LAUTECH Area');
-  const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
-  const [spotAddress, setSpotAddress] = useState('');
-
   // Treasury Rates
   const [plan1Rate, setPlan1Rate] = useState<number>(15000);
   const [plan3Rate, setPlan3Rate] = useState<number>(13000);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const avatarFileRef = useRef<HTMLInputElement>(null);
+  const bannerFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && (!isAdmin || !user)) {
@@ -133,10 +129,10 @@ export const AdminDashboard: React.FC = () => {
 
   useEffect(() => {
     if (user && activeTab === 'superuser') {
-       setAdminFullName(user.fullName || '');
-       setAdminEmail(user.email || '');
-       setAdminPhone(user.phoneNumber || '');
-       setAdminBusinessName(user.businessName || '');
+       setAdminFullName(user.fullName || 'Sealify');
+       setAdminEmail(user.email || 'admin@sealify.ng');
+       setAdminPhone(user.phoneNumber || '+234 813 120 8468');
+       setAdminBusinessName(user.businessName || 'Sealify Official Hub');
        setAdminAvatar(user.avatarUrl || '');
        setAdminBanner(user.storeBannerUrl || '');
        setAdminBadge(user.verificationType || 'premium');
@@ -159,6 +155,38 @@ export const AdminDashboard: React.FC = () => {
   }, [user, activeTab, siteSettings, promotionPlans]);
 
   if (loading || !isAdmin || !user) return null;
+
+  const handleAdminAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newUrl = event.target.result as string;
+          setAdminAvatar(newUrl);
+          updateUser(user.id, { avatarUrl: newUrl });
+          toast.success('🎉 Sealify profile photo updated!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAdminBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          const newUrl = event.target.result as string;
+          setAdminBanner(newUrl);
+          updateUser(user.id, { storeBannerUrl: newUrl });
+          toast.success('🎨 Sealify storefront cover banner updated!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleUpdateSiteMetadata = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,29 +264,6 @@ export const AdminDashboard: React.FC = () => {
     toast.success(`Category "${newCatName}" added!`);
   };
 
-  const handleAddSafeSpotSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!spotName.trim() || !spotAddress.trim()) return;
-    addSafeSpot({
-      name: spotName.trim(),
-      zone: spotZone,
-      category: spotCategory,
-      address: spotAddress.trim(),
-      distance: '0.5 km',
-      hours: '8:00 AM - 6:00 PM',
-      cctvVerified: true,
-    });
-    setSpotName('');
-    setSpotAddress('');
-    toast.success('New Verified Safe Spot added!');
-  };
-
-  const handleSaveTreasuryRates = () => {
-    updatePromotionPlanRate(1, plan1Rate);
-    updatePromotionPlanRate(3, plan3Rate);
-    toast.success('Promotion plan monthly rates updated!');
-  };
-
   // Bulk Actions
   const handleToggleSelectAllUsers = () => {
     if (selectedUserIds.length === filteredUsers.length) {
@@ -318,12 +323,14 @@ export const AdminDashboard: React.FC = () => {
   const totalRealizedRevenue = approvedPromoPay.reduce((sum, r) => sum + r.amount, 0);
   const totalPendingRevenue = pendingPromoPay.reduce((sum, r) => sum + r.amount, 0);
 
+  const adminListings = listings.filter(l => l.sellerId === user.id);
+
   const moduleGroups: ModuleGroup[] = [
     {
       groupName: "Overview & Root",
       items: [
         { id: 'analytics', label: 'Vitals & Stats', description: 'Real-time metrics, node traffic, gross liquidity', icon: Activity, color: 'text-emerald-400' },
-        { id: 'superuser', label: 'Master Admin Identity', description: 'Configure public name, photos, badge & login details', icon: Fingerprint, color: 'text-emerald-400' },
+        { id: 'superuser', label: 'Master Admin Identity', description: 'Configure Sealify public name, photos, cover & credentials', icon: Fingerprint, color: 'text-emerald-400' },
         { id: 'announcements', label: 'Global Announcements', description: 'Broadcast notices and real-time alerts', icon: Megaphone, badge: announcements.filter(a => a.active).length, color: 'text-yellow-400' },
         { id: 'categories', label: 'Market Categories', description: 'Manage category taxonomy and icons', icon: Layers, badge: categories.length, color: 'text-purple-400' },
       ]
@@ -372,25 +379,48 @@ export const AdminDashboard: React.FC = () => {
       <div className="bg-slate-900/50 border-b border-slate-800/80 backdrop-blur-xl sticky top-[64px] z-30">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden flex items-center justify-center">
+            
+            {/* Clickable Profile Avatar */}
+            <Link 
+              to={`/seller/${user.id}`} 
+              className="w-14 h-14 bg-slate-950 border-2 border-emerald-500 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden flex items-center justify-center hover:scale-105 transition-transform group"
+              title="Click to view Official Sealify Storefront Profile"
+            >
               {user.avatarUrl ? (
-                <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
+                <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Sealify Admin" />
               ) : (
-                <User className="w-6 h-6 text-slate-500" />
+                <User className="w-6 h-6 text-emerald-400" />
               )}
               <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-lg flex items-center justify-center border-2 border-slate-900 z-20">
                 <ShieldCheck className="w-3 h-3" />
               </div>
-            </div>
+            </Link>
+
             <div>
-              <h1 className="text-xl font-black text-white tracking-tighter uppercase">{user.fullName} Admin Panel</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-black text-white tracking-tighter uppercase">{user.fullName || 'Sealify'}</h1>
+                <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                  Official Root
+                </span>
+              </div>
               <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest flex items-center gap-1.5 mt-0.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                 Node: OGB-NPF-72 • Godmode Active
               </p>
             </div>
           </div>
+
           <div className="flex items-center gap-2 flex-wrap">
+            
+            {/* My Official Storefront Link */}
+            <Link
+              to={`/seller/${user.id}`}
+              className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black rounded-xl shadow-lg flex items-center gap-1.5 transition-transform active:scale-95"
+            >
+              <User className="w-3.5 h-3.5 fill-current" />
+              <span>My Sealify Profile ({adminListings.length} Official Ads)</span>
+            </Link>
+
             <button onClick={() => setIsSqlModalOpen(true)} className="px-3.5 py-2 bg-slate-800 hover:bg-slate-750 text-slate-300 text-[10px] font-bold rounded-xl border border-slate-700 flex items-center gap-1.5">
               <Database className="w-3.5 h-3.5 text-emerald-400" /> SQL Schema
             </button>
@@ -493,6 +523,163 @@ export const AdminDashboard: React.FC = () => {
                   ))}
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* TAB: Master Admin Superuser Setup */}
+          {activeTab === 'superuser' && (
+            <div className="space-y-6 animate-in fade-in">
+              
+              {/* Profile Preview Header */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden shadow-2xl space-y-6">
+                <div className="h-40 w-full bg-slate-950 rounded-2xl overflow-hidden relative border border-slate-800 flex items-center justify-center">
+                  {adminBanner || user.storeBannerUrl ? (
+                    <img src={adminBanner || user.storeBannerUrl} alt="Store Banner" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-slate-600 uppercase">Default Sealify Cover Banner</span>
+                  )}
+                  <input type="file" ref={bannerFileRef} onChange={handleAdminBannerUpload} accept="image/*" className="hidden" />
+                  <button
+                    type="button"
+                    onClick={() => bannerFileRef.current?.click()}
+                    className="absolute top-3 right-3 px-3 py-1.5 bg-slate-950/80 backdrop-blur-md text-emerald-400 rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-800"
+                  >
+                    <Camera className="w-3.5 h-3.5" /> Change Cover
+                  </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center sm:items-end justify-between gap-4 -mt-16 sm:-mt-14 relative z-10">
+                  <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
+                    <div className="relative group shrink-0">
+                      {adminAvatar || user.avatarUrl ? (
+                        <img src={adminAvatar || user.avatarUrl} alt={adminFullName} className="w-24 h-24 rounded-2xl object-cover border-4 border-slate-900 bg-slate-950 shadow-xl" />
+                      ) : (
+                        <div className="w-24 h-24 rounded-2xl border-4 border-slate-900 bg-slate-950 flex items-center justify-center text-slate-500 shadow-xl">
+                          <User className="w-10 h-10" />
+                        </div>
+                      )}
+                      <input type="file" ref={avatarFileRef} onChange={handleAdminAvatarUpload} accept="image/*" className="hidden" />
+                      <button
+                        type="button"
+                        onClick={() => avatarFileRef.current?.click()}
+                        className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 text-center sm:text-left">
+                      <div className="flex items-center gap-2 justify-center sm:justify-start">
+                        <h2 className="text-2xl font-black text-white">{adminFullName || 'Sealify'}</h2>
+                        <span className="text-[10px] font-black uppercase text-amber-300 bg-gradient-to-r from-purple-600 to-indigo-600 px-2.5 py-0.5 rounded-full shadow">
+                          Premium Verified
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-emerald-400">{adminBusinessName || 'Sealify Official Hub'}</p>
+                      <p className="text-[11px] text-slate-500">{adminEmail} • {adminPhone}</p>
+                    </div>
+                  </div>
+
+                  <Link
+                    to={`/seller/${user.id}`}
+                    className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1.5 shadow-lg"
+                  >
+                    <span>View Public Storefront</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
+              </div>
+
+              {/* Master Form */}
+              <form onSubmit={handleSaveSuperuserProfile} className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+                <h3 className="font-extrabold text-sm text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                  <Fingerprint className="w-4 h-4" /> Edit Master Admin Profile & Security
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-300 uppercase">Display Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={adminFullName}
+                      onChange={e => setAdminFullName(e.target.value)}
+                      placeholder="Sealify"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-300 uppercase">Official Store Name</label>
+                    <input
+                      type="text"
+                      value={adminBusinessName}
+                      onChange={e => setAdminBusinessName(e.target.value)}
+                      placeholder="Sealify Official Hub"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 font-bold text-emerald-400"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-300 uppercase">Admin Email *</label>
+                    <input
+                      type="email"
+                      required
+                      value={adminEmail}
+                      onChange={e => setAdminEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-slate-300 uppercase">Phone Number</label>
+                    <input
+                      type="text"
+                      value={adminPhone}
+                      onChange={e => setAdminPhone(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white font-mono focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-950 border border-emerald-500/20 rounded-2xl space-y-3 text-xs">
+                  <span className="font-bold text-emerald-400 uppercase tracking-widest block">Update Security Credentials</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-400 font-bold uppercase text-[10px]">Master Access Key / Password</label>
+                      <input
+                        type="password"
+                        value={adminPassword}
+                        onChange={e => setAdminPassword(e.target.value)}
+                        placeholder="Leave blank to keep existing"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-400 font-bold uppercase text-[10px]">Master Terminal PIN</label>
+                      <input
+                        type="password"
+                        maxLength={6}
+                        value={newPin}
+                        onChange={e => setNewPin(e.target.value)}
+                        placeholder={`Current: ${adminPin}`}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white font-mono tracking-widest"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Save Master Sealify Profile</span>
+                </button>
+              </form>
             </div>
           )}
 
@@ -723,8 +910,8 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-          {/* Remaining tabs (users, listings, settings, etc.) are already robust */}
-          {(['users', 'listings', 'requests', 'disputes', 'settings', 'superuser', 'categories', 'buyer_requests', 'reviews'] as const).includes(activeTab as any) && (
+          {/* Remaining tabs (users, listings, settings, etc.) */}
+          {(['users', 'listings', 'requests', 'disputes', 'settings', 'categories', 'buyer_requests', 'reviews'] as const).includes(activeTab as any) && (
              <div className="animate-in fade-in slide-in-from-bottom-2">
                <p className="text-slate-500 text-[10px] uppercase font-black text-center py-10 tracking-[0.2em]">Module Endpoint Active: Synchronizing {activeTab} Data</p>
              </div>

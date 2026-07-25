@@ -162,12 +162,12 @@ export const MOCK_LISTINGS: Listing[] = Object.keys(DETAILED_PRODUCTS).flatMap((
   const items = DETAILED_PRODUCTS[category];
   return items.map((prod, itemIdx) => ({
     id: `lst_${catIdx * 10 + itemIdx + 1}`,
-    sellerId: itemIdx % 2 === 0 ? 'usr_1' : 'usr_2',
-    sellerName: itemIdx % 2 === 0 ? 'Adebowale Ogunleye' : 'Blessing Okonjo',
+    sellerId: itemIdx % 2 === 0 ? 'usr_admin_default' : 'usr_1',
+    sellerName: itemIdx % 2 === 0 ? 'Sealify' : 'Adebowale Ogunleye',
     sellerPhone: '+234 813 120 8468',
     sellerAvatar: '',
     sellerVerified: true,
-    sellerVerificationType: itemIdx % 3 === 0 ? 'business' : 'individual',
+    sellerVerificationType: itemIdx % 2 === 0 ? 'premium' : 'business',
     title: prod.title,
     description: prod.desc,
     price: prod.price,
@@ -185,14 +185,15 @@ export const MOCK_LISTINGS: Listing[] = Object.keys(DETAILED_PRODUCTS).flatMap((
 export const ALL_MOCK_USERS: UserProfile[] = [
   {
     id: 'usr_admin_default',
-    email: 'olarotimiisrael@gmail.com',
-    fullName: 'Israel Olarotimi',
-    phoneNumber: '0813 120 8468',
+    email: 'admin@sealify.ng',
+    fullName: 'Sealify',
+    phoneNumber: '+234 813 120 8468',
     avatarUrl: '',
     storeBannerUrl: '',
     role: 'admin',
     verified: true,
     verificationType: 'premium',
+    businessName: 'Sealify Official Hub',
     memberSince: 'Jan 2023',
     location: 'Ogbomoso, Oyo State',
   },
@@ -212,5 +213,5 @@ export const ALL_MOCK_USERS: UserProfile[] = [
   }
 ];
 
-export const MOCK_USER = ALL_MOCK_USERS[1];
+export const MOCK_USER = ALL_MOCK_USERS[0]; // Default user set to Sealify Admin
 export const MOCK_MESSAGES: any[] = [];

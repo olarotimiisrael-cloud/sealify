@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -27,24 +27,31 @@ import {
   Clock,
   Building2,
   User,
-  Layout
+  Layout,
+  Camera,
+  Edit3
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { listings, allUsers, isAuthenticated, user, reviews, addReview } = useSealify();
+  const { listings, allUsers, isAuthenticated, user, reviews, addReview, updateUser } = useSealify();
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const sellerUser = allUsers.find((u) => u.id === id);
+  const isMe = user?.id === id;
+
   const sellerListings = listings.filter((l) => l.sellerId === id);
   const sampleListing = sellerListings[0] || listings[0];
 
-  const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Verified Seller';
-  const businessName = sellerUser?.businessName || (sampleListing?.title ? `${sellerName}'s Store` : 'Local Merchant');
+  const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Sealify';
+  const businessName = sellerUser?.businessName || (sellerUser?.role === 'admin' ? 'Sealify Official Hub' : `${sellerName}'s Store`);
   const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || '';
   const sellerBanner = sellerUser?.storeBannerUrl || '';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
-  const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
+  const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'premium';
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
   const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 813 120 8468';
   const memberSince = sellerUser?.memberSince || '2023';
@@ -57,8 +64,35 @@ const SellerProfile: React.FC = () => {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   const sellerReviews = reviews.filter(r => r.sellerId === id);
-
   const totalViews = sellerListings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const newAvatarUrl = event.target.result as string;
+        updateUser(user.id, { avatarUrl: newAvatarUrl });
+        toast.success('🎉 Profile photo updated!');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const newBannerUrl = event.target.result as string;
+        updateUser(user.id, { storeBannerUrl: newBannerUrl });
+        toast.success('🎨 Storefront cover photo updated!');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleToggleFollow = () => {
     if (!isAuthenticated) {
@@ -109,8 +143,8 @@ const SellerProfile: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
-        title={`${sellerName}'s Store & Listings — Sealify Nigeria`} 
-        description={`Explore items and services offered by ${sellerName} in ${sellerLocation}. Verified vendor profile.`}
+        title={`${sellerName}'s Store & Official Ads — Sealify Nigeria`} 
+        description={`Explore items and official services offered by ${sellerName} in ${sellerLocation}. Verified profile.`}
         image={sellerAvatar}
         url={window.location.href}
       />
@@ -119,7 +153,7 @@ const SellerProfile: React.FC = () => {
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         {/* Profile Banner & Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
-          <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center">
+          <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center group">
             {sellerBanner ? (
               <img
                 src={sellerBanner}
@@ -133,22 +167,53 @@ const SellerProfile: React.FC = () => {
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+
+            {isMe && (
+              <>
+                <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => bannerInputRef.current?.click()}
+                  className="absolute top-4 right-4 px-3.5 py-2 bg-slate-950/80 backdrop-blur-md text-emerald-400 hover:text-white rounded-xl text-xs font-bold border border-slate-800 flex items-center gap-1.5 shadow-xl hover:scale-105 transition-all"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>Update Cover Photo</span>
+                </button>
+              </>
+            )}
           </div>
 
           <div className="p-6 sm:p-8 -mt-16 sm:-mt-20 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-              {sellerAvatar ? (
-                <img
-                  src={sellerAvatar}
-                  alt={sellerName}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
-                />
-              ) : (
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
-                  <User className="w-10 h-10" />
-                  <span className="text-[8px] font-extrabold uppercase mt-1">No Photo</span>
-                </div>
-              )}
+              <div className="relative group shrink-0">
+                {sellerAvatar ? (
+                  <img
+                    src={sellerAvatar}
+                    alt={sellerName}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
+                  />
+                ) : (
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
+                    <User className="w-10 h-10" />
+                    <span className="text-[8px] font-extrabold uppercase mt-1">No Photo</span>
+                  </div>
+                )}
+
+                {isMe && (
+                  <>
+                    <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+                    <button
+                      type="button"
+                      onClick={() => avatarInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black hover:scale-110 transition-transform"
+                      title="Upload Profile Picture"
+                    >
+                      <Camera className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+
               <div className="space-y-1 mb-1">
                 <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                   <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{sellerName}</h1>
@@ -157,12 +222,10 @@ const SellerProfile: React.FC = () => {
                   )}
                 </div>
 
-                {sellerUser?.businessName && (
-                  <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>{sellerUser.businessName}</span>
-                  </p>
-                )}
+                <p className="text-xs font-extrabold text-emerald-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{businessName}</span>
+                </p>
 
                 <div className="flex items-center gap-3 text-xs text-slate-400 justify-center sm:justify-start flex-wrap pt-0.5">
                   <span className="flex items-center gap-1">
@@ -178,17 +241,27 @@ const SellerProfile: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
-              <button
-                onClick={handleToggleFollow}
-                className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center gap-2 transition-all shadow ${
-                  isFollowing
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
-                }`}
-              >
-                {isFollowing ? <Check className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                <span>{isFollowing ? 'Following Store' : 'Follow Vendor'}</span>
-              </button>
+              {isMe ? (
+                <Link
+                  to="/settings"
+                  className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow"
+                >
+                  <Edit3 className="w-4 h-4" />
+                  <span>Edit Profile & Store Settings</span>
+                </Link>
+              ) : (
+                <button
+                  onClick={handleToggleFollow}
+                  className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center gap-2 transition-all shadow ${
+                    isFollowing
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                  }`}
+                >
+                  {isFollowing ? <Check className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                  <span>{isFollowing ? 'Following Store' : 'Follow Vendor'}</span>
+                </button>
+              )}
 
               <button
                 onClick={() => setIsShareModalOpen(true)}
@@ -228,7 +301,7 @@ const SellerProfile: React.FC = () => {
               }`}
             >
               <Package className="w-4 h-4" />
-              <span>Active Ads ({sellerListings.length})</span>
+              <span>Official & Active Ads ({sellerListings.length})</span>
             </button>
 
             <button
@@ -259,10 +332,10 @@ const SellerProfile: React.FC = () => {
 
         {activeTab === 'listings' && (
           <div className="space-y-4">
-            <h2 className="text-lg font-black text-white">All Classifieds by {sellerName}</h2>
+            <h2 className="text-lg font-black text-white">Official Classifieds & Storefront Items by {sellerName}</h2>
             {sellerListings.length === 0 ? (
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs">
-                No active listings from this vendor at the moment.
+                No active listings published under this storefront profile yet.
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -285,7 +358,7 @@ const SellerProfile: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
-                <p className="text-xs font-bold text-slate-400 uppercase">Total Published Items</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">Total Published Ads</p>
                 <p className="text-3xl font-black text-white">{sellerListings.length}</p>
               </div>
 
@@ -295,7 +368,7 @@ const SellerProfile: React.FC = () => {
               </div>
 
               <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-1">
-                <p className="text-xs font-bold text-slate-400 uppercase">Average Buyer Rating</p>
+                <p className="text-xs font-bold text-slate-400 uppercase">Average Rating</p>
                 <p className="text-3xl font-black text-amber-400 flex items-center gap-1">
                   <span>{averageRating}</span>
                   <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
@@ -352,7 +425,7 @@ const SellerProfile: React.FC = () => {
 
             <div className="space-y-3">
               {sellerReviews.length === 0 ? (
-                 <div className="py-12 text-center text-slate-500 italic text-xs">No reviews for this vendor yet. Be the first to rate!</div>
+                 <div className="py-12 text-center text-slate-500 italic text-xs">No reviews for this storefront yet. Be the first to rate!</div>
               ) : (
                 sellerReviews.map((rev) => (
                   <div
