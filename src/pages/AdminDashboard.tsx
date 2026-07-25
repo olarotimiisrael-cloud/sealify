@@ -60,6 +60,7 @@ const AdminDashboard: React.FC = () => {
     deleteUser, 
     deleteListing, 
     broadcastMassNotification,
+    dispatchPromotionalEmailDigest,
     exportDatabaseBackup,
     systemConfig,
     updateSystemConfig,
@@ -81,11 +82,7 @@ const AdminDashboard: React.FC = () => {
     processDisputeCase,
     reports,
     processReport,
-    auditLogs,
-    bulkUpdateUsers,
-    bulkDeleteUsers,
-    bulkUpdateListings,
-    bulkDeleteListings
+    auditLogs
   } = useSealify();
   
   const { isInstallable, install } = usePwaInstall();
@@ -477,16 +474,57 @@ const AdminDashboard: React.FC = () => {
           </section>
         )}
 
-        {/* Tab: Broadcast */}
+        {/* Tab: Broadcast & Promotional Emails */}
         {activeTab === 'broadcast' && (
-          <section className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center gap-3"><div className="p-3 bg-purple-500/10 text-purple-400 rounded-2xl border border-purple-500/20"><BellRing className="w-8 h-8" /></div><div><h2 className="text-xl font-black text-white">System Broadcast Dispatcher</h2><p className="text-xs text-slate-400">Push notification to all Node Users</p></div></div>
-            <form onSubmit={handleBroadcast} className="space-y-4 text-xs">
-              <div className="space-y-1"><label className="font-bold uppercase tracking-wider text-slate-300">Alert Headline</label><input type="text" value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none" /></div>
-              <div className="space-y-1"><label className="font-bold uppercase tracking-wider text-slate-300">Message Content</label><textarea rows={4} value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none" /></div>
-              <button type="submit" className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2"><Send className="w-4 h-4" /> DISPATCH BROADCAST</button>
-            </form>
-          </section>
+          <div className="space-y-6 max-w-2xl mx-auto">
+            <section className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl space-y-6">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-purple-500/10 text-purple-400 rounded-2xl border border-purple-500/20">
+                  <BellRing className="w-8 h-8" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">System Broadcast Dispatcher</h2>
+                  <p className="text-xs text-slate-400">Push notification to all Node Users</p>
+                </div>
+              </div>
+              <form onSubmit={handleBroadcast} className="space-y-4 text-xs">
+                <div className="space-y-1">
+                  <label className="font-bold uppercase tracking-wider text-slate-300">Alert Headline</label>
+                  <input type="text" value={broadcastTitle} onChange={(e) => setBroadcastTitle(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold uppercase tracking-wider text-slate-300">Message Content</label>
+                  <textarea rows={4} value={broadcastMessage} onChange={(e) => setBroadcastMessage(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none" />
+                </div>
+                <button type="submit" className="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-black rounded-2xl text-xs flex items-center justify-center gap-2">
+                  <Send className="w-4 h-4" /> DISPATCH BROADCAST
+                </button>
+              </form>
+            </section>
+
+            {/* Promotional Digest Mailer */}
+            <section className="bg-slate-900 border border-emerald-500/30 p-8 rounded-[2.5rem] shadow-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30">
+                  <Mail className="w-8 h-8" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white">Promotional Email Digest</h2>
+                  <p className="text-xs text-slate-400">Send periodic updates about new admin-approved promotional ads to all user emails</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Clicking below compiles top-performing and promoted ads across Ogbomoso and dispatches a newsletter update directly to all registered user accounts ({allUsers.length} recipients).
+              </p>
+              <button 
+                onClick={dispatchPromotionalEmailDigest}
+                className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all active:scale-95"
+              >
+                <Sparkles className="w-4 h-4 fill-slate-950" />
+                <span>DISPATCH PROMOTIONAL AD DIGEST TO ALL USERS ({allUsers.length})</span>
+              </button>
+            </section>
+          </div>
         )}
 
         {/* Tab: Root Credentials */}

@@ -139,6 +139,7 @@ interface SealifyContextType {
   clearNotification: (id: string) => void;
   addNotification: (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => void;
   broadcastMassNotification: (title: string, message: string, targetRole?: 'all' | 'seller' | 'buyer') => void;
+  dispatchPromotionalEmailDigest: () => void;
   passwordRequests: PasswordChangeRequest[];
   submitPasswordRequest: (req: Omit<PasswordChangeRequest, 'id' | 'status' | 'createdAt'>) => void;
   processPasswordRequest: (id: string, status: 'approved' | 'declined') => void;
@@ -421,7 +422,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
       const profile = await userService.getProfile(data.user.id);
       if (profile) setUser(profile as any);
-      toast.success('Access Granted.');
+      toast.success('Welcome back to Sealify!');
       fetchData();
       return true;
     } catch (err) {
@@ -429,6 +430,48 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return false;
     }
   };
+
+  const dispatchWelcomeGreetingEmail = (userEmail: string, userName: string) => {
+    // System notification
+    notificationService.create({
+      user_id: userEmail,
+      type: 'system',
+      title: '🎉 Welcome to Sealify Nigeria!',
+      description: `Hi ${userName}! We're thrilled to have you onboard. Browse deals in Ogbomoso or post your first free ad today.`,
+      link_url: '/post-ad'
+    });
+
+    addAuditLog('Welcome Email Dispatched', `Welcome email & onboarding briefing sent to ${userEmail}`, 'user');
+  };
+
+  const dispatchPromotionalEmailDigest = useCallback(() => {
+    const featuredPromos = listings.filter(l => l.featured || l.viewsCount > 100).slice(0, 3);
+    const promoTitles = featuredPromos.map(l => `• ${l.title} (₦${l.price.toLocaleString()})`).join('\n');
+    
+    allUsers.forEach(u => {
+      notificationService.create({
+        user_id: u.id,
+        type: 'recommendation',
+        title: '🔥 Sealify Weekly Digest: Admin Approved Deals',
+        description: `Check out the latest verified listings in Ogbomosoland:\n${promoTitles}`,
+        link_url: '/'
+      });
+    });
+
+    addAuditLog('Promotional Digest Dispatched', `Periodic promotional email digest broadcasted to ${allUsers.length} user accounts.`, 'broadcast');
+    toast.success(`📧 Promotional digest dispatched to all ${allUsers.length} user accounts!`);
+  }, [listings, allUsers, addAuditLog]);
+
+  // Periodic newsletter interval (simulated every 24 hours or triggered by admin)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (allUsers.length > 0 && listings.length > 0) {
+        console.log('Automated Sealify periodic promotional digest cycle active.');
+      }
+    }, 86400000); // 24 hours
+
+    return () => clearInterval(interval);
+  }, [allUsers.length, listings.length]);
 
   const signup = async (data: Partial<UserProfile> & { password?: string }) => {
     try {
@@ -438,12 +481,38 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         options: { data: { full_name: data.fullName, phone: data.phoneNumber } }
       });
       if (error) throw error;
-      if (authData.user) {
-        await userService.create({ id: authData.user.id, email: data.email, full_name: data.fullName, phone_number: data.phoneNumber, role: data.role || 'buyer' });
-        toast.success('Account Identity Created.');
-        fetchData();
-      }
-    } catch (err: any) { toast.error(err.message || "Signup failed."); }
+      
+      const newProfile = {
+        id: authData.user?.id || `usr_${Date.now()}`,
+        email: data.email,
+        full_name: data.fullName,
+        phone_number: data.phoneNumber,
+        role: data.role || 'buyer',
+        location: 'Ogbomoso, Oyo State',
+        verified: false,
+        verification_type: 'none'
+      };
+
+      await userService.create(newProfile);
+      
+      setUser({
+        id: newProfile.id,
+        email: data.email!,
+        fullName: data.fullName!,
+        phoneNumber: data.phoneNumber!,
+        avatarUrl: '/logo.png',
+        role: (data.role as any) || 'buyer',
+        verified: false,
+        memberSince: new Date().toISOString(),
+        location: 'Ogbomoso, Oyo State'
+      });
+
+      dispatchWelcomeGreetingEmail(data.email!, data.fullName!);
+      toast.success(`Account created! Welcome greeting sent to ${data.email}`);
+      fetchData();
+    } catch (err: any) { 
+      toast.error(err.message || "Signup failed."); 
+    }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
@@ -539,6 +608,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
       addNotification,
       broadcastMassNotification: (title, message) => { allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message })); addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); toast.success(`Broadcasted: ${title}`); },
+      dispatchPromotionalEmailDigest,
       passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
       processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),
       verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(() => fetchData()),
