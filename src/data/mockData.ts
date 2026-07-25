@@ -18,247 +18,274 @@ interface CatalogItem {
   desc: string;
   price: number;
   cond: 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
-  featured: boolean; // 1 per category is featured promotional ad
+  featured: boolean;
+  loc?: string;
 }
 
 const CATALOG_DATA: Record<Category, CatalogItem[]> = {
   'Vehicles': [
     {
-      title: 'Toyota Camry 2022 Hybrid LE (Promotional Top Ad)',
-      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop',
-      desc: '🔥 TOP AD PROMOTION: Super clean Tokunbo standard Toyota Camry Hybrid LE 2022 model. Smooth engine, factory leather, active reverse camera, original duty papers verified.',
-      price: 18500000,
-      cond: 'Like New',
-      featured: true
-    },
-    {
-      title: 'Mercedes Benz C300 Luxury Sedan',
-      image: 'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&auto=format&fit=crop',
-      desc: 'Full option Mercedes Benz C300 with panoramic sunroof, ambient lighting, keyless entry. Located at Takie Roundabout, Ogbomoso.',
-      price: 14200000,
-      cond: 'Like New',
-      featured: false
-    },
-    {
-      title: 'Lexus RX 350 AWD SUV',
-      image: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&auto=format&fit=crop',
-      desc: 'Clean Lexus RX 350 SUV. Powerful V6 engine, first body paint, ice-cold AC, genuine custom documents.',
-      price: 16800000,
+      title: 'Qlink Target 200cc Motorbike (Strong Engine)',
+      image: 'https://images.unsplash.com/photo-1558981403-c5f91cbba527?w=800&auto=format&fit=crop',
+      desc: '🔥 OGBOMOSO SPECIAL: Super clean Qlink Target motorbike. Perfect for students and commercial transport. Strong chassis, fuel efficient, and registered with local numbers. Buy and drive!',
+      price: 485000,
       cond: 'Used - Good',
-      featured: false
+      featured: true,
+      loc: 'Under G Area, Ogbomoso'
+    },
+    {
+      title: 'Toyota Camry 2010 (Muscle) - Tokunbo Standard',
+      image: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&auto=format&fit=crop',
+      desc: 'Muscle Camry with ice cold AC, original first body paint, clean leather interior. Located at Takie Square for easy inspection.',
+      price: 6800000,
+      cond: 'Like New',
+      featured: false,
+      loc: 'Takie Square, Ogbomoso'
+    },
+    {
+      title: 'Bajaj Pulsar 150cc (Campus Ride)',
+      image: 'https://images.unsplash.com/photo-1591637333184-19aa84b3e01f?w=800&auto=format&fit=crop',
+      desc: 'Efficient Bajaj Pulsar 150. Ideal for getting around LAUTECH campus. Low mileage and well maintained by a student.',
+      price: 320000,
+      cond: 'Used - Good',
+      featured: false,
+      loc: 'LAUTECH Gate, Ogbomoso'
     }
   ],
   'Electronics': [
     {
-      title: 'Apple iPhone 15 Pro Max 256GB (Promotional Top Ad)',
-      image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop',
-      desc: '⚡ PROMOTED DEAL: Brand new factory unlocked iPhone 15 Pro Max in Natural Titanium. 100% battery health, full box and original Type-C cable included.',
-      price: 1350000,
-      cond: 'Brand New',
-      featured: true
-    },
-    {
-      title: 'Apple MacBook Pro M3 14-inch',
+      title: 'HP EliteBook 840 G5 (Student/Work Laptop)',
       image: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop',
-      desc: 'Space Black MacBook Pro M3 chip with 18GB RAM and 512GB SSD. Perfect for software development and 4K editing in LAUTECH Under G.',
-      price: 1950000,
+      desc: '⚡ BEST FOR STUDENTS: Core i5, 8GB RAM, 256GB SSD. Long battery life for LAUTECH lecture halls. Premium aluminum body.',
+      price: 245000,
       cond: 'Like New',
-      featured: false
+      featured: true,
+      loc: 'Under G, Ogbomoso'
     },
     {
-      title: 'Sony PlayStation 5 Disc Console + 2 Controllers',
-      image: 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?w=800&auto=format&fit=crop',
-      desc: 'PS5 Disc Edition console in mint condition. Comes with 2 DualSense controllers, HDMI 2.1 cable, and EA FC24 pre-installed.',
-      price: 680000,
+      title: 'iPhone 13 Pro 128GB (Blue) - 92% Battery',
+      image: 'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?w=800&auto=format&fit=crop',
+      desc: 'Super clean iPhone 13 Pro. Factory unlocked, FaceID active, original screen. No faults at all.',
+      price: 780000,
       cond: 'Like New',
-      featured: false
+      featured: false,
+      loc: 'Adenike Area, Ogbomoso'
+    },
+    {
+      title: 'Starlink Gen 2 Kit (Ogbomoso Delivery)',
+      image: 'https://images.unsplash.com/photo-1647414800315-77983c271871?w=800&auto=format&fit=crop',
+      desc: 'Brand new Starlink Gen 2. Solve your internet issues in Ogbomoso once and for all. Setup assistance available.',
+      price: 520000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'General Area, Ogbomoso'
     }
   ],
   'Real Estate': [
     {
-      title: 'Luxury 4 Bedroom Detached Duplex in Aroje (Promotional Top Ad)',
-      image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&auto=format&fit=crop',
-      desc: '👑 FEATURED REAL ESTATE: Newly built 4-bedroom fully detached duplex with modern fitted kitchen, pop ceiling, parking for 5 cars, C of O title papers ready.',
-      price: 65000000,
-      cond: 'Brand New',
-      featured: true
-    },
-    {
-      title: 'Modern 2 Bedroom Student Apartment Rental',
+      title: 'Executive Self-Contain in Under G (LAUTECH)',
       image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&auto=format&fit=crop',
-      desc: 'Clean 2-bedroom flat with running borehole water, prepaid meter, fully tiled rooms near LAUTECH Main Gate.',
-      price: 450000,
+      desc: '👑 FEATURED HOSTEL: Tiled room, running water (borehole), prepaid meter, secured gate. 5 minutes walk to LAUTECH gate.',
+      price: 280000,
       cond: 'Like New',
-      featured: false
+      featured: true,
+      loc: 'Under G, Ogbomoso'
     },
     {
-      title: 'Commercial Storefront & Hub Space in Takie',
-      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
-      desc: 'Prime commercial shop suitable for boutique, pharmacy, or tech store right at Takie Square, Ogbomoso.',
-      price: 1200000,
+      title: 'Standard Plot of Land in Aroje (Phase 1)',
+      image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop',
+      desc: '60ft by 120ft dry land in a developing neighborhood. C of O in process. Perfect for residential building.',
+      price: 1800000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Aroje Area, Ogbomoso'
+    },
+    {
+      title: 'Commercial Shop for Rent at Takie Square',
+      image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop',
+      desc: 'Prime business location right in the heart of Takie. High foot traffic, suitable for boutique or pharmacy.',
+      price: 450000,
+      cond: 'Used - Good',
+      featured: false,
+      loc: 'Takie, Ogbomoso'
     }
   ],
   'Fashion': [
     {
-      title: 'Nike Air Jordan 1 High OG Sneakers (Promotional Top Ad)',
-      image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop',
-      desc: '🔥 PROMOTED FASHION: 100% Original Nike Air Jordan 1 High sneakers. EU Sizes 41-45 available for immediate dispatch in Ogbomoso.',
-      price: 65000,
-      cond: 'Brand New',
-      featured: true
-    },
-    {
-      title: 'Men Luxury Designer Chronograph Wristwatch',
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop',
-      desc: 'Waterproof stainless steel chronograph watch with date display. Includes luxury leather gift presentation box.',
-      price: 48000,
-      cond: 'Brand New',
-      featured: false
-    },
-    {
-      title: 'Handcrafted Traditional Agbada & Native Wear',
+      title: 'Premium Ogbomoso Handmade Aso-Oke Set',
       image: 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?w=800&auto=format&fit=crop',
-      desc: 'Premium Aso-Oke native Agbada 3-piece set sewn by master tailors in Sabo Market, Ogbomoso.',
-      price: 85000,
+      desc: '🔥 LOCAL PRIDE: High quality traditional Aso-Oke set for weddings and occasions. Hand-woven by local masters in Sabo.',
+      price: 125000,
       cond: 'Brand New',
-      featured: false
+      featured: true,
+      loc: 'Sabo Market, Ogbomoso'
+    },
+    {
+      title: 'Nike Air Force 1 - White (Campus Trend)',
+      image: 'https://images.unsplash.com/photo-1552346154-21d32810aba3?w=800&auto=format&fit=crop',
+      desc: 'Clean AF1 in various sizes. Comfortable and stylish for daily campus wear.',
+      price: 35000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Under G, Ogbomoso'
+    },
+    {
+      title: 'Men Designer Leather Palm Slippers',
+      image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=800&auto=format&fit=crop',
+      desc: 'Strong leather palms, durable sole. Perfect for Ogbomoso weather and casual outings.',
+      price: 18000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Takie, Ogbomoso'
     }
   ],
   'Home & Furniture': [
     {
-      title: 'Modern 7-Seater Sectional Leather Sofa Set (Promotional Top Ad)',
+      title: '7-Seater Royal Sofa Set (Ogbomoso Finish)',
       image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&auto=format&fit=crop',
-      desc: '🛋️ TOP AD PROMOTION: High-density foam 7-seater L-shaped leather sofa set with plush throw pillows. Stylish dark grey finish for modern homes.',
-      price: 380000,
-      cond: 'Like New',
-      featured: true
+      desc: '🛋️ TOP DEAL: Luxurious sofa set for your living room. Built with strong wood and premium fabric. Quality you can trust.',
+      price: 450000,
+      cond: 'Brand New',
+      featured: true,
+      loc: 'General Area, Ogbomoso'
     },
     {
-      title: 'Solid Mahogany Wood 6-Seater Dining Set',
-      image: 'https://images.unsplash.com/photo-1617806118233-18e1de247200?w=800&auto=format&fit=crop',
-      desc: 'Handcrafted mahogany dining table with 6 cushioned chairs. Durable build for long-lasting dining room elegance.',
-      price: 260000,
-      cond: 'Like New',
-      featured: false
-    },
-    {
-      title: 'Orthopedic Queen Size Bed Frame & Mattress',
+      title: 'Mouka Orthopedic Queen Mattress (6x6)',
       image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&auto=format&fit=crop',
-      desc: 'High-quality Mouka Orthopedic Queen Mattress (6x6) with sturdy wooden bed frame. Great back support.',
+      desc: 'Standard queen size mattress for better sleep. 10-year warranty from Mouka. Free delivery in Under G.',
       price: 195000,
-      cond: 'Like New',
-      featured: false
+      cond: 'Brand New',
+      featured: false,
+      loc: 'LAUTECH Gate, Ogbomoso'
+    },
+    {
+      title: 'Modern Student Study Desk & Chair',
+      image: 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&auto=format&fit=crop',
+      desc: 'Strong wooden desk with drawer and matching chair. Perfect for student reading corners.',
+      price: 45000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Adenike, Ogbomoso'
     }
   ],
   'Services': [
     {
-      title: '5kVA Solar Hybrid Inverter Installation Service (Promotional Top Ad)',
+      title: 'Solar Power & Inverter Installation (2.5kVA)',
       image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop',
-      desc: '⚡ TOP AD SERVICE: Professional engineering installation of 3.5kVA to 10kVA solar hybrid inverters and lithium batteries across Oyo State.',
-      price: 150000,
+      desc: '⚡ BYE NEPA: Complete solar setup for hostels and small homes. Runs fans, laptops, and bulbs 24/7. Expert installation.',
+      price: 580000,
       cond: 'Brand New',
-      featured: true
+      featured: true,
+      loc: 'Ogbomoso Hub'
     },
     {
-      title: 'Professional CCTV & Security Alarm Installation',
+      title: 'Professional Laptop Repair & Software Fix',
       image: 'https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=800&auto=format&fit=crop',
-      desc: 'Complete 8-camera Hikvision CCTV installation with mobile live monitoring setup for homes and businesses.',
-      price: 180000,
+      desc: 'We fix all laptop issues (screen, battery, keyboard, OS). Located at Under G for quick campus service.',
+      price: 5000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Under G, Ogbomoso'
     },
     {
-      title: 'Architectural Blueprint & Building Design Consultancy',
-      image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&auto=format&fit=crop',
-      desc: 'Custom 2D/3D building designs, structural drawings, and approval processing for properties in Ogbomoso.',
-      price: 120000,
+      title: 'Event Catering & Cake Baking (Ogbomoso)',
+      image: 'https://images.unsplash.com/photo-1535141123063-3bb610932e47?w=800&auto=format&fit=crop',
+      desc: 'Professional catering for weddings, birthdays, and campus events. Delicious cakes and local meals.',
+      price: 25000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Sabo Area, Ogbomoso'
     }
   ],
   'Jobs': [
     {
-      title: 'Senior Full-Stack React Developer (Remote / Hybrid) (Promotional Top Ad)',
+      title: 'Delivery Riders Needed (Ogbomoso Logistics)',
       image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format&fit=crop',
-      desc: '💼 FEATURED JOB: Hiring Senior Web Developer with experience in React, TypeScript, and Node.js. Competitive NGN salary package.',
-      price: 450000,
+      desc: '💼 URGENT: Hiring dispatch riders for local Ogbomoso deliveries. Must have a valid motorbike license and good local knowledge.',
+      price: 65000,
       cond: 'Brand New',
-      featured: true
+      featured: true,
+      loc: 'Takie, Ogbomoso'
     },
     {
-      title: 'Store Manager & Sales Executive Position in Takie',
+      title: 'Sales Assistant at Ogbomoso Boutique',
       image: 'https://images.unsplash.com/photo-1556740738-b6a63e27c4df?w=800&auto=format&fit=crop',
-      desc: 'Urgent hiring for experienced retail manager to oversee inventory and customer service in Takie Square retail outlet.',
-      price: 120000,
+      desc: 'Friendly sales assistant needed for a retail shop at Sabo. Previous experience is a plus.',
+      price: 35000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Sabo Market, Ogbomoso'
     },
     {
-      title: 'Graphics Designer & Social Media Handler',
+      title: 'Hostel Security Guard (Night Shift)',
       image: 'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=800&auto=format&fit=crop',
-      desc: 'Creative designer needed for Canva, Photoshop, and Instagram reel content creation for local brand marketing.',
-      price: 90000,
+      desc: 'Reliable person needed for night security at a large student hostel in Under G area.',
+      price: 40000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Under G, Ogbomoso'
     }
   ],
   'Beauty & Health': [
     {
-      title: 'Organic Skincare & Glowing Serum Complete Set (Promotional Top Ad)',
+      title: 'Organic Skincare & Glowing Serum Set',
       image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&auto=format&fit=crop',
-      desc: '✨ FEATURED BEAUTY: Dermatologist tested organic vitamin C facial serum, moisturizing body lotion, and exfoliation scrub set.',
-      price: 35000,
+      desc: '✨ FEATURED: Authentic Ogbomoso black soap and organic glowing oils. Tested and trusted for glowing skin.',
+      price: 15000,
       cond: 'Brand New',
-      featured: true
+      featured: true,
+      loc: 'General Area, Ogbomoso'
     },
     {
-      title: 'Professional Human Hair Wig 24-inch Bone Straight',
-      image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800&auto=format&fit=crop',
-      desc: '100% Vietnam double drawn bone straight human hair wig with HD frontal closure. Zero tangling.',
-      price: 145000,
-      cond: 'Brand New',
-      featured: false
-    },
-    {
-      title: 'Unisex Eau de Parfum Luxury Perfume Set',
+      title: 'Unisex Perfume Oils (Long Lasting)',
       image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=800&auto=format&fit=crop',
-      desc: 'Long-lasting Arabian Oud & Amber 100ml perfume set with 48-hour fragrance projection.',
-      price: 28000,
+      desc: 'Small but mighty perfume oils. Smells expensive but very affordable for students.',
+      price: 3500,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'LAUTECH Gate, Ogbomoso'
+    },
+    {
+      title: 'Professional Salon & Hairdressing (Under G)',
+      image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800&auto=format&fit=crop',
+      desc: 'Expert hair braiding and wig installation. Get that campus glow-up at our studio.',
+      price: 8000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Under G, Ogbomoso'
     }
   ],
   'Utility & Energy': [
     {
-      title: 'Elepaq Silent Inverter Generator 3.5kVA (Promotional Top Ad)',
+      title: 'Elepaq SV2200 Constant Generator (Clean)',
       image: 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=800&auto=format&fit=crop',
-      desc: '⚡ FEATURED POWER: Fuel-efficient low noise copper-coil 3.5kVA generator. Runs refrigerators, TVs, and laptops smoothly.',
-      price: 220000,
-      cond: 'Brand New',
-      featured: true
+      desc: '⚡ MUST HAVE: Fuel efficient Elepaq generator. Ideal for hostels to run fans, TV, and recharge devices during blackouts.',
+      price: 185000,
+      cond: 'Used - Good',
+      featured: true,
+      loc: 'Under G, Ogbomoso'
     },
     {
-      title: '200Ah 12V Deep Cycle Gel Solar Battery',
+      title: 'Luminous 220Ah Inverter Battery',
       image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&auto=format&fit=crop',
-      desc: 'Maintenance-free 200Ah tubular gel solar battery with 3-year warranty for residential inverters.',
-      price: 210000,
+      desc: 'Deep cycle tubular battery for solar and inverter systems. Very reliable and long lasting.',
+      price: 240000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Ogbomoso Hub'
     },
     {
-      title: 'Heavy Duty Prepaid Electricity Meter Enclosure Box',
+      title: 'Rechargeable LED Fan with Solar Panel',
       image: 'https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=800&auto=format&fit=crop',
-      desc: 'Weatherproof transparent protective meter box for single & three-phase electricity meters.',
-      price: 18000,
+      desc: 'Stay cool during the heat with this solar rechargeable fan. Includes light and phone charging port.',
+      price: 38000,
       cond: 'Brand New',
-      featured: false
+      featured: false,
+      loc: 'Takie, Ogbomoso'
     }
   ]
 };
 
-// Generate 27 listings (3 per category, 1 promotional per category) - ALL OWNED BY ADMIN
 export const MOCK_LISTINGS: Listing[] = Object.keys(CATALOG_DATA).flatMap((catKey, catIdx) => {
   const items = CATALOG_DATA[catKey as Category];
   return items.map((item, itemIdx) => ({
@@ -274,10 +301,10 @@ export const MOCK_LISTINGS: Listing[] = Object.keys(CATALOG_DATA).flatMap((catKe
     price: item.price,
     category: catKey as Category,
     condition: item.cond,
-    location: 'Ogbomoso, Oyo State',
+    location: item.loc || 'Ogbomoso, Oyo State',
     status: 'active',
     images: [item.image],
-    viewsCount: Math.floor(Math.random() * 300) + 50,
+    viewsCount: Math.floor(Math.random() * 500) + 100,
     createdAt: 'Just now',
     featured: item.featured,
     promotionPlanName: item.featured ? 'Top Ad Boost' : undefined,
@@ -312,7 +339,7 @@ export const ALL_MOCK_USERS: UserProfile[] = [
     verificationType: 'business',
     businessName: 'Ogunleye Motors Ogbomoso',
     memberSince: 'Mar 2023',
-    location: 'Ogbomoso, Oyo State',
+    location: 'Takie, Ogbomoso',
   }
 ];
 
