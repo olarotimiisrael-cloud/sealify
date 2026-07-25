@@ -29,10 +29,21 @@ import {
   Mail,
   Eye,
   EyeOff,
-  Check
+  Check,
+  ShieldAlert,
+  CreditCard,
+  MapPin,
+  Clock,
+  Plus,
+  XCircle,
+  FileText,
+  UserCheck,
+  Siren,
+  Terminal,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { UserProfile, Listing } from '../types/sealify';
+import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
 
 const AdminDashboard: React.FC = () => {
   const { 
@@ -50,24 +61,44 @@ const AdminDashboard: React.FC = () => {
     adminEmail,
     adminPassword,
     adminPin,
-    updateAdminCredentials
+    updateAdminCredentials,
+    verificationRequests,
+    processVerificationRequest,
+    passwordRequests,
+    processPasswordRequest,
+    promotionPaymentRequests,
+    processPromotionPaymentRequest,
+    intrusionLogs,
+    safeSpots,
+    addSafeSpot,
+    deleteSafeSpot
   } = useSealify();
   
   const { isInstallable, install } = usePwaInstall();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'broadcast' | 'credentials'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'requests' | 'security' | 'spots' | 'broadcast' | 'credentials'>('overview');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
+  
+  // Search state
   const [userSearch, setUserSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
+  
+  // Broadcast state
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
 
-  // Credentials Edit Form State
+  // Credentials state
   const [newEmail, setNewEmail] = useState(adminEmail);
   const [newPassword, setNewPassword] = useState(adminPassword);
   const [newPin, setNewPin] = useState(adminPin);
   const [showPass, setShowPass] = useState(false);
+
+  // Safe Spot Form State
+  const [spotName, setSpotName] = useState('');
+  const [spotAddress, setSpotAddress] = useState('');
+  const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('LAUTECH Area');
+  const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
 
   if (!isAdmin) {
     return (
@@ -94,6 +125,9 @@ const AdminDashboard: React.FC = () => {
     l.category.toLowerCase().includes(listingSearch.toLowerCase())
   );
 
+  const pendingVerifications = verificationRequests.filter(v => v.status === 'pending');
+  const pendingPromotions = promotionPaymentRequests.filter(p => p.status === 'pending');
+
   const handleBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
     if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
@@ -116,6 +150,26 @@ const AdminDashboard: React.FC = () => {
       return;
     }
     updateAdminCredentials(newEmail.trim(), newPassword.trim(), newPin.trim());
+  };
+
+  const handleAddSafeSpot = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!spotName.trim() || !spotAddress.trim()) {
+      toast.error('Please provide spot name and physical address');
+      return;
+    }
+    addSafeSpot({
+      name: spotName.trim(),
+      address: spotAddress.trim(),
+      zone: spotZone,
+      category: spotCategory,
+      distance: 'Local Hub',
+      hours: '8:00 AM - 6:00 PM',
+      cctvVerified: true
+    });
+    setSpotName('');
+    setSpotAddress('');
+    toast.success('New Verified Safe Meetup Spot added!');
   };
 
   return (
@@ -163,7 +217,7 @@ const AdminDashboard: React.FC = () => {
               activeTab === 'overview' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white'
             }`}
           >
-            System Health & App Distro
+            System Overview
           </button>
           <button
             onClick={() => setActiveTab('users')}
@@ -179,7 +233,35 @@ const AdminDashboard: React.FC = () => {
               activeTab === 'listings' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white'
             }`}
           >
-            Listings Management ({listings.length})
+            Listings Feed ({listings.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('requests')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeTab === 'requests' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-amber-400 hover:text-amber-300'
+            }`}
+          >
+            <span>Pending Requests</span>
+            {(pendingVerifications.length > 0 || pendingPromotions.length > 0) && (
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeTab === 'security' ? 'bg-rose-600 text-white shadow-lg' : 'bg-slate-900 text-rose-400 hover:text-rose-300'
+            }`}
+          >
+            <Siren className="w-3.5 h-3.5" />
+            <span>Intrusion Logs</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('spots')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all ${
+              activeTab === 'spots' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white'
+            }`}
+          >
+            Safe Meetup Spots
           </button>
           <button
             onClick={() => setActiveTab('broadcast')}
@@ -187,7 +269,7 @@ const AdminDashboard: React.FC = () => {
               activeTab === 'broadcast' ? 'bg-emerald-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-slate-400 hover:text-white'
             }`}
           >
-            Mass Push Broadcast
+            Broadcast Push
           </button>
           <button
             onClick={() => setActiveTab('credentials')}
@@ -203,18 +285,22 @@ const AdminDashboard: React.FC = () => {
         {/* Tab 1: System Health & App Distro */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2 shadow-xl">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1 shadow-xl">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Registered Merchants</span>
                 <p className="text-3xl font-black text-white">{allUsers.length}</p>
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2 shadow-xl">
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1 shadow-xl">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Ads in Feed</span>
                 <p className="text-3xl font-black text-emerald-400">{listings.length}</p>
               </div>
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-2 shadow-xl">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Node Uptime</span>
-                <p className="text-3xl font-black text-blue-400">99.9%</p>
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1 shadow-xl">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pending Approvals</span>
+                <p className="text-3xl font-black text-amber-400">{pendingVerifications.length + pendingPromotions.length}</p>
+              </div>
+              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1 shadow-xl">
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Threats Flagged</span>
+                <p className="text-3xl font-black text-rose-400">{intrusionLogs.length}</p>
               </div>
             </div>
 
@@ -416,7 +502,246 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 4: Mass Push Broadcast */}
+        {/* Tab 4: Pending Approval Requests */}
+        {activeTab === 'requests' && (
+          <div className="space-y-8">
+            {/* ID Verification Submissions */}
+            <div className="space-y-3">
+              <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-amber-400" />
+                <span>Pending ID & CAC Verification Queue ({pendingVerifications.length})</span>
+              </h3>
+
+              {pendingVerifications.length === 0 ? (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center text-xs text-slate-500 italic">
+                  No pending verification applications right now.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pendingVerifications.map((req) => (
+                    <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-sm text-white">{req.userName}</h4>
+                          <p className="text-xs text-slate-400">{req.userEmail}</p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">
+                          {req.type}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-300 font-mono">
+                        Doc Number: <strong className="text-emerald-400">{req.docNumber}</strong> ({req.docType})
+                      </p>
+
+                      {req.docUrl && (
+                        <a href={req.docUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
+                          <span>Inspect Document Photo</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => processVerificationRequest(req.id, 'approved')}
+                          className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs"
+                        >
+                          Approve Badge
+                        </button>
+                        <button
+                          onClick={() => processVerificationRequest(req.id, 'rejected')}
+                          className="flex-1 py-2 bg-slate-800 hover:bg-rose-500/20 text-rose-400 font-bold rounded-xl text-xs"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Top Ad Promotion Payment Requests */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-emerald-400" />
+                <span>Pending Top Ad Payment Proofs ({pendingPromotions.length})</span>
+              </h3>
+
+              {pendingPromotions.length === 0 ? (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center text-xs text-slate-500 italic">
+                  No pending promotion payments.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pendingPromotions.map((pay) => (
+                    <div key={pay.id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="text-xs text-slate-400 font-mono">Ad ID: {pay.listingId}</p>
+                          <p className="text-lg font-black text-emerald-400">₦{pay.amount.toLocaleString()}</p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded border border-purple-500/30">
+                          {pay.planName}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-slate-300">Method: {pay.paymentMethod}</p>
+
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => processPromotionPaymentRequest(pay.id, 'approved')}
+                          className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs"
+                        >
+                          Approve Promotion
+                        </button>
+                        <button
+                          onClick={() => processPromotionPaymentRequest(pay.id, 'rejected')}
+                          className="flex-1 py-2 bg-slate-800 hover:bg-rose-500/20 text-rose-400 font-bold rounded-xl text-xs"
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: Security & Intrusion Logs */}
+        {activeTab === 'security' && (
+          <div className="space-y-4">
+            <div className="bg-rose-950/80 border border-rose-500/30 p-6 rounded-3xl space-y-2">
+              <h3 className="text-lg font-black text-rose-200 uppercase flex items-center gap-2">
+                <Siren className="w-5 h-5 text-rose-400" />
+                <span>Forensic Threat Intelligence & Intrusion Logs</span>
+              </h3>
+              <p className="text-xs text-rose-300">
+                Automated security logs captured whenever an unauthorized login attempt is registered at the admin terminal.
+              </p>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden divide-y divide-slate-800">
+              {intrusionLogs.length === 0 ? (
+                <div className="p-8 text-center text-slate-500 text-xs italic">
+                  No intrusion incidents recorded. System terminal is secure.
+                </div>
+              ) : (
+                intrusionLogs.map((log) => (
+                  <div key={log.id} className="p-4 font-mono text-xs space-y-1 hover:bg-slate-800/40">
+                    <div className="flex justify-between items-center text-rose-400 font-bold">
+                      <span>ATTEMPTED EMAIL: {log.attemptedEmail}</span>
+                      <span className="text-[10px] text-slate-500">{log.timestamp}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300">{log.mediaStatus}</p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 6: Safe Meetup Spots Config */}
+        {activeTab === 'spots' && (
+          <div className="space-y-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
+              <h3 className="text-base font-black text-white uppercase flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-emerald-400" />
+                <span>Add Verified Safe Exchange Spot</span>
+              </h3>
+
+              <form onSubmit={handleAddSafeSpot} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Spot Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={spotName}
+                    onChange={(e) => setSpotName(e.target.value)}
+                    placeholder="e.g. LAUTECH Library Gate Spot"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Address *</label>
+                  <input
+                    type="text"
+                    required
+                    value={spotAddress}
+                    onChange={(e) => setSpotAddress(e.target.value)}
+                    placeholder="e.g. Under G Main Road, Ogbomoso"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Zone Area</label>
+                  <select
+                    value={spotZone}
+                    onChange={(e) => setSpotZone(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="LAUTECH Area">LAUTECH Area</option>
+                    <option value="Takie / Center">Takie / Center</option>
+                    <option value="Sabo Market Zone">Sabo Market Zone</option>
+                    <option value="Police HQ">Police HQ</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-slate-300">Spot Type</label>
+                  <select
+                    value={spotCategory}
+                    onChange={(e) => setSpotCategory(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500"
+                  >
+                    <option value="Police Safe Zone">Police Safe Zone</option>
+                    <option value="Public Library">Public Library</option>
+                    <option value="Shopping Mall">Shopping Mall</option>
+                    <option value="Café">Café</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="sm:col-span-2 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Publish Safe Meetup Location</span>
+                </button>
+              </form>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-sm font-black text-white uppercase tracking-wider">Configured Exchange Spots ({safeSpots.length})</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {safeSpots.map((spot) => (
+                  <div key={spot.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex justify-between items-start gap-3">
+                    <div className="space-y-1">
+                      <p className="font-bold text-xs text-white">{spot.name}</p>
+                      <p className="text-[11px] text-slate-400">{spot.address}</p>
+                      <span className="inline-block text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                        {spot.zone}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() => deleteSafeSpot(spot.id)}
+                      className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 7: Mass Push Broadcast */}
         {activeTab === 'broadcast' && (
           <section className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] space-y-6 shadow-2xl max-w-2xl mx-auto">
             <div className="flex items-center gap-3">
@@ -465,7 +790,7 @@ const AdminDashboard: React.FC = () => {
           </section>
         )}
 
-        {/* Tab 5: Admin Credentials & Security Setup */}
+        {/* Tab 8: Admin Credentials & Security Setup */}
         {activeTab === 'credentials' && (
           <section className="bg-slate-900 border-2 border-rose-500/30 p-8 rounded-[2.5rem] space-y-6 shadow-2xl max-w-2xl mx-auto font-mono">
             <div className="flex items-center gap-3">
