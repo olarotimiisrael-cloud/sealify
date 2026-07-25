@@ -92,6 +92,20 @@ export interface UserProfile {
   verified: boolean;
   verificationType?: VerificationBadgeType;
   businessName?: string;
+  cacNumber?: string;
+  businessHours?: string;
+  
+  // Bank Settlement Details
+  bankName?: string;
+  accountNumber?: string;
+  accountName?: string;
+
+  // Socials & Web
+  websiteUrl?: string;
+  instagramHandle?: string;
+  twitterHandle?: string;
+  whatsappNumber?: string;
+
   memberSince: string;
   location: string;
   password?: string;

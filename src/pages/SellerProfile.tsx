@@ -30,7 +30,12 @@ import {
   Layout,
   Camera,
   Edit3,
-  FileText
+  FileText,
+  CreditCard,
+  Globe,
+  Instagram,
+  Twitter,
+  ShieldCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -57,6 +62,14 @@ const SellerProfile: React.FC = () => {
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
   const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 813 120 8468';
   const memberSince = sellerUser?.memberSince || '2023';
+
+  // Extended Seller Details
+  const bankName = sellerUser?.bankName;
+  const accountNumber = sellerUser?.accountNumber;
+  const businessHours = sellerUser?.businessHours || 'Mon - Sat: 8:00 AM - 7:00 PM';
+  const instagramHandle = sellerUser?.instagramHandle;
+  const twitterHandle = sellerUser?.twitterHandle;
+  const websiteUrl = sellerUser?.websiteUrl;
 
   const [activeTab, setActiveTab] = useState<'listings' | 'overview' | 'reviews'>('listings');
   const [showPhone, setShowPhone] = useState(false);
@@ -293,15 +306,55 @@ const SellerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Store Bio Section */}
-          {sellerBio && (
-            <div className="px-6 sm:px-8 pb-4">
+          {/* Social Links & Bio */}
+          <div className="px-6 sm:px-8 pb-4 space-y-3">
+            {sellerBio && (
               <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs text-slate-300 leading-relaxed font-medium flex items-start gap-2.5">
                 <FileText className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <p>{sellerBio}</p>
               </div>
-            </div>
-          )}
+            )}
+
+            {(instagramHandle || twitterHandle || websiteUrl) && (
+              <div className="flex items-center gap-3 flex-wrap text-xs pt-1">
+                {instagramHandle && (
+                  <a
+                    href={`https://instagram.com/${instagramHandle.replace('@', '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-pink-400 hover:text-white transition-colors"
+                  >
+                    <Instagram className="w-3.5 h-3.5" />
+                    <span>{instagramHandle}</span>
+                  </a>
+                )}
+
+                {twitterHandle && (
+                  <a
+                    href={`https://twitter.com/${twitterHandle.replace('@', '')}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-blue-400 hover:text-white transition-colors"
+                  >
+                    <Twitter className="w-3.5 h-3.5" />
+                    <span>{twitterHandle}</span>
+                  </a>
+                )}
+
+                {websiteUrl && (
+                  <a
+                    href={websiteUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-emerald-400 hover:text-white transition-colors"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>Website</span>
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 border-t border-slate-800/80 p-4 bg-slate-950/60 overflow-x-auto no-scrollbar">
             <button
@@ -391,21 +444,35 @@ const SellerProfile: React.FC = () => {
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
               <div className="flex items-center gap-2 text-emerald-400 font-extrabold text-sm uppercase tracking-wider">
                 <Clock className="w-4 h-4" />
-                <span>Storefront Operations & Safe Exchange Info</span>
+                <span>Storefront Operations & Verification Info</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-slate-300">
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                   <p className="font-bold text-white uppercase text-[10px] text-slate-400">Business Operating Hours</p>
-                  <p>Mon - Sat: 8:00 AM - 7:00 PM</p>
-                  <p>Sun: Closed / Appointments Only</p>
+                  <p>{businessHours}</p>
                 </div>
 
                 <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
                   <p className="font-bold text-white uppercase text-[10px] text-slate-400">Preferred Handover Zone</p>
-                  <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-emerald-400" /> Ogbomoso Police HQ Safe Zone or LAUTECH Gate</p>
+                  <p className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-emerald-400" /> {sellerLocation}</p>
                 </div>
               </div>
+
+              {bankName && accountNumber && (
+                <div className="p-4 bg-slate-950 rounded-2xl border border-emerald-500/30 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <p className="font-extrabold text-white">Verified Merchant Settlement Account</p>
+                      <p className="text-slate-400 text-[11px] font-mono">{bankName} • ****{accountNumber.slice(-4)}</p>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    BANK VERIFIED
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         )}

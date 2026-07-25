@@ -26,7 +26,6 @@ export const storageService = {
       const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(data.path);
       return publicUrl;
     } catch (err) {
-      // Data URL fallback if bucket is missing or restricted
       return new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target?.result as string || '');
@@ -39,13 +38,93 @@ export const storageService = {
 
 export const userService = {
   async getAll() { 
-    return (await handleResponse(supabase.from('users').select('*').order('created_at', { ascending: false }))) || [];
+    const raw = await handleResponse(supabase.from('users').select('*').order('created_at', { ascending: false }));
+    if (!raw) return [];
+    return raw.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      fullName: u.full_name,
+      phoneNumber: u.phone_number,
+      avatarUrl: u.avatar_url,
+      storeBannerUrl: u.store_banner_url,
+      bio: u.bio,
+      role: u.role,
+      verified: u.verified,
+      verificationType: u.verification_type,
+      businessName: u.business_name,
+      cacNumber: u.cac_number,
+      businessHours: u.business_hours,
+      bankName: u.bank_name,
+      accountNumber: u.account_number,
+      accountName: u.account_name,
+      websiteUrl: u.website_url,
+      instagramHandle: u.instagram_handle,
+      twitterHandle: u.twitter_handle,
+      whatsappNumber: u.whatsapp_number,
+      memberSince: u.member_since,
+      location: u.location,
+      status: u.status,
+      restrictionReason: u.restriction_reason,
+      appealStatus: u.appeal_status
+    }));
   },
   async getByEmail(email: string) { 
-    return await handleResponse(supabase.from('users').select('*').eq('email', email.toLowerCase()).maybeSingle()); 
+    const u = await handleResponse(supabase.from('users').select('*').eq('email', email.toLowerCase()).maybeSingle());
+    if (!u) return null;
+    return {
+      id: u.id,
+      email: u.email,
+      fullName: u.full_name,
+      phoneNumber: u.phone_number,
+      avatarUrl: u.avatar_url,
+      storeBannerUrl: u.store_banner_url,
+      bio: u.bio,
+      role: u.role,
+      verified: u.verified,
+      verificationType: u.verification_type,
+      businessName: u.business_name,
+      cacNumber: u.cac_number,
+      businessHours: u.business_hours,
+      bankName: u.bank_name,
+      accountNumber: u.account_number,
+      accountName: u.account_name,
+      websiteUrl: u.website_url,
+      instagramHandle: u.instagram_handle,
+      twitterHandle: u.twitter_handle,
+      whatsappNumber: u.whatsapp_number,
+      memberSince: u.member_since,
+      location: u.location,
+      status: u.status
+    };
   },
   async getProfile(id: string) { 
-    return await handleResponse(supabase.from('users').select('*').eq('id', id).maybeSingle()); 
+    const u = await handleResponse(supabase.from('users').select('*').eq('id', id).maybeSingle()); 
+    if (!u) return null;
+    return {
+      id: u.id,
+      email: u.email,
+      fullName: u.full_name,
+      phoneNumber: u.phone_number,
+      avatarUrl: u.avatar_url,
+      storeBannerUrl: u.store_banner_url,
+      bio: u.bio,
+      role: u.role,
+      verified: u.verified,
+      verificationType: u.verification_type,
+      businessName: u.business_name,
+      cacNumber: u.cac_number,
+      businessHours: u.business_hours,
+      bankName: u.bank_name,
+      accountNumber: u.account_number,
+      accountName: u.account_name,
+      websiteUrl: u.website_url,
+      instagramHandle: u.instagram_handle,
+      twitterHandle: u.twitter_handle,
+      whatsappNumber: u.whatsapp_number,
+      memberSince: u.member_since,
+      location: u.location,
+      status: u.status
+    };
   },
   async ensureUserExists(userProfile: any) {
     if (!userProfile || !userProfile.id) return null;
@@ -73,10 +152,41 @@ export const userService = {
     }
   },
   async update(id: string, updates: any) { 
-    return await handleResponse(supabase.from('users').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).select().maybeSingle()); 
+    const dbUpdates: any = { updated_at: new Date().toISOString() };
+    if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+    if (updates.phoneNumber !== undefined) dbUpdates.phone_number = updates.phoneNumber;
+    if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
+    if (updates.storeBannerUrl !== undefined) dbUpdates.store_banner_url = updates.storeBannerUrl;
+    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+    if (updates.role !== undefined) dbUpdates.role = updates.role;
+    if (updates.verified !== undefined) dbUpdates.verified = updates.verified;
+    if (updates.verificationType !== undefined) dbUpdates.verification_type = updates.verificationType;
+    if (updates.businessName !== undefined) dbUpdates.business_name = updates.businessName;
+    if (updates.cacNumber !== undefined) dbUpdates.cac_number = updates.cacNumber;
+    if (updates.businessHours !== undefined) dbUpdates.business_hours = updates.businessHours;
+    if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName;
+    if (updates.accountNumber !== undefined) dbUpdates.account_number = updates.accountNumber;
+    if (updates.accountName !== undefined) dbUpdates.account_name = updates.accountName;
+    if (updates.websiteUrl !== undefined) dbUpdates.website_url = updates.websiteUrl;
+    if (updates.instagramHandle !== undefined) dbUpdates.instagram_handle = updates.instagramHandle;
+    if (updates.twitterHandle !== undefined) dbUpdates.twitter_handle = updates.twitterHandle;
+    if (updates.whatsappNumber !== undefined) dbUpdates.whatsapp_number = updates.whatsappNumber;
+    if (updates.location !== undefined) dbUpdates.location = updates.location;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+
+    return await handleResponse(supabase.from('users').update(dbUpdates).eq('id', id).select().maybeSingle()); 
   },
   async create(user: any) { 
-    return await handleResponse(supabase.from('users').insert([{ ...user, member_since: new Date().toISOString() }]).select().maybeSingle()); 
+    return await handleResponse(supabase.from('users').insert([{
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name || user.fullName,
+      phone_number: user.phone_number || user.phoneNumber,
+      role: user.role || 'buyer',
+      status: user.status || 'active',
+      location: user.location || 'Ogbomoso, Oyo State',
+      member_since: new Date().toISOString()
+    }]).select().maybeSingle()); 
   },
   async delete(id: string) { 
     await supabase.from('users').delete().eq('id', id); 
@@ -94,7 +204,6 @@ export const listingService = {
     )) || [];
   },
   async create(listing: any, imageUrls: string[]) {
-    // 1. Ensure seller row exists in Supabase public.users to satisfy Foreign Key constraints
     if (listing.seller_id) {
       await userService.ensureUserExists({
         id: listing.seller_id,
@@ -107,15 +216,25 @@ export const listingService = {
       });
     }
 
-    // 2. Insert post row into listings table
-    const { data, error } = await supabase.from('listings').insert([listing]).select().single();
+    const { data, error } = await supabase.from('listings').insert([{
+      seller_id: listing.seller_id,
+      title: listing.title,
+      description: listing.description,
+      price: listing.price,
+      category: listing.category,
+      condition: listing.condition,
+      location: listing.location,
+      status: listing.status || 'active',
+      featured: listing.featured || false,
+      specifications: listing.specifications || {}
+    }]).select().single();
+
     if (error) {
       console.warn('Supabase Listing Create Warning:', error.message || error);
     }
 
     const createdId = data?.id;
 
-    // 3. Insert images into listing_images table if createdId exists
     if (createdId && imageUrls.length > 0) {
       const imgRows = imageUrls.map(url => ({ listing_id: createdId, image_url: url }));
       await supabase.from('listing_images').insert(imgRows);

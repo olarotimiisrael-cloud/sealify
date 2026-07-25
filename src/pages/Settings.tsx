@@ -26,12 +26,18 @@ import {
   Lock, 
   Upload, 
   Layout, 
-  Image as ImageIcon,
+  ImageIcon,
   CheckCircle2,
   ExternalLink,
   Shield,
   KeyRound,
-  Store
+  Store,
+  CreditCard,
+  Globe,
+  Instagram,
+  Twitter,
+  Clock,
+  Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -46,6 +52,21 @@ const POPULAR_LOCATIONS = [
   'Ibadan, Oyo State',
 ];
 
+const NIGERIAN_BANKS = [
+  'Access Bank',
+  'First Bank of Nigeria',
+  'Guaranty Trust Bank (GTB)',
+  'OPay',
+  'PalmPay',
+  'Kuda Bank',
+  'Moniepoint Microfinance Bank',
+  'United Bank for Africa (UBA)',
+  'Zenith Bank',
+  'Wema Bank / ALAT',
+  'Stanbic IBTC Bank',
+  'Fidelity Bank',
+];
+
 const Settings: React.FC = () => {
   const { user, updateUser } = useSealify();
 
@@ -56,11 +77,24 @@ const Settings: React.FC = () => {
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [businessName, setBusinessName] = useState(user?.businessName || '');
+  const [cacNumber, setCacNumber] = useState(user?.cacNumber || '');
+  const [businessHours, setBusinessHours] = useState(user?.businessHours || 'Mon - Sat: 8:00 AM - 7:00 PM');
   const [location, setLocation] = useState(user?.location || 'Under G, Ogbomoso');
   const [bio, setBio] = useState(user?.bio || '');
   const [role, setRole] = useState<'buyer' | 'seller'>(user?.role === 'admin' ? 'seller' : (user?.role || 'buyer'));
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [storeBannerUrl, setStoreBannerUrl] = useState(user?.storeBannerUrl || '');
+
+  // Bank Settlement Details
+  const [bankName, setBankName] = useState(user?.bankName || 'OPay');
+  const [accountNumber, setAccountNumber] = useState(user?.accountNumber || '');
+  const [accountName, setAccountName] = useState(user?.accountName || '');
+
+  // Social & Web Links
+  const [websiteUrl, setWebsiteUrl] = useState(user?.websiteUrl || '');
+  const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
+  const [twitterHandle, setTwitterHandle] = useState(user?.twitterHandle || '');
+  const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || user?.phoneNumber || '');
 
   const [isVerificationModalOpen, setIsVerificationOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -75,6 +109,8 @@ const Settings: React.FC = () => {
       setFullName(user.fullName || '');
       setPhoneNumber(user.phoneNumber || '');
       setBusinessName(user.businessName || '');
+      setCacNumber(user.cacNumber || '');
+      setBusinessHours(user.businessHours || 'Mon - Sat: 8:00 AM - 7:00 PM');
       setLocation(user.location || 'Under G, Ogbomoso');
       setBio(user.bio || '');
       if (user.role !== 'admin') {
@@ -82,6 +118,15 @@ const Settings: React.FC = () => {
       }
       setAvatarUrl(user.avatarUrl || '');
       setStoreBannerUrl(user.storeBannerUrl || '');
+
+      setBankName(user.bankName || 'OPay');
+      setAccountNumber(user.accountNumber || '');
+      setAccountName(user.accountName || '');
+
+      setWebsiteUrl(user.websiteUrl || '');
+      setInstagramHandle(user.instagramHandle || '');
+      setTwitterHandle(user.twitterHandle || '');
+      setWhatsappNumber(user.whatsappNumber || user.phoneNumber || '');
     }
   }, [user]);
 
@@ -112,7 +157,7 @@ const Settings: React.FC = () => {
     reader.onload = (event) => {
       if (event.target?.result) {
         setAvatarUrl(event.target.result as string);
-        toast.success('New profile picture loaded. Remember to click "Save Profile Changes" below.');
+        toast.success('New profile picture loaded. Click "Save Profile Changes" below.');
       }
     };
     reader.readAsDataURL(file);
@@ -145,15 +190,26 @@ const Settings: React.FC = () => {
         fullName: fullName.trim(),
         phoneNumber: phoneNumber.trim(),
         businessName: businessName.trim() || undefined,
+        cacNumber: cacNumber.trim() || undefined,
+        businessHours: businessHours.trim() || undefined,
         location: location.trim(),
         bio: bio.trim() || undefined,
         role: user.role === 'admin' ? 'admin' : role,
         avatarUrl: avatarUrl.trim() || user.avatarUrl,
         storeBannerUrl: storeBannerUrl.trim(),
+
+        bankName,
+        accountNumber: accountNumber.trim(),
+        accountName: accountName.trim(),
+
+        websiteUrl: websiteUrl.trim(),
+        instagramHandle: instagramHandle.trim(),
+        twitterHandle: twitterHandle.trim(),
+        whatsappNumber: whatsappNumber.trim(),
       });
 
       setIsSaving(false);
-      toast.success('🎉 Profile & Storefront settings updated successfully!');
+      toast.success('🎉 Profile, Storefront & Settlement Details synchronized to database!');
     } catch (e: any) {
       setIsSaving(false);
       toast.error('Failed to save profile changes. Please try again.');
@@ -193,7 +249,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans selection:bg-emerald-500 selection:text-slate-950">
-      <SEO title="Profile & Store Settings — Sealify Nigeria" description="Edit your profile details, cover photo, business information, and app security settings on Sealify." />
+      <SEO title="Profile & Store Settings — Sealify Nigeria" description="Edit your profile details, cover photo, business information, bank payout details, and app security settings on Sealify." />
       <Navbar />
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 space-y-8 flex-1">
@@ -202,7 +258,7 @@ const Settings: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Profile & Store Settings</h1>
-            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, storefront branding, and security locks</p>
+            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, bank payout account, and storefront branding</p>
           </div>
 
           <Link
@@ -289,99 +345,215 @@ const Settings: React.FC = () => {
             </div>
 
             {/* Profile Input Fields */}
-            <div className="space-y-4 pt-4 border-t border-slate-800">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <User className="w-4 h-4 text-emerald-400" />
-                    <span>Full Name *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Adebayo Ogunlesi"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
-                  />
-                </div>
+            <div className="space-y-6 pt-4 border-t border-slate-800">
+              
+              {/* Personal Info */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                  <User className="w-4 h-4" />
+                  <span>Personal Identity Information</span>
+                </h4>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Phone className="w-4 h-4 text-emerald-400" />
-                    <span>WhatsApp / Phone Number *</span>
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="+234 813 000 0000"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
-                  />
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="e.g. Adebayo Ogunlesi"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-emerald-400" />
-                    <span>Business / Store Name (Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={businessName}
-                    onChange={(e) => setBusinessName(e.target.value)}
-                    placeholder="e.g. Ogunlesi Tech Store"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="w-4 h-4 text-emerald-400" />
-                    <span>Primary Location / Neighborhood Hub *</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    placeholder="e.g. Under G, Ogbomoso"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
-                  />
-                  <div className="flex flex-wrap gap-1 pt-1">
-                    {POPULAR_LOCATIONS.map((loc) => (
-                      <button
-                        key={loc}
-                        type="button"
-                        onClick={() => setLocation(loc)}
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded border transition-colors ${
-                          location === loc ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-slate-800 text-slate-500 hover:text-slate-300'
-                        }`}
-                      >
-                        {loc.split(',')[0]}
-                      </button>
-                    ))}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">WhatsApp / Phone Number *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      placeholder="+234 813 000 0000"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-emerald-400" />
-                  <span>Store Bio / About Seller</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  placeholder="Describe your store offerings, warranty terms, or pickup hours..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
-                />
+              {/* Business / Storefront Metadata */}
+              <div className="space-y-4 pt-4 border-t border-slate-800/80">
+                <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  <span>Storefront & Merchant Details</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Business / Store Name</label>
+                    <input
+                      type="text"
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      placeholder="e.g. Ogunlesi Tech Store"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">CAC Registration Number (Optional)</label>
+                    <input
+                      type="text"
+                      value={cacNumber}
+                      onChange={(e) => setCacNumber(e.target.value)}
+                      placeholder="e.g. RC-1849204"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Operating Hours</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={businessHours}
+                      onChange={(e) => setBusinessHours(e.target.value)}
+                      placeholder="Mon - Sat: 8:00 AM - 7:00 PM"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Primary Location Hub *</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="e.g. Under G, Ogbomoso"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store Bio / Description</label>
+                  <textarea
+                    rows={3}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Describe your store offerings, warranty terms, or pickup hours..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
+              {/* Bank Settlement Account for Payouts */}
+              <div className="space-y-4 pt-4 border-t border-slate-800/80">
+                <h4 className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  <span>Bank Settlement Account (For Wallet Withdrawals)</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bank Name</label>
+                    <select
+                      value={bankName}
+                      onChange={(e) => setBankName(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    >
+                      {NIGERIAN_BANKS.map((b) => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Number</label>
+                    <input
+                      type="text"
+                      maxLength={10}
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      placeholder="10-Digit Account No."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Name</label>
+                    <input
+                      type="text"
+                      value={accountName}
+                      onChange={(e) => setAccountName(e.target.value)}
+                      placeholder="Match official bank name"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media & External Links */}
+              <div className="space-y-4 pt-4 border-t border-slate-800/80">
+                <h4 className="text-xs font-black text-purple-400 uppercase tracking-widest flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  <span>Social Media & Web Storefront Links</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Instagram className="w-3.5 h-3.5 text-pink-400" />
+                      <span>Instagram Handle</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={instagramHandle}
+                      onChange={(e) => setInstagramHandle(e.target.value)}
+                      placeholder="@yourstore"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Twitter className="w-3.5 h-3.5 text-blue-400" />
+                      <span>X / Twitter Handle</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={twitterHandle}
+                      onChange={(e) => setTwitterHandle(e.target.value)}
+                      placeholder="@yourstore"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Website / Portfolio</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://yourstore.com"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pt-2">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Role</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -415,7 +587,7 @@ const Settings: React.FC = () => {
                 className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95"
               >
                 <Save className="w-4 h-4" />
-                <span>{isSaving ? 'Saving Changes...' : 'Save Profile Changes'}</span>
+                <span>{isSaving ? 'Synchronizing to Database...' : 'Save Profile Changes'}</span>
               </button>
             </div>
 
