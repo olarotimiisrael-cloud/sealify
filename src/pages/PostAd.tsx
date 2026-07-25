@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -9,8 +9,8 @@ import ValuationCalculatorModal from '../components/ValuationCalculatorModal';
 import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
-  X, Plus, ShieldCheck, Upload, 
-  Video, FileVideo, Crown, MapPin, Calculator, Wand2, Image as ImageIcon, Shield, Loader2, Sliders, Check, ChevronRight, ChevronLeft
+  X, Plus, ShieldCheck, 
+  Crown, MapPin, Wand2, Loader2, Sliders, Check, ChevronRight, ChevronLeft, Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +55,28 @@ const CATEGORY_KEYWORDS: Record<string, Category> = {
   'solar': 'Utility & Energy',
   'generator': 'Utility & Energy',
   'battery': 'Utility & Energy',
+};
+
+// Preset spec templates per category
+const CATEGORY_SPEC_FIELDS: Record<string, { label: string; key: string; placeholder: string; options?: string[] }[]> = {
+  Electronics: [
+    { label: 'RAM Size', key: 'RAM', placeholder: 'e.g. 8GB', options: ['4GB', '8GB', '16GB', '32GB'] },
+    { label: 'Storage Capacity', key: 'Storage', placeholder: 'e.g. 256GB SSD', options: ['128GB', '256GB', '512GB', '1TB'] },
+    { label: 'Battery Health / Condition', key: 'Battery', placeholder: 'e.g. 88% or Good' },
+  ],
+  Vehicles: [
+    { label: 'Transmission', key: 'Transmission', placeholder: 'e.g. Automatic', options: ['Automatic', 'Manual'] },
+    { label: 'Mileage / Mileage Range', key: 'Mileage', placeholder: 'e.g. 85,000 km' },
+    { label: 'Fuel Type', key: 'Fuel', placeholder: 'e.g. Petrol', options: ['Petrol', 'Diesel', 'Hybrid', 'Electric'] },
+  ],
+  'Real Estate': [
+    { label: 'Bedrooms', key: 'Bedrooms', placeholder: 'e.g. 1 Bedroom / Self-Contain', options: ['Single Room', 'Self-Contain', '2 Bedrooms', '3+ Bedrooms'] },
+    { label: 'Water & Utility', key: 'Utilities', placeholder: 'e.g. Borehole & Prepaid Meter' },
+  ],
+  'Utility & Energy': [
+    { label: 'Power Rating (kVA / Watts)', key: 'PowerRating', placeholder: 'e.g. 2.5 kVA' },
+    { label: 'Battery / Fuel Type', key: 'FuelType', placeholder: 'e.g. Solar / Petrol' },
+  ]
 };
 
 const PostAd: React.FC = () => {
@@ -113,6 +135,10 @@ const PostAd: React.FC = () => {
     toast.success('Photos added to queue');
   };
 
+  const handleSpecChange = (key: string, value: string) => {
+    setSpecs(prev => ({ ...prev, [key]: value }));
+  };
+
   const handleNext = () => {
     if (step === 1 && (!title.trim() || images.length === 0)) {
       toast.error('Please provide a title and at least one photo');
@@ -138,6 +164,8 @@ const PostAd: React.FC = () => {
     setIsSubmitting(false);
     if (success) navigate('/my-ads');
   };
+
+  const currentSpecFields = CATEGORY_SPEC_FIELDS[category] || [];
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans">
@@ -210,6 +238,47 @@ const PostAd: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              {/* Dynamic Specifications according to Category */}
+              {currentSpecFields.length > 0 && (
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                  <div className="flex items-center gap-1.5 text-xs font-black uppercase text-emerald-400">
+                    <Sliders className="w-4 h-4" />
+                    <span>{category} Specifications</span>
+                  </div>
+
+                  <div className="space-y-3 text-xs">
+                    {currentSpecFields.map((field) => (
+                      <div key={field.key} className="space-y-1">
+                        <label className="font-bold text-slate-400 uppercase text-[10px]">{field.label}</label>
+                        <input
+                          type="text"
+                          value={specs[field.key] || ''}
+                          onChange={(e) => handleSpecChange(field.key, e.target.value)}
+                          placeholder={field.placeholder}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                        />
+                        {field.options && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {field.options.map((opt) => (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => handleSpecChange(field.key, opt)}
+                                className={`px-2 py-0.5 rounded text-[9px] font-bold border transition-colors ${
+                                  specs[field.key] === opt ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-900 text-slate-400 border-slate-800'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <button type="button" onClick={handleNext} className="w-full py-4 bg-emerald-500 text-slate-950 font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs uppercase tracking-widest">
                 <span>Continue to Pricing</span>
