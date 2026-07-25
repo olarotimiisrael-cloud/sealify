@@ -4,7 +4,8 @@ import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
 import ShareQrModal from './ShareQrModal';
-import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag, Calendar, Share2, Clock } from 'lucide-react';
+import QuickViewModal from './QuickViewModal';
+import { Heart, MapPin, Eye, Scale, TrendingDown, Flame, Tag, Calendar, Share2, Clock, Maximize2 } from 'lucide-react';
 
 interface ListingCardProps {
   listing: Listing;
@@ -15,6 +16,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
   const saved = isSaved(listing.id);
   const compared = isInCompare(listing.id);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -76,6 +78,18 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
         {/* Top Action Buttons */}
         <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsQuickViewOpen(true);
+            }}
+            className="p-1.5 rounded-full bg-slate-950/80 text-blue-400 hover:text-white backdrop-blur-md transition-transform active:scale-90"
+            title="Quick Preview"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -194,6 +208,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         listingTitle={listing.title}
         listingPrice={listing.price}
         listingUrl={shareUrl}
+      />
+
+      <QuickViewModal
+        listing={listing}
+        isOpen={isQuickViewOpen}
+        onClose={() => setIsQuickViewOpen(false)}
       />
     </>
   );
