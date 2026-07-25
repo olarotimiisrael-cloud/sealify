@@ -187,25 +187,7 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  
-  // Persistent user state initialized from localStorage
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    try {
-      const savedUser = localStorage.getItem('sealify_active_user');
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  // Keep localStorage in sync with current user state
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('sealify_active_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('sealify_active_user');
-    }
-  }, [user]);
+  const [user, setUser] = useState<UserProfile | null>(null);
 
   // AI & Personalization State
   const [userInterests, setUserInterests] = useState<Record<string, number>>(() => {
@@ -314,7 +296,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (profile) {
           setUser(profile as any);
         } else {
-          setUser(prev => prev || {
+          setUser({
             id: session.user.id,
             email: session.user.email || '',
             fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
@@ -435,49 +417,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || 'password123' });
       if (error) { 
-        // Fallback check against allUsers for offline or custom demo users
-        const foundUser = allUsers.find(u => u.email.toLowerCase().trim() === email.toLowerCase().trim());
-        if (foundUser) {
-          setUser(foundUser);
-          toast.success(`Welcome back, ${foundUser.fullName}!`);
-          return true;
-        }
         toast.error(error.message); 
         return false; 
       }
       const profile = await userService.getProfile(data.user.id);
-      if (profile) {
-        setUser(profile as any);
-      } else {
-        const newU: UserProfile = {
-          id: data.user.id,
-          email: data.user.email || email,
-          fullName: data.user.user_metadata?.full_name || email.split('@')[0],
-          phoneNumber: data.user.user_metadata?.phone || '',
-          avatarUrl: '/logo.png',
-          role: 'buyer',
-          verified: false,
-          memberSince: new Date().toISOString(),
-          location: 'Ogbomoso, Oyo State'
-        };
-        setUser(newU);
-      }
+      if (profile) setUser(profile as any);
       toast.success('Welcome back to Sealify!');
       fetchData();
       return true;
     } catch (err) {
-      const foundUser = allUsers.find(u => u.email.toLowerCase().trim() === email.toLowerCase().trim());
-      if (foundUser) {
-        setUser(foundUser);
-        toast.success(`Welcome back, ${foundUser.fullName}!`);
-        return true;
-      }
       toast.error('Authentication failure.');
       return false;
     }
   };
 
   const dispatchWelcomeGreetingEmail = (userEmail: string, userName: string) => {
+    // System notification
     notificationService.create({
       user_id: userEmail,
       type: 'system',
@@ -506,6 +461,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addAuditLog('Promotional Digest Dispatched', `Periodic promotional email digest broadcasted to ${allUsers.length} user accounts.`, 'broadcast');
     toast.success(`📧 Promotional digest dispatched to all ${allUsers.length} user accounts!`);
   }, [listings, allUsers, addAuditLog]);
+
+  // Periodic newsletter interval (simulated every 24 hours or triggered by admin)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (allUsers.length > 0 && listings.length > 0) {
+        console.log('Automated Sealify periodic promotional digest cycle active.');
+      }
+    }, 86400000); // 24 hours
+
+    return () => clearInterval(interval);
+  }, [allUsers.length, listings.length]);
 
   const signup = async (data: Partial<UserProfile> & { password?: string }) => {
     try {
@@ -560,12 +526,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return false;
   };
 
-  const logout = () => { 
-    setUser(null); 
-    localStorage.removeItem('sealify_active_user');
-    supabase.auth.signOut(); 
-    toast.info('Signed out successfully.'); 
-  };
+  const logout = () => { setUser(null); supabase.auth.signOut(); toast.info('Disconnected.'); };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
     const updated = await userService.update(id, data);
