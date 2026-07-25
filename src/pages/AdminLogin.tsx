@@ -8,15 +8,14 @@ import {
   Lock, 
   Mail, 
   Key, 
-  ArrowRight, 
   Terminal, 
   AlertTriangle, 
   ShieldCheck, 
-  Fingerprint, 
   Siren,
   EyeOff,
   Eye,
-  Radio
+  Radio,
+  Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,16 +28,24 @@ const AdminLogin: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isLockedOut) {
-      toast.error('🚨 TERMINAL LOCKED: Intrusion protocol engaged. Security agents notified.');
+      toast.error('🚨 TERMINAL LOCKED: Intrusion protocol engaged. Cybercrime agents notified.');
       return;
     }
 
+    setIsAuthenticating(true);
+
+    // Security delay to prevent timing attacks & high-speed automated brute-force bots
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
     const success = await adminLogin(email, password, pin);
+    setIsAuthenticating(false);
+
     if (success) {
       setFailedAttempts(0);
       navigate('/admin');
@@ -50,15 +57,14 @@ const AdminLogin: React.FC = () => {
       const deviceMetadata = `IP_LOGGED | Device: ${navigator.platform} | UserAgent: ${navigator.userAgent.slice(0, 40)}... | Attempt ${newCount}/3`;
       recordIntrusion(email || 'UNAUTHORIZED_ATTEMPT', deviceMetadata);
 
-      // Warning Toast alerting user of device tracking
       toast.error(
-        `🚨 WRONG CREDENTIALS! Attempt ${newCount}/3. Device metadata & IP captured and dispatched to Cybercrime Unit!`,
+        `🚨 WRONG CREDENTIALS! Attempt ${newCount}/3. Hardware fingerprint captured and logged to security database!`,
         { duration: 6000 }
       );
 
       if (newCount >= 3) {
         setIsLockedOut(true);
-        toast.error('⛔ MAXIMUM FAILED ATTEMPTS REACHED! Terminal locked. Target flagged for investigation.');
+        toast.error('⛔ MAXIMUM FAILED ATTEMPTS REACHED! Terminal permanently locked for this session.');
       }
     }
   };
@@ -172,10 +178,20 @@ const AdminLogin: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full py-4 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-xl shadow-rose-950/50 flex items-center justify-center gap-2 mt-2 font-mono active:scale-95"
+                disabled={isAuthenticating}
+                className="w-full py-4 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 disabled:opacity-50 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-xl shadow-rose-950/50 flex items-center justify-center gap-2 mt-2 font-mono active:scale-95"
               >
-                <ShieldCheck className="w-4 h-4" />
-                <span>Verify Credentials & Authenticate</span>
+                {isAuthenticating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Verifying Cryptographic Credentials...</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Verify Credentials & Authenticate</span>
+                  </>
+                )}
               </button>
             </form>
           )}

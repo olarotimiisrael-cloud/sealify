@@ -6,47 +6,35 @@ import SEO from '../components/SEO';
 import AdminEditUserModal from '../components/AdminEditUserModal';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import PwaInstallButton from '../components/PwaInstallButton';
+import { Link } from 'react-router-dom';
 import { 
   Download, 
   Users, 
   Package, 
   Activity, 
-  Share2, 
   ShieldCheck, 
   Database, 
   BellRing,
   Send,
   Trash2,
-  Edit3,
-  CheckCircle2,
-  AlertTriangle,
+  Check,
   FileSpreadsheet,
   Layers,
   Sparkles,
-  Lock,
   Search,
   KeyRound,
   Mail,
-  Eye,
-  Check,
-  ShieldAlert,
   CreditCard,
   MapPin,
-  Clock,
-  Plus,
-  XCircle,
-  FileText,
   UserCheck,
   Siren,
-  Terminal,
-  ExternalLink,
   Gavel,
   Flag,
   Globe,
-  Settings as SettingsIcon,
   SearchCode,
   Fingerprint,
-  MessageCircle
+  MessageCircle,
+  Lock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
@@ -115,15 +103,31 @@ const AdminDashboard: React.FC = () => {
   const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('LAUTECH Area');
   const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
 
+  // Hardened Route Guard: If not an authenticated Admin with verified token signature
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center p-6 text-center">
-        <SEO title="Unauthorized — Sealify" />
+      <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col font-sans">
+        <SEO title="Restricted Area — Admin Login Required" />
         <Navbar />
-        <div className="bg-slate-900 border border-slate-800 p-8 rounded-3xl space-y-4 max-w-md my-auto">
-          <ShieldCheck className="w-12 h-12 text-rose-500 mx-auto" />
-          <h2 className="text-xl font-black text-white">Access Denied</h2>
-          <p className="text-xs text-slate-400">You must hold Administrator credentials to open this terminal.</p>
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-slate-900 border-2 border-rose-500/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 max-w-md my-auto shadow-2xl relative overflow-hidden">
+            <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30">
+              <Lock className="w-8 h-8" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black text-white uppercase tracking-tight">Access Restricted</h2>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                You must log in through the official encrypted Terminal with Master Access Credentials to view this control panel.
+              </p>
+            </div>
+            <Link 
+              to="/admin/login" 
+              className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-rose-950/50 inline-flex items-center justify-center gap-2 transition-transform active:scale-95"
+            >
+              <ShieldCheck className="w-4 h-4" />
+              <span>AUTHENTICATE AT ADMIN TERMINAL</span>
+            </Link>
+          </div>
         </div>
         <MobileNav />
       </div>
@@ -510,7 +514,7 @@ const AdminDashboard: React.FC = () => {
                    <div className="space-y-1"><label className="font-bold uppercase text-slate-500 tracking-wider">Support Phone</label><input type="text" value={metaPhone} onChange={(e) => setMetaPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none" /></div>
                 </div>
                 <div className="space-y-1"><label className="font-bold uppercase text-slate-500 tracking-wider">Site Description</label><textarea rows={3} value={metaDesc} onChange={(e) => setMetaDesc(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-white focus:outline-none" /></div>
-                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-xl flex items-center justify-center gap-2 uppercase tracking-widest"><CheckCircle2 className="w-4 h-4" /> Save Meta Changes</button>
+                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-xl flex items-center justify-center gap-2 uppercase tracking-widest"><Check className="w-4 h-4" /> Save Meta Changes</button>
              </form>
           </section>
         )}

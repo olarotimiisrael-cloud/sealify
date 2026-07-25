@@ -185,15 +185,36 @@ interface SealifyContextType {
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
+// Helper function to generate an admin session verification token
+const generateAdminSessionToken = (email: string) => {
+  const salt = 'SEALIFY_HARDENED_ROOT_KEY_2024';
+  return btoa(`${email.toLowerCase()}:${salt}:${new Date().toDateString()}`);
+};
+
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
-  // Persistent User Session Initialization from LocalStorage
+  // Editable Admin Credentials
+  const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
+  const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
+  const [adminPin, setAdminPin] = useState<string>(() => localStorage.getItem('sealify_admin_pin') || '336699');
+
+  // Persistent User Session Initialization with Security Checks
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('sealify_active_user');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Anti-Tamper Protection: If user role is admin, verify session token in sessionStorage
+        if (parsed.role === 'admin') {
+          const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
+          const expectedToken = generateAdminSessionToken(adminEmail);
+          if (!sessionToken || sessionToken !== expectedToken) {
+            console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected. Revoking admin status.');
+            return { ...parsed, role: 'buyer' };
+          }
+        }
+        return parsed;
       } catch (e) {
         return null;
       }
@@ -201,12 +222,21 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return null;
   });
 
+  // Verify Admin Session state whenever user changes or on component mount
+  const isAdmin = useMemo(() => {
+    if (!user || user.role !== 'admin') return false;
+    const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
+    const expectedToken = generateAdminSessionToken(adminEmail);
+    return sessionToken === expectedToken;
+  }, [user, adminEmail]);
+
   // Sync user state to localStorage on any profile change
   useEffect(() => {
     if (user) {
       localStorage.setItem('sealify_active_user', JSON.stringify(user));
     } else {
       localStorage.removeItem('sealify_active_user');
+      sessionStorage.removeItem('sealify_admin_session_token');
     }
   }, [user]);
 
@@ -216,11 +246,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return saved ? JSON.parse(saved) : {};
   });
 
-  // Editable Admin Credentials
-  const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
-  const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
-  const [adminPin, setAdminPin] = useState<string>(() => localStorage.getItem('sealify_admin_pin') || '336699');
-
   const updateAdminCredentials = (newEmail: string, newPassword: string, newPin: string) => {
     setAdminEmail(newEmail);
     setAdminPassword(newPassword);
@@ -228,6 +253,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_admin_email', newEmail);
     localStorage.setItem('sealify_admin_password', newPassword);
     localStorage.setItem('sealify_admin_pin', newPin);
+
+    // Re-issue session token if current user is admin
+    if (user?.role === 'admin') {
+      const newToken = generateAdminSessionToken(newEmail);
+      sessionStorage.setItem('sealify_admin_session_token', newToken);
+    }
+
     toast.success('🔒 Official Admin Credentials updated successfully!');
   };
   
@@ -543,6 +575,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
     if (email.toLowerCase().trim() === adminEmail.toLowerCase().trim() && pass === adminPassword && pin === adminPin) {
       const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
+      
+      // Issue session token to sessionStorage
+      const sessionToken = generateAdminSessionToken(adminEmail);
+      sessionStorage.setItem('sealify_admin_session_token', sessionToken);
+
       setUser(adminProfile);
       addAuditLog('Admin Login', 'Master root access granted to official terminal', 'security');
       toast.success('🔑 Master Sealify Root Access Granted');
@@ -554,6 +591,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const logout = () => { 
     setUser(null); 
     localStorage.removeItem('sealify_active_user');
+    sessionStorage.removeItem('sealify_admin_session_token');
     supabase.auth.signOut(); 
     toast.info('Logged out successfully.'); 
   };
@@ -619,7 +657,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   return (
     <SealifyContext.Provider value={{
-      user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
+      user, setUser, isAuthenticated: !!user, isAdmin,
       adminEmail, adminPassword, adminPin, updateAdminCredentials,
       systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v)); },
       siteSettings, updateSiteSettings: (s) => { setSiteSettings(p => ({...p, ...s})); siteSettingsService.update(s); addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast'); },
