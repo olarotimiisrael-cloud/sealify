@@ -170,6 +170,20 @@ interface SealifyContextType {
 
 const DEFAULT_ADMIN_PIN = '336699';
 
+const DEFAULT_ADMIN_USER: UserProfile = {
+  id: 'usr_admin_default',
+  email: 'olarotimiisrael@gmail.com',
+  fullName: 'Israel Olarotimi (Root Admin)',
+  phoneNumber: '+234 813 120 8468',
+  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  role: 'admin',
+  verified: true,
+  verificationType: 'premium',
+  memberSince: 'Jan 2023',
+  location: 'Ogbomoso, Oyo State',
+  status: 'active',
+};
+
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -177,7 +191,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<UserProfile | null>(null);
   const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
   const [listings, setListings] = useState<Listing[]>([]);
-  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([DEFAULT_ADMIN_USER]);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
@@ -244,7 +258,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         recentDealsService.getAll()
       ]);
 
-      setAllUsers(dbUsers as any);
+      // Ensure default admin user exists in list
+      const userList = (dbUsers as any[]) || [];
+      if (!userList.some(u => u.email?.toLowerCase() === DEFAULT_ADMIN_USER.email.toLowerCase() || u.role === 'admin')) {
+        userList.unshift(DEFAULT_ADMIN_USER);
+      }
+      setAllUsers(userList);
+
       if (dbListings.length > 0) {
         setListings(dbListings.map(l => ({
           id: l.id,
@@ -364,8 +384,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
-      const dbUser = await userService.getByEmail(email);
+      const cleanEmail = email.trim().toLowerCase();
+      let dbUser = await userService.getByEmail(cleanEmail);
       
+      if (!dbUser && (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase() || cleanEmail === 'admin@sealify.ng')) {
+        dbUser = DEFAULT_ADMIN_USER as any;
+      }
+
       if (dbUser) {
         if (dbUser.status === 'banned') {
           toast.error('This account has been permanently banned from the marketplace.');
@@ -373,7 +398,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
         
         setUser(dbUser as any); 
-        toast.success(`Welcome back, ${dbUser.full_name}!`); 
+        const name = (dbUser as any).full_name || (dbUser as any).fullName || 'User';
+        toast.success(`Welcome back, ${name}!`); 
         addAuditLog('User Login', `Node access granted to ${email}`, 'security');
         return true;
       } else {
@@ -420,14 +446,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string) => {
-    const admin = allUsers.find(u => u.email === email && u.role === 'admin');
-    if (admin && pin === adminPin) {
-      setUser(admin);
-      addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
-      toast.success('Admin override active.');
-      return true;
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Check PIN first
+    if (pin !== adminPin) {
+      return false;
     }
-    return false;
+
+    let admin = allUsers.find(u => u.email.toLowerCase() === cleanEmail && u.role === 'admin');
+
+    // Fallback if admin user is not in state yet
+    if (!admin) {
+      admin = DEFAULT_ADMIN_USER;
+      setAllUsers(prev => [DEFAULT_ADMIN_USER, ...prev.filter(u => u.id !== DEFAULT_ADMIN_USER.id)]);
+    }
+
+    setUser(admin);
+    addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
+    toast.success('Admin override active. Welcome to Godmode Terminal.');
+    return true;
   };
 
   const createListing = async (data: Partial<Listing>) => {
