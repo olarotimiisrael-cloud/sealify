@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
-import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService } from '@/services/supabaseService';
+import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -222,6 +222,53 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
+  // Check 24-Hour Inactivity Reminder Trigger
+  useEffect(() => {
+    const lastActiveStr = localStorage.getItem('sealify_last_active');
+    const now = Date.now();
+    localStorage.setItem('sealify_last_active', now.toString());
+
+    if (lastActiveStr) {
+      const lastActive = parseInt(lastActiveStr, 10);
+      const hoursPassed = (now - lastActive) / (1000 * 60 * 60);
+      if (hoursPassed >= 24) {
+        toast.info("Welcome back! New verified deals are available in Ogbomoso today.", {
+          duration: 5000,
+        });
+      }
+    }
+  }, []);
+
+  // Listen to Supabase Auth State Changes
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const profile = await userService.getProfile(session.user.id);
+        if (profile) {
+          setUser(profile as any);
+        } else {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            phoneNumber: session.user.user_metadata?.phone || '',
+            avatarUrl: session.user.user_metadata?.avatar_url || '',
+            role: 'buyer',
+            verified: false,
+            memberSince: new Date().toISOString(),
+            location: 'Ogbomoso, Oyo State'
+          });
+        }
+      } else {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.allSettled([
@@ -244,9 +291,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         recentDealsService.getAll()
       ]);
 
-      if (dbUsers.status === 'fulfilled') setAllUsers(dbUsers.value as any);
+      if (dbUsers.status === 'fulfilled' && dbUsers.value) setAllUsers(dbUsers.value as any);
 
-      if (dbListings.status === 'fulfilled') {
+      if (dbListings.status === 'fulfilled' && dbListings.value) {
         setListings(dbListings.value.map((l: any) => ({
           id: l.id,
           sellerId: l.seller_id,
@@ -257,32 +304,32 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           sellerVerificationType: l.users?.verification_type || 'none',
           title: l.title,
           description: l.description,
-          price: l.price,
+          price: Number(l.price) || 0,
           category: l.category,
           condition: l.condition,
           location: l.location,
-          status: l.status,
-          images: l.listing_images?.map((img: any) => img.image_url) || [],
+          status: l.status || 'active',
+          images: l.listing_images?.map((img: any) => img.image_url) || (l.images ? l.images : []),
           viewsCount: l.views_count || 0,
-          createdAt: new Date(l.created_at).toLocaleDateString(),
-          featured: l.featured,
+          createdAt: new Date(l.created_at || Date.now()).toLocaleDateString(),
+          featured: l.featured || false,
           promotionEndDate: l.promotion_end_date,
           specifications: l.specifications
         })));
       }
 
-      if (dbVerifications.status === 'fulfilled') setVerificationRequests(dbVerifications.value as any);
-      if (dbPasswords.status === 'fulfilled') setPasswordRequests(dbPasswords.value as any);
-      if (dbPromoPay.status === 'fulfilled') setPromotionPaymentRequests(dbPromoPay.value as any);
-      if (dbBuyerReqs.status === 'fulfilled') setBuyerRequests(dbBuyerReqs.value as any);
-      if (dbReviews.status === 'fulfilled') setReviews(dbReviews.value as any);
-      if (dbAnnouncements.status === 'fulfilled') setAnnouncements(dbAnnouncements.value as any);
-      if (dbReports.status === 'fulfilled') setReports(dbReports.value as any);
-      if (dbDisputes.status === 'fulfilled') setDisputeCases(dbDisputes.value as any);
-      if (dbLogs.status === 'fulfilled') setAuditLogs(dbLogs.value as any);
-      if (dbThreats.status === 'fulfilled') setIntrusionLogs(dbThreats.value as any);
-      if (dbSpots.status === 'fulfilled') setSafeSpots(dbSpots.value as any);
-      if (dbDeals.status === 'fulfilled') setRecentDeals(dbDeals.value.map((d: any) => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
+      if (dbVerifications.status === 'fulfilled' && dbVerifications.value) setVerificationRequests(dbVerifications.value as any);
+      if (dbPasswords.status === 'fulfilled' && dbPasswords.value) setPasswordRequests(dbPasswords.value as any);
+      if (dbPromoPay.status === 'fulfilled' && dbPromoPay.value) setPromotionPaymentRequests(dbPromoPay.value as any);
+      if (dbBuyerReqs.status === 'fulfilled' && dbBuyerReqs.value) setBuyerRequests(dbBuyerReqs.value as any);
+      if (dbReviews.status === 'fulfilled' && dbReviews.value) setReviews(dbReviews.value as any);
+      if (dbAnnouncements.status === 'fulfilled' && dbAnnouncements.value) setAnnouncements(dbAnnouncements.value as any);
+      if (dbReports.status === 'fulfilled' && dbReports.value) setReports(dbReports.value as any);
+      if (dbDisputes.status === 'fulfilled' && dbDisputes.value) setDisputeCases(dbDisputes.value as any);
+      if (dbLogs.status === 'fulfilled' && dbLogs.value) setAuditLogs(dbLogs.value as any);
+      if (dbThreats.status === 'fulfilled' && dbThreats.value) setIntrusionLogs(dbThreats.value as any);
+      if (dbSpots.status === 'fulfilled' && dbSpots.value && dbSpots.value.length > 0) setSafeSpots(dbSpots.value as any);
+      if (dbDeals.status === 'fulfilled' && dbDeals.value) setRecentDeals(dbDeals.value.map((d: any) => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       
       if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
       
@@ -300,7 +347,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           searchAlertService.getAll(user.id)
         ]);
         
-        if (results[0].status === 'fulfilled') {
+        if (results[0].status === 'fulfilled' && results[0].value) {
           setNotifications(results[0].value.map((n: any) => ({
             id: n.id,
             type: n.type as any,
@@ -311,10 +358,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             linkUrl: n.link_url || undefined
           })));
         }
-        if (results[1].status === 'fulfilled') setSavedListingIds(results[1].value);
-        if (results[3].status === 'fulfilled') setSearchAlerts(results[3].value as any);
+        if (results[1].status === 'fulfilled' && results[1].value) setSavedListingIds(results[1].value);
+        if (results[3].status === 'fulfilled' && results[3].value) setSearchAlerts(results[3].value as any);
 
-        if (results[2].status === 'fulfilled') {
+        if (results[2].status === 'fulfilled' && results[2].value) {
           const grouped: Record<string, Conversation> = {};
           results[2].value.forEach((m: any) => {
             const otherUserId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
@@ -361,58 +408,122 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || 'password123' });
-      if (error) { toast.error(error.message); return false; }
+      if (error) { 
+        toast.error(error.message); 
+        return false; 
+      }
       const profile = await userService.getProfile(data.user.id);
-      setUser(profile as any);
+      if (profile) {
+        setUser(profile as any);
+      }
       toast.success('Access Granted.');
+      fetchData();
       return true;
     } catch (err) {
-      toast.error('Auth failure.');
+      toast.error('Authentication failure.');
       return false;
     }
   };
 
   const signup = async (data: Partial<UserProfile> & { password?: string }) => {
     try {
-      const { data: authData, error } = await supabase.auth.signUp({ email: data.email!, password: data.password! });
+      const { data: authData, error } = await supabase.auth.signUp({ 
+        email: data.email!, 
+        password: data.password!,
+        options: {
+          data: {
+            full_name: data.fullName,
+            phone: data.phoneNumber,
+          }
+        }
+      });
       if (error) throw error;
       if (authData.user) {
-        await userService.create({ id: authData.user.id, email: data.email, full_name: data.fullName, role: data.role || 'buyer' });
-        toast.success('Node Identity Created.');
+        await userService.create({ 
+          id: authData.user.id, 
+          email: data.email, 
+          full_name: data.fullName, 
+          phone_number: data.phoneNumber,
+          role: data.role || 'buyer' 
+        });
+        toast.success('Account Identity Created.');
         fetchData();
       }
-    } catch (err) { toast.error("Signup failed."); }
+    } catch (err: any) { 
+      toast.error(err.message || "Signup failed."); 
+    }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
     const success = await login(email, pass);
-    if (success && user?.role === 'admin' && pin === adminPin) return true;
+    if (success && pin === adminPin) return true;
     return false;
   };
 
-  const logout = () => { setUser(null); supabase.auth.signOut(); toast.info('Disconnected.'); };
+  const logout = () => { 
+    setUser(null); 
+    supabase.auth.signOut(); 
+    toast.info('Disconnected.'); 
+  };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
     const updated = await userService.update(id, data);
-    if (user?.id === id) setUser(updated as any);
+    if (user?.id === id && updated) setUser(updated as any);
     fetchData();
   };
 
-  const deleteUser = async (id: string) => { await userService.delete(id); fetchData(); };
-
-  const createListing = async (data: Partial<Listing>): Promise<boolean> => {
-    try {
-      await listingService.create({ seller_id: user?.id, ...data }, data.images || []);
-      fetchData();
-      return true;
-    } catch (e) { return false; }
+  const deleteUser = async (id: string) => { 
+    await userService.delete(id); 
+    fetchData(); 
   };
 
-  const updateListing = async (id: string, updatedData: Partial<Listing>) => { await listingService.update(id, updatedData); fetchData(); };
+  const createListing = async (data: Partial<Listing>, files?: File[]): Promise<boolean> => {
+    try {
+      let uploadedUrls: string[] = data.images || [];
 
-  const deleteListing = async (id: string) => { await listingService.delete(id); fetchData(); };
+      if (files && files.length > 0) {
+        const fileUploadPromises = files.map(file => storageService.uploadFile('listing-photos', `lst_${Date.now()}`, file));
+        const newUrls = await Promise.all(fileUploadPromises);
+        uploadedUrls = [...uploadedUrls, ...newUrls.filter(Boolean)];
+      }
 
-  const markAsSold = async (id: string) => { await listingService.update(id, { status: 'sold' }); fetchData(); };
+      const newListingData = {
+        seller_id: user?.id || 'usr_guest',
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        category: data.category,
+        condition: data.condition,
+        location: data.location || 'Ogbomoso, Oyo State',
+        status: 'active',
+        featured: data.featured || false,
+        specifications: data.specifications || {}
+      };
+
+      await listingService.create(newListingData, uploadedUrls);
+      toast.success('Listing created successfully!');
+      fetchData();
+      return true;
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to publish listing.');
+      return false; 
+    }
+  };
+
+  const updateListing = async (id: string, updatedData: Partial<Listing>) => { 
+    await listingService.update(id, updatedData); 
+    fetchData(); 
+  };
+
+  const deleteListing = async (id: string) => { 
+    await listingService.delete(id); 
+    fetchData(); 
+  };
+
+  const markAsSold = async (id: string) => { 
+    await listingService.update(id, { status: 'sold' }); 
+    fetchData(); 
+  };
 
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
@@ -448,11 +559,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
       adminPin, updateAdminPin: (p) => setAdminPin(p),
-      systemConfig, updateSystemConfig: (upd) => setSystemConfig(p => ({...p, ...upd})),
-      siteSettings, updateSiteSettings: (s) => setSiteSettings(p => ({...p, ...s})),
+      systemConfig, updateSystemConfig: (upd) => {
+        setSystemConfig(p => ({...p, ...upd}));
+        Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v));
+      },
+      siteSettings, updateSiteSettings: (s) => {
+        setSiteSettings(p => ({...p, ...s}));
+        siteSettingsService.update(s);
+      },
       promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
-      safeSpots, addSafeSpot: (s) => setSafeSpots(p => [...p, {...s, id: `spot_${Date.now()}`}]), deleteSafeSpot: (id) => setSafeSpots(p => p.filter(s => s.id !== id)),
-      exportDatabaseBackup: () => toast.info('Backup initiated.'),
+      safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),
+      exportDatabaseBackup: () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2));
+        const dlAnchorElem = document.createElement('a');
+        dlAnchorElem.setAttribute("href", dataStr);
+        dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`);
+        dlAnchorElem.click();
+        toast.success("Database Backup Exported!");
+      },
       language, setLanguage, t, categories, 
       addCategory: (c) => setCategories(prev => [...prev, c]), 
       deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
@@ -466,7 +590,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)),
       bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
       savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)),
-      toggleSaveListing: async (id) => { if (user) { setSavedListingIds(p => p.includes(id) ? p.filter(i => i !== id) : [...p, id]); } },
+      toggleSaveListing: async (id) => { 
+        if (user) { 
+          const exists = savedListingIds.includes(id);
+          await favoriteService.toggle(user.id, id, exists);
+          setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); 
+        } 
+      },
       isSaved: (id) => savedListingIds.includes(id),
       filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
       activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
@@ -483,8 +613,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
       markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
-      addNotification: (n) => toast.success("Notification sent."), 
-      broadcastMassNotification: (title, message) => toast.success(`Broadcasted: ${title}`),
+      addNotification: (n) => {
+        if (user) notificationService.create({ user_id: user.id, ...n }).then(() => fetchData());
+      }, 
+      broadcastMassNotification: (title, message) => {
+        allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message }));
+        toast.success(`Broadcasted: ${title}`);
+      },
       passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
       processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),
       verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(() => fetchData()),
@@ -522,6 +657,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useSealify = () => {
   const context = useContext(SealifyContext);
-  if (!context) throw new Error('useSealify error');
+  if (!context) throw new Error('useSealify must be used within SealifyProvider');
   return context;
 };
