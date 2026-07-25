@@ -30,7 +30,6 @@ import {
   TrendingUp,
   Clock,
   ShieldCheck,
-  AlertCircle,
   CheckCircle2,
   XCircle
 } from 'lucide-react';
