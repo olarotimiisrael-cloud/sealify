@@ -32,7 +32,9 @@ import {
   Activity,
   Users,
   Eye,
-  ShoppingBag
+  ShoppingBag,
+  Search,
+  ArrowRight
 } from 'lucide-react';
 
 export default function Index() {
@@ -56,6 +58,7 @@ export default function Index() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [heroSearch, setHeroSearch] = useState('');
 
   // Sync URL search parameters with filter state
   useEffect(() => {
@@ -72,6 +75,11 @@ export default function Index() {
       }));
     }
   }, [searchParams, setFilters]);
+
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters(prev => ({ ...prev, searchQuery: heroSearch.trim() }));
+  };
 
   const activeAnnouncements = announcements.filter((a) => a.active);
 
@@ -147,6 +155,59 @@ export default function Index() {
 
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-6 flex-1 space-y-8 overflow-x-hidden">
         
+        {/* NEW ENHANCED HERO SECTION */}
+        <section className="relative py-12 sm:py-20 text-center space-y-8">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_70%)] pointer-events-none"></div>
+
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/5">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              <span>{t('trusted_marketplace')}</span>
+            </div>
+            <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter leading-none">
+              Trade Securely in <br/>
+              <span className="text-emerald-500">Ogbomosoland.</span>
+            </h1>
+            <p className="text-slate-400 text-xs sm:text-base max-w-xl mx-auto font-medium">
+              Verified local items, safe meetup locations, and AI-powered pricing. Connect with thousands of buyers in Under G, Takie, and LAUTECH.
+            </p>
+          </div>
+
+          <form onSubmit={handleHeroSearch} className="max-w-2xl mx-auto relative z-10 px-4">
+             <div className="relative group">
+                <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+                <div className="relative flex items-center bg-slate-900 border-2 border-slate-800 focus-within:border-emerald-500 rounded-[2rem] p-2 pr-2.5 transition-all shadow-2xl">
+                   <Search className="w-6 h-6 text-slate-500 ml-4 shrink-0" />
+                   <input 
+                     type="text" 
+                     placeholder={t('search_placeholder')}
+                     value={heroSearch}
+                     onChange={(e) => setHeroSearch(e.target.value)}
+                     className="flex-1 bg-transparent border-none text-white text-base sm:text-lg px-4 py-3 focus:outline-none placeholder:text-slate-600 font-bold"
+                   />
+                   <button type="submit" className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                      <span className="hidden sm:inline">FIND DEALS</span>
+                      <ArrowRight className="w-5 h-5" />
+                   </button>
+                </div>
+             </div>
+
+             <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+                <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest mr-1">Trending:</span>
+                {['iPhone', 'Toyota', 'Hostel', 'Generator', 'Laptop'].map(tag => (
+                   <button 
+                     key={tag} 
+                     type="button"
+                     onClick={() => { setHeroSearch(tag); setFilters(f => ({...f, searchQuery: tag})); }}
+                     className="text-[11px] font-bold text-slate-400 hover:text-emerald-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full transition-colors"
+                   >
+                     {tag}
+                   </button>
+                ))}
+             </div>
+          </form>
+        </section>
+
         {activeAnnouncements.length > 0 && (
           <div className="space-y-2">
             {activeAnnouncements.map((ann) => (
@@ -246,23 +307,6 @@ export default function Index() {
                 <ListingCard key={item.id} listing={item} />
               ))}
             </div>
-          </section>
-        )}
-
-        {/* Recently Viewed */}
-        {recentlyViewed.length > 0 && activeCategory === 'All' && !hasActiveFilters && (
-          <section className="space-y-4 animate-in fade-in slide-in-from-left-4">
-             <div className="flex items-center gap-2 px-1">
-                <History className="w-5 h-5 text-emerald-400" />
-                <h2 className="text-lg font-black text-white">Recently Viewed</h2>
-             </div>
-             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                {recentlyViewed.map(item => (
-                  <div key={item.id} className="min-w-[200px] w-48 shrink-0">
-                     <ListingCard listing={item} />
-                  </div>
-                ))}
-             </div>
           </section>
         )}
 

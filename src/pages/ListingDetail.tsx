@@ -16,6 +16,7 @@ import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
 import PriceDropAlertModal from '../components/PriceDropAlertModal';
 import SwapProposalModal from '../components/SwapProposalModal';
 import PriceHistoryChart from '../components/PriceHistoryChart';
+import PriceGuard from '../components/PriceGuard';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
 import VerifiedBadge from '../components/VerifiedBadge';
@@ -381,6 +382,8 @@ const ListingDetail: React.FC = () => {
           </div>
 
           <div className="space-y-6">
+            <PriceGuard price={listing.price} category={listing.category} location={listing.location} />
+
             <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-5">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Seller Information</h3>
 
