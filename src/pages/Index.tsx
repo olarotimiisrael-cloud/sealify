@@ -14,6 +14,7 @@ import MapView from '../components/MapView';
 import FilterDrawer from '../components/FilterDrawer';
 import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
+import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
 import SEO from '../components/SEO';
 import { 
   Grid, 
@@ -37,7 +38,8 @@ import {
   ArrowRight,
   X,
   Clock,
-  Tag
+  Tag,
+  Bot
 } from 'lucide-react';
 
 export default function Index() {
@@ -61,6 +63,7 @@ export default function Index() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
   const [heroSearch, setHeroSearch] = useState('');
 
   // Sync URL search parameters with filter state
@@ -164,7 +167,7 @@ export default function Index() {
       <Navbar />
       <CategoryBar />
 
-      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-6 flex-1 space-y-8 overflow-x-hidden">
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-6 flex-1 space-y-8 overflow-x-hidden relative">
         
         {/* HERO SECTION */}
         <section className="relative py-12 sm:py-20 text-center space-y-8">
@@ -456,6 +459,19 @@ export default function Index() {
             </button>
           </div>
         )}
+
+        {/* Floating AI Copilot Action Widget */}
+        <div className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-30">
+          <button
+            onClick={() => setIsAiCopilotOpen(true)}
+            className="group flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black px-4 py-3 rounded-full shadow-2xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all border-2 border-white/20"
+            title="Open Sealify AI Shopping Copilot"
+          >
+            <Bot className="w-5 h-5 stroke-[2.5] animate-pulse" />
+            <span className="text-xs tracking-tight hidden sm:inline">AI Copilot</span>
+          </button>
+        </div>
+
       </main>
 
       <Footer />
@@ -463,6 +479,7 @@ export default function Index() {
       <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
       <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
       <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
+      <AiShoppingAssistantModal isOpen={isAiCopilotOpen} onClose={() => setIsAiCopilotOpen(false)} />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
 import EscrowProtectionModal from './EscrowProtectionModal';
+import AiShoppingAssistantModal from './AiShoppingAssistantModal';
 import Logo from './Logo';
 import AuthModal from './AuthModal';
 import { SupportedLanguage } from '../translations/languages';
@@ -32,7 +33,9 @@ import {
   ArrowLeft,
   Wallet,
   Newspaper,
-  BadgeCheck
+  BadgeCheck,
+  Bot,
+  Sparkles
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -61,6 +64,7 @@ const Navbar: React.FC = () => {
   
   const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
   const [isEscrowOpen, setIsEscrowOpen] = useState(false);
+  const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
@@ -122,6 +126,16 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            {/* AI Copilot Button */}
+            <button
+              onClick={() => setIsAiAssistantOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-black transition-all shadow shadow-emerald-500/10 active:scale-95"
+              title="Open Sealify AI Copilot Assistant"
+            >
+              <Bot className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <span>AI Copilot</span>
+            </button>
+
             <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
               <Building2 className="w-4 h-4 text-emerald-400" />
               <span>Vendors</span>
@@ -260,6 +274,9 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
+            <button onClick={() => setIsAiAssistantOpen(true)} className="p-2 text-emerald-400" title="AI Copilot">
+              <Bot className="w-6 h-6 animate-pulse" />
+            </button>
             <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
               <Search className="w-6 h-6" />
             </button>
@@ -279,6 +296,9 @@ const Navbar: React.FC = () => {
                 ))}
              </div>
             <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <button onClick={() => { setIsMobileMenuOpen(false); setIsAiAssistantOpen(true); }} className="py-2.5 bg-slate-950 border border-emerald-500/30 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5 font-black">
+                <Bot className="w-4 h-4" /> AI Copilot
+              </button>
               <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">
                 <Building2 className="w-4 h-4" /> Vendors
               </Link>
@@ -287,9 +307,6 @@ const Navbar: React.FC = () => {
               </Link>
               <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5">
                 <PlayCircle className="w-4 h-4" /> Guide
-              </Link>
-              <Link to="/market-insights" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-blue-400 rounded-xl text-center flex items-center justify-center gap-1.5">
-                <TrendingUp className="w-4 h-4" /> Insights
               </Link>
             </div>
             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
@@ -311,6 +328,7 @@ const Navbar: React.FC = () => {
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <EscrowProtectionModal isOpen={isEscrowOpen} onClose={() => setIsEscrowOpen(false)} />
+      <AiShoppingAssistantModal isOpen={isAiAssistantOpen} onClose={() => setIsAiAssistantOpen(false)} />
     </>
   );
 };
