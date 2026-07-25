@@ -111,6 +111,7 @@ interface SealifyContextType {
   bulkDeleteListings: (listingIds: string[]) => void;
   savedListingIds: string[];
   recentlyViewedIds: string[];
+  userInterests: Record<string, number>;
   addRecentlyViewed: (id: string) => void;
   toggleSaveListing: (id: string) => void;
   isSaved: (id: string) => boolean;
@@ -186,6 +187,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
 
+  // AI & Personalization State
+  const [userInterests, setUserInterests] = useState<Record<string, number>>(() => {
+    const saved = localStorage.getItem('sealify_interests');
+    return saved ? JSON.parse(saved) : {};
+  });
+
   // Editable Admin Credentials
   const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
   const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
@@ -251,6 +258,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
+    localStorage.setItem('sealify_interests', JSON.stringify(userInterests));
+  }, [userInterests]);
+
+  useEffect(() => {
     if (user) {
       setWallet({
         id: 'wal_1',
@@ -307,9 +318,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
   }, []);
 
+  const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
+    if (user) {
+      notificationService.create({ user_id: user.id, ...n }).then(() => fetchData());
+    }
+  }, [user]);
+
   const fetchData = useCallback(async () => {
     try {
-      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.allSettled([
+      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals, dbAlerts] = await Promise.allSettled([
         userService.getAll(),
         listingService.getAll(),
         verificationService.getAll(),
@@ -326,7 +343,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         systemConfigService.getAll(),
         siteSettingsService.get(),
         promotionPlanService.getAll(),
-        recentDealsService.getAll()
+        recentDealsService.getAll(),
+        user ? searchAlertService.getAll(user.id) : Promise.resolve([])
       ]);
 
       if (dbUsers.status === 'fulfilled' && dbUsers.value) setAllUsers(dbUsers.value as any);
@@ -369,16 +387,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (dbSpots.status === 'fulfilled' && dbSpots.value && dbSpots.value.length > 0) setSafeSpots(dbSpots.value as any);
       if (dbDeals.status === 'fulfilled' && dbDeals.value) setRecentDeals(dbDeals.value.map((d: any) => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
+      if (dbAlerts.status === 'fulfilled' && dbAlerts.value) setSearchAlerts(dbAlerts.value as any);
 
       setLoading(false);
     } catch (err) {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const addRecentlyViewed = useCallback((id: string) => {
+    setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10));
+    const item = listings.find(l => l.id === id);
+    if (item) {
+      setUserInterests(prev => ({
+        ...prev,
+        [item.category]: (prev[item.category] || 0) + 1
+      }));
+    }
+  }, [listings]);
 
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
@@ -471,6 +501,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     fetchData(); 
   };
 
+  const checkSearchAlertsForListing = useCallback((listing: Listing) => {
+    searchAlerts.forEach(alert => {
+      const queryMatch = listing.title.toLowerCase().includes(alert.query.toLowerCase()) || 
+                         listing.category.toLowerCase().includes(alert.query.toLowerCase());
+      const catMatch = alert.category === 'All' || alert.category === listing.category;
+      const priceMatch = !alert.maxPrice || listing.price <= alert.maxPrice;
+
+      if (queryMatch && catMatch && priceMatch) {
+        addNotification({
+          type: 'alert_match',
+          title: 'Search Alert Match!',
+          description: `A new item matching your alert "${alert.query}" was just posted: "${listing.title}"`,
+          linkUrl: `/listing/${listing.id}`
+        });
+      }
+    });
+  }, [searchAlerts, addNotification]);
+
   const createListing = async (data: Partial<Listing>, files?: File[]): Promise<boolean> => {
     try {
       let uploadedUrls: string[] = data.images || [];
@@ -494,10 +542,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         specifications: data.specifications || {}
       };
 
-      await listingService.create(newListingData, uploadedUrls);
-      toast.success('Listing created successfully!');
-      fetchData();
-      return true;
+      const result = await listingService.create(newListingData, uploadedUrls);
+      if (result) {
+        checkSearchAlertsForListing(result as any);
+        toast.success('Listing created successfully!');
+        fetchData();
+        return true;
+      }
+      return false;
     } catch (e: any) {
       toast.error(e.message || 'Failed to publish listing.');
       return false; 
@@ -583,7 +635,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
       bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)),
       bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
-      savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)),
+      savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,
       toggleSaveListing: async (id) => { 
         if (user) { 
           const exists = savedListingIds.includes(id);
@@ -607,9 +659,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
       markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
-      addNotification: (n) => {
-        if (user) notificationService.create({ user_id: user.id, ...n }).then(() => fetchData());
-      }, 
+      addNotification,
       broadcastMassNotification: (title, message) => {
         allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message }));
         toast.success(`Broadcasted: ${title}`);

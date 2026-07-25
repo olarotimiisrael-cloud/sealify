@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -26,7 +26,9 @@ import {
   CheckCircle2,
   Package,
   RotateCcw,
-  History
+  History,
+  TrendingUp,
+  BrainCircuit
 } from 'lucide-react';
 
 export default function Index() {
@@ -41,6 +43,7 @@ export default function Index() {
     recentDeals,
     resetFilters,
     recentlyViewedIds,
+    userInterests,
     t
   } = useSealify();
 
@@ -84,6 +87,29 @@ export default function Index() {
   });
 
   const recentlyViewed = listings.filter(l => recentlyViewedIds.includes(l.id));
+
+  // AI Recommendation Logic: Sort by interest category first, then featured
+  const recommendedListings = useMemo(() => {
+    if (Object.keys(userInterests).length === 0) return [];
+    
+    // Sort categories by interest count
+    const sortedInterests = Object.entries(userInterests)
+      .sort(([, a], [, b]) => b - a)
+      .map(([cat]) => cat);
+
+    return listings
+      .filter(l => l.status === 'active' && !recentlyViewedIds.includes(l.id))
+      .sort((a, b) => {
+        const aIndex = sortedInterests.indexOf(a.category);
+        const bIndex = sortedInterests.indexOf(b.category);
+        
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      })
+      .slice(0, 4);
+  }, [listings, userInterests, recentlyViewedIds]);
 
   const sortedListings = [...filteredListings].sort((a, b) => {
     if (filters.sortBy === 'price-asc') return a.price - b.price;
@@ -150,6 +176,28 @@ export default function Index() {
           </section>
         )}
 
+        {/* AI Recommendations Section */}
+        {recommendedListings.length > 0 && activeCategory === 'All' && !hasActiveFilters && (
+          <section className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-[2.5rem] space-y-4 animate-in fade-in slide-in-from-right-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-white">{t('recommended_for_you')}</h2>
+                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{t('ai_matched')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {recommendedListings.map(item => (
+                <ListingCard key={item.id} listing={item} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Recently Viewed */}
         {recentlyViewed.length > 0 && activeCategory === 'All' && !hasActiveFilters && (
           <section className="space-y-4 animate-in fade-in slide-in-from-left-4">
@@ -171,7 +219,7 @@ export default function Index() {
         <NeighborhoodFilter />
         <FeaturedVendorsSection />
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pt-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">{t('marketplace_feed')}</h2>
