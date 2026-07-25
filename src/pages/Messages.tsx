@@ -7,8 +7,9 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import TransactionReceiptModal from '../components/TransactionReceiptModal';
+import EscrowInitiatorModal from '../components/EscrowInitiatorModal';
 import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2, Check, X } from 'lucide-react';
+import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2, Check, Lock, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 const QUICK_REPLIES = [
@@ -29,6 +30,7 @@ const Messages: React.FC = () => {
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,11 +90,7 @@ const Messages: React.FC = () => {
 
   const handleSealTheDeal = (receiptMsg: string) => {
     if (!activeConv || !activeListing) return;
-    
-    // Official Platform Action
     sealDeal(activeListing.id, activeConv.otherUser.name, activeListing.price);
-    
-    // Send Receipt Text to Chat
     sendMessage(activeConv.listingId, activeConv.otherUser.id, receiptMsg);
   };
 
@@ -189,9 +187,17 @@ const Messages: React.FC = () => {
                       className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
                     >
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Seal the Deal</span>
+                      <span>Seal Deal</span>
                     </button>
                   )}
+
+                  <button
+                    onClick={() => setIsEscrowModalOpen(true)}
+                    className="px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-xl text-xs font-bold border border-teal-500/30 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Escrow</span>
+                  </button>
 
                   <button
                     onClick={() => setIsInspectionOpen(true)}
@@ -227,6 +233,7 @@ const Messages: React.FC = () => {
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
                   const isInspectionMsg = m.content.includes('IN-PERSON INSPECTION REPORT');
                   const isReceiptMsg = m.content.includes('OFFICIAL SEALIFY TRANSACTION RECEIPT');
+                  const isEscrowMsg = m.content.includes('SEALIFY SAFE ESCROW VAULT');
                   const isAudioMsg = m.content.includes('Voice Note');
 
                   return (
@@ -243,6 +250,8 @@ const Messages: React.FC = () => {
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : isReceiptMsg
                             ? 'bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 rounded-bl-none'
+                            : isEscrowMsg
+                            ? 'bg-teal-950/90 border border-teal-400/50 text-teal-200 rounded-bl-none'
                             : isAudioMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
@@ -250,7 +259,6 @@ const Messages: React.FC = () => {
                       >
                         <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
 
-                        {/* Interactive Accept Offer Option for Received Offers */}
                         {!isMe && isOfferMsg && (
                           <div className="pt-2 border-t border-amber-500/30 flex gap-2">
                             <button
@@ -365,6 +373,17 @@ const Messages: React.FC = () => {
         category={activeListing?.category || 'Electronics'}
         itemTitle={activeConv?.listingTitle || 'Item'}
         onSendChecklistToChat={handleSendInspectionReport}
+      />
+
+      <EscrowInitiatorModal
+        isOpen={isEscrowModalOpen}
+        onClose={() => setIsEscrowModalOpen(false)}
+        listingTitle={activeConv?.listingTitle || 'Item'}
+        price={activeConv?.listingPrice || 0}
+        sellerName={activeConv?.otherUser.name || 'Merchant'}
+        onSendEscrowToChat={(msg) => {
+          if (activeConv) sendMessage(activeConv.listingId, activeConv.otherUser.id, msg);
+        }}
       />
 
       {activeListing && (
