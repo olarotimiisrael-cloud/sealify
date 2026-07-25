@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -34,7 +34,10 @@ import {
   Eye,
   ShoppingBag,
   Search,
-  ArrowRight
+  ArrowRight,
+  X,
+  Clock,
+  Tag
 } from 'lucide-react';
 
 export default function Index() {
@@ -99,7 +102,9 @@ export default function Index() {
     return true;
   });
 
-  const recentlyViewed = listings.filter(l => recentlyViewedIds.includes(l.id));
+  const recentlyViewed = useMemo(() => {
+    return listings.filter(l => recentlyViewedIds.includes(l.id));
+  }, [listings, recentlyViewedIds]);
 
   // AI Recommendation Logic: Sort by interest category first, then featured
   const recommendedListings = useMemo(() => {
@@ -139,7 +144,13 @@ export default function Index() {
     }).format(amount);
   };
 
-  const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.minPrice !== null || filters.maxPrice !== null;
+  const hasActiveFilters = Boolean(
+    filters.searchQuery || 
+    filters.category !== 'All' || 
+    filters.location || 
+    filters.minPrice !== null || 
+    filters.maxPrice !== null
+  );
 
   const totalMarketViews = listings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
 
@@ -155,7 +166,7 @@ export default function Index() {
 
       <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-6 flex-1 space-y-8 overflow-x-hidden">
         
-        {/* NEW ENHANCED HERO SECTION */}
+        {/* HERO SECTION */}
         <section className="relative py-12 sm:py-20 text-center space-y-8">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_70%)] pointer-events-none"></div>
 
@@ -310,9 +321,80 @@ export default function Index() {
           </section>
         )}
 
+        {/* Recently Viewed Tray */}
+        {recentlyViewed.length > 0 && !hasActiveFilters && (
+          <section className="bg-slate-900/40 border border-slate-800/60 p-5 rounded-3xl space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-xs font-black text-white uppercase tracking-wider">Recently Inspected Items</h3>
+              </div>
+              <span className="text-[10px] text-slate-500 font-bold">{recentlyViewed.length} items</span>
+            </div>
+
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+              {recentlyViewed.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/listing/${item.id}`}
+                  className="min-w-[180px] sm:min-w-[200px] bg-slate-950 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
+                >
+                  <img src={item.images[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" />
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="text-xs font-bold text-white truncate group-hover:text-emerald-400 transition-colors">{item.title}</p>
+                    <p className="text-xs font-black text-emerald-400">{formatNGN(item.price)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
         <CategoryGrid />
         <NeighborhoodFilter />
         <FeaturedVendorsSection />
+
+        {/* Active Filter Chips Bar */}
+        {hasActiveFilters && (
+          <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-2xl flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active Filters:</span>
+
+            {filters.searchQuery && (
+              <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Keyword: "{filters.searchQuery}"</span>
+                <button onClick={() => setFilters(f => ({ ...f, searchQuery: '' }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {filters.category !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Category: {filters.category}</span>
+                <button onClick={() => setFilters(f => ({ ...f, category: 'All' }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {filters.location && (
+              <span className="inline-flex items-center gap-1.5 bg-teal-500/10 border border-teal-500/30 text-teal-300 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Location: {filters.location}</span>
+                <button onClick={() => setFilters(f => ({ ...f, location: '' }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {(filters.minPrice !== null || filters.maxPrice !== null) && (
+              <span className="inline-flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Price: {filters.minPrice ? formatNGN(filters.minPrice) : '₦0'} - {filters.maxPrice ? formatNGN(filters.maxPrice) : 'Any'}</span>
+                <button onClick={() => setFilters(f => ({ ...f, minPrice: null, maxPrice: null }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            <button
+              onClick={resetFilters}
+              className="text-[10px] font-black uppercase text-rose-400 hover:underline ml-auto flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" /> Clear All
+            </button>
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div>
@@ -321,14 +403,6 @@ export default function Index() {
               <span className="text-[10px] bg-slate-900 text-emerald-400 font-extrabold px-3 py-1 rounded-full border border-slate-800 shadow">
                 {sortedListings.length} ads
               </span>
-              {hasActiveFilters && (
-                <button
-                  onClick={resetFilters}
-                  className="text-[10px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/20 flex items-center gap-1 transition-colors"
-                >
-                  <circle cx="5" cy="5" r="4" /><RotateCcw className="w-3 h-3" /> Clear Search
-                </button>
-              )}
             </div>
             {filters.searchQuery && (
               <p className="text-xs text-slate-400 mt-1">
