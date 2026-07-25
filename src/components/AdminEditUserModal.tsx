@@ -67,7 +67,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       role,
       verified: verificationType !== 'none',
       verificationType,
-      avatarUrl: avatarUrl.trim() || user.avatarUrl,
+      avatarUrl: avatarUrl.trim(),
       status,
       restrictionReason: status !== 'active' ? restrictionReason.trim() : '',
       appealStatus: status === 'active' ? 'none' : user.appealStatus,
@@ -97,14 +97,17 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
         </button>
 
         <div className="flex items-center gap-4 pb-4 border-b border-slate-800">
-          <img
-            src={avatarUrl || user.avatarUrl}
-            alt={user.fullName}
-            className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0 bg-slate-950"
-            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-              e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
-            }}
-          />
+          {avatarUrl || user.avatarUrl ? (
+            <img
+              src={avatarUrl || user.avatarUrl}
+              alt={user.fullName}
+              className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0 bg-slate-950"
+            />
+          ) : (
+            <div className="w-16 h-16 rounded-2xl border-2 border-slate-800 bg-slate-950 flex items-center justify-center text-slate-500 shrink-0">
+              <User className="w-8 h-8" />
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-xl font-black text-white">Edit User Record</h2>
