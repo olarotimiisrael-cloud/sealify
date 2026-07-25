@@ -40,7 +40,9 @@ import {
   UserCheck,
   Siren,
   Terminal,
-  ExternalLink
+  ExternalLink,
+  Gavel,
+  Flag
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
@@ -71,12 +73,16 @@ const AdminDashboard: React.FC = () => {
     intrusionLogs,
     safeSpots,
     addSafeSpot,
-    deleteSafeSpot
+    deleteSafeSpot,
+    disputeCases,
+    processDisputeCase,
+    reports,
+    processReport
   } = useSealify();
   
   const { isInstallable, install } = usePwaInstall();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'requests' | 'security' | 'spots' | 'broadcast' | 'credentials'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'requests' | 'disputes' | 'security' | 'spots' | 'broadcast' | 'credentials'>('overview');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   
@@ -127,6 +133,8 @@ const AdminDashboard: React.FC = () => {
 
   const pendingVerifications = verificationRequests.filter(v => v.status === 'pending');
   const pendingPromotions = promotionPaymentRequests.filter(p => p.status === 'pending');
+  const pendingDisputes = disputeCases.filter(d => d.status !== 'resolved');
+  const pendingReports = reports.filter(r => r.status === 'pending');
 
   const handleBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
@@ -241,10 +249,19 @@ const AdminDashboard: React.FC = () => {
               activeTab === 'requests' ? 'bg-amber-500 text-slate-950 shadow-lg' : 'bg-slate-900 text-amber-400 hover:text-amber-300'
             }`}
           >
-            <span>Pending Requests</span>
+            <span>Pending Approvals</span>
             {(pendingVerifications.length > 0 || pendingPromotions.length > 0) && (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
             )}
+          </button>
+          <button
+            onClick={() => setActiveTab('disputes')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeTab === 'disputes' ? 'bg-purple-600 text-white shadow-lg' : 'bg-slate-900 text-purple-300 hover:text-white'
+            }`}
+          >
+            <Gavel className="w-3.5 h-3.5" />
+            <span>Disputes & Reports ({pendingDisputes.length + pendingReports.length})</span>
           </button>
           <button
             onClick={() => setActiveTab('security')}
@@ -299,8 +316,8 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-3xl font-black text-amber-400">{pendingVerifications.length + pendingPromotions.length}</p>
               </div>
               <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-1 shadow-xl">
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Threats Flagged</span>
-                <p className="text-3xl font-black text-rose-400">{intrusionLogs.length}</p>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Active Trade Claims</span>
+                <p className="text-3xl font-black text-purple-400">{pendingDisputes.length}</p>
               </div>
             </div>
 
@@ -610,7 +627,124 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 5: Security & Intrusion Logs */}
+        {/* Tab 5: Trade Disputes & Safety Reports */}
+        {activeTab === 'disputes' && (
+          <div className="space-y-8">
+            {/* Trade Disputes Section */}
+            <div className="space-y-3">
+              <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <Gavel className="w-5 h-5 text-rose-400" />
+                <span>Submitted Trade Dispute Claims ({disputeCases.length})</span>
+              </h3>
+
+              {disputeCases.length === 0 ? (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center text-xs text-slate-500 italic">
+                  No trade dispute cases logged.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {disputeCases.map((disp) => (
+                    <div key={disp.id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="font-mono text-[10px] text-emerald-400 font-bold">{disp.id}</span>
+                          <h4 className="font-bold text-sm text-white">{disp.itemTitle}</h4>
+                          <p className="text-xs text-slate-400">Claimant: {disp.userEmail}</p>
+                        </div>
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                          disp.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' :
+                          disp.status === 'in_review' ? 'bg-amber-500/20 text-amber-300' : 'bg-rose-500/20 text-rose-300'
+                        }`}>
+                          {disp.status}
+                        </span>
+                      </div>
+
+                      <div className="p-3 bg-slate-950 rounded-xl text-xs space-y-1">
+                        <p className="text-slate-300">Target Party: <strong className="text-white">{disp.counterparty}</strong></p>
+                        <p className="text-slate-400 italic">"{disp.details}"</p>
+                      </div>
+
+                      {disp.evidenceUrl && (
+                        <a href={disp.evidenceUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
+                          <span>Inspect Evidence File</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => processDisputeCase(disp.id, 'in_review')}
+                          className="flex-1 py-2 bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500 hover:text-slate-950 font-bold rounded-xl text-xs transition-all"
+                        >
+                          Assign Review
+                        </button>
+                        <button
+                          onClick={() => processDisputeCase(disp.id, 'resolved')}
+                          className="flex-1 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs transition-all"
+                        >
+                          Resolve & Close
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Flagged Ad Reports Section */}
+            <div className="space-y-3 pt-4 border-t border-slate-800">
+              <h3 className="text-base font-black text-white uppercase tracking-tight flex items-center gap-2">
+                <Flag className="w-5 h-5 text-amber-400" />
+                <span>Flagged Ad Reports Queue ({reports.length})</span>
+              </h3>
+
+              {reports.length === 0 ? (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center text-xs text-slate-500 italic">
+                  No flagged listings reported.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {reports.map((rep) => (
+                    <div key={rep.id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-sm text-white">{rep.listingTitle}</h4>
+                          <p className="text-xs text-slate-400">Reporter: {rep.reporterName || 'Anonymous'}</p>
+                        </div>
+                        <span className="text-[10px] font-black uppercase bg-rose-500/20 text-rose-300 px-2 py-0.5 rounded border border-rose-500/30">
+                          {rep.reason}
+                        </span>
+                      </div>
+
+                      {rep.details && (
+                        <p className="text-xs text-slate-300 italic bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                          "{rep.details}"
+                        </p>
+                      )}
+
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => processReport(rep.id, 'dismiss')}
+                          className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs"
+                        >
+                          Dismiss Report
+                        </button>
+                        <button
+                          onClick={() => processReport(rep.id, 'resolve_delete_ad')}
+                          className="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-lg"
+                        >
+                          Delete Reported Ad
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab 6: Security & Intrusion Logs */}
         {activeTab === 'security' && (
           <div className="space-y-4">
             <div className="bg-rose-950/80 border border-rose-500/30 p-6 rounded-3xl space-y-2">
@@ -643,7 +777,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 6: Safe Meetup Spots Config */}
+        {/* Tab 7: Safe Meetup Spots Config */}
         {activeTab === 'spots' && (
           <div className="space-y-6">
             <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
@@ -741,7 +875,7 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Tab 7: Mass Push Broadcast */}
+        {/* Tab 8: Mass Push Broadcast */}
         {activeTab === 'broadcast' && (
           <section className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] space-y-6 shadow-2xl max-w-2xl mx-auto">
             <div className="flex items-center gap-3">
@@ -790,7 +924,7 @@ const AdminDashboard: React.FC = () => {
           </section>
         )}
 
-        {/* Tab 8: Admin Credentials & Security Setup */}
+        {/* Tab 9: Admin Credentials & Security Setup */}
         {activeTab === 'credentials' && (
           <section className="bg-slate-900 border-2 border-rose-500/30 p-8 rounded-[2.5rem] space-y-6 shadow-2xl max-w-2xl mx-auto font-mono">
             <div className="flex items-center gap-3">
