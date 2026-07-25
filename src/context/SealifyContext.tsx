@@ -191,6 +191,24 @@ const generateAdminSessionToken = (email: string) => {
   return btoa(`${email.toLowerCase()}:${salt}:${new Date().toDateString()}`);
 };
 
+// Local storage helpers for listings persistence
+const getStoredCustomListings = (): Listing[] => {
+  try {
+    const saved = localStorage.getItem('sealify_custom_listings');
+    return saved ? JSON.parse(saved) : [];
+  } catch (e) {
+    return [];
+  }
+};
+
+const saveStoredCustomListings = (customListings: Listing[]) => {
+  try {
+    localStorage.setItem('sealify_custom_listings', JSON.stringify(customListings));
+  } catch (e) {
+    console.error('Failed to write custom listings to localStorage:', e);
+  }
+};
+
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
@@ -261,8 +279,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('🔒 Official Admin Credentials updated successfully!');
   };
   
-  // App Data State
-  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  // App Data State initialized with stored local listings merged with mocks
+  const [listings, setListings] = useState<Listing[]>(() => {
+    const localCustom = getStoredCustomListings();
+    const mockIds = new Set(MOCK_LISTINGS.map(l => l.id));
+    const customOnly = localCustom.filter(l => !mockIds.has(l.id));
+    return [...customOnly, ...MOCK_LISTINGS];
+  });
+
   const [allUsers, setAllUsers] = useState<UserProfile[]>(ALL_MOCK_USERS);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
@@ -404,8 +428,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAllUsers(dbUsers.value as any);
       }
 
+      const localCustom = getStoredCustomListings();
+
       if (dbListings.status === 'fulfilled' && dbListings.value && dbListings.value.length > 0) {
-        setListings(dbListings.value.map((l: any) => ({
+        const fetchedFromDb = dbListings.value.map((l: any) => ({
           id: l.id,
           sellerId: l.seller_id,
           sellerName: l.users?.full_name || 'Verified Seller',
@@ -426,7 +452,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           featured: l.featured || false,
           promotionEndDate: l.promotion_end_date,
           specifications: l.specifications
-        })));
+        }));
+
+        // Merge DB listings with stored local listings (deduplicate by ID)
+        const dbIds = new Set(fetchedFromDb.map(item => item.id));
+        const uniqueLocal = localCustom.filter(item => !dbIds.has(item.id));
+        setListings([...uniqueLocal, ...fetchedFromDb]);
+      } else {
+        // Fallback: merge stored local custom listings with MOCK_LISTINGS
+        const mockIds = new Set(MOCK_LISTINGS.map(item => item.id));
+        const uniqueLocal = localCustom.filter(item => !mockIds.has(item.id));
+        setListings([...uniqueLocal, ...MOCK_LISTINGS]);
       }
 
       if (dbVerifications.status === 'fulfilled' && dbVerifications.value) setVerificationRequests(dbVerifications.value as any);
@@ -656,7 +692,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           specifications: data.specifications || {}
         }, uploadedUrls);
       } catch (e) {
-        console.warn('Listing DB create failed, using state fallback', e);
+        console.warn('Listing DB create failed, using state & localStorage fallback', e);
       }
 
       const newListing: Listing = {
@@ -682,6 +718,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         specifications: data.specifications
       };
 
+      // Store new listing in localStorage so it persists upon page reloads!
+      const currentStored = getStoredCustomListings();
+      saveStoredCustomListings([newListing, ...currentStored]);
+
       setListings(prev => [newListing, ...prev]);
       checkSearchAlertsForListing(newListing);
       addAuditLog('Listing Created', `Published new ad: "${newListing.title}"`, 'ad');
@@ -695,6 +735,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateListing = async (id: string, updatedData: Partial<Listing>) => { 
     setListings(prev => prev.map(item => item.id === id ? { ...item, ...updatedData } : item));
+    
+    // Update local storage if present
+    const currentStored = getStoredCustomListings();
+    const updatedStored = currentStored.map(item => item.id === id ? { ...item, ...updatedData } : item);
+    saveStoredCustomListings(updatedStored);
+
     await listingService.update(id, updatedData); 
     addAuditLog('Listing Modified', `Updated ad details for ID ${id}`, 'ad'); 
     fetchData(); 
@@ -702,6 +748,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const deleteListing = async (id: string) => { 
     setListings(prev => prev.filter(item => item.id !== id));
+    
+    // Remove from local storage
+    const currentStored = getStoredCustomListings();
+    const updatedStored = currentStored.filter(item => item.id !== id);
+    saveStoredCustomListings(updatedStored);
+
     await listingService.delete(id); 
     addAuditLog('Listing Deleted', `Dropped ad from feed ID ${id}`, 'ad'); 
     fetchData(); 
@@ -709,6 +761,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const markAsSold = async (id: string) => { 
     setListings(prev => prev.map(item => item.id === id ? { ...item, status: 'sold' as const } : item));
+    
+    const currentStored = getStoredCustomListings();
+    const updatedStored = currentStored.map(item => item.id === id ? { ...item, status: 'sold' as const } : item);
+    saveStoredCustomListings(updatedStored);
+
     await listingService.update(id, { status: 'sold' }); 
     fetchData(); 
   };
