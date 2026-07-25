@@ -3,8 +3,8 @@ import { UserProfile, VerificationBadgeType, UserStatus, Listing } from '../type
 import { useSealify } from '../context/SealifyContext';
 import { 
   X, Check, Edit3, User, Mail, Phone, MapPin, Building2, 
-  Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound, 
-  Package, Trash2, ExternalLink, Camera, Upload 
+  Shield, Award, Image as ImageIcon, AlertOctagon, Info, Lock, KeyRound, 
+  Package, Trash2, ExternalLink, Camera, Upload, CheckCircle2 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -63,7 +63,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       reader.onload = (event) => {
         if (event.target?.result) {
           setAvatarUrl(event.target.result as string);
-          toast.success('Avatar image uploaded successfully');
+          toast.success('Profile photo uploaded successfully');
         }
       };
       reader.readAsDataURL(file);
@@ -334,28 +334,38 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
             </div>
           </div>
 
-          <div className="space-y-1">
+          {/* Photo File Upload Box */}
+          <div className="space-y-1.5">
             <label className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-              <Image className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Avatar Image URL or Device File</span>
+              <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+              <span>User Profile Photo Upload</span>
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                placeholder="https://... or upload file"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-emerald-500 flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => avatarFileRef.current?.click()}
-                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl border border-slate-700 shrink-0 flex items-center gap-1"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload</span>
-              </button>
-            </div>
+            <input
+              type="file"
+              ref={avatarFileRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => avatarFileRef.current?.click()}
+              className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 ${
+                avatarUrl ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
+              }`}
+            >
+              {avatarUrl ? (
+                <>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase">Profile Photo Selected — Click to Change</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-6 h-6 text-slate-500" />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Click to Select Photo File From Device</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* User's Posted Classified Ads Section */}
