@@ -100,7 +100,7 @@ export const MagicSearch: React.FC<MagicSearchProps> = ({ isOpen, onClose }) => 
               </button>
             )}
             <div className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-800 rounded-md border border-slate-700 text-[10px] font-black transition-colors">
-              <Command className="w-3.5 h-3.5 text-slate-400" />
+              <Command className="w-2.5 h-2.5" />
               <span className="text-slate-400">ESC</span>
             </div>
             <button onClick={onClose} className="p-2 text-slate-400 hover:text-white transition-colors">
