@@ -119,7 +119,7 @@ interface SealifyContextType {
   toggleCompareListing: (id: string) => void;
   isInCompare: (id: string) => boolean;
   clearCompare: () => void;
-  createListing: (data: Partial<Listing>) => Promise<void>;
+  createListing: (data: Partial<Listing>) => Promise<boolean>;
   updateListing: (id: string, updatedData: Partial<Listing>) => Promise<void>;
   deleteListing: (id: string) => Promise<void>;
   markAsSold: (id: string) => Promise<void>;
@@ -431,9 +431,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return false;
   };
 
-  const createListing = async (data: Partial<Listing>) => {
+  const createListing = async (data: Partial<Listing>): Promise<boolean> => {
     try {
-      await listingService.create({
+      const result = await listingService.create({
         seller_id: user?.id,
         title: data.title,
         description: data.description,
@@ -446,8 +446,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         featured: data.featured || false,
         specifications: data.specifications || null,
       }, data.images || []);
-      fetchData();
-    } catch (e) { toast.error('Creation failed.'); }
+      
+      if (result) {
+        await fetchData();
+        return true;
+      }
+      return false;
+    } catch (e: any) { 
+      console.error("Listing Creation Error:", e);
+      toast.error(`Creation failed: ${e.message || 'Unknown error'}`); 
+      return false;
+    }
   };
 
   const updateListing = async (id: string, updatedData: Partial<Listing>) => {

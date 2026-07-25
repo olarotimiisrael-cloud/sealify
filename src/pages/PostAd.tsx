@@ -11,7 +11,7 @@ import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Upload, 
   Video, FileVideo, Crown, Sparkles, MapPin, AlertTriangle, Navigation, Calculator, Wand2, Image as ImageIcon, Check, Shield,
-  Sliders, Gauge, Cpu, Home, Shirt
+  Sliders, Gauge, Cpu, Home, Shirt, Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -63,6 +63,7 @@ const PostAd: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isValuationOpen, setIsValuationOpen] = useState(false);
   const [isAiOpen, setIsAiOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<Category>('Electronics');
@@ -126,6 +127,10 @@ const PostAd: React.FC = () => {
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Max 5MB.`);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
@@ -134,7 +139,7 @@ const PostAd: React.FC = () => {
       };
       reader.readAsDataURL(file);
     });
-    toast.success('Photo added');
+    toast.success('Photos added to queue');
   };
 
   const handleAddPresetImage = (url: string) => {
@@ -160,7 +165,6 @@ const PostAd: React.FC = () => {
 
   const buildSpecifications = (): Record<string, string> => {
     const specs: Record<string, string> = {};
-
     if (category === 'Vehicles') {
       specs['Transmission'] = vehicleTransmission;
       specs['Fuel Type'] = vehicleFuel;
@@ -176,11 +180,10 @@ const PostAd: React.FC = () => {
       specs['Size'] = fashionSize;
       specs['Gender'] = fashionGender;
     }
-
     return specs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated) {
@@ -199,9 +202,10 @@ const PostAd: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     const specifications = buildSpecifications();
 
-    createListing({
+    const success = await createListing({
       title,
       category,
       condition,
@@ -215,12 +219,16 @@ const PostAd: React.FC = () => {
       specifications,
     });
 
-    toast.success(
-      isAdmin 
-        ? '🎉 Official Admin Advert published 100% free with Top Ad boost enabled!' 
-        : featuredBoost ? '🎉 Ad posted with Top Ad Boost enabled!' : '🎉 Classified Ad published successfully!'
-    );
-    navigate('/my-ads');
+    setIsSubmitting(false);
+
+    if (success) {
+      toast.success(
+        isAdmin 
+          ? '🎉 Official Admin Advert published successfully!' 
+          : '🎉 Classified Ad published successfully!'
+      );
+      navigate('/my-ads');
+    }
   };
 
   return (
@@ -238,7 +246,6 @@ const PostAd: React.FC = () => {
           <p className="text-xs text-slate-400">Items with clear photos and video sell <strong className="text-emerald-400">3x faster</strong></p>
         </div>
 
-        {/* Admin Special Mode Banner */}
         {isAdmin && (
           <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-purple-950 border-2 border-emerald-500/50 p-5 rounded-3xl space-y-3 shadow-2xl">
             <div className="flex items-center gap-2 text-emerald-400 font-black text-xs uppercase tracking-widest">
@@ -246,15 +253,15 @@ const PostAd: React.FC = () => {
               <span>Admin Official Listing Mode</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              As a Sealify Administrator, you can post unlimited <strong>100% FREE official adverts</strong> for vendor services, local store offerings, or partner products with complimentary Top Ad promotion.
+              As an Administrator, you can post unlimited official ads with Top Ad boost enabled.
             </p>
             <div className="pt-1">
-              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Display Merchant / Brand Name Override (Optional)</label>
+              <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Display Merchant Name Override</label>
               <input
                 type="text"
                 value={customSellerName}
                 onChange={(e) => setCustomSellerName(e.target.value)}
-                placeholder="e.g. LAUTECH Shuttle Services or Ogbomoso Auto Hub"
+                placeholder="e.g. Ogbomoso Auto Hub"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -265,21 +272,19 @@ const PostAd: React.FC = () => {
           
           {/* Photo Uploader */}
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
-                <ImageIcon className="w-4 h-4 text-emerald-400" />
-                <span>Product / Service Photos * ({images.length} added)</span>
-              </label>
-            </div>
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <ImageIcon className="w-4 h-4 text-emerald-400" />
+              <span>Product Photos * ({images.length})</span>
+            </label>
 
             <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
               {images.map((img, idx) => (
                 <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group">
-                  <img src={img} alt="Product upload" className="w-full h-full object-cover" />
+                  <img src={img} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => setImages(images.filter((_, i) => i !== idx))}
-                    className="absolute top-1 right-1 p-1 bg-slate-950/80 text-red-400 rounded-lg hover:bg-slate-900 transition-colors"
+                    className="absolute top-1 right-1 p-1 bg-slate-950/80 text-red-400 rounded-lg hover:bg-slate-900"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -289,78 +294,38 @@ const PostAd: React.FC = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all cursor-pointer"
+                className="aspect-square rounded-xl border-2 border-dashed border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/5 flex flex-col items-center justify-center text-emerald-400 transition-all"
               >
                 <Plus className="w-5 h-5" />
                 <span className="text-[9px] font-bold mt-1">Upload</span>
               </button>
             </div>
 
-            {/* Sample presets for quick testing */}
             {images.length === 0 && (
-              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800/80 space-y-2">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Sample Stock Photos:</p>
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
-                  {DEMO_PRESET_IMAGES.map((preset) => (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => handleAddPresetImage(preset.url)}
-                      className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 rounded-lg text-[10px] font-bold border border-slate-800 shrink-0 transition-colors"
-                    >
-                      + {preset.label} Photo
-                    </button>
-                  ))}
-                </div>
+              <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                {DEMO_PRESET_IMAGES.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    onClick={() => handleAddPresetImage(preset.url)}
+                    className="px-2.5 py-1 bg-slate-800 text-slate-400 rounded-lg text-[10px] font-bold border border-slate-700 shrink-0"
+                  >
+                    + {preset.label}
+                  </button>
+                ))}
               </div>
             )}
-
-            {/* Video Attachment */}
-            <div className="pt-2 border-t border-slate-800">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                  <Video className="w-4 h-4 text-purple-400" />
-                  <span>Product / Service Video (Optional)</span>
-                </label>
-              </div>
-
-              {videoUrl ? (
-                <div className="relative w-full aspect-video bg-slate-950 rounded-2xl overflow-hidden border border-purple-500/30">
-                  <video src={videoUrl} className="w-full h-full object-cover" controls />
-                  <button
-                    type="button"
-                    onClick={() => setVideoUrl('')}
-                    className="absolute top-3 right-3 p-2 bg-slate-900/90 text-red-400 rounded-xl"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <input type="file" ref={videoInputRef} onChange={handleVideoUpload} accept="video/*" className="hidden" />
-                  <button
-                    type="button"
-                    onClick={() => videoInputRef.current?.click()}
-                    className="w-full py-4 rounded-2xl border-2 border-dashed border-purple-500/20 hover:border-purple-500/50 bg-purple-500/5 flex flex-col items-center justify-center gap-2 text-purple-400 transition-all group"
-                  >
-                    <FileVideo className="w-6 h-6" />
-                    <p className="text-xs font-bold">Attach Short Video Demonstration</p>
-                  </button>
-                </>
-              )}
-            </div>
           </div>
 
-          {/* Listing Details */}
           <div className="space-y-4">
             <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Listing Title *</label>
+              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Ad Title *</label>
               <input
                 type="text"
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Professional Laptop Repair & Servicing or Toyota Camry 2018"
+                placeholder="e.g. iPhone 15 Pro Max 256GB"
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -393,108 +358,24 @@ const PostAd: React.FC = () => {
               </div>
             </div>
 
-            {/* Category-Specific Dynamic Specifications Card */}
-            {category === 'Vehicles' && (
-              <div className="bg-slate-950 border border-blue-500/30 p-4 rounded-2xl space-y-3 shadow-inner">
-                <div className="flex items-center gap-2 text-blue-400 font-extrabold text-xs uppercase tracking-wider">
-                  <Gauge className="w-4 h-4" />
-                  <span>Vehicle Specifications</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Transmission</label>
-                    <select value={vehicleTransmission} onChange={(e) => setVehicleTransmission(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
-                      <option value="Automatic">Automatic</option>
-                      <option value="Manual">Manual</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Fuel Type</label>
-                    <select value={vehicleFuel} onChange={(e) => setVehicleFuel(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
-                      <option value="Petrol">Petrol</option>
-                      <option value="Diesel">Diesel</option>
-                      <option value="Hybrid">Hybrid</option>
-                      <option value="Electric">Electric</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Mileage</label>
-                    <input type="text" value={vehicleMileage} onChange={(e) => setVehicleFuelMileage(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {category === 'Electronics' && (
-              <div className="bg-slate-950 border border-purple-500/30 p-4 rounded-2xl space-y-3 shadow-inner">
-                <div className="flex items-center gap-2 text-purple-400 font-extrabold text-xs uppercase tracking-wider">
-                  <Cpu className="w-4 h-4" />
-                  <span>Device Technical Specifications</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Storage</label>
-                    <select value={deviceStorage} onChange={(e) => setDeviceStorage(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
-                      <option value="64GB">64GB</option>
-                      <option value="128GB">128GB</option>
-                      <option value="256GB">256GB</option>
-                      <option value="512GB">512GB</option>
-                      <option value="1TB">1TB</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">RAM</label>
-                    <select value={deviceRam} onChange={(e) => setDeviceRam(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white">
-                      <option value="4GB">4GB</option>
-                      <option value="8GB">8GB</option>
-                      <option value="16GB">16GB</option>
-                      <option value="32GB">32GB</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Battery Health</label>
-                    <input type="text" value={batteryHealth} onChange={(e) => setBatteryHealth(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-xs text-white" />
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <div className="flex justify-between items-center">
                   <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Price (₦ NGN) *</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsValuationOpen(true)}
-                    className="text-[10px] text-emerald-400 font-bold"
-                  >
-                    <Calculator className="w-3.5 h-3.5 inline mr-1" />
-                    Estimate Worth
-                  </button>
+                  <button type="button" onClick={() => setIsValuationOpen(true)} className="text-[10px] text-emerald-400 font-bold flex items-center gap-1"><Calculator className="w-3 h-3" /> Valuation</button>
                 </div>
                 <input
                   type="number"
                   required
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="e.g. 4500000"
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 font-extrabold"
+                  placeholder="e.g. 500000"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500 font-black"
                 />
               </div>
 
               <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store / Location *</label>
-                  <button
-                    type="button"
-                    onClick={handleDetectLocation}
-                    disabled={isDetectingLocation}
-                    className="text-[10px] text-emerald-400 font-bold"
-                  >
-                    <Navigation className={`w-3 h-3 inline mr-1 ${isDetectingLocation ? 'animate-spin-slow' : ''}`} />
-                    Detect GPS
-                  </button>
-                </div>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Location *</label>
                 <input
                   type="text"
                   required
@@ -506,45 +387,17 @@ const PostAd: React.FC = () => {
               </div>
             </div>
 
-            {/* Neighborhood Location Chips */}
-            <div className="space-y-1.5 pt-1">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Quick Ogbomoso Areas:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {LOCAL_NEIGHBORHOODS.map((nh) => (
-                  <button
-                    key={nh}
-                    type="button"
-                    onClick={() => setLocation(nh)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
-                      location === nh
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {nh.split(',')[0]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Full Description *</label>
-                <button
-                  type="button"
-                  onClick={() => setIsAiOpen(true)}
-                  className="text-[10px] text-purple-400 font-bold"
-                >
-                  <Wand2 className="w-3.5 h-3.5 inline mr-1" />
-                  AI Assistant
-                </button>
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Description *</label>
+                <button type="button" onClick={() => setIsAiOpen(true)} className="text-[10px] text-purple-400 font-bold flex items-center gap-1"><Wand2 className="w-3 h-3" /> AI Assistant</button>
               </div>
               <textarea
                 rows={5}
                 required
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Provide technical specs, condition details, service guarantees..."
+                placeholder="Describe your product details..."
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 text-sm text-white focus:outline-none focus:border-emerald-500 leading-relaxed"
               />
             </div>
@@ -554,8 +407,8 @@ const PostAd: React.FC = () => {
             <div className="flex items-center gap-3">
               <Crown className="w-5 h-5 text-amber-400 fill-amber-400" />
               <div>
-                <h4 className="font-extrabold text-xs text-white">Enable Top Ad Boost</h4>
-                <p className="text-[11px] text-slate-400">Pin listing at the top of category feeds for 5x visibility</p>
+                <h4 className="font-extrabold text-xs text-white uppercase">Enable Top Ad Boost</h4>
+                <p className="text-[10px] text-slate-400">Increase visibility by 5x in category feeds</p>
               </div>
             </div>
 
@@ -576,10 +429,20 @@ const PostAd: React.FC = () => {
 
           <button
             type="submit"
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
+            disabled={isSubmitting}
+            className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 text-slate-950 font-black rounded-2xl text-base shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95"
           >
-            <ShieldCheck className="w-6 h-6" />
-            <span>{isAdmin ? 'Publish Official Free Advert' : 'Publish Classified Ad'}</span>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <span>Publishing to Marketplace...</span>
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="w-6 h-6" />
+                <span>{isAdmin ? 'Publish Official Free Advert' : 'Publish Classified Ad'}</span>
+              </>
+            )}
           </button>
         </form>
       </main>
