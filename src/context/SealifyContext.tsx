@@ -299,7 +299,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAuditLogs(dbLogs as any);
       setIntrusionLogs(dbThreats as any);
       setSafeSpots(dbSpots as any);
-      setRecentDeals(dbDeals.map(d => ({ id: d.id, item_title: d.item_title, price: d.price, location: d.location, time: d.time })));
+      setRecentDeals(dbDeals.map(d => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
       
       if (dbMeta) setSiteSettings(dbMeta as any);
       if (dbPlans && dbPlans.length > 0) setPromotionPlans(dbPlans as any);
