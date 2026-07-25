@@ -268,3 +268,14 @@ export interface FilterState {
   location: string;
   sortBy: 'newest' | 'price-asc' | 'price-desc';
 }
+
+export interface SafeMeetupSpotConfig {
+  id: string;
+  name: string;
+  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
+  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
+  address: string;
+  distance: string;
+  hours: string;
+  cctvVerified: boolean;
+}
