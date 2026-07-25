@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService } from '@/services/supabaseService';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export interface AppNotification {
@@ -87,7 +88,7 @@ interface SealifyContextType {
   setLanguage: (lang: SupportedLanguage) => void;
   t: (key: string) => string;
   categories: { id: string, name: string, iconName: string, count: number, color: string }[];
-  addCategory: (cat: any) => void;
+  addCategory: (cat: { id: string, name: string, iconName: string, count: number, color: string }) => void;
   deleteCategory: (id: string) => void;
   updateCategory: (id: string, name: string) => void;
   analytics: AnalyticsData;
@@ -315,7 +316,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           searchAlertService.getAll(user.id)
         ]);
         
-        setNotifications(userNotifs as any);
+        setNotifications(userNotifs.map((n: any) => ({
+          id: n.id,
+          type: n.type as any,
+          title: n.title,
+          description: n.description,
+          time: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          read: n.read,
+          linkUrl: n.link_url || undefined
+        })));
         setSavedListingIds(userFavs);
         setSearchAlerts(userAlerts as any);
 
@@ -508,6 +517,96 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) { toast.error('Deletion failed.'); }
   };
 
+  // Category Management
+  const addCategory = (cat: { id: string, name: string, iconName: string, count: number, color: string }) => {
+    setCategories(prev => [...prev.filter(c => c.id !== cat.id), cat]);
+  };
+
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+  };
+
+  const updateCategory = (id: string, name: string) => {
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+  };
+
+  // Notifications Management
+  const markNotificationRead = async (id: string) => {
+    await notificationService.markRead(id);
+    fetchData();
+  };
+
+  const markAllNotificationsRead = async () => {
+    if (!user) return;
+    try {
+      await supabase.from('notifications').update({ read: true }).eq('user_id', user.id);
+      toast.success('All notifications marked as read');
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const clearNotification = async (id: string) => {
+    await notificationService.clear(id);
+    fetchData();
+  };
+
+  const addNotification = async (notif: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
+    if (!user) return;
+    try {
+      await supabase.from('notifications').insert([{
+        user_id: user.id,
+        type: notif.type,
+        title: notif.title,
+        description: notif.description,
+        link_url: notif.linkUrl || null,
+        read: false
+      }]);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const broadcastMassNotification = async (title: string, message: string, targetRole: 'all' | 'seller' | 'buyer' = 'all') => {
+    try {
+      const targets = targetRole === 'all' 
+        ? allUsers 
+        : allUsers.filter(u => u.role === targetRole);
+
+      const notifRows = targets.map(u => ({
+        user_id: u.id,
+        type: 'system',
+        title,
+        description: message,
+        read: false
+      }));
+
+      if (notifRows.length > 0) {
+        await supabase.from('notifications').insert(notifRows);
+        toast.success(`Broadcasted notification to ${notifRows.length} users!`);
+        addAuditLog('Mass Broadcast', `Notified ${notifRows.length} users: ${title}`, 'broadcast');
+        fetchData();
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Mass broadcast failed.');
+    }
+  };
+
+  const toggleAnnouncement = async (id: string) => {
+    const target = announcements.find(a => a.id === id);
+    if (!target) return;
+    try {
+      await supabase.from('announcements').update({ active: !target.active }).eq('id', id);
+      toast.success(`Announcement ${!target.active ? 'enabled' : 'disabled'}`);
+      fetchData();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
   const marketStats: CategoryStats[] = useMemo(() => {
@@ -550,7 +649,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       promotionPlans, updatePromotionPlanRate: (m, r) => promotionPlanService.updateRate(m, r).then(fetchData),
       safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(fetchData), deleteSafeSpot: (id) => safeSpotService.delete(id).then(fetchData),
       exportDatabaseBackup: () => toast.info('Exporting database...'),
-      language, setLanguage, t, categories, addCategory: (c) => {}, deleteCategory: (id) => {}, updateCategory: () => {},
+      language, setLanguage, t, categories, addCategory, deleteCategory, updateCategory,
       analytics, marketStats, login, signup, adminLogin, logout: () => setUser(null), listings, allUsers, updateUser, deleteUser,
       bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)),
       bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
@@ -564,9 +663,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
       isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
       createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing, promoteListing, conversations, sendMessage,
-      notifications, markNotificationRead: (id) => notificationService.markRead(id).then(fetchData),
-      markAllNotificationsRead: () => {}, clearNotification: (id) => notificationService.clear(id).then(fetchData),
-      addNotification: (n) => {}, broadcastMassNotification: (t, m) => {},
+      notifications, markNotificationRead, markAllNotificationsRead, clearNotification,
+      addNotification, broadcastMassNotification,
       passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(fetchData),
       processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(fetchData),
       verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(fetchData),
@@ -574,7 +672,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       promotionPaymentRequests, submitPromotionPaymentRequest: (r) => promotionService.create(r).then(fetchData),
       processPromotionPaymentRequest: (id, s) => promotionService.updateStatus(id, s).then(fetchData),
       announcements, addAnnouncement: (a) => announcementService.create(a).then(fetchData),
-      toggleAnnouncement: (id) => {}, deleteAnnouncement: (id) => announcementService.delete(id).then(fetchData),
+      toggleAnnouncement, deleteAnnouncement: (id) => announcementService.delete(id).then(fetchData),
       reports, submitReport: (r) => reportService.create(r).then(fetchData),
       processReport: (id, a) => reportService.updateStatus(id, 'resolved').then(fetchData),
       disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(fetchData),
