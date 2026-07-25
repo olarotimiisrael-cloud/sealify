@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest, Wallet, Transaction } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
+import { ALL_MOCK_USERS, MOCK_LISTINGS } from '@/data/mockData';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
@@ -205,16 +206,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_admin_email', newEmail);
     localStorage.setItem('sealify_admin_password', newPassword);
     localStorage.setItem('sealify_admin_pin', newPin);
-
-    if (user?.role === 'admin') {
-      setUser(prev => prev ? { ...prev, email: newEmail, fullName: 'Sealify Official' } : null);
-    }
     toast.success('🔒 Official Admin Credentials updated successfully!');
   };
   
   // App Data State
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+  const [listings, setListings] = useState<Listing[]>(MOCK_LISTINGS);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(ALL_MOCK_USERS);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
   const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
@@ -324,6 +321,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
+  const addAuditLog = useCallback((action: string, details: string, type: AuditLog['type']) => {
+    auditService.create({ action, details, type, created_at: new Date().toISOString() }).then(() => fetchData());
+  }, []);
+
   const fetchData = useCallback(async () => {
     try {
       const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals, dbAlerts] = await Promise.allSettled([
@@ -347,9 +348,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         user ? searchAlertService.getAll(user.id) : Promise.resolve([])
       ]);
 
-      if (dbUsers.status === 'fulfilled' && dbUsers.value) setAllUsers(dbUsers.value as any);
+      if (dbUsers.status === 'fulfilled' && dbUsers.value && dbUsers.value.length > 0) {
+        setAllUsers(dbUsers.value as any);
+      }
 
-      if (dbListings.status === 'fulfilled' && dbListings.value) {
+      if (dbListings.status === 'fulfilled' && dbListings.value && dbListings.value.length > 0) {
         setListings(dbListings.value.map((l: any) => ({
           id: l.id,
           sellerId: l.seller_id,
@@ -375,7 +378,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
 
       if (dbVerifications.status === 'fulfilled' && dbVerifications.value) setVerificationRequests(dbVerifications.value as any);
-      if (dbPasswords.status === 'fulfilled' && dbPasswords.value) setPasswordRequests(dbPasswords.value as any);
       if (dbPromoPay.status === 'fulfilled' && dbPromoPay.value) setPromotionPaymentRequests(dbPromoPay.value as any);
       if (dbBuyerReqs.status === 'fulfilled' && dbBuyerReqs.value) setBuyerRequests(dbBuyerReqs.value as any);
       if (dbReviews.status === 'fulfilled' && dbReviews.value) setReviews(dbReviews.value as any);
@@ -418,9 +420,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return false; 
       }
       const profile = await userService.getProfile(data.user.id);
-      if (profile) {
-        setUser(profile as any);
-      }
+      if (profile) setUser(profile as any);
       toast.success('Access Granted.');
       fetchData();
       return true;
@@ -435,86 +435,43 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { data: authData, error } = await supabase.auth.signUp({ 
         email: data.email!, 
         password: data.password!,
-        options: {
-          data: {
-            full_name: data.fullName,
-            phone: data.phoneNumber,
-          }
-        }
+        options: { data: { full_name: data.fullName, phone: data.phoneNumber } }
       });
       if (error) throw error;
       if (authData.user) {
-        await userService.create({ 
-          id: authData.user.id, 
-          email: data.email, 
-          full_name: data.fullName, 
-          phone_number: data.phoneNumber,
-          role: data.role || 'buyer' 
-        });
+        await userService.create({ id: authData.user.id, email: data.email, full_name: data.fullName, phone_number: data.phoneNumber, role: data.role || 'buyer' });
         toast.success('Account Identity Created.');
         fetchData();
       }
-    } catch (err: any) { 
-      toast.error(err.message || "Signup failed."); 
-    }
+    } catch (err: any) { toast.error(err.message || "Signup failed."); }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
-    const isEmailValid = email.toLowerCase().trim() === adminEmail.toLowerCase().trim();
-    const isPassValid = pass === adminPassword;
-    const isPinValid = pin === adminPin;
-
-    if (isEmailValid && isPassValid && isPinValid) {
-      const adminProfile: UserProfile = {
-        id: 'usr_admin_default',
-        email: adminEmail,
-        fullName: 'Sealify Official',
-        phoneNumber: '+234 813 120 8468',
-        avatarUrl: '/logo.png',
-        role: 'admin',
-        verified: true,
-        verificationType: 'premium',
-        memberSince: new Date().toISOString(),
-        location: 'Ogbomoso, Oyo State'
-      };
+    if (email.toLowerCase().trim() === adminEmail.toLowerCase().trim() && pass === adminPassword && pin === adminPin) {
+      const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
       setUser(adminProfile);
+      addAuditLog('Admin Login', 'Master root access granted to official terminal', 'security');
       toast.success('🔑 Master Sealify Root Access Granted');
       return true;
     }
     return false;
   };
 
-  const logout = () => { 
-    setUser(null); 
-    supabase.auth.signOut(); 
-    toast.info('Disconnected.'); 
-  };
+  const logout = () => { setUser(null); supabase.auth.signOut(); toast.info('Disconnected.'); };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
     const updated = await userService.update(id, data);
     if (user?.id === id && updated) setUser(updated as any);
+    addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
     fetchData();
   };
 
-  const deleteUser = async (id: string) => { 
-    await userService.delete(id); 
-    fetchData(); 
-  };
+  const deleteUser = async (id: string) => { await userService.delete(id); addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user'); fetchData(); };
 
   const checkSearchAlertsForListing = useCallback((listing: Listing) => {
     searchAlerts.forEach(alert => {
-      const queryMatch = listing.title.toLowerCase().includes(alert.query.toLowerCase()) || 
-                         listing.category.toLowerCase().includes(alert.query.toLowerCase());
-      const catMatch = alert.category === 'All' || alert.category === listing.category;
-      const priceMatch = !alert.maxPrice || listing.price <= alert.maxPrice;
-
-      if (queryMatch && catMatch && priceMatch) {
-        addNotification({
-          type: 'alert_match',
-          title: 'Search Alert Match!',
-          description: `A new item matching your alert "${alert.query}" was just posted: "${listing.title}"`,
-          linkUrl: `/listing/${listing.id}`
-        });
+      if ((listing.title.toLowerCase().includes(alert.query.toLowerCase()) || listing.category.toLowerCase().includes(alert.query.toLowerCase())) && (alert.category === 'All' || alert.category === listing.category) && (!alert.maxPrice || listing.price <= alert.maxPrice)) {
+        addNotification({ type: 'alert_match', title: 'Search Alert Match!', description: `A new item matching your alert "${alert.query}" was just posted: "${listing.title}"`, linkUrl: `/listing/${listing.id}` });
       }
     });
   }, [searchAlerts, addNotification]);
@@ -522,179 +479,84 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const createListing = async (data: Partial<Listing>, files?: File[]): Promise<boolean> => {
     try {
       let uploadedUrls: string[] = data.images || [];
-
       if (files && files.length > 0) {
-        const fileUploadPromises = files.map(file => storageService.uploadFile('listing-photos', `lst_${Date.now()}`, file));
-        const newUrls = await Promise.all(fileUploadPromises);
+        const newUrls = await Promise.all(files.map(file => storageService.uploadFile('listing-photos', `lst_${Date.now()}`, file)));
         uploadedUrls = [...uploadedUrls, ...newUrls.filter(Boolean)];
       }
-
-      const newListingData = {
-        seller_id: user?.id || 'usr_guest',
-        title: data.title,
-        description: data.description,
-        price: data.price,
-        category: data.category,
-        condition: data.condition,
-        location: data.location || 'Ogbomoso, Oyo State',
-        status: 'active',
-        featured: data.featured || false,
-        specifications: data.specifications || {}
-      };
-
-      const result = await listingService.create(newListingData, uploadedUrls);
+      const result = await listingService.create({ seller_id: user?.id || 'usr_guest', title: data.title, description: data.description, price: data.price, category: data.category, condition: data.condition, location: data.location || 'Ogbomoso, Oyo State', status: 'active', featured: data.featured || false, specifications: data.specifications || {} }, uploadedUrls);
       if (result) {
         checkSearchAlertsForListing(result as any);
-        toast.success('Listing created successfully!');
+        addAuditLog('Listing Created', `Published new ad: "${data.title}"`, 'ad');
         fetchData();
         return true;
       }
       return false;
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to publish listing.');
-      return false; 
-    }
+    } catch (e: any) { toast.error(e.message || 'Failed to publish listing.'); return false; }
   };
 
-  const updateListing = async (id: string, updatedData: Partial<Listing>) => { 
-    await listingService.update(id, updatedData); 
-    fetchData(); 
-  };
-
-  const deleteListing = async (id: string) => { 
-    await listingService.delete(id); 
-    fetchData(); 
-  };
-
-  const markAsSold = async (id: string) => { 
-    await listingService.update(id, { status: 'sold' }); 
-    fetchData(); 
-  };
-
+  const updateListing = async (id: string, updatedData: Partial<Listing>) => { await listingService.update(id, updatedData); addAuditLog('Listing Modified', `Updated ad details for ID ${id}`, 'ad'); fetchData(); };
+  const deleteListing = async (id: string) => { await listingService.delete(id); addAuditLog('Listing Deleted', `Dropped ad from feed ID ${id}`, 'ad'); fetchData(); };
+  const markAsSold = async (id: string) => { await listingService.update(id, { status: 'sold' }); fetchData(); };
   const t = useCallback((key: string) => TRANSLATIONS[language]?.[key] || key, [language]);
 
   const marketStats: CategoryStats[] = useMemo(() => {
     return categories.map(cat => {
       const catAds = listings.filter(l => l.category === cat.name);
       const prices = catAds.map(l => l.price);
-      return {
-        category: cat.name as Category,
-        avgPrice: prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0,
-        minPrice: prices.length ? Math.min(...prices) : 0,
-        maxPrice: prices.length ? Math.max(...prices) : 0,
-        totalAds: catAds.length,
-        demandScore: Math.min(100, Math.round(catAds.length * 15)),
-        trend: 'up'
-      };
+      return { category: cat.name as Category, avgPrice: prices.length ? Math.round(prices.reduce((a, b) => a + b, 0) / prices.length) : 0, minPrice: prices.length ? Math.min(...prices) : 0, maxPrice: prices.length ? Math.max(...prices) : 0, totalAds: catAds.length, demandScore: Math.min(100, Math.round(catAds.length * 15)), trend: 'up' };
     });
   }, [listings, categories]);
 
   const analytics = useMemo((): AnalyticsData => {
-    return {
-      visitors: 142 + Math.floor(Math.random() * 20),
-      activeAds: listings.filter(l => l.status === 'active').length,
-      totalChats: conversations.length,
-      totalRevenue: promotionPaymentRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0),
-      userGrowth: Math.round((allUsers.length / 10) * 100) / 10,
-      categoryDistribution: categories.map(c => ({ name: c.name, count: listings.filter(l => l.category === c.name).length, color: c.color })),
-      activeSessions: [{ id: 'sess_1', user: 'Guest_Node', action: 'Searching', time: 'Just now' }]
-    };
+    return { visitors: 142 + Math.floor(Math.random() * 20), activeAds: listings.filter(l => l.status === 'active').length, totalChats: conversations.length, totalRevenue: promotionPaymentRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0), userGrowth: Math.round((allUsers.length / 10) * 100) / 10, categoryDistribution: categories.map(c => ({ name: c.name, count: listings.filter(l => l.category === c.name).length, color: c.color })), activeSessions: [{ id: 'sess_1', user: 'Guest_Node', action: 'Searching', time: 'Just now' }] };
   }, [listings, allUsers, conversations, promotionPaymentRequests, categories]);
 
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
       adminEmail, adminPassword, adminPin, updateAdminCredentials,
-      systemConfig, updateSystemConfig: (upd) => {
-        setSystemConfig(p => ({...p, ...upd}));
-        Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v));
-      },
-      siteSettings, updateSiteSettings: (s) => {
-        setSiteSettings(p => ({...p, ...s}));
-        siteSettingsService.update(s);
-      },
+      systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v)); },
+      siteSettings, updateSiteSettings: (s) => { setSiteSettings(p => ({...p, ...s})); siteSettingsService.update(s); addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast'); },
       promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
       safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),
-      exportDatabaseBackup: () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2));
-        const dlAnchorElem = document.createElement('a');
-        dlAnchorElem.setAttribute("href", dataStr);
-        dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`);
-        dlAnchorElem.click();
-        toast.success("Database Backup Exported!");
-      },
+      exportDatabaseBackup: () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`); dlAnchorElem.click(); toast.success("Database Backup Exported!"); },
       language, setLanguage, t, categories, 
-      addCategory: (c) => setCategories(prev => [...prev, c]), 
-      deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), 
-      updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? {...c, name} : c)),
-      analytics, marketStats, login, signup, 
-      sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), 
-      verifyPhoneOtp: async () => true, 
+      addCategory: (c) => setCategories(prev => [...prev, c]), deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? {...c, name} : c)),
+      analytics, marketStats, login, signup, sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), verifyPhoneOtp: async () => true, 
       adminLogin, logout, listings, allUsers, updateUser, deleteUser,
-      bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)),
-      bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
-      bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)),
-      bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
+      bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)), bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
+      bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)), bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
       savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,
-      toggleSaveListing: async (id) => { 
-        if (user) { 
-          const exists = savedListingIds.includes(id);
-          await favoriteService.toggle(user.id, id, exists);
-          setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); 
-        } 
-      },
-      isSaved: (id) => savedListingIds.includes(id),
-      filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
+      toggleSaveListing: async (id) => { if (user) { const exists = savedListingIds.includes(id); await favoriteService.toggle(user.id, id, exists); setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); } },
+      isSaved: (id) => savedListingIds.includes(id), filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
       activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
       compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
       isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing, updateListing, deleteListing, markAsSold, 
-      toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), 
-      promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
-      conversations, 
-      sendMessage: async (lId, rId, content) => {
-        await messageService.sendMessage({ sender_id: user?.id, receiver_id: rId, listing_id: lId, content });
-        fetchData();
-      },
+      createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
+      conversations, sendMessage: async (lId, rId, content) => { await messageService.sendMessage({ sender_id: user?.id, receiver_id: rId, listing_id: lId, content }); fetchData(); },
       notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
       markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
       addNotification,
-      broadcastMassNotification: (title, message) => {
-        allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message }));
-        toast.success(`Broadcasted: ${title}`);
-      },
+      broadcastMassNotification: (title, message) => { allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message })); addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); toast.success(`Broadcasted: ${title}`); },
       passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
       processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),
       verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(() => fetchData()),
-      processVerificationRequest: (id, s) => verificationService.updateStatus(id, s).then(() => fetchData()),
+      processVerificationRequest: (id, s) => verificationService.updateStatus(id, s).then(() => { addAuditLog('Verification Processed', `Request ID ${id} set to ${s}`, 'verification'); fetchData(); }),
       promotionPaymentRequests, submitPromotionPaymentRequest: (r) => promotionService.create(r).then(() => fetchData()),
-      processPromotionPaymentRequest: (id, s) => promotionService.updateStatus(id, s).then(() => fetchData()),
-      announcements, 
-      addAnnouncement: (a) => announcementService.create(a).then(() => fetchData()),
-      toggleAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()), 
-      deleteAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()),
-      reports, 
-      submitReport: (r) => reportService.create(r).then(() => fetchData()),
-      processReport: (id) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
-      disputeCases, 
-      submitDisputeCase: (d) => disputeService.create(d).then(() => fetchData()),
-      processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(() => fetchData()),
-      auditLogs, addAuditLog: (a, d, t) => auditService.create({ action: a, details: d, type: t }).then(() => fetchData()),
-      recentDeals, 
-      sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location || 'Ogbomoso', time: 'Just now' }).then(() => fetchData()),
-      intrusionLogs, recordIntrusion: (e, m) => intrusionService.create({ attempted_email: e, media_status: m, timestamp: new Date().toISOString() }).then(() => fetchData()),
-      searchAlerts, 
-      saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(() => fetchData()),
+      processPromotionPaymentRequest: (id, s) => promotionService.updateStatus(id, s).then(() => { addAuditLog('Finance Approval', `Promotion Payment ID ${id} ${s}`, 'finance'); fetchData(); }),
+      announcements, addAnnouncement: (a) => announcementService.create(a).then(() => fetchData()), toggleAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()), deleteAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()),
+      reports, submitReport: (r) => reportService.create(r).then(() => fetchData()), processReport: (id) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
+      disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(() => fetchData()),
+      processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(() => { addAuditLog('Dispute Mediated', `Dispute ID ${id} set to ${s}`, 'dispute'); fetchData(); }),
+      auditLogs, addAuditLog,
+      recentDeals, sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location || 'Ogbomoso', time: 'Just now' }).then(() => fetchData()),
+      intrusionLogs, recordIntrusion: (e, m) => intrusionService.create({ attempted_email: e, media_status: m, timestamp: new Date().toISOString() }).then(() => { addAuditLog('Unauthorized Access Attempt', `Email: ${e} | Payload: ${m}`, 'intrusion'); fetchData(); }),
+      searchAlerts, saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(() => fetchData()),
       deleteSearchAlert: (id) => searchAlertService.delete(id).then(() => fetchData()),
-      reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), 
-      deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
-      buyerRequests, 
-      createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), 
-      deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
-      
+      reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
+      buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
       wallet, transactions, requestPayout,
-      
       loading, error: null
     }}>
       {children}
