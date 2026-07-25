@@ -37,7 +37,13 @@ import {
   Instagram,
   Twitter,
   Clock,
-  Briefcase
+  Briefcase,
+  Database,
+  RefreshCw,
+  EyeOff,
+  Eye,
+  MessageSquare,
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
@@ -68,7 +74,7 @@ const NIGERIAN_BANKS = [
 ];
 
 const Settings: React.FC = () => {
-  const { user, updateUser } = useSealify();
+  const { user, updateUser, isSyncing, lastSyncTime, syncDatabase, exportDatabaseBackup, listings } = useSealify();
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +101,12 @@ const Settings: React.FC = () => {
   const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
   const [twitterHandle, setTwitterHandle] = useState(user?.twitterHandle || '');
   const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || user?.phoneNumber || '');
+
+  // Communication & Privacy Preferences
+  const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
+  const [whatsappNotifications, setWhatsappNotifications] = useState(user?.whatsappNotifications ?? true);
+  const [hidePhonePublicly, setHidePhonePublicly] = useState(user?.hidePhonePublicly ?? false);
+  const [hideLocationPublicly, setHideLocationPublicly] = useState(user?.hideLocationPublicly ?? false);
 
   const [isVerificationModalOpen, setIsVerificationOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -127,6 +139,11 @@ const Settings: React.FC = () => {
       setInstagramHandle(user.instagramHandle || '');
       setTwitterHandle(user.twitterHandle || '');
       setWhatsappNumber(user.whatsappNumber || user.phoneNumber || '');
+
+      setEmailNotifications(user.emailNotifications ?? true);
+      setWhatsappNotifications(user.whatsappNotifications ?? true);
+      setHidePhonePublicly(user.hidePhonePublicly ?? false);
+      setHideLocationPublicly(user.hideLocationPublicly ?? false);
     }
   }, [user]);
 
@@ -206,35 +223,18 @@ const Settings: React.FC = () => {
         instagramHandle: instagramHandle.trim(),
         twitterHandle: twitterHandle.trim(),
         whatsappNumber: whatsappNumber.trim(),
+
+        emailNotifications,
+        whatsappNotifications,
+        hidePhonePublicly,
+        hideLocationPublicly
       });
 
       setIsSaving(false);
-      toast.success('🎉 Profile, Storefront & Settlement Details synchronized to database!');
+      toast.success('🎉 Profile & preferences synchronized with database!');
     } catch (e: any) {
       setIsSaving(false);
       toast.error('Failed to save profile changes. Please try again.');
-    }
-  };
-
-  const handleRequestNativePermission = async (type: 'notifications' | 'camera') => {
-    if (type === 'notifications') {
-      if ('Notification' in window) {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          toast.success('Push Notifications Enabled successfully!');
-        } else {
-          toast.error('Permission denied for device notifications');
-        }
-      } else {
-        toast.info('Notifications requested. PWA system channel activated.');
-      }
-    } else {
-      try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
-        toast.success('Camera & Storage Access Verified!');
-      } catch (e) {
-        toast.error('Camera access denied or restricted by browser settings.');
-      }
     }
   };
 
@@ -245,6 +245,7 @@ const Settings: React.FC = () => {
     toast.success(nextState ? 'Biometric App Lock Enabled' : 'Biometric Lock Disabled');
   };
 
+  const myAdsCount = listings.filter(l => l.sellerId === user.id).length;
   const storefrontUrl = `${window.location.origin}/seller/${user.id}`;
 
   return (
@@ -271,7 +272,43 @@ const Settings: React.FC = () => {
           </Link>
         </div>
 
-        {/* 1. PROFILE & COVER PHOTO EDIT FORM */}
+        {/* Database Synchronization Status Bar */}
+        <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex items-center justify-between gap-4 shadow-xl flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/30 shrink-0">
+              <Database className={`w-5 h-5 ${isSyncing ? 'animate-spin' : ''}`} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-white uppercase tracking-wider">Database Connection</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              </div>
+              <p className="text-[11px] text-slate-400 font-mono">Synced: {lastSyncTime} • UID: {user.id.slice(0, 12)}...</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => syncDatabase()}
+              disabled={isSyncing}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Syncing...' : 'Sync DB Now'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={exportDatabaseBackup}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-blue-400 text-xs font-bold rounded-xl border border-slate-700 transition-colors flex items-center gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Backup JSON</span>
+            </button>
+          </div>
+        </div>
+
+        {/* PROFILE & COVER PHOTO EDIT FORM */}
         <form onSubmit={handleSaveProfile} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl space-y-6">
           
           {/* Cover Photo Header Manager */}
@@ -341,6 +378,7 @@ const Settings: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-slate-400 font-mono">{user.email}</p>
+                <p className="text-[10px] text-slate-500">Total Active Inventory: <strong className="text-emerald-400">{myAdsCount} Ads</strong></p>
               </div>
             </div>
 
@@ -452,6 +490,72 @@ const Settings: React.FC = () => {
                     placeholder="Describe your store offerings, warranty terms, or pickup hours..."
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
                   />
+                </div>
+              </div>
+
+              {/* Communication & Privacy Preferences */}
+              <div className="space-y-4 pt-4 border-t border-slate-800/80">
+                <h4 className="text-xs font-black text-teal-400 uppercase tracking-widest flex items-center gap-2">
+                  <Bell className="w-4 h-4" />
+                  <span>Communication & Privacy Controls</span>
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Email Digest & Alerts</p>
+                      <p className="text-[10px] text-slate-500">Receive weekly marketplace deals</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEmailNotifications(!emailNotifications)}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${emailNotifications ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${emailNotifications ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">WhatsApp Direct Messages</p>
+                      <p className="text-[10px] text-slate-500">Allow buyers to chat via WhatsApp</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setWhatsappNotifications(!whatsappNotifications)}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${whatsappNotifications ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${whatsappNotifications ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Mask Phone Number</p>
+                      <p className="text-[10px] text-slate-500">Hide phone from non-logged users</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHidePhonePublicly(!hidePhonePublicly)}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${hidePhonePublicly ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${hidePhonePublicly ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Hide Street Location</p>
+                      <p className="text-[10px] text-slate-500">Display only city (Ogbomoso)</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHideLocationPublicly(!hideLocationPublicly)}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${hideLocationPublicly ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${hideLocationPublicly ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -594,7 +698,7 @@ const Settings: React.FC = () => {
           </div>
         </form>
 
-        {/* 2. IDENTITY VERIFICATION & SECURITY */}
+        {/* IDENTITY VERIFICATION & SECURITY */}
         <section className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2.5rem] space-y-6 shadow-xl">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
             <div className="flex items-center gap-3">
@@ -644,12 +748,12 @@ const Settings: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. PWA DIRECT INSTALLATION */}
+        {/* PWA DIRECT INSTALLATION */}
         <section>
           <PwaInstallButton variant="card" />
         </section>
 
-        {/* 4. PERMISSIONS & DEVICE CONTROLS */}
+        {/* PERMISSIONS & DEVICE CONTROLS */}
         <section className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2.5rem] space-y-6 shadow-xl">
           <h2 className="text-lg font-black text-white flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-blue-400" /> 
@@ -669,29 +773,16 @@ const Settings: React.FC = () => {
               </div>
               <button
                 type="button"
-                onClick={() => handleRequestNativePermission('notifications')}
+                onClick={() => {
+                  if ('Notification' in window) {
+                    Notification.requestPermission().then(p => {
+                      if (p === 'granted') toast.success('Notifications active');
+                    });
+                  }
+                }}
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-colors border border-slate-700"
               >
                 ENABLE
-              </button>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl">
-                  <Camera className="w-5 h-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-white">Camera & Storage Access</p>
-                  <p className="text-[10px] text-slate-400">Required for item photos & verification uploads</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleRequestNativePermission('camera')}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-colors border border-slate-700"
-              >
-                VERIFY ACCESS
               </button>
             </div>
 
@@ -718,7 +809,7 @@ const Settings: React.FC = () => {
           </div>
         </section>
 
-        {/* 5. STOREFRONT DISTRIBUTION URL */}
+        {/* STOREFRONT DISTRIBUTION URL */}
         <section className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2.5rem] space-y-4 shadow-xl">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-amber-500/10 text-amber-400 rounded-2xl border border-amber-500/20">

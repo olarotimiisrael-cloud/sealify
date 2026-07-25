@@ -180,6 +180,9 @@ interface SealifyContextType {
   requestPayout: (amount: number) => Promise<void>;
   
   loading: boolean;
+  isSyncing: boolean;
+  lastSyncTime: string;
+  syncDatabase: () => Promise<void>;
   error: string | null;
 }
 
@@ -209,6 +212,8 @@ const saveStoredCustomListings = (customListings: Listing[]) => {
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string>(() => new Date().toLocaleTimeString());
 
   const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
   const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
@@ -227,7 +232,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return { ...parsed, role: 'buyer', status: 'active' };
           }
         }
-        return { ...parsed, status: 'active' }; // Guarantee unrestricted access
+        return { ...parsed, status: 'active' };
       } catch (e) {
         return null;
       }
@@ -271,7 +276,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     toast.success('🔒 Official Admin Credentials updated successfully!');
   };
-  
+
   const [listings, setListings] = useState<Listing[]>(() => {
     const localCustom = getStoredCustomListings();
     const mockIds = new Set(MOCK_LISTINGS.map(l => l.id));
@@ -343,6 +348,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         { id: 'tr_2', walletId: 'wal_1', type: 'payout', amount: -30000, status: 'completed', description: 'Bank Withdrawal to GTB', createdAt: '5 days ago' },
         { id: 'tr_3', walletId: 'wal_1', type: 'promotion', amount: -15000, status: 'completed', description: 'Top Ad Boost: Toyota Corolla', createdAt: '1 week ago' }
       ]);
+
+      favoriteService.getByUserId(user.id).then(favIds => {
+        if (favIds && favIds.length > 0) {
+          setSavedListingIds(favIds);
+        }
+      });
     }
   }, [user]);
 
@@ -402,6 +413,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const fetchData = useCallback(async () => {
+    setIsSyncing(true);
     try {
       const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals, dbAlerts] = await Promise.allSettled([
         userService.getAll(),
@@ -477,9 +489,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
       if (dbAlerts.status === 'fulfilled' && dbAlerts.value) setSearchAlerts(dbAlerts.value as any);
 
+      setLastSyncTime(new Date().toLocaleTimeString());
       setLoading(false);
+      setIsSyncing(false);
     } catch (err) {
       setLoading(false);
+      setIsSyncing(false);
     }
   }, [user]);
 
@@ -545,7 +560,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setNotifications(prev => [welcomeNotif, ...prev]);
 
-    // Save notification to DB mapped properly to the user's UUID
     notificationService.create({
       user_id: userId,
       type: 'system',
@@ -598,7 +612,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         full_name: data.fullName!,
         phone_number: data.phoneNumber!,
         role: data.role || 'buyer',
-        status: 'active', // Explicitly UNRESTRICTED
+        status: 'active',
         location: 'Ogbomoso, Oyo State',
         verified: false,
         verification_type: 'none'
@@ -617,7 +631,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         phoneNumber: data.phoneNumber!,
         avatarUrl: '/logo.png',
         role: (data.role as any) || 'buyer',
-        status: 'active', // Unrestricted account state
+        status: 'active',
         verified: false,
         memberSince: new Date().toISOString(),
         location: 'Ogbomoso, Oyo State'
@@ -913,7 +927,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
       buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
       wallet, transactions, requestPayout,
-      loading, error: null
+      loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error: null
     }}>
       {children}
     </SealifyContext.Provider>

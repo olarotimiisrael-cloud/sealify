@@ -31,7 +31,10 @@ import {
   Clock,
   ShieldCheck,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Database,
+  Search,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -48,7 +51,10 @@ const MyAds: React.FC = () => {
     promoteListing, 
     updateUser, 
     wallet,
-    verificationRequests 
+    verificationRequests,
+    isSyncing,
+    lastSyncTime,
+    syncDatabase
   } = useSealify();
   
   const navigate = useNavigate();
@@ -61,6 +67,7 @@ const MyAds: React.FC = () => {
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
   const myVerificationReq = verificationRequests.find(r => r.userId === user?.id);
@@ -85,15 +92,21 @@ const MyAds: React.FC = () => {
   };
 
   const filteredAds = myAds.filter((ad) => {
-    if (statusFilter === 'active') return ad.status === 'active';
-    if (statusFilter === 'sold') return ad.status === 'sold';
-    if (statusFilter === 'featured') return ad.featured;
+    if (statusFilter === 'active' && ad.status !== 'active') return false;
+    if (statusFilter === 'sold' && ad.status !== 'sold') return false;
+    if (statusFilter === 'featured' && !ad.featured) return false;
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return ad.title.toLowerCase().includes(q) || ad.category.toLowerCase().includes(q);
+    }
     return true;
   });
 
   const totalImpressions = myAds.reduce((acc, ad) => acc + (ad.viewsCount || 0), 0);
   const activeCount = myAds.filter((ad) => ad.status === 'active').length;
   const soldCount = myAds.filter((ad) => ad.status === 'sold').length;
+  const totalInventoryValuation = myAds.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0);
 
   const handleBumpAd = (ad: Listing) => {
     updateListing(ad.id, { createdAt: 'Just now' });
@@ -118,6 +131,24 @@ const MyAds: React.FC = () => {
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         
+        {/* Sync Status Banner */}
+        <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-bold text-slate-300">Database Sync Status:</span>
+            <span className="text-emerald-400 font-mono text-[11px]">{isSyncing ? 'Synchronizing...' : `Connected (Synced ${lastSyncTime})`}</span>
+          </div>
+
+          <button
+            onClick={() => syncDatabase()}
+            disabled={isSyncing}
+            className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-[11px] flex items-center gap-1 border border-slate-700 transition-colors"
+          >
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
         {/* Profile & Summary Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
@@ -166,7 +197,7 @@ const MyAds: React.FC = () => {
               <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start flex-wrap">
                 <span>Active Ads: <strong className="text-emerald-400 font-black">{activeCount}</strong></span>
                 <span>Sold: <strong className="text-teal-400 font-black">{soldCount}</strong></span>
-                <span>Views: <strong className="text-amber-400 font-black">{totalImpressions}</strong></span>
+                <span>Valuation: <strong className="text-amber-400 font-black">{formatNGN(totalInventoryValuation)}</strong></span>
               </div>
             </div>
           </div>
@@ -241,13 +272,20 @@ const MyAds: React.FC = () => {
           </section>
         )}
 
+        {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-          <div className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-emerald-400" />
-            <h2 className="text-lg font-black text-white">Your Classified Inventory</h2>
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              placeholder="Search your inventory by ad title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+            />
           </div>
 
-          <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-2xl">
+          <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 p-1 rounded-2xl shrink-0">
             {(['all', 'active', 'sold', 'featured'] as StatusFilter[]).map((f) => (
               <button
                 key={f}
@@ -266,7 +304,7 @@ const MyAds: React.FC = () => {
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs my-8 space-y-4 shadow-xl">
              <Package className="w-12 h-12 text-slate-700 mx-auto" />
              <div className="space-y-1">
-                <p className="font-bold text-white text-sm">No ads found in this category.</p>
+                <p className="font-bold text-white text-sm">No ads found matching your search.</p>
                 <p className="text-slate-500 max-w-xs mx-auto">Publish your first ad today and reach thousands of buyers in Ogbomoso!</p>
              </div>
              <Link to="/post-ad" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs">
