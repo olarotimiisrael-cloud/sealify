@@ -40,14 +40,14 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
     // Auto-focus next input
     if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-\${index + 1}`);
+      const nextInput = document.getElementById(`otp-${index + 1}`);
       nextInput?.focus();
     }
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-\${index - 1}`);
+      const prevInput = document.getElementById(`otp-${index - 1}`);
       prevInput?.focus();
     }
   };
@@ -102,7 +102,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
             {otp.map((digit, i) => (
               <input
                 key={i}
-                id={`otp-\${i}`}
+                id={`otp-${i}`}
                 type="number"
                 maxLength={1}
                 value={digit}

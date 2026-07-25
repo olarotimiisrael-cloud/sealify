@@ -491,7 +491,7 @@ const PostAd: React.FC = () => {
                     disabled={isDetectingLocation}
                     className="text-[10px] text-emerald-400 font-bold"
                   >
-                    <Navigation className={`w-3 h-3 inline mr-1 \${isDetectingLocation ? 'animate-spin-slow' : ''}`} />
+                    <Navigation className={`w-3 h-3 inline mr-1 ${isDetectingLocation ? 'animate-spin-slow' : ''}`} />
                     Detect GPS
                   </button>
                 </div>
@@ -515,7 +515,7 @@ const PostAd: React.FC = () => {
                     key={nh}
                     type="button"
                     onClick={() => setLocation(nh)}
-                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors \${
+                    className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-colors ${
                       location === nh
                         ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                         : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
@@ -562,12 +562,12 @@ const PostAd: React.FC = () => {
             <button
               type="button"
               onClick={() => setFeaturedBoost(!featuredBoost)}
-              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 \${
+              className={`w-12 h-6 rounded-full transition-colors relative p-0.5 ${
                 featuredBoost ? 'bg-amber-500' : 'bg-slate-800'
               }`}
             >
               <div
-                className={`w-5 h-5 rounded-full bg-slate-950 transition-transform \${
+                className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${
                   featuredBoost ? 'translate-x-6' : 'translate-x-0'
                 }`}
               />

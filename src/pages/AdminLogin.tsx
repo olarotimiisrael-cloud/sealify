@@ -31,13 +31,13 @@ const AdminLogin: React.FC = () => {
       const newCount = failedAttempts + 1;
       setFailedAttempts(newCount);
       
-      recordIntrusion(email, `Failed Access Attempt \${newCount}/3`);
+      recordIntrusion(email, `Failed Access Attempt ${newCount}/3`);
 
       if (newCount >= 3) {
         setIsLockedOut(true);
         toast.error('🚨 Security Lockout: 3 failed attempts. Terminal blocked.');
       } else {
-        toast.error(`Access denied. Verify credentials. \${3 - newCount} attempts remaining.`);
+        toast.error(`Access denied. Verify credentials. ${3 - newCount} attempts remaining.`);
       }
     }
   };

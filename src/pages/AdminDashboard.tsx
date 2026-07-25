@@ -217,14 +217,14 @@ export const AdminDashboard: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-slate-900 rounded-xl border border-slate-800 shrink-0">
-                  <ActiveIcon className={`w-5 h-5 \${activeModule.color || 'text-emerald-400'}`} />
+                  <ActiveIcon className={`w-5 h-5 ${activeModule.color || 'text-emerald-400'}`} />
                 </div>
                 <div className="text-left">
                     <span className="font-black text-sm text-white">{activeModule.label}</span>
                     <p className="text-[10px] text-slate-500">{activeModule.description}</p>
                 </div>
               </div>
-              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform \${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isDropdownOpen && (
@@ -236,8 +236,8 @@ export const AdminDashboard: React.FC = () => {
                       {group.items.map((item) => {
                         const Icon = item.icon;
                         return (
-                          <button key={item.id} onClick={() => { setActiveTab(item.id); setIsDropdownOpen(false); }} className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 \${activeTab === item.id ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/60'}`}>
-                            <Icon className={`w-4 h-4 shrink-0 mt-0.5 \${activeTab === item.id ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
+                          <button key={item.id} onClick={() => { setActiveTab(item.id); setIsDropdownOpen(false); }} className={`w-full p-3 rounded-2xl text-left transition-all flex items-start gap-3 ${activeTab === item.id ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-950/60 hover:bg-slate-800/80 text-slate-300 border border-slate-800/60'}`}>
+                            <Icon className={`w-4 h-4 shrink-0 mt-0.5 ${activeTab === item.id ? 'text-slate-950' : item.color || 'text-slate-400'}`} />
                             <div className="min-w-0">
                                <p className="text-xs font-bold truncate">{item.label}</p>
                                <p className="text-[10px] opacity-70 truncate">{item.description}</p>
@@ -304,7 +304,7 @@ export const AdminDashboard: React.FC = () => {
                             </div>
                          </td>
                          <td className="px-6 py-4">
-                            <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase \${u.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{u.status || 'active'}</span>
+                            <span className={`px-2 py-0.5 rounded-lg font-black text-[9px] uppercase ${u.status === 'active' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{u.status || 'active'}</span>
                          </td>
                          <td className="px-6 py-4 font-black uppercase text-[9px] text-slate-400">{u.role}</td>
                          <td className="px-6 py-4 text-right">

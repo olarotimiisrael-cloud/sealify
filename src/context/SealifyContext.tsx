@@ -323,7 +323,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userMsgs.forEach((m: any) => {
           const otherUserId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
           const otherUser = m.sender_id === user.id ? m.receiver : m.sender;
-          const key = `\${m.listing_id}_\${otherUserId}`;
+          const key = `${m.listing_id}_${otherUserId}`;
           
           if (!grouped[key]) {
             grouped[key] = {
@@ -378,8 +378,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           return false;
         }
         setUser(dbUser as any);
-        toast.success(`Access Granted: \${dbUser.full_name}`);
-        addAuditLog('User Login', `Node access to \${email}`, 'security');
+        toast.success(`Access Granted: ${dbUser.full_name}`);
+        addAuditLog('User Login', `Node access to ${email}`, 'security');
         return true;
       }
       toast.error('Invalid credentials.');
@@ -406,7 +406,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       });
       setUser(newUser as any);
       toast.success('Node Identity Created.');
-      addAuditLog('Registration', `New user \${data.email}`, 'user');
+      addAuditLog('Registration', `New user ${data.email}`, 'user');
       fetchData();
     } catch (err) { toast.error('Signup failed.'); }
   };

@@ -123,7 +123,7 @@ export const messageService = {
         sender:sender_id(full_name, avatar_url),
         receiver:receiver_id(full_name, avatar_url)
       `)
-      .or(`sender_id.eq.\${userId},receiver_id.eq.\${userId}`)
+      .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
