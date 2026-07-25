@@ -72,8 +72,10 @@ interface SealifyContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthenticated: boolean;
   isAdmin: boolean;
+  adminEmail: string;
+  adminPassword: string;
   adminPin: string;
-  updateAdminPin: (newPin: string) => void;
+  updateAdminCredentials: (newEmail: string, newPassword: string, newPin: string) => void;
   systemConfig: SystemConfig;
   updateSystemConfig: (updated: Partial<SystemConfig>) => void;
   siteSettings: SiteSettings;
@@ -170,7 +172,6 @@ interface SealifyContextType {
   createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void;
   deleteBuyerRequest: (id: string) => void;
   
-  // Wallet State
   wallet: Wallet | null;
   transactions: Transaction[];
   requestPayout: (amount: number) => Promise<void>;
@@ -184,7 +185,25 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [adminPin, setAdminPin] = useState<string>('336699');
+
+  // Editable Admin Credentials
+  const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
+  const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
+  const [adminPin, setAdminPin] = useState<string>(() => localStorage.getItem('sealify_admin_pin') || '336699');
+
+  const updateAdminCredentials = (newEmail: string, newPassword: string, newPin: string) => {
+    setAdminEmail(newEmail);
+    setAdminPassword(newPassword);
+    setAdminPin(newPin);
+    localStorage.setItem('sealify_admin_email', newEmail);
+    localStorage.setItem('sealify_admin_password', newPassword);
+    localStorage.setItem('sealify_admin_pin', newPin);
+
+    if (user?.role === 'admin') {
+      setUser(prev => prev ? { ...prev, email: newEmail, fullName: 'Sealify Official' } : null);
+    }
+    toast.success('🔒 Official Admin Credentials updated successfully!');
+  };
   
   // App Data State
   const [listings, setListings] = useState<Listing[]>([]);
@@ -228,13 +247,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
-  // Wallet and Transactions
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   useEffect(() => {
     if (user) {
-      // Mock wallet initialization
       setWallet({
         id: 'wal_1',
         userId: user.id,
@@ -263,7 +280,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Payout request submitted to admin!');
   };
 
-  // Listen to Supabase Auth State Changes
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
@@ -283,8 +299,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             location: 'Ogbomoso, Oyo State'
           });
         }
-      } else {
-        setUser(null);
       }
     });
 
@@ -354,76 +368,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (dbThreats.status === 'fulfilled' && dbThreats.value) setIntrusionLogs(dbThreats.value as any);
       if (dbSpots.status === 'fulfilled' && dbSpots.value && dbSpots.value.length > 0) setSafeSpots(dbSpots.value as any);
       if (dbDeals.status === 'fulfilled' && dbDeals.value) setRecentDeals(dbDeals.value.map((d: any) => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
-      
       if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
-      
-      if (dbConfigs.status === 'fulfilled' && dbConfigs.value && dbConfigs.value.length > 0) {
-        const configMap: Partial<SystemConfig> = {};
-        dbConfigs.value.forEach((c: any) => configMap[c.key as keyof SystemConfig] = c.value);
-        setSystemConfig(prev => ({ ...prev, ...configMap }));
-      }
-
-      if (user) {
-        const results = await Promise.allSettled([
-          notificationService.getAll(user.id),
-          favoriteService.getByUserId(user.id),
-          messageService.getConversations(user.id),
-          searchAlertService.getAll(user.id)
-        ]);
-        
-        if (results[0].status === 'fulfilled' && results[0].value) {
-          setNotifications(results[0].value.map((n: any) => ({
-            id: n.id,
-            type: n.type as any,
-            title: n.title,
-            description: n.description,
-            time: new Date(n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            read: n.read,
-            linkUrl: n.link_url || undefined
-          })));
-        }
-        if (results[1].status === 'fulfilled' && results[1].value) setSavedListingIds(results[1].value);
-        if (results[3].status === 'fulfilled' && results[3].value) setSearchAlerts(results[3].value as any);
-
-        if (results[2].status === 'fulfilled' && results[2].value) {
-          const grouped: Record<string, Conversation> = {};
-          results[2].value.forEach((m: any) => {
-            const otherUserId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
-            const otherUser = m.sender_id === user.id ? m.receiver : m.sender;
-            const key = `${m.listing_id}_${otherUserId}`;
-            
-            if (!grouped[key]) {
-              grouped[key] = {
-                id: key,
-                listingId: m.listing_id,
-                listingTitle: m.listings?.title || 'Listing',
-                listingImage: m.listings?.listing_images?.[0]?.image_url || '',
-                listingPrice: m.listings?.price || 0,
-                otherUser: { id: otherUserId, name: otherUser?.full_name || 'User', avatar: otherUser?.avatar_url || '' },
-                lastMessage: m.content,
-                lastMessageTime: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                messages: []
-              };
-            }
-            grouped[key].messages.push({
-              id: m.id,
-              senderId: m.sender_id,
-              receiverId: m.receiver_id,
-              listingId: m.listing_id,
-              content: m.content,
-              createdAt: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              isRead: m.read
-            });
-          });
-          setConversations(Object.values(grouped));
-        }
-      }
 
       setLoading(false);
     } catch (err) {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -479,8 +430,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
-    const success = await login(email, pass);
-    if (success && pin === adminPin) return true;
+    const isEmailValid = email.toLowerCase().trim() === adminEmail.toLowerCase().trim();
+    const isPassValid = pass === adminPassword;
+    const isPinValid = pin === adminPin;
+
+    if (isEmailValid && isPassValid && isPinValid) {
+      const adminProfile: UserProfile = {
+        id: 'usr_admin_default',
+        email: adminEmail,
+        fullName: 'Sealify Official',
+        phoneNumber: '+234 813 120 8468',
+        avatarUrl: '/logo.png',
+        role: 'admin',
+        verified: true,
+        verificationType: 'premium',
+        memberSince: new Date().toISOString(),
+        location: 'Ogbomoso, Oyo State'
+      };
+      setUser(adminProfile);
+      toast.success('🔑 Master Sealify Root Access Granted');
+      return true;
+    }
     return false;
   };
 
@@ -582,7 +552,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   return (
     <SealifyContext.Provider value={{
       user, setUser, isAuthenticated: !!user, isAdmin: user?.role === 'admin',
-      adminPin, updateAdminPin: (p) => setAdminPin(p),
+      adminEmail, adminPassword, adminPin, updateAdminCredentials,
       systemConfig, updateSystemConfig: (upd) => {
         setSystemConfig(p => ({...p, ...upd}));
         Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v));
@@ -673,7 +643,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), 
       deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
       
-      // Wallet State & Logic
       wallet, transactions, requestPayout,
       
       loading, error: null

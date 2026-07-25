@@ -24,7 +24,12 @@ import {
   Layers,
   Sparkles,
   Lock,
-  Search
+  Search,
+  KeyRound,
+  Mail,
+  Eye,
+  EyeOff,
+  Check
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing } from '../types/sealify';
@@ -41,18 +46,28 @@ const AdminDashboard: React.FC = () => {
     broadcastMassNotification,
     exportDatabaseBackup,
     systemConfig,
-    updateSystemConfig
+    updateSystemConfig,
+    adminEmail,
+    adminPassword,
+    adminPin,
+    updateAdminCredentials
   } = useSealify();
   
   const { isInstallable, install } = usePwaInstall();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'broadcast'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'broadcast' | 'credentials'>('overview');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [userSearch, setUserSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
+
+  // Credentials Edit Form State
+  const [newEmail, setNewEmail] = useState(adminEmail);
+  const [newPassword, setNewPassword] = useState(adminPassword);
+  const [newPin, setNewPin] = useState(adminPin);
+  const [showPass, setShowPass] = useState(false);
 
   if (!isAdmin) {
     return (
@@ -88,6 +103,19 @@ const AdminDashboard: React.FC = () => {
     broadcastMassNotification(broadcastTitle.trim(), broadcastMessage.trim());
     setBroadcastTitle('');
     setBroadcastMessage('');
+  };
+
+  const handleSaveCredentials = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim() || !newPassword.trim() || !newPin.trim()) {
+      toast.error('Email, Password, and Master PIN cannot be empty');
+      return;
+    }
+    if (newPin.length < 6) {
+      toast.error('Master PIN must be 6 digits');
+      return;
+    }
+    updateAdminCredentials(newEmail.trim(), newPassword.trim(), newPin.trim());
   };
 
   return (
@@ -160,6 +188,15 @@ const AdminDashboard: React.FC = () => {
             }`}
           >
             Mass Push Broadcast
+          </button>
+          <button
+            onClick={() => setActiveTab('credentials')}
+            className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-1.5 ${
+              activeTab === 'credentials' ? 'bg-rose-600 text-white shadow-lg' : 'bg-slate-900 text-rose-400 hover:text-rose-300'
+            }`}
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            <span>Admin Credentials</span>
           </button>
         </div>
 
@@ -423,6 +460,99 @@ const AdminDashboard: React.FC = () => {
               >
                 <Send className="w-4 h-4" />
                 <span>DISPATCH MASS BROADCAST TO ALL USERS</span>
+              </button>
+            </form>
+          </section>
+        )}
+
+        {/* Tab 5: Admin Credentials & Security Setup */}
+        {activeTab === 'credentials' && (
+          <section className="bg-slate-900 border-2 border-rose-500/30 p-8 rounded-[2.5rem] space-y-6 shadow-2xl max-w-2xl mx-auto font-mono">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/30">
+                <KeyRound className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-xl font-black text-white uppercase">Official Admin Credentials Manager</h2>
+                <p className="text-xs text-slate-400">Update root login details and bypass security keys</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveCredentials} className="space-y-5 text-xs font-sans">
+              <div className="space-y-1">
+                <label className="font-bold uppercase tracking-wider text-slate-300 font-mono text-[10px]">
+                  Official Terminal Email ID *
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type="email"
+                    required
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="admin@sealify.ng"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-white font-mono focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold uppercase tracking-wider text-slate-300 font-mono text-[10px]">
+                  Access Key (Password) *
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <input
+                    type={showPass ? 'text' : 'password'}
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Admin1234"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-10 py-2.5 text-white font-mono focus:outline-none focus:border-rose-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-3 text-slate-500 hover:text-white"
+                  >
+                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold uppercase tracking-wider text-slate-300 font-mono text-[10px]">
+                  Master PIN (6 Digits) *
+                </label>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-rose-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    placeholder="336699"
+                    className="w-full bg-slate-950 border border-rose-500/40 rounded-xl pl-10 pr-4 py-2.5 text-rose-400 font-black font-mono tracking-widest focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1 text-[11px] text-slate-400">
+                <p className="font-bold text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Current Active Record
+                </p>
+                <p>Email: <span className="text-emerald-400 font-mono">{adminEmail}</span></p>
+                <p>Access Key: <span className="text-emerald-400 font-mono">{adminPassword}</span></p>
+                <p>Master PIN: <span className="text-emerald-400 font-mono">{adminPin}</span></p>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-xs shadow-xl flex items-center justify-center gap-2 transition-transform active:scale-95 uppercase tracking-widest font-mono"
+              >
+                <Check className="w-4 h-4" />
+                <span>Save & Overwrite Official Credentials</span>
               </button>
             </form>
           </section>
