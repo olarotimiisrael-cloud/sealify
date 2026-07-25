@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { UserProfile, VerificationBadgeType, UserStatus, Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
-import { X, Check, Edit3, User, Mail, Phone, MapPin, Building2, Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound, Package, Trash2, ExternalLink } from 'lucide-react';
+import { 
+  X, Check, Edit3, User, Mail, Phone, MapPin, Building2, 
+  Shield, Award, Image, AlertOctagon, Info, Lock, KeyRound, 
+  Package, Trash2, ExternalLink, Camera, Upload 
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminEditUserModalProps {
@@ -16,6 +20,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   onSave,
 }) => {
   const { listings, deleteListing } = useSealify();
+  const avatarFileRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -50,6 +55,20 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   }, [user]);
 
   if (!user) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setAvatarUrl(event.target.result as string);
+          toast.success('Avatar image uploaded successfully');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,20 +116,38 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
         </button>
 
         <div className="flex items-center gap-4 pb-4 border-b border-slate-800">
-          {avatarUrl || user.avatarUrl ? (
-            <img
-              src={avatarUrl || user.avatarUrl}
-              alt={user.fullName}
-              className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0 bg-slate-950"
+          <div className="relative group shrink-0">
+            {avatarUrl || user.avatarUrl ? (
+              <img
+                src={avatarUrl || user.avatarUrl}
+                alt={user.fullName}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-emerald-500 shadow-md bg-slate-950"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl border-2 border-slate-800 bg-slate-950 flex items-center justify-center text-slate-500">
+                <User className="w-8 h-8" />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => avatarFileRef.current?.click()}
+              className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-500 text-slate-950 rounded-lg shadow font-black hover:scale-110 transition-transform"
+              title="Upload New Photo"
+            >
+              <Camera className="w-3 h-3" />
+            </button>
+            <input
+              type="file"
+              ref={avatarFileRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
             />
-          ) : (
-            <div className="w-16 h-16 rounded-2xl border-2 border-slate-800 bg-slate-950 flex items-center justify-center text-slate-500 shrink-0">
-              <User className="w-8 h-8" />
-            </div>
-          )}
+          </div>
+
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-white">Edit User Record</h2>
+              <h2 className="text-xl font-black text-white">{fullName || user.fullName}</h2>
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
                 {user.id}
               </span>
@@ -300,15 +337,25 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
           <div className="space-y-1">
             <label className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
               <Image className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Avatar Image URL</span>
+              <span>Avatar Image URL or Device File</span>
             </label>
-            <input
-              type="text"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                placeholder="https://... or upload file"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white focus:outline-none focus:border-emerald-500 flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => avatarFileRef.current?.click()}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl border border-slate-700 shrink-0 flex items-center gap-1"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload</span>
+              </button>
+            </div>
           </div>
 
           {/* User's Posted Classified Ads Section */}
