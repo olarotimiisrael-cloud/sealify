@@ -27,7 +27,12 @@ import {
   User,
   Wallet as WalletIcon,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Clock,
+  ShieldCheck,
+  AlertCircle,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -35,7 +40,18 @@ import { toast } from 'sonner';
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, wallet } = useSealify();
+  const { 
+    user, 
+    logout, 
+    listings, 
+    deleteListing, 
+    updateListing, 
+    promoteListing, 
+    updateUser, 
+    wallet,
+    verificationRequests 
+  } = useSealify();
+  
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -48,6 +64,7 @@ const MyAds: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
+  const myVerificationReq = verificationRequests.find(r => r.userId === user?.id);
   
   const handleLogout = () => {
     logout();
@@ -93,6 +110,8 @@ const MyAds: React.FC = () => {
     }).format(amount);
   };
 
+  if (!user) return null;
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-16 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SEO title="My Ads & Inventory — Sealify" />
@@ -106,7 +125,7 @@ const MyAds: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
             <div className="relative group shrink-0">
-              {user?.avatarUrl ? (
+              {user.avatarUrl ? (
                 <img 
                   src={user.avatarUrl} 
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-2 border-emerald-500 shadow-xl bg-slate-950" 
@@ -131,8 +150,8 @@ const MyAds: React.FC = () => {
 
             <div className="space-y-1">
               <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">{user?.fullName}</h1>
-                {user?.verified ? (
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">{user.fullName}</h1>
+                {user.verified ? (
                   <VerifiedBadge type={user.verificationType || 'individual'} showText />
                 ) : (
                   <button
@@ -144,7 +163,7 @@ const MyAds: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-400 font-mono">{user?.email}</p>
+              <p className="text-xs text-slate-400 font-mono">{user.email}</p>
               <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start flex-wrap">
                 <span>Active Ads: <strong className="text-emerald-400 font-black">{activeCount}</strong></span>
                 <span>Sold: <strong className="text-teal-400 font-black">{soldCount}</strong></span>
@@ -153,7 +172,7 @@ const MyAds: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto">
+          <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
             {/* Wallet Quick Access */}
             <Link 
               to="/wallet"
@@ -175,14 +194,6 @@ const MyAds: React.FC = () => {
               <span>Report</span>
             </button>
 
-            <Link
-              to="/settings"
-              className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"
-            >
-              <Edit3 className="w-4 h-4 text-purple-400" />
-              <span>Settings</span>
-            </Link>
-
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-4 py-3 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded-2xl text-xs border border-rose-500/20 transition-all"
@@ -200,6 +211,36 @@ const MyAds: React.FC = () => {
             </Link>
           </div>
         </div>
+
+        {/* Verification Tracker */}
+        {myVerificationReq && !user.verified && (
+          <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-5 shadow-xl animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl border ${myVerificationReq.status === 'pending' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : myVerificationReq.status === 'rejected' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                  {myVerificationReq.status === 'pending' ? <Clock className="w-5 h-5" /> : myVerificationReq.status === 'rejected' ? <XCircle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                    Verification Status: {myVerificationReq.status.toUpperCase()}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {myVerificationReq.status === 'pending' 
+                      ? 'Our team is currently reviewing your documents. ETA: 24-48 hours.' 
+                      : myVerificationReq.status === 'rejected' 
+                      ? 'Application declined. Please check your email for details or re-apply.'
+                      : 'Congratulations! Your official verification badge is now active.'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Type: {myVerificationReq.type}</span>
+                <span className="text-[10px] font-mono text-slate-400 mt-0.5">REQ_ID: {myVerificationReq.id.slice(-6)}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
           <div className="flex items-center gap-2">
@@ -225,7 +266,14 @@ const MyAds: React.FC = () => {
         {filteredAds.length === 0 ? (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs my-8 space-y-4 shadow-xl">
              <Package className="w-12 h-12 text-slate-700 mx-auto" />
-             <p className="font-bold text-white text-sm">No ads found in this category.</p>
+             <div className="space-y-1">
+                <p className="font-bold text-white text-sm">No ads found in this category.</p>
+                <p className="text-slate-500 max-w-xs mx-auto">Publish your first ad today and reach thousands of buyers in Ogbomoso!</p>
+             </div>
+             <Link to="/post-ad" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs">
+                <PlusCircle className="w-4 h-4" />
+                <span>Create New Listing</span>
+             </Link>
           </div>
         ) : (
           <div className="space-y-3">
@@ -314,9 +362,9 @@ const MyAds: React.FC = () => {
           price={flycardListing.price}
           location={flycardListing.location}
           image={flycardListing.images[0]}
-          sellerName={user?.fullName || flycardListing.sellerName}
-          sellerPhone={user?.phoneNumber || flycardListing.sellerPhone}
-          verificationType={user?.verificationType || flycardListing.sellerVerificationType}
+          sellerName={user.fullName}
+          sellerPhone={user.phoneNumber}
+          verificationType={user.verificationType}
           itemUrl={`${window.location.origin}/listing/${flycardListing.id}`}
         />
       )}

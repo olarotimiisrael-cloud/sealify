@@ -28,7 +28,11 @@ import {
   RotateCcw,
   History,
   TrendingUp,
-  BrainCircuit
+  BrainCircuit,
+  Activity,
+  Users,
+  Eye,
+  ShoppingBag
 } from 'lucide-react';
 
 export default function Index() {
@@ -44,6 +48,7 @@ export default function Index() {
     resetFilters,
     recentlyViewedIds,
     userInterests,
+    allUsers,
     t
   } = useSealify();
 
@@ -128,6 +133,8 @@ export default function Index() {
 
   const hasActiveFilters = filters.searchQuery || filters.category !== 'All' || filters.location || filters.minPrice !== null || filters.maxPrice !== null;
 
+  const totalMarketViews = listings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SEO 
@@ -152,6 +159,50 @@ export default function Index() {
         )}
 
         <PromotedSpotlightBanner listings={listings} />
+
+        {/* Marketplace Pulse Metrics */}
+        {activeCategory === 'All' && !hasActiveFilters && (
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+             <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2 shadow-xl hover:border-emerald-500/30 transition-colors group">
+                <div className="flex items-center gap-2 text-emerald-400 mb-1">
+                   <Activity className="w-4 h-4" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Market Pulse</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                   <p className="text-2xl sm:text-3xl font-black text-white">Live</p>
+                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">Active Node Trading</p>
+             </div>
+
+             <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2 shadow-xl hover:border-blue-500/30 transition-colors group">
+                <div className="flex items-center gap-2 text-blue-400 mb-1">
+                   <Users className="w-4 h-4" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Community</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black text-white">{allUsers.length}</p>
+                <p className="text-[11px] text-slate-400 font-medium">Registered Members</p>
+             </div>
+
+             <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2 shadow-xl hover:border-amber-500/30 transition-colors group">
+                <div className="flex items-center gap-2 text-amber-400 mb-1">
+                   <Eye className="w-4 h-4" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Impressions</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black text-white">{(totalMarketViews / 1000).toFixed(1)}k</p>
+                <p className="text-[11px] text-slate-400 font-medium">Cumulative Ad Views</p>
+             </div>
+
+             <div className="bg-slate-900 border border-slate-800 p-5 rounded-3xl space-y-2 shadow-xl hover:border-purple-500/30 transition-colors group">
+                <div className="flex items-center gap-2 text-purple-400 mb-1">
+                   <ShoppingBag className="w-4 h-4" />
+                   <span className="text-[10px] font-black uppercase tracking-widest">Volume</span>
+                </div>
+                <p className="text-2xl sm:text-3xl font-black text-white">{listings.length}</p>
+                <p className="text-[11px] text-slate-400 font-medium">Verified Classifieds</p>
+             </div>
+          </section>
+        )}
 
         {/* Recent Market Activity Ticker */}
         {recentDeals.length > 0 && (activeCategory === 'All') && (
@@ -281,7 +332,7 @@ export default function Index() {
             </div>
             <button
               onClick={resetFilters}
-              className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs hover:bg-emerald-400 transition-colors shadow-lg"
+              className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs hover:bg-emerald-400 transition-colors shadow-lg"
             >
               Reset All Filters
             </button>

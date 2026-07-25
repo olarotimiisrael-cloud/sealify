@@ -453,7 +453,7 @@ const ListingDetail: React.FC = () => {
       <SwapProposalModal isOpen={isSwapOpen} onClose={() => setIsSwapOpen(false)} targetItemTitle={listing.title} targetItemPrice={listing.price} sellerName={listing.sellerName} onSendSwapToChat={handleSendSwapFromModal} />
       <ShareQrModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} listingTitle={listing.title} listingPrice={listing.price} listingUrl={window.location.href} />
       <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} onSelectSpot={handleSelectMeetupSpot} />
-      <DeliveryEstimatorModal isOpen={setIsDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
+      <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} onSendChecklistToChat={handleSendInspectionReport} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
       
