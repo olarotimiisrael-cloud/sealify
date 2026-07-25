@@ -187,61 +187,171 @@ const DEFAULT_ADMIN_USER: UserProfile = {
   password: DEFAULT_ADMIN_PASSWORD
 };
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  LISTINGS: 'sealify_listings',
+  USERS: 'sealify_users',
+  SAVED_IDS: 'sealify_saved',
+  RECENTLY_VIEWED: 'sealify_recently_viewed',
+  COMPARE_IDS: 'sealify_compare',
+  NOTIFICATIONS: 'sealify_notifications',
+  VERIFICATION_REQUESTS: 'sealify_verification_requests',
+  PASSWORD_REQUESTS: 'sealify_password_requests',
+  PROMOTION_PAYMENTS: 'sealify_promotion_payments',
+  BUYER_REQUESTS: 'sealify_buyer_requests',
+  REVIEWS: 'sealify_reviews',
+  ANNOUNCEMENTS: 'sealify_announcements',
+  REPORTS: 'sealify_reports',
+  DISPUTES: 'sealify_disputes',
+  AUDIT_LOGS: 'sealify_audit_logs',
+  INTRUSION_LOGS: 'sealify_intrusion_logs',
+  SAFE_SPOTS: 'sealify_safe_spots',
+  SEARCH_ALERTS: 'sealify_search_alerts',
+  RECENT_DEALS: 'sealify_recent_deals',
+  SYSTEM_CONFIG: 'sealify_system_config',
+  SITE_SETTINGS: 'sealify_site_settings',
+  PROMOTION_PLANS: 'sealify_promotion_plans',
+  CATEGORIES: 'sealify_categories',
+  CONVERSATIONS: 'sealify_conversations',
+  MESSAGES: 'sealify_messages',
+} as const;
+
+// Helper functions for localStorage
+const getFromStorage = <T>(key: string, fallback: T): T => {
+  try {
+    const item = localStorage.getItem(key);
+    return item ? JSON.parse(item) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const saveToStorage = <T>(key: string, data: T): void => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn(`Failed to save ${key} to localStorage:`, e);
+  }
+};
+
+// Default mock data
+const DEFAULT_CATEGORIES = [
+  { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 0, color: 'bg-blue-500' },
+  { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
+  { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 0, color: 'bg-teal-500' },
+  { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 0, color: 'bg-pink-500' },
+  { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
+  { id: 'services', name: 'Services', iconName: 'Wrench', count: 0, color: 'bg-cyan-500' },
+  { id: 'jobs', name: 'Jobs', iconName: 'Briefcase', count: 0, color: 'bg-indigo-500' },
+  { id: 'beauty', name: 'Beauty & Health', iconName: 'Sparkles', count: 0, color: 'bg-rose-500' },
+  { id: 'utility', name: 'Utility & Energy', iconName: 'Zap', count: 0, color: 'bg-yellow-500' },
+];
+
+const DEFAULT_PROMOTION_PLANS: PromotionPlanConfig[] = [
+  { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
+  { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
+];
+
+const DEFAULT_SYSTEM_CONFIG: SystemConfig = {
+  maintenanceMode: false,
+  autoApproveAds: true,
+  requireIdForPosting: false,
+  aiSpamFilter: true,
+};
+
+const DEFAULT_SITE_SETTINGS: SiteSettings = {
+  siteName: 'Sealify Nigeria',
+  siteDescription: "Nigeria's Trusted Local Marketplace.",
+  ogImage: '/og-image.png',
+  logoUrl: '/logo.png',
+  contactEmail: 'support@sealify.ng',
+  contactPhone: '+234 813 120 8468',
+};
+
+const DEFAULT_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
+  { id: 'spot_1', name: 'Ogbomoso Divisional Police HQ', zone: 'Police HQ', category: 'Police Safe Zone', address: 'Police HQ, Takie Square, Ogbomoso', distance: '1.2 km away', hours: '24/7', cctvVerified: true },
+  { id: 'spot_2', name: 'LAUTECH Main Gate Security Post', zone: 'LAUTECH Area', category: 'Police Safe Zone', address: 'LAUTECH Main Gate, Ogbomoso', distance: '2.1 km away', hours: '6:00 AM - 10:00 PM', cctvVerified: true },
+  { id: 'spot_3', name: 'Takie Shopping Mall', zone: 'Takie / Center', category: 'Shopping Mall', address: 'Takie Square, Ogbomoso', distance: '0.8 km away', hours: '8:00 AM - 9:00 PM', cctvVerified: true },
+  { id: 'spot_4', name: 'Sabo Market Police Post', zone: 'Sabo Market Zone', category: 'Police Safe Zone', address: 'Sabo Market, Ogbomoso', distance: '3.5 km away', hours: '7:00 AM - 8:00 PM', cctvVerified: true },
+];
+
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [allUsers, setAllUsers] = useState<UserProfile[]>([DEFAULT_ADMIN_USER]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([]);
-  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>([]);
-  const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>([]);
-  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>([]);
-  const [reports, setReports] = useState<AdReport[]>([]);
-  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
-  const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
-  const [language, setLanguage] = useState<SupportedLanguage>('en');
-  const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
-  const [categories, setCategories] = useState([
-    { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 0, color: 'bg-blue-500' },
-    { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
-    { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 0, color: 'bg-teal-500' },
-    { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 0, color: 'bg-pink-500' },
-    { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
-    { id: 'services', name: 'Services', iconName: 'Wrench', count: 0, color: 'bg-cyan-500' },
-    { id: 'jobs', name: 'Jobs', iconName: 'Briefcase', count: 0, color: 'bg-indigo-500' },
-    { id: 'beauty', name: 'Beauty & Health', iconName: 'Sparkles', count: 0, color: 'bg-rose-500' },
-    { id: 'utility', name: 'Utility & Energy', iconName: 'Zap', count: 0, color: 'bg-yellow-500' },
-  ]);
-
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>([]);
-  const [safeSpots, setSafeSpots] = useState<SafeMeetupSpotConfig[]>([]);
-  const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
-  const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>([]);
-  const [systemConfig, setSystemConfig] = useState<SystemConfig>({ maintenanceMode: false, autoApproveAds: true, requireIdForPosting: false, aiSpamFilter: true });
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>({ siteName: 'Sealify Nigeria', siteDescription: "Nigeria's Trusted Local Marketplace.", ogImage: '/og-image.png', logoUrl: '/logo.png', contactEmail: 'support@sealify.ng', contactPhone: '+234 813 120 8468' });
-  const [promotionPlans, setPromotionPlans] = useState<PromotionPlanConfig[]>([
-    { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER' },
-    { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
-  ]);
+  const [adminPin, setAdminPin] = useState<string>(() => getFromStorage('sealify_admin_pin', DEFAULT_ADMIN_PIN));
+  const [listings, setListings] = useState<Listing[]>(() => getFromStorage(STORAGE_KEYS.LISTINGS, []));
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const stored = getFromStorage(STORAGE_KEYS.USERS, []);
+    if (stored.length === 0 || !stored.some(u => u.email?.toLowerCase() === DEFAULT_ADMIN_USER.email.toLowerCase())) {
+      return [DEFAULT_ADMIN_USER, ...stored];
+    }
+    return stored;
+  });
+  const [notifications, setNotifications] = useState<AppNotification[]>(() => getFromStorage(STORAGE_KEYS.NOTIFICATIONS, []));
+  const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>(() => getFromStorage(STORAGE_KEYS.VERIFICATION_REQUESTS, []));
+  const [passwordRequests, setPasswordRequests] = useState<PasswordChangeRequest[]>(() => getFromStorage(STORAGE_KEYS.PASSWORD_REQUESTS, []));
+  const [promotionPaymentRequests, setPromotionPaymentRequests] = useState<PromotionPaymentRequest[]>(() => getFromStorage(STORAGE_KEYS.PROMOTION_PAYMENTS, []));
+  const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>(() => getFromStorage(STORAGE_KEYS.BUYER_REQUESTS, []));
+  const [reviews, setReviews] = useState<Review[]>(() => getFromStorage(STORAGE_KEYS.REVIEWS, []));
+  const [announcements, setAnnouncements] = useState<SystemAnnouncement[]>(() => getFromStorage(STORAGE_KEYS.ANNOUNCEMENTS, []));
+  const [reports, setReports] = useState<AdReport[]>(() => getFromStorage(STORAGE_KEYS.REPORTS, []));
+  const [disputeCases, setDisputeCases] = useState<DisputeCase[]>(() => getFromStorage(STORAGE_KEYS.DISPUTES, []));
+  const [conversations, setConversations] = useState<Conversation[]>(() => getFromStorage(STORAGE_KEYS.CONVERSATIONS, []));
+  const [savedListingIds, setSavedListingIds] = useState<string[]>(() => getFromStorage(STORAGE_KEYS.SAVED_IDS, []));
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => getFromStorage(STORAGE_KEYS.RECENTLY_VIEWED, []));
+  const [compareListingIds, setCompareListingIds] = useState<string[]>(() => getFromStorage(STORAGE_KEYS.COMPARE_IDS, []));
+  const [language, setLanguage] = useState<SupportedLanguage>(() => getFromStorage('sealify_language', 'en'));
+  const [filters, setFilters] = useState<FilterState>(() => getFromStorage('sealify_filters', { searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }));
+  const [categories, setCategories] = useState(() => getFromStorage(STORAGE_KEYS.CATEGORIES, DEFAULT_CATEGORIES));
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => getFromStorage(STORAGE_KEYS.AUDIT_LOGS, []));
+  const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>(() => getFromStorage(STORAGE_KEYS.INTRUSION_LOGS, []));
+  const [safeSpots, setSafeSpots] = useState<SafeMeetupSpotConfig[]>(() => getFromStorage(STORAGE_KEYS.SAFE_SPOTS, DEFAULT_SAFE_SPOTS));
+  const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>(() => getFromStorage(STORAGE_KEYS.SEARCH_ALERTS, []));
+  const [recentDeals, setRecentDeals] = useState<MarketplaceDeal[]>(() => getFromStorage(STORAGE_KEYS.RECENT_DEALS, []));
+  const [systemConfig, setSystemConfig] = useState<SystemConfig>(() => getFromStorage(STORAGE_KEYS.SYSTEM_CONFIG, DEFAULT_SYSTEM_CONFIG));
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(() => getFromStorage(STORAGE_KEYS.SITE_SETTINGS, DEFAULT_SITE_SETTINGS));
+  const [promotionPlans, setPromotionPlans] = useState<PromotionPlanConfig[]>(() => getFromStorage(STORAGE_KEYS.PROMOTION_PLANS, DEFAULT_PROMOTION_PLANS));
 
   const [analytics] = useState<AnalyticsData>({
     visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
     activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
   });
 
-  const fetchData = useCallback(async () => {
+  // Persist all state changes to localStorage
+  useEffect(() => { saveToStorage(STORAGE_KEYS.LISTINGS, listings); }, [listings]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.USERS, allUsers); }, [allUsers]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.SAVED_IDS, savedListingIds); }, [savedListingIds]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.RECENTLY_VIEWED, recentlyViewedIds); }, [recentlyViewedIds]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.COMPARE_IDS, compareListingIds); }, [compareListingIds]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.NOTIFICATIONS, notifications); }, [notifications]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.VERIFICATION_REQUESTS, verificationRequests); }, [verificationRequests]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.PASSWORD_REQUESTS, passwordRequests); }, [passwordRequests]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.PROMOTION_PAYMENTS, promotionPaymentRequests); }, [promotionPaymentRequests]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.BUYER_REQUESTS, buyerRequests); }, [buyerRequests]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.REVIEWS, reviews); }, [reviews]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.ANNOUNCEMENTS, announcements); }, [announcements]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.REPORTS, reports); }, [reports]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.DISPUTES, disputeCases); }, [disputeCases]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.AUDIT_LOGS, auditLogs); }, [auditLogs]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.INTRUSION_LOGS, intrusionLogs); }, [intrusionLogs]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.SAFE_SPOTS, safeSpots); }, [safeSpots]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.SEARCH_ALERTS, searchAlerts); }, [searchAlerts]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.RECENT_DEALS, recentDeals); }, [recentDeals]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.SYSTEM_CONFIG, systemConfig); }, [systemConfig]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.SITE_SETTINGS, siteSettings); }, [siteSettings]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.PROMOTION_PLANS, promotionPlans); }, [promotionPlans]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.CATEGORIES, categories); }, [categories]);
+  useEffect(() => { saveToStorage(STORAGE_KEYS.CONVERSATIONS, conversations); }, [conversations]);
+  useEffect(() => { localStorage.setItem('sealify_admin_pin', adminPin); }, [adminPin]);
+  useEffect(() => { localStorage.setItem('sealify_language', language); }, [language]);
+  useEffect(() => { localStorage.setItem('sealify_filters', JSON.stringify(filters)); }, [filters]);
+
+  // Sync with Supabase in background (non-blocking)
+  const syncWithSupabase = useCallback(async () => {
     try {
-      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.all([
+      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals] = await Promise.allSettled([
         userService.getAll(),
         listingService.getAll(),
         verificationService.getAll(),
@@ -261,14 +371,21 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         recentDealsService.getAll()
       ]);
 
-      const userList = (dbUsers as any[]) || [];
-      if (!userList.some(u => u.email?.toLowerCase() === DEFAULT_ADMIN_USER.email.toLowerCase() || u.role === 'admin')) {
-        userList.unshift(DEFAULT_ADMIN_USER);
+      // Merge Supabase data with local data (local takes precedence for recent changes)
+      if (dbUsers.status === 'fulfilled' && dbUsers.value.length > 0) {
+        const mergedUsers = [...dbUsers.value];
+        // Ensure admin exists
+        if (!mergedUsers.some(u => u.email?.toLowerCase() === DEFAULT_ADMIN_USER.email.toLowerCase())) {
+          mergedUsers.unshift(DEFAULT_ADMIN_USER as any);
+        }
+        setAllUsers(prev => {
+          const localMap = new Map(prev.map(u => [u.id, u]));
+          return mergedUsers.map(u => localMap.get(u.id) || u);
+        });
       }
-      setAllUsers(userList);
 
-      if (dbListings.length > 0) {
-        setListings(dbListings.map(l => ({
+      if (dbListings.status === 'fulfilled' && dbListings.value.length > 0) {
+        const dbListingsMapped = dbListings.value.map(l => ({
           id: l.id,
           sellerId: l.seller_id,
           sellerName: l.users?.full_name || 'Verified Seller',
@@ -289,84 +406,43 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           featured: l.featured,
           promotionEndDate: l.promotion_end_date,
           specifications: l.specifications
-        })));
-      }
-      setVerificationRequests(dbVerifications as any);
-      setPasswordRequests(dbPasswords as any);
-      setPromotionPaymentRequests(dbPromoPay as any);
-      setBuyerRequests(dbBuyerReqs as any);
-      setReviews(dbReviews as any);
-      setAnnouncements(dbAnnouncements as any);
-      setReports(dbReports as any);
-      setDisputeCases(dbDisputes as any);
-      setAuditLogs(dbLogs as any);
-      setIntrusionLogs(dbThreats as any);
-      setSafeSpots(dbSpots as any);
-      setRecentDeals(dbDeals.map(d => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
-      
-      if (dbMeta) setSiteSettings(dbMeta as any);
-      if (dbPlans.length > 0) setPromotionPlans(dbPlans as any);
-      
-      if (dbConfigs.length > 0) {
-        const configMap: Partial<SystemConfig> = {};
-        dbConfigs.forEach(c => configMap[c.key as keyof SystemConfig] = c.value);
-        setSystemConfig(prev => ({ ...prev, ...configMap }));
-      }
-
-      if (user) {
-        const [userNotifs, userFavs, userMsgs, userAlerts] = await Promise.all([
-          notificationService.getAll(user.id),
-          favoriteService.getByUserId(user.id),
-          messageService.getConversations(user.id),
-          searchAlertService.getAll(user.id)
-        ]);
-        
-        setNotifications(userNotifs as any);
-        setSavedListingIds(userFavs);
-        setSearchAlerts(userAlerts as any);
-
-        const grouped: Record<string, Conversation> = {};
-        userMsgs.forEach((m: any) => {
-          const otherUserId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
-          const otherUser = m.sender_id === user.id ? m.receiver : m.sender;
-          const key = `${m.listing_id}_${otherUserId}`;
-          
-          if (!grouped[key]) {
-            grouped[key] = {
-              id: key,
-              listingId: m.listing_id,
-              listingTitle: m.listings?.title || 'Listing',
-              listingImage: m.listings?.listing_images?.[0]?.image_url || '',
-              listingPrice: m.listings?.price || 0,
-              otherUser: { id: otherUserId, name: otherUser?.full_name || 'User', avatar: otherUser?.avatar_url || '' },
-              lastMessage: m.content,
-              lastMessageTime: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              messages: []
-            };
-          }
-          grouped[key].messages.push({
-            id: m.id,
-            senderId: m.sender_id,
-            receiverId: m.receiver_id,
-            listingId: m.listing_id,
-            content: m.content,
-            createdAt: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isRead: m.read
-          });
+        }));
+        setListings(prev => {
+          const localMap = new Map(prev.map(l => [l.id, l]));
+          return dbListingsMapped.map(l => localMap.get(l.id) || l);
         });
-        setConversations(Object.values(grouped));
+      }
+
+      if (dbVerifications.status === 'fulfilled') setVerificationRequests(dbVerifications.value as any);
+      if (dbPasswords.status === 'fulfilled') setPasswordRequests(dbPasswords.value as any);
+      if (dbPromoPay.status === 'fulfilled') setPromotionPaymentRequests(dbPromoPay.value as any);
+      if (dbBuyerReqs.status === 'fulfilled') setBuyerRequests(dbBuyerReqs.value as any);
+      if (dbReviews.status === 'fulfilled') setReviews(dbReviews.value as any);
+      if (dbAnnouncements.status === 'fulfilled') setAnnouncements(dbAnnouncements.value as any);
+      if (dbReports.status === 'fulfilled') setReports(dbReports.value as any);
+      if (dbDisputes.status === 'fulfilled') setDisputeCases(dbDisputes.value as any);
+      if (dbLogs.status === 'fulfilled') setAuditLogs(dbLogs.value as any);
+      if (dbThreats.status === 'fulfilled') setIntrusionLogs(dbThreats.value as any);
+      if (dbSpots.status === 'fulfilled') setSafeSpots(dbSpots.value as any);
+      if (dbDeals.status === 'fulfilled') setRecentDeals(dbDeals.value.map(d => ({ id: d.id, itemTitle: d.item_title, price: d.price, location: d.location, time: d.time })));
+      if (dbMeta.status === 'fulfilled' && dbMeta.value) setSiteSettings(dbMeta.value as any);
+      if (dbPlans.status === 'fulfilled' && dbPlans.value.length > 0) setPromotionPlans(dbPlans.value as any);
+      if (dbConfigs.status === 'fulfilled' && dbConfigs.value.length > 0) {
+        const configMap: Partial<SystemConfig> = {};
+        dbConfigs.value.forEach(c => configMap[c.key as keyof SystemConfig] = c.value);
+        setSystemConfig(prev => ({ ...prev, ...configMap }));
       }
 
       setLoading(false);
     } catch (err) {
-      console.error("Supabase Sync Error:", err);
+      console.warn("Supabase sync failed, using localStorage:", err);
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    syncWithSupabase();
+  }, [syncWithSupabase]);
 
   const addAuditLog = async (action: string, details: string, type: AuditLog['type']) => {
     const newLog: AuditLog = {
@@ -440,6 +516,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } as any);
 
       setUser(newUser as any);
+      setAllUsers(prev => [newUser as any, ...prev]);
       toast.success(`Account created! Welcome to Sealify, ${data.fullName}. Please upload your profile photo in settings.`);
       addAuditLog('User Registered', `New node created for ${data.email}`, 'user');
     } catch (err) {
@@ -450,14 +527,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const adminLogin = async (email: string, pass: string, pin?: string) => {
     const cleanEmail = email.trim().toLowerCase();
     
-    // Check Email, Password and PIN
     if (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase() && pass === DEFAULT_ADMIN_PASSWORD && pin === adminPin) {
        setUser(DEFAULT_ADMIN_USER);
        addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
        toast.success('Admin override active. Welcome to Godmode Terminal.');
        return true;
     }
-
     return false;
   };
 
@@ -706,9 +781,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, !!v)); 
         setSystemConfig(p => ({ ...p, ...upd }));
       },
-      siteSettings, updateSiteSettings: (s) => siteSettingsService.update(s).then(fetchData),
-      promotionPlans, updatePromotionPlanRate: (m, r) => promotionPlanService.updateRate(m, r).then(fetchData),
-      safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(fetchData), deleteSafeSpot: (id) => safeSpotService.delete(id).then(fetchData),
+      siteSettings, updateSiteSettings: (s) => siteSettingsService.update(s).then(syncWithSupabase),
+      promotionPlans, updatePromotionPlanRate: (m, r) => promotionPlanService.updateRate(m, r).then(syncWithSupabase),
+      safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(syncWithSupabase), deleteSafeSpot: (id) => safeSpotService.delete(id).then(syncWithSupabase),
       exportDatabaseBackup: () => toast.info('Exporting forensic SQL snapshot...'),
       language, setLanguage, t, categories, 
       addCategory: (c) => { setCategories(prev => [...prev, { id: `cat_${Date.now()}`, name: c.name, iconName: c.iconName || 'Layers', count: 0, color: 'bg-emerald-500' }]); },
