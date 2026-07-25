@@ -1,12 +1,12 @@
 import React from 'react';
-import { X, TrendingUp, Eye, Heart, MessageSquare, Award, CheckCircle2, AlertCircle, BarChart2, Share2, Globe } from 'lucide-react';
+import { X, TrendingUp, Eye, Heart, MessageSquare, CheckCircle2, AlertCircle, Share2, Globe } from 'lucide-react';
 import { Listing } from '../types/sealify';
 
 interface AdAnalyticsModalProps {
   isOpen: boolean;
   onClose: () => void;
   listing: Listing | null;
-};
+}
 
 export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
   isOpen,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, FileSpreadsheet, Printer, TrendingUp, DollarSign, Package, Eye, CheckCircle2, ShieldCheck, Download } from 'lucide-react';
+import { X, FileSpreadsheet, Printer, TrendingUp, DollarSign, Eye, Download } from 'lucide-react';
 import { Listing } from '../types/sealify';
 import { useSealify } from '../context/SealifyContext';
 import { toast } from 'sonner';
