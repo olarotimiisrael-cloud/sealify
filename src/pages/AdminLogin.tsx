@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import SEO from '../components/SEO';
-import { ShieldAlert, Lock, Mail, Key, ArrowRight, Terminal, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, Lock, Mail, Key, ArrowRight, Terminal, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 const AdminLogin: React.FC = () => {
   const { adminLogin, recordIntrusion } = useSealify();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@sealify.ng');
+  const [password, setPassword] = useState('password');
   const [pin, setPin] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
@@ -37,7 +37,7 @@ const AdminLogin: React.FC = () => {
         setIsLockedOut(true);
         toast.error('🚨 Security Lockout: 3 failed attempts. Terminal blocked.');
       } else {
-        toast.error(`Access denied. Verify credentials. ${3 - newCount} attempts remaining.`);
+        toast.error(`Access denied. Verify PIN. Hint: Check docs. ${3 - newCount} attempts remaining.`);
       }
     }
   };
@@ -63,7 +63,16 @@ const AdminLogin: React.FC = () => {
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               <span>Identity Protection Active</span>
             </div>
-            <p className="text-slate-500 text-[10px]">Enter your root administrative credentials to access the node control panel.</p>
+            <p className="text-slate-400 text-[10px]">Log in with admin@sealify.ng and the official root bypass PIN.</p>
+          </div>
+
+          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[10px] space-y-1">
+            <div className="flex items-center gap-1.5 text-blue-400 font-bold">
+              <Info className="w-3.5 h-3.5" />
+              <span>Demo Credentials</span>
+            </div>
+            <p className="text-slate-500">Email: <span className="text-slate-300">admin@sealify.ng</span></p>
+            <p className="text-slate-500">Master PIN: <span className="text-emerald-400 font-bold">336699</span></p>
           </div>
 
           {isLockedOut && (
