@@ -9,9 +9,9 @@ import { toast } from 'sonner';
 const AdminLogin: React.FC = () => {
   const { adminLogin, recordIntrusion } = useSealify();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('olarotimiisrael@gmail.com');
-  const [password, setPassword] = useState('Admin1234');
-  const [pin, setPin] = useState('336699');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
 
@@ -31,13 +31,13 @@ const AdminLogin: React.FC = () => {
       const newCount = failedAttempts + 1;
       setFailedAttempts(newCount);
       
-      recordIntrusion(email, `Failed Access Attempt ${newCount}/3`);
+      recordIntrusion(email, `Failed Access Attempt \${newCount}/3`);
 
       if (newCount >= 3) {
         setIsLockedOut(true);
         toast.error('🚨 Security Lockout: 3 failed attempts. Terminal blocked.');
       } else {
-        toast.error(`Access denied. Verify credentials. ${3 - newCount} attempts remaining.`);
+        toast.error(`Access denied. Verify credentials. \${3 - newCount} attempts remaining.`);
       }
     }
   };
@@ -58,12 +58,12 @@ const AdminLogin: React.FC = () => {
             <p className="text-[10px] text-slate-500 uppercase font-bold">Authorized Personnel Only • Encrypted Terminal</p>
           </div>
 
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-[11px] text-emerald-300 space-y-1">
+          <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl text-[11px] text-emerald-300 space-y-1">
             <div className="flex items-center gap-1.5 font-bold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Official Admin Key Active</span>
+              <span>Identity Protection Active</span>
             </div>
-            <p className="text-slate-400 text-[10px]">PASS: <strong className="text-emerald-400 font-mono">Admin1234</strong> | KEY: <strong className="text-emerald-400 font-mono">336699</strong></p>
+            <p className="text-slate-500 text-[10px]">Enter your root administrative credentials to access the node control panel.</p>
           </div>
 
           {isLockedOut && (
@@ -107,7 +107,7 @@ const AdminLogin: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Master Security Access PIN *</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Master PIN *</label>
               <div className="relative">
                 <Key className="w-4 h-4 text-emerald-400 absolute left-4 top-3.5" />
                 <input 
@@ -117,7 +117,7 @@ const AdminLogin: React.FC = () => {
                   disabled={isLockedOut}
                   value={pin} 
                   onChange={e => setPin(e.target.value)} 
-                  placeholder="336699" 
+                  placeholder="000000" 
                   className="w-full bg-slate-950 border border-emerald-500/50 rounded-xl pl-11 pr-4 py-3 text-sm font-black text-emerald-400 focus:outline-none focus:border-emerald-400 font-mono tracking-widest disabled:opacity-50" 
                 />
               </div>
