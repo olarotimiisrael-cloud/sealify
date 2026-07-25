@@ -60,7 +60,9 @@ interface AnalyticsData {
   visitors: number;
   activeAds: number;
   totalChats: number;
-  sessionsPerMinute: number[];
+  totalRevenue: number;
+  userGrowth: number;
+  categoryDistribution: { name: string; count: number; color: string }[];
   activeSessions: { id: string, user: string, action: string, time: string }[];
 }
 
@@ -192,7 +194,6 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<UserProfile | null>(() => {
-    // Initial check for existing session
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('sealify_session');
       return stored ? JSON.parse(stored) : null;
@@ -242,12 +243,34 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
-  const [analytics] = useState<AnalyticsData>({
-    visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
-    activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
-  });
+  // Derived Analytics State
+  const analytics = useMemo((): AnalyticsData => {
+    const activeAds = listings.filter(l => l.status === 'active').length;
+    const totalRevenue = promotionPaymentRequests
+      .filter(r => r.status === 'approved')
+      .reduce((sum, req) => sum + req.amount, 0);
 
-  // Sync user state to localStorage whenever it changes
+    const categoryDistribution = categories.map(cat => ({
+      name: cat.name,
+      count: listings.filter(l => l.category === cat.name).length,
+      color: cat.color
+    })).sort((a, b) => b.count - a.count);
+
+    return {
+      visitors: 142 + Math.floor(Math.random() * 20),
+      activeAds,
+      totalChats: conversations.length,
+      totalRevenue,
+      userGrowth: Math.round((allUsers.length / 10) * 100) / 10,
+      categoryDistribution,
+      activeSessions: [
+        { id: 'sess_1', user: 'Ope_72', action: 'Viewing Electronics', time: 'Just now' },
+        { id: 'sess_2', user: 'Guest_Node', action: 'Searching Ogbomoso', time: '1m ago' },
+        { id: 'sess_3', user: 'Root_Admin', action: 'Auditing Registry', time: '3m ago' }
+      ]
+    };
+  }, [listings, allUsers, conversations, promotionPaymentRequests, categories]);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem('sealify_session', JSON.stringify(user));
@@ -346,7 +369,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userMsgs.forEach((m: any) => {
           const otherUserId = m.sender_id === user.id ? m.receiver_id : m.sender_id;
           const otherUser = m.sender_id === user.id ? m.receiver : m.sender;
-          const key = `${m.listing_id}_${otherUserId}`;
+          const key = `\${m.listing_id}_\${otherUserId}`;
           
           if (!grouped[key]) {
             grouped[key] = {
@@ -387,7 +410,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const addAuditLog = async (action: string, details: string, type: AuditLog['type']) => {
     const newLog: AuditLog = {
-      id: `log_${Date.now()}`,
+      id: `log_\${Date.now()}`,
       action,
       details,
       type,
@@ -418,8 +441,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setUser(dbUser as any); 
         const name = (dbUser as any).full_name || (dbUser as any).fullName || 'User';
-        toast.success(`Welcome back, ${name}!`); 
-        addAuditLog('User Login', `Node access granted to ${email}`, 'security');
+        toast.success(`Welcome back, \${name}!`); 
+        addAuditLog('User Login', `Node access granted to \${email}`, 'security');
         return true;
       } else {
         toast.error('Invalid email or password.');
@@ -457,8 +480,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } as any);
 
       setUser(newUser as any);
-      toast.success(`Account created! Welcome to Sealify, ${data.fullName}. Please upload your profile photo in settings.`);
-      addAuditLog('User Registered', `New node created for ${data.email}`, 'user');
+      toast.success(`Account created! Welcome to Sealify, \${data.fullName}. Please upload your profile photo in settings.`);
+      addAuditLog('User Registered', `New node created for \${data.email}`, 'user');
     } catch (err) {
       toast.error('Signup failed. Please check your connection.');
     }
@@ -466,20 +489,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = async (email: string, pass: string, pin?: string) => {
     const cleanEmail = email.trim().toLowerCase();
-    
-    // Check Email, Password and PIN
     if (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase() && pass === DEFAULT_ADMIN_PASSWORD && pin === adminPin) {
        setUser(DEFAULT_ADMIN_USER);
        addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
        toast.success('Admin override active. Welcome to Godmode Terminal.');
        return true;
     }
-
     return false;
   };
 
   const createListing = async (data: Partial<Listing>) => {
-    const newId = `lst_${Date.now()}`;
+    const newId = `lst_\${Date.now()}`;
     const newListing: Listing = {
       id: newId,
       sellerId: user?.id || 'usr_guest',
@@ -524,7 +544,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.warn("DB listing insert fallback:", e);
     }
 
-    addAuditLog('Listing Created', `New classified ad published: ${data.title}`, 'ad');
+    addAuditLog('Listing Created', `New classified ad published: \${data.title}`, 'ad');
   };
 
   const updateListing = async (id: string, updatedData: Partial<Listing>) => {
@@ -543,7 +563,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.warn("DB listing delete fallback:", e);
     }
-    addAuditLog('Listing Deleted', `Ad ${id} removed`, 'ad');
+    addAuditLog('Listing Deleted', `Ad \${id} removed`, 'ad');
   };
 
   const markAsSold = async (id: string) => {
@@ -553,7 +573,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.warn("DB listing mark sold fallback:", e);
     }
-    addAuditLog('Listing Sold', `Ad ${id} sealed`, 'ad');
+    addAuditLog('Listing Sold', `Ad \${id} sealed`, 'ad');
   };
 
   const toggleFeaturedListing = async (id: string) => {
@@ -591,7 +611,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.warn("DB promotion fallback:", e);
     }
-    addAuditLog('Ad Promoted', `Ad ${id} boosted via ${planName}`, 'ad');
+    addAuditLog('Ad Promoted', `Ad \${id} boosted via \${planName}`, 'ad');
   };
 
   const sendMessage = async (listingId: string, receiverId: string, content: string) => {
@@ -599,7 +619,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const receiverUser = allUsers.find(u => u.id === receiverId);
 
     const newMsg: Message = {
-      id: `msg_${Date.now()}`,
+      id: `msg_\${Date.now()}`,
       senderId: user?.id || 'usr_guest',
       receiverId,
       listingId,
@@ -609,7 +629,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     };
 
     setConversations(prev => {
-      const convKey = `${listingId}_${receiverId}`;
+      const convKey = `\${listingId}_\${receiverId}`;
       const existing = prev.find(c => c.listingId === listingId && c.otherUser.id === receiverId);
 
       if (existing) {
@@ -653,7 +673,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const recordIntrusion = async (email: string, mediaStatus: string) => {
     const newIntrusion: SecurityIntrusionLog = {
-      id: `threat_${Date.now()}`,
+      id: `threat_\${Date.now()}`,
       timestamp: new Date().toLocaleTimeString(),
       attemptedEmail: email,
       mediaCaptured: false,
@@ -674,13 +694,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (e) {
       console.warn("Intrusion DB fallback:", e);
     }
-    addAuditLog('Intrusion Detected', `Failed login attempt for ${email}`, 'intrusion');
+    addAuditLog('Intrusion Detected', `Failed login attempt for \${email}`, 'intrusion');
   };
 
   const sealDeal = async (listingId: string, buyerName: string, price: number) => {
     const dealItem = listings.find(l => l.id === listingId);
     const newDeal: MarketplaceDeal = {
-      id: `deal_${Date.now()}`,
+      id: `deal_\${Date.now()}`,
       itemTitle: dealItem?.title || 'Classified Item',
       price,
       location: user?.location || 'Ogbomoso',
@@ -728,7 +748,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(fetchData), deleteSafeSpot: (id) => safeSpotService.delete(id).then(fetchData),
       exportDatabaseBackup: () => toast.info('Exporting forensic SQL snapshot...'),
       language, setLanguage, t, categories, 
-      addCategory: (c) => { setCategories(prev => [...prev, { id: `cat_${Date.now()}`, name: c.name, iconName: c.iconName || 'Layers', count: 0, color: 'bg-emerald-500' }]); },
+      addCategory: (c) => { setCategories(prev => [...prev, { id: `cat_\${Date.now()}`, name: c.name, iconName: c.iconName || 'Layers', count: 0, color: 'bg-emerald-500' }]); },
       deleteCategory: (id) => setCategories(prev => prev.filter(c => c.id !== id)), 
       updateCategory: () => {},
       analytics, marketStats, login, signup, adminLogin, logout: () => setUser(null), listings, allUsers, 
@@ -736,17 +756,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...data } : u));
         if (user?.id === id) setUser(prev => prev ? { ...prev, ...data } : null);
         try { await userService.update(id, data as any); } catch (e) { console.warn("User update DB fallback:", e); }
-        addAuditLog('User Updated', `Profile ${id} record modified`, 'user');
+        addAuditLog('User Updated', `Profile \${id} record modified`, 'user');
       },
       deleteUser: async (id) => { 
         setAllUsers(prev => prev.filter(u => u.id !== id));
         try { await userService.delete(id); } catch (e) { console.warn("User delete DB fallback:", e); }
-        addAuditLog('User Deleted', `Identity ${id} purged from federation`, 'user');
+        addAuditLog('User Deleted', `Identity \${id} purged from federation`, 'user');
       },
-      bulkUpdateUsers: (ids, data) => { setAllUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, ...data } : u)); ids.forEach(id => userService.update(id, data as any)); addAuditLog('Bulk User Update', `${ids.length} nodes modified`, 'user'); },
-      bulkDeleteUsers: (ids) => { setAllUsers(prev => prev.filter(u => !ids.includes(u.id))); ids.forEach(id => userService.delete(id)); addAuditLog('Bulk User Deletion', `${ids.length} identities purged`, 'user'); },
-      bulkUpdateListings: (ids, data) => { setListings(prev => prev.map(l => ids.includes(l.id) ? { ...l, ...data } : l)); ids.forEach(id => listingService.update(id, data as any)); addAuditLog('Bulk Ad Update', `${ids.length} listings modified`, 'ad'); },
-      bulkDeleteListings: (ids) => { setListings(prev => prev.filter(l => !ids.includes(l.id))); ids.forEach(id => listingService.delete(id)); addAuditLog('Bulk Ad Deletion', `${ids.length} listings purged`, 'ad'); },
+      bulkUpdateUsers: (ids, data) => { setAllUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, ...data } : u)); ids.forEach(id => userService.update(id, data as any)); addAuditLog('Bulk User Update', `\${ids.length} nodes modified`, 'user'); },
+      bulkDeleteUsers: (ids) => { setAllUsers(prev => prev.filter(u => !ids.includes(u.id))); ids.forEach(id => userService.delete(id)); addAuditLog('Bulk User Deletion', `\${ids.length} identities purged`, 'user'); },
+      bulkUpdateListings: (ids, data) => { setListings(prev => prev.map(l => ids.includes(l.id) ? { ...l, ...data } : l)); ids.forEach(id => listingService.update(id, data as any)); addAuditLog('Bulk Ad Update', `\${ids.length} listings modified`, 'ad'); },
+      bulkDeleteListings: (ids) => { setListings(prev => prev.filter(l => !ids.includes(l.id))); ids.forEach(id => listingService.delete(id)); addAuditLog('Bulk Ad Deletion', `\${ids.length} listings purged`, 'ad'); },
       savedListingIds, recentlyViewedIds, addRecentlyViewed: (id) => setRecentlyViewedIds(p => [id, ...p.filter(i => i !== id)].slice(0, 10)), 
       toggleSaveListing: async (id) => { 
         if (!user) return; 
@@ -766,27 +786,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       markNotificationRead: (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)), 
       markAllNotificationsRead: () => setNotifications(prev => prev.map(n => ({ ...n, read: true }))), 
       clearNotification: (id) => setNotifications(prev => prev.filter(n => n.id !== id)), 
-      addNotification: (n) => setNotifications(prev => [{ ...n, id: `notif_${Date.now()}`, time: 'Just now', read: false }, ...prev]), 
-      broadcastMassNotification: (t, m) => { toast.info('Broadcasting notification to all active nodes...'); addAuditLog('Global Broadcast', `System message: ${t}`, 'broadcast'); }, 
-      passwordRequests, submitPasswordRequest: async (r) => { setPasswordRequests(p => [{ ...r, id: `req_${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await passwordRequestService.create(r); } catch(e){} },
-      processPasswordRequest: async (id, s) => { setPasswordRequests(p => p.map(r => r.id === id ? { ...r, status: s } : r)); addAuditLog('Password Reset', `Request ${id} ${s}`, 'security'); },
-      verificationRequests, submitVerificationRequest: async (r) => { setVerificationRequests(p => [{ ...r, id: `v_${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await verificationService.create(r); } catch(e){} },
-      processVerificationRequest: async (id, s) => { setVerificationRequests(p => p.map(r => r.id === id ? { ...r, status: s } : r)); addAuditLog('ID Verification', `Request ${id} ${s}`, 'verification'); },
-      promotionPaymentRequests, submitPromotionPaymentRequest: async (r) => { setPromotionPaymentRequests(p => [{ ...r, id: `pay_${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await promotionService.create(r); } catch(e){} }, 
+      addNotification: (n) => setNotifications(prev => [{ ...n, id: `notif_\${Date.now()}`, time: 'Just now', read: false }, ...prev]), 
+      broadcastMassNotification: (t, m) => { toast.info('Broadcasting notification to all active nodes...'); addAuditLog('Global Broadcast', `System message: \${t}`, 'broadcast'); }, 
+      passwordRequests, submitPasswordRequest: async (r) => { setPasswordRequests(p => [{ ...r, id: `req_\${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await passwordRequestService.create(r); } catch(e){} },
+      processPasswordRequest: async (id, s) => { setPasswordRequests(p => p.map(r => r.id === id ? { ...r, status: s } : r)); addAuditLog('Password Reset', `Request \${id} \${s}`, 'security'); },
+      verificationRequests, submitVerificationRequest: async (r) => { setVerificationRequests(p => [{ ...r, id: `v_\${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await verificationService.create(r); } catch(e){} },
+      processVerificationRequest: async (id, s) => { setVerificationRequests(p => p.map(r => r.id === id ? { ...r, status: s } : r)); addAuditLog('ID Verification', `Request \${id} \${s}`, 'verification'); },
+      promotionPaymentRequests, submitPromotionPaymentRequest: async (r) => { setPromotionPaymentRequests(p => [{ ...r, id: `pay_\${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]); try { await promotionService.create(r); } catch(e){} }, 
       processPromotionPaymentRequest: async (id, s) => { setPromotionPaymentRequests(p => p.map(r => r.id === id ? { ...r, status: s } : r)); },
-      announcements, addAnnouncement: (a) => setAnnouncements(p => [{ ...a, id: `ann_${Date.now()}`, createdAt: 'Just now' }, ...p]), 
+      announcements, addAnnouncement: (a) => setAnnouncements(p => [{ ...a, id: `ann_\${Date.now()}`, createdAt: 'Just now' }, ...p]), 
       toggleAnnouncement: (id) => setAnnouncements(p => p.map(a => a.id === id ? { ...a, active: !a.active } : a)), 
       deleteAnnouncement: (id) => setAnnouncements(p => p.filter(a => a.id !== id)),
-      reports, submitReport: (r) => setReports(p => [{ ...r, id: `rep_${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]), 
+      reports, submitReport: (r) => setReports(p => [{ ...r, id: `rep_\${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]), 
       processReport: (id, a) => setReports(p => p.map(r => r.id === id ? { ...r, status: 'resolved' } : r)), 
-      disputeCases, submitDisputeCase: (d) => setDisputeCases(p => [{ ...d, id: `disp_${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]), 
+      disputeCases, submitDisputeCase: (d) => setDisputeCases(p => [{ ...d, id: `disp_\${Date.now()}`, status: 'pending', createdAt: 'Just now' }, ...p]), 
       processDisputeCase: (id, s) => setDisputeCases(p => p.map(d => d.id === id ? { ...d, status: s } : d)),
       auditLogs, addAuditLog, recentDeals, sealDeal, intrusionLogs, recordIntrusion,
-      searchAlerts, saveSearchAlert: (a) => { setSearchAlerts(p => [{ ...a, id: `alt_${Date.now()}`, userId: user?.id || 'usr_guest', createdAt: 'Just now', matchCount: 0 }, ...p]); toast.success('Search alert saved!'); }, 
+      searchAlerts, saveSearchAlert: (a) => { setSearchAlerts(p => [{ ...a, id: `alt_\${Date.now()}`, userId: user?.id || 'usr_guest', createdAt: 'Just now', matchCount: 0 }, ...p]); toast.success('Search alert saved!'); }, 
       deleteSearchAlert: (id) => setSearchAlerts(p => p.filter(a => a.id !== id)), 
-      reviews, addReview: (r) => setReviews(p => [{ ...r, id: `rev_${Date.now()}`, createdAt: 'Just now' }, ...p]), 
+      reviews, addReview: (r) => setReviews(p => [{ ...r, id: `rev_\${Date.now()}`, createdAt: 'Just now' }, ...p]), 
       deleteReview: (id) => setReviews(p => p.filter(r => r.id !== id)),
-      buyerRequests, createBuyerRequest: (r) => { setBuyerRequests(p => [{ ...r, id: `req_${Date.now()}`, createdAt: 'Just now', responsesCount: 0 }, ...p]); toast.success('Request posted to Want Board!'); }, 
+      buyerRequests, createBuyerRequest: (r) => { setBuyerRequests(p => [{ ...r, id: `req_\${Date.now()}`, createdAt: 'Just now', responsesCount: 0 }, ...p]); toast.success('Request posted to Want Board!'); }, 
       deleteBuyerRequest: (id) => setBuyerRequests(p => p.filter(r => r.id !== id)),
       loading, error: null
     }}>
