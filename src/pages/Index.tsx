@@ -140,7 +140,7 @@ export default function Index() {
                   <div key={`${deal.id}-${idx}`} className="flex items-center gap-2 text-xs">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                     <span className="text-slate-400">Sold:</span>
-                    <span className="font-bold text-white">{deal.itemTitle}</span>
+                    <span className="font-bold text-white">{deal.item_title}</span>
                     <span className="text-emerald-400 font-black">{formatNGN(deal.price)}</span>
                     <span className="text-slate-500 text-[10px]">{deal.location}</span>
                   </div>
@@ -183,7 +183,7 @@ export default function Index() {
                   onClick={resetFilters}
                   className="text-[10px] font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-full border border-rose-500/20 flex items-center gap-1 transition-colors"
                 >
-                  <circle cx="5" cy="5" r="4" /><RotateCcw className="w-3 h-3" /> Clear Search
+                  <RotateCcw className="w-3 h-3" /> Clear Search
                 </button>
               )}
             </div>

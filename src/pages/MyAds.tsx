@@ -8,6 +8,7 @@ import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
 import SalesReportModal from '../components/SalesReportModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
@@ -23,7 +24,8 @@ import {
   Share2,
   Camera,
   LogOut,
-  User
+  User,
+  BarChart3
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -38,6 +40,7 @@ const MyAds: React.FC = () => {
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
+  const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
@@ -95,7 +98,6 @@ const MyAds: React.FC = () => {
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         
-        {/* Profile & Summary Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -204,83 +206,85 @@ const MyAds: React.FC = () => {
           </div>
         </div>
 
-        {filteredAds.length === 0 ? (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs my-8 space-y-4 shadow-xl">
-             <Package className="w-12 h-12 text-slate-700 mx-auto" />
-             <p className="font-bold text-white text-sm">No ads found in this category.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredAds.map((ad) => (
-              <div
-                key={ad.id}
-                className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all shadow-md"
-              >
-                <div className="flex items-center gap-3.5 w-full sm:w-auto">
-                  <div className="relative shrink-0">
-                    <img 
-                      src={ad.images[0]} 
-                      alt={ad.title} 
-                      className="w-20 h-20 rounded-xl object-cover bg-slate-950 border border-slate-800" 
-                    />
-                    {ad.featured && (
-                      <div className="absolute -top-1.5 -left-1.5 bg-amber-500 p-1 rounded-md shadow">
-                        <Crown className="w-3 h-3 text-slate-950 fill-current" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1 min-w-0 flex-1">
-                    <h3 className="font-bold text-sm sm:text-base text-white truncate max-w-xs">{ad.title}</h3>
-                    <div className="flex items-center gap-3 text-xs">
-                      <span className="font-extrabold text-emerald-400">{formatNGN(ad.price)}</span>
-                      <span className="text-slate-400 flex items-center gap-1 text-[11px]">
-                        <Eye className="w-3 h-3 text-slate-500" />
-                        {ad.viewsCount} views
-                      </span>
+        <div className="space-y-3">
+          {filteredAds.map((ad) => (
+            <div
+              key={ad.id}
+              className="bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all shadow-md"
+            >
+              <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                <div className="relative shrink-0">
+                  <img 
+                    src={ad.images[0]} 
+                    alt={ad.title} 
+                    className="w-20 h-20 rounded-xl object-cover bg-slate-950 border border-slate-800" 
+                  />
+                  {ad.featured && (
+                    <div className="absolute -top-1.5 -left-1.5 bg-amber-500 p-1 rounded-md shadow">
+                      <Crown className="w-3 h-3 text-slate-950 fill-current" />
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-                  <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>Flyer</span>
-                  </button>
-
-                  {ad.status === 'active' && (
-                    <>
-                      <button onClick={() => handleBumpAd(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Bump</span>
-                      </button>
-
-                      <button onClick={() => setEditingListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors">
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-
-                      <button onClick={() => setPromotingListing(ad)} className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs shadow-lg">
-                        <Crown className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Promote</span>
-                      </button>
-                    </>
-                  )}
-
-                  <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="space-y-1 min-w-0 flex-1">
+                  <h3 className="font-bold text-sm sm:text-base text-white truncate max-w-xs">{ad.title}</h3>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="font-extrabold text-emerald-400">{formatNGN(ad.price)}</span>
+                    <span className="text-slate-400 flex items-center gap-1 text-[11px]">
+                      <Eye className="w-3 h-3 text-slate-500" />
+                      {ad.viewsCount} views
+                    </span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
+                <button 
+                  onClick={() => setAnalyticsListing(ad)} 
+                  className="flex items-center gap-1 px-3 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 font-bold rounded-xl text-xs border border-emerald-500/20 transition-colors"
+                >
+                  <BarChart3 className="w-3.5 h-3.5" />
+                  <span>Stats</span>
+                </button>
+
+                <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>Flyer</span>
+                </button>
+
+                {ad.status === 'active' && (
+                  <>
+                    <button onClick={() => handleBumpAd(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Bump</span>
+                    </button>
+
+                    <button onClick={() => setEditingListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors">
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit</span>
+                    </button>
+
+                    <button onClick={() => setPromotingListing(ad)} className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs shadow-lg">
+                      <Crown className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Promote</span>
+                    </button>
+                  </>
+                )}
+
+                <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </main>
 
       <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
       <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
+      <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
       
       {flycardListing && (
         <StorefrontFlycardModal
