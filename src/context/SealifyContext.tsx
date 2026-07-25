@@ -169,6 +169,7 @@ interface SealifyContextType {
 }
 
 const DEFAULT_ADMIN_PIN = '336699';
+const DEFAULT_ADMIN_PASSWORD = 'Admin1234';
 
 const DEFAULT_ADMIN_USER: UserProfile = {
   id: 'usr_admin_default',
@@ -182,6 +183,7 @@ const DEFAULT_ADMIN_USER: UserProfile = {
   memberSince: 'Jan 2023',
   location: 'Ogbomoso, Oyo State',
   status: 'active',
+  password: DEFAULT_ADMIN_PASSWORD
 };
 
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
@@ -258,7 +260,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         recentDealsService.getAll()
       ]);
 
-      // Ensure default admin user exists in list
       const userList = (dbUsers as any[]) || [];
       if (!userList.some(u => u.email?.toLowerCase() === DEFAULT_ADMIN_USER.email.toLowerCase() || u.role === 'admin')) {
         userList.unshift(DEFAULT_ADMIN_USER);
@@ -387,7 +388,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const cleanEmail = email.trim().toLowerCase();
       let dbUser = await userService.getByEmail(cleanEmail);
       
-      if (!dbUser && (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase() || cleanEmail === 'admin@sealify.ng')) {
+      if (!dbUser && (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase())) {
         dbUser = DEFAULT_ADMIN_USER as any;
       }
 
@@ -403,7 +404,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addAuditLog('User Login', `Node access granted to ${email}`, 'security');
         return true;
       } else {
-        toast.error('Invalid email or password. Please sign up if you do not have an account.');
+        toast.error('Invalid email or password.');
         return false;
       }
     } catch (err) { 
@@ -448,23 +449,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const adminLogin = async (email: string, pass: string, pin?: string) => {
     const cleanEmail = email.trim().toLowerCase();
     
-    // Check PIN first
-    if (pin !== adminPin) {
-      return false;
+    // Check Email, Password and PIN
+    if (cleanEmail === DEFAULT_ADMIN_USER.email.toLowerCase() && pass === DEFAULT_ADMIN_PASSWORD && pin === adminPin) {
+       setUser(DEFAULT_ADMIN_USER);
+       addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
+       toast.success('Admin override active. Welcome to Godmode Terminal.');
+       return true;
     }
 
-    let admin = allUsers.find(u => u.email.toLowerCase() === cleanEmail && u.role === 'admin');
-
-    // Fallback if admin user is not in state yet
-    if (!admin) {
-      admin = DEFAULT_ADMIN_USER;
-      setAllUsers(prev => [DEFAULT_ADMIN_USER, ...prev.filter(u => u.id !== DEFAULT_ADMIN_USER.id)]);
-    }
-
-    setUser(admin);
-    addAuditLog('Admin Elevation', 'Root administrative override activated', 'security');
-    toast.success('Admin override active. Welcome to Godmode Terminal.');
-    return true;
+    return false;
   };
 
   const createListing = async (data: Partial<Listing>) => {

@@ -10,7 +10,7 @@ const AdminLogin: React.FC = () => {
   const { adminLogin, recordIntrusion } = useSealify();
   const navigate = useNavigate();
   const [email, setEmail] = useState('olarotimiisrael@gmail.com');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('Admin1234');
   const [pin, setPin] = useState('336699');
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
@@ -37,7 +37,7 @@ const AdminLogin: React.FC = () => {
         setIsLockedOut(true);
         toast.error('🚨 Security Lockout: 3 failed attempts. Terminal blocked.');
       } else {
-        toast.error(`Access denied. PIN must be 336699. ${3 - newCount} attempts remaining.`);
+        toast.error(`Access denied. Verify credentials. ${3 - newCount} attempts remaining.`);
       }
     }
   };
@@ -61,9 +61,9 @@ const AdminLogin: React.FC = () => {
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-[11px] text-emerald-300 space-y-1">
             <div className="flex items-center gap-1.5 font-bold">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Default Credentials Ready</span>
+              <span>Official Admin Key Active</span>
             </div>
-            <p className="text-slate-400 text-[10px]">PIN: <strong className="text-emerald-400 font-mono">336699</strong></p>
+            <p className="text-slate-400 text-[10px]">PASS: <strong className="text-emerald-400 font-mono">Admin1234</strong> | KEY: <strong className="text-emerald-400 font-mono">336699</strong></p>
           </div>
 
           {isLockedOut && (
