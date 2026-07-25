@@ -39,6 +39,7 @@ import {
   CheckSquare,
   Volume2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -110,6 +111,47 @@ const ListingDetail: React.FC = () => {
       return;
     }
     sendMessage(listing.id, listing.sellerId, chatMessage);
+    navigate('/messages');
+  };
+
+  const handleSendOfferFromModal = (offerPrice: number, offerMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, offerMsg);
+    toast.success(`Price offer sent to ${listing.sellerName}!`);
+    navigate('/messages');
+  };
+
+  const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    const meetupProposal = `📍 PROPOSED SAFE MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
+    sendMessage(listing.id, listing.sellerId, meetupProposal);
+    toast.success(`Proposed meetup location sent to seller chat!`);
+    navigate('/messages');
+  };
+
+  const handleSendEstimateToChat = (estimateMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, estimateMsg);
+    toast.success(`Delivery dispatch rate proposal sent to chat!`);
+    navigate('/messages');
+  };
+
+  const handleSendInspectionReport = (reportMsg: string) => {
+    if (!isAuthenticated) {
+      setIsAuthOpen(true);
+      return;
+    }
+    sendMessage(listing.id, listing.sellerId, reportMsg);
+    toast.success(`Inspection report shared to seller chat!`);
     navigate('/messages');
   };
 
@@ -317,7 +359,7 @@ const ListingDetail: React.FC = () => {
                   <a
                     href={whatsappUrl}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noreferrer"
                     className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md"
                   >
                     <MessageCircle className="w-3.5 h-3.5" />
@@ -373,12 +415,12 @@ const ListingDetail: React.FC = () => {
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} />
-      <OfferModal isOpen={isOfferOpen} onClose={() => setIsOfferOpen(false)} listingTitle={listing.title} originalPrice={listing.price} onSendOffer={() => {}} />
+      <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} listingTitle={listing.title} listingId={listing.id} />
+      <OfferModal isOpen={isOfferOpen} onClose={() => setIsOfferOpen(false)} listingTitle={listing.title} originalPrice={listing.price} onSendOffer={handleSendOfferFromModal} />
       <ShareQrModal isOpen={isQrOpen} onClose={() => setIsQrOpen(false)} listingTitle={listing.title} listingPrice={listing.price} listingUrl={window.location.href} />
-      <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} />
-      <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} />
-      <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} />
+      <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} onSelectSpot={handleSelectMeetupSpot} />
+      <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
+      <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} onSendChecklistToChat={handleSendInspectionReport} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
       
       <AiVoiceOverviewModal
