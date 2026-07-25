@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -53,9 +53,10 @@ export const AdminDashboard: React.FC = () => {
     disputeCases, processDisputeCase, intrusionLogs,
     systemConfig, updateSystemConfig, siteSettings, updateSiteSettings,
     adminPin, updateAdminPin, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
-    reports, processReport, buyerRequests, deleteBuyerRequest, reviews, deleteReview
+    reports, processReport, buyerRequests, deleteBuyerRequest, reviews, deleteReview, loading
   } = useSealify();
 
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
@@ -119,6 +120,13 @@ export const AdminDashboard: React.FC = () => {
   const topHeaderAvatarRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
+  // Security Guard: Redirect if not admin
+  useEffect(() => {
+    if (!loading && (!isAdmin || !user)) {
+      navigate('/admin/login');
+    }
+  }, [isAdmin, user, loading, navigate]);
+
   useEffect(() => {
     if (user && activeTab === 'superuser') {
        setAdminFullName(user.fullName);
@@ -142,7 +150,14 @@ export const AdminDashboard: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  if (!isAdmin || !user) return null;
+  if (loading || !isAdmin || !user) {
+    return (
+      <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center space-y-4">
+        <RefreshCw className="w-10 h-10 text-emerald-500 animate-spin" />
+        <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Verifying Node Credentials...</p>
+      </div>
+    );
+  }
 
   const pendingVerifications = verificationRequests.filter(r => r.status === 'pending');
   const pendingPasswords = passwordRequests.filter(r => r.status === 'pending');

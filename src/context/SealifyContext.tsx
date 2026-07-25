@@ -191,7 +191,15 @@ const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    // Initial check for existing session
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('sealify_session');
+      return stored ? JSON.parse(stored) : null;
+    }
+    return null;
+  });
+  
   const [adminPin, setAdminPin] = useState<string>(DEFAULT_ADMIN_PIN);
   const [listings, setListings] = useState<Listing[]>([]);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([DEFAULT_ADMIN_USER]);
@@ -238,6 +246,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     visitors: 142, activeAds: 0, totalChats: 12, sessionsPerMinute: [12, 18, 22],
     activeSessions: [{ id: 'sess_1', user: 'Ope_72', action: 'Viewing Store', time: 'Just now' }]
   });
+
+  // Sync user state to localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('sealify_session', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('sealify_session');
+    }
+  }, [user]);
 
   const fetchData = useCallback(async () => {
     try {
