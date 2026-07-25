@@ -22,7 +22,8 @@ import {
   FileSpreadsheet,
   Share2,
   Camera,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -100,14 +101,18 @@ const MyAds: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
             <div className="relative group shrink-0">
-              <img 
-                src={user?.avatarUrl} 
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-2 border-emerald-500 shadow-xl bg-slate-950" 
-                alt="Avatar"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300';
-                }}
-              />
+              {user?.avatarUrl ? (
+                <img 
+                  src={user.avatarUrl} 
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-2 border-emerald-500 shadow-xl bg-slate-950" 
+                  alt="Avatar"
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl border-2 border-slate-800 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-xl">
+                  <User className="w-8 h-8 sm:w-10 sm:h-10" />
+                  <span className="text-[8px] font-extrabold uppercase mt-0.5">No Photo</span>
+                </div>
+              )}
               <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
               <button
                 type="button"

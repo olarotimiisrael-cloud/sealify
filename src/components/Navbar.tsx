@@ -181,11 +181,17 @@ const Navbar: React.FC = () => {
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
                   className="flex items-center gap-2 bg-slate-950 hover:bg-slate-800 p-1.5 pr-3 rounded-2xl border border-emerald-500/40 shadow-lg transition-all group"
                 >
-                  <img 
-                    src={user?.avatarUrl} 
-                    className="w-9 h-9 rounded-xl object-cover border-2 border-emerald-500 shadow-sm" 
-                    alt={user?.fullName}
-                  />
+                  {user?.avatarUrl ? (
+                    <img 
+                      src={user.avatarUrl} 
+                      className="w-9 h-9 rounded-xl object-cover border-2 border-emerald-500 shadow-sm" 
+                      alt={user?.fullName}
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl bg-slate-900 border-2 border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                      <User className="w-5 h-5" />
+                    </div>
+                  )}
                   <div className="text-left hidden xl:block min-w-0">
                     <p className="text-xs font-black text-white truncate leading-tight">{user?.fullName}</p>
                     <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider">{isAdmin ? 'Admin' : user?.role}</p>

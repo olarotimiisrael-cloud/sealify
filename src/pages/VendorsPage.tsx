@@ -15,7 +15,8 @@ import {
   Package, 
   Users,
   CheckCircle2,
-  SlidersHorizontal
+  SlidersHorizontal,
+  User
 } from 'lucide-react';
 import { VerificationBadgeType } from '../types/sealify';
 
@@ -89,13 +90,13 @@ export const VendorsPage: React.FC = () => {
               <button
                 key={filter}
                 onClick={() => setBadgeFilter(filter)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all shrink-0 \${
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all shrink-0 ${
                   badgeFilter === filter
                     ? 'bg-emerald-500 text-slate-950 shadow-md font-black'
                     : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
-                {filter === 'All' ? 'All Vendors' : `\${filter} Badge`}
+                {filter === 'All' ? 'All Vendors' : `${filter} Badge`}
               </button>
             ))}
           </div>
@@ -118,11 +119,17 @@ export const VendorsPage: React.FC = () => {
                   <div className="space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={vendor.avatarUrl}
-                          className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
-                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100'; }}
-                        />
+                        {vendor.avatarUrl ? (
+                          <img
+                            src={vendor.avatarUrl}
+                            className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500 shadow-md"
+                            alt={vendor.fullName}
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-2xl border-2 border-emerald-500 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-md">
+                            <User className="w-6 h-6" />
+                          </div>
+                        )}
                         <div className="min-w-0">
                           <h3 className="font-extrabold text-base text-white truncate">{vendor.fullName}</h3>
                           {vendor.businessName && <p className="text-xs font-bold text-emerald-400 truncate">{vendor.businessName}</p>}
@@ -145,7 +152,7 @@ export const VendorsPage: React.FC = () => {
                   </div>
 
                   <Link
-                    to={`/seller/\${vendor.id}`}
+                    to={`/seller/${vendor.id}`}
                     className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs text-center flex items-center justify-center gap-1.5 shadow transition-colors"
                   >
                     <span>View Storefront</span>

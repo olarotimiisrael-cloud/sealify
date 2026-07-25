@@ -25,7 +25,9 @@ import {
   Check,
   Share2,
   Clock,
-  Building2
+  Building2,
+  User,
+  Layout
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -39,8 +41,8 @@ const SellerProfile: React.FC = () => {
 
   const sellerName = sellerUser?.fullName || sampleListing?.sellerName || 'Verified Seller';
   const businessName = sellerUser?.businessName || (sampleListing?.title ? `${sellerName}'s Store` : 'Local Merchant');
-  const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80';
-  const sellerBanner = sellerUser?.storeBannerUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80';
+  const sellerAvatar = sellerUser?.avatarUrl || sampleListing?.sellerAvatar || '';
+  const sellerBanner = sellerUser?.storeBannerUrl || '';
   const sellerVerified = sellerUser?.verified ?? sampleListing?.sellerVerified ?? true;
   const sellerVerificationType = sellerUser?.verificationType || sampleListing?.sellerVerificationType || 'individual';
   const sellerLocation = sellerUser?.location || sampleListing?.location || 'Ogbomoso, Oyo State';
@@ -117,22 +119,36 @@ const SellerProfile: React.FC = () => {
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         {/* Profile Banner & Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
-          <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden">
-            <img
-              src={sellerBanner}
-              alt="Storefront Cover"
-              className="w-full h-full object-cover opacity-80"
-            />
+          <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center">
+            {sellerBanner ? (
+              <img
+                src={sellerBanner}
+                alt="Storefront Cover"
+                className="w-full h-full object-cover opacity-80"
+              />
+            ) : (
+              <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-xs">
+                <Layout className="w-5 h-5" />
+                <span>Store Cover Banner</span>
+              </div>
+            )}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
           </div>
 
           <div className="p-6 sm:p-8 -mt-16 sm:-mt-20 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 text-center sm:text-left">
             <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
-              <img
-                src={sellerAvatar}
-                alt={sellerName}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
-              />
+              {sellerAvatar ? (
+                <img
+                  src={sellerAvatar}
+                  alt={sellerName}
+                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
+                />
+              ) : (
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
+                  <User className="w-10 h-10" />
+                  <span className="text-[8px] font-extrabold uppercase mt-1">No Photo</span>
+                </div>
+              )}
               <div className="space-y-1 mb-1">
                 <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                   <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{sellerName}</h1>
@@ -345,11 +361,17 @@ const SellerProfile: React.FC = () => {
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={rev.buyerAvatar}
-                          alt={rev.buyerName}
-                          className="w-10 h-10 rounded-xl object-cover border border-slate-700"
-                        />
+                        {rev.buyerAvatar ? (
+                          <img
+                            src={rev.buyerAvatar}
+                            alt={rev.buyerName}
+                            className="w-10 h-10 rounded-xl object-cover border border-slate-700"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">
+                            <User className="w-5 h-5" />
+                          </div>
+                        )}
                         <div>
                           <h4 className="font-bold text-xs text-white">{rev.buyerName}</h4>
                           <p className="text-[10px] text-slate-500">{rev.createdAt}</p>

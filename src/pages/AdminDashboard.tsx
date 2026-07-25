@@ -19,7 +19,7 @@ import {
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
   ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
-  Share2, BellRing, MapPin, Upload
+  Share2, BellRing, MapPin, Upload, User
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -125,7 +125,7 @@ export const AdminDashboard: React.FC = () => {
        setAdminEmail(user.email);
        setAdminPhone(user.phoneNumber || '');
        setAdminBusinessName(user.businessName || '');
-       setAdminAvatar(user.avatarUrl);
+       setAdminAvatar(user.avatarUrl || '');
        setAdminBanner(user.storeBannerUrl || '');
        setAdminBadge(user.verificationType || 'premium');
        setAdminPassword(user.password || '');
@@ -362,8 +362,14 @@ export const AdminDashboard: React.FC = () => {
             
             {/* Top Admin Profile Avatar with Instant Upload */}
             <div className="relative group shrink-0">
-              <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden">
-                <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
+              <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden flex items-center justify-center">
+                {user.avatarUrl ? (
+                  <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
+                ) : (
+                  <div className="w-full h-full rounded-xl bg-slate-900 flex items-center justify-center text-slate-500">
+                    <User className="w-6 h-6" />
+                  </div>
+                )}
                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-lg flex items-center justify-center border-2 border-slate-900 z-20">
                   <ShieldCheck className="w-3 h-3" />
                 </div>
@@ -714,7 +720,13 @@ export const AdminDashboard: React.FC = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <img src={u.avatarUrl} className="w-9 h-9 rounded-xl object-cover border border-slate-800 bg-slate-950" alt="" />
+                              {u.avatarUrl ? (
+                                <img src={u.avatarUrl} className="w-9 h-9 rounded-xl object-cover border border-slate-800 bg-slate-950" alt="" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">
+                                  <User className="w-4 h-4" />
+                                </div>
+                              )}
                               <div className="min-w-0">
                                 <p className="font-bold text-white truncate">{u.fullName}</p>
                                 <p className="text-[10px] text-slate-500 font-mono truncate">{u.email}</p>
@@ -1465,13 +1477,26 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Cover & Avatar Preview Box */}
-              <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 h-36">
-                <img src={adminBanner || user.storeBannerUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80'} className="w-full h-full object-cover opacity-70" />
+              <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 h-36 flex items-center justify-center">
+                {adminBanner || user.storeBannerUrl ? (
+                  <img src={adminBanner || user.storeBannerUrl} className="w-full h-full object-cover opacity-70" alt="Banner" />
+                ) : (
+                  <div className="text-slate-600 font-bold text-xs uppercase flex items-center gap-1.5">
+                    <Layout className="w-4 h-4" />
+                    <span>No Cover Banner Uploaded</span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
                 
                 <div className="absolute bottom-3 left-4 flex items-center gap-3">
                   <div className="relative">
-                    <img src={adminAvatar || user.avatarUrl} className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-500 bg-slate-900 shadow-xl" />
+                    {adminAvatar || user.avatarUrl ? (
+                      <img src={adminAvatar || user.avatarUrl} className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-500 bg-slate-900 shadow-xl" alt="Avatar" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl border-2 border-slate-800 bg-slate-900 flex items-center justify-center text-slate-500">
+                        <User className="w-8 h-8" />
+                      </div>
+                    )}
                     <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 text-slate-950 rounded-lg shadow" title="Upload Admin Photo">
                       <Camera className="w-3 h-3" />
                     </button>
@@ -1539,20 +1564,24 @@ export const AdminDashboard: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Profile Avatar Photo (URL or Upload)</label>
+                    <label className="font-bold text-slate-300 uppercase">Profile Avatar Photo (Device Upload)</label>
                     <div className="flex gap-2">
-                      <input type="text" value={adminAvatar} onChange={(e) => setAdminAvatar(e.target.value)} placeholder="https://..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
                       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
-                      <button type="button" onClick={() => avatarInputRef.current?.click()} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Upload</button>
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Avatar File</span>
+                      </button>
                     </div>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Cover Banner (URL or Upload)</label>
+                    <label className="font-bold text-slate-300 uppercase">Cover Banner (Device Upload)</label>
                     <div className="flex gap-2">
-                      <input type="text" value={adminBanner} onChange={(e) => setAdminBanner(e.target.value)} placeholder="https://..." className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-emerald-500" />
                       <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
-                      <button type="button" onClick={() => bannerInputRef.current?.click()} className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold">Upload</button>
+                      <button type="button" onClick={() => bannerInputRef.current?.click()} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2">
+                        <Upload className="w-4 h-4" />
+                        <span>Upload Cover Banner</span>
+                      </button>
                     </div>
                   </div>
                 </div>

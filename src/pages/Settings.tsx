@@ -9,24 +9,9 @@ import SEO from '../components/SEO';
 import { 
   ShieldCheck, Calendar, Edit3, Trash2, Mail, Camera, Image as ImageIcon, Check, Upload, 
   KeyRound, Lock, UserCheck, ShoppingBag, Store, Zap, Building2, MapPin, Sparkles,
-  Phone, AlertTriangle, Layout, Shield, ArrowRight
+  Phone, AlertTriangle, Layout, Shield, ArrowRight, User
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-const SAMPLE_AVATARS = [
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=300&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=300&auto=format&fit=crop&q=80',
-];
-
-const SAMPLE_BANNERS = [
-  'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1200&auto=format&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=1200&auto=format&fit=crop&q=80',
-];
 
 const Settings: React.FC = () => {
   const { user, updateUser, isAdmin } = useSealify();
@@ -38,8 +23,8 @@ const Settings: React.FC = () => {
   const [newPhone, setNewPhone] = useState(user?.phoneNumber || '');
   const [location, setLocation] = useState(user?.location || 'Ogbomoso, Oyo State');
   const [businessName, setBusinessName] = useState(user?.businessName || '');
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || SAMPLE_AVATARS[0]);
-  const [selectedBanner, setSelectedBanner] = useState(user?.storeBannerUrl || SAMPLE_BANNERS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatarUrl || '');
+  const [selectedBanner, setSelectedBanner] = useState(user?.storeBannerUrl || '');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   if (!user) {
@@ -117,21 +102,28 @@ const Settings: React.FC = () => {
         <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl relative">
           
           {/* Banner Image */}
-          <div className="h-48 sm:h-64 w-full bg-slate-950 relative overflow-hidden group">
-            <img
-              src={selectedBanner || user.storeBannerUrl || SAMPLE_BANNERS[0]}
-              alt="Store Cover Banner"
-              className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
+          <div className="h-48 sm:h-64 w-full bg-slate-950 relative overflow-hidden group flex items-center justify-center">
+            {selectedBanner || user.storeBannerUrl ? (
+              <img
+                src={selectedBanner || user.storeBannerUrl}
+                alt="Store Cover Banner"
+                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center text-slate-600 gap-2">
+                <Layout className="w-10 h-10" />
+                <span className="text-xs font-bold uppercase tracking-wider">No Cover Banner Uploaded</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
             
             <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
             <button
               onClick={() => bannerInputRef.current?.click()}
               className="absolute top-4 right-4 px-4 py-2 bg-slate-950/80 backdrop-blur-md text-emerald-400 hover:text-white rounded-2xl border border-slate-800 text-xs font-black flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
             >
-              <Layout className="w-4 h-4" />
-              <span>Change Cover Photo</span>
+              <Camera className="w-4 h-4" />
+              <span>{selectedBanner || user.storeBannerUrl ? 'Change Cover Photo' : 'Upload Cover Banner'}</span>
             </button>
           </div>
 
@@ -141,14 +133,18 @@ const Settings: React.FC = () => {
               
               {/* Avatar with Camera Icon Overlay */}
               <div className="relative group shrink-0">
-                <img
-                  src={selectedAvatar || user.avatarUrl}
-                  alt={user.fullName}
-                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300';
-                  }}
-                />
+                {selectedAvatar || user.avatarUrl ? (
+                  <img
+                    src={selectedAvatar || user.avatarUrl}
+                    alt={user.fullName}
+                    className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
+                  />
+                ) : (
+                  <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-[2rem] border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
+                    <User className="w-12 h-12" />
+                    <span className="text-[9px] font-extrabold uppercase mt-1">No Photo</span>
+                  </div>
+                )}
                 <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
                 <button
                   type="button"
@@ -185,38 +181,8 @@ const Settings: React.FC = () => {
               className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow-xl transition-all"
             >
               <Upload className="w-4 h-4" />
-              <span>Upload New Photo</span>
+              <span>Upload Profile Picture</span>
             </button>
-          </div>
-        </div>
-
-        {/* Preset Avatar Selection Grid */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4 shadow-xl">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-              <Camera className="w-4 h-4 text-emerald-400" />
-              <span>Select Preset Profile Avatars</span>
-            </h3>
-            <span className="text-[10px] text-slate-500 font-bold uppercase">Click to Apply</span>
-          </div>
-
-          <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
-            {SAMPLE_AVATARS.map((avUrl, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => {
-                  setSelectedAvatar(avUrl);
-                  updateUser(user.id, { avatarUrl: avUrl });
-                  toast.success('Preset profile picture applied!');
-                }}
-                className={`w-14 h-14 rounded-2xl overflow-hidden border-2 shrink-0 transition-all ${
-                  selectedAvatar === avUrl ? 'border-emerald-500 ring-4 ring-emerald-500/20 scale-105' : 'border-slate-800 opacity-60 hover:opacity-100'
-                }`}
-              >
-                <img src={avUrl} className="w-full h-full object-cover" alt="Preset" />
-              </button>
-            ))}
           </div>
         </div>
 
@@ -292,7 +258,7 @@ const Settings: React.FC = () => {
             className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs transition-transform active:scale-95 shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2"
           >
             <Check className="w-4 h-4" />
-            <span>Save Profile Branding Changes</span>
+            <span>Save Profile Details</span>
           </button>
         </form>
 

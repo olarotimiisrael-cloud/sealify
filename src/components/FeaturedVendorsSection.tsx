@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import VerifiedBadge from './VerifiedBadge';
-import { Building2, ArrowRight, MapPin, Package } from 'lucide-react';
+import { Building2, ArrowRight, MapPin, Package, User } from 'lucide-react';
 
 export const FeaturedVendorsSection: React.FC = () => {
   const { allUsers, listings, t } = useSealify();
@@ -44,7 +44,6 @@ export const FeaturedVendorsSection: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {topVendors.map((vendor) => {
           const vendorListings = listings.filter((l) => l.sellerId === vendor.id);
-          const storeBanner = vendor.storeBannerUrl || 'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=600&auto=format&fit=crop&q=80';
 
           return (
             <div
@@ -53,12 +52,16 @@ export const FeaturedVendorsSection: React.FC = () => {
             >
               <div>
                 {/* Store Cover Header */}
-                <div className="h-20 w-full relative overflow-hidden bg-slate-900">
-                  <img
-                    src={storeBanner}
-                    alt={vendor.fullName}
-                    className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500"
-                  />
+                <div className="h-20 w-full relative overflow-hidden bg-slate-900 flex items-center justify-center">
+                  {vendor.storeBannerUrl ? (
+                    <img
+                      src={vendor.storeBannerUrl}
+                      alt={vendor.fullName}
+                      className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Storefront</span>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
                   <div className="absolute top-2 right-2">
                     <VerifiedBadge type={vendor.verificationType || 'individual'} />
@@ -68,14 +71,17 @@ export const FeaturedVendorsSection: React.FC = () => {
                 {/* Avatar & Title info */}
                 <div className="p-4 -mt-8 relative z-10 space-y-2">
                   <div className="flex items-end gap-3">
-                    <img
-                      src={vendor.avatarUrl}
-                      alt={vendor.fullName}
-                      className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-950 shadow-md shrink-0 bg-slate-900"
-                      onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                        e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100';
-                      }}
-                    />
+                    {vendor.avatarUrl ? (
+                      <img
+                        src={vendor.avatarUrl}
+                        alt={vendor.fullName}
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-950 shadow-md shrink-0 bg-slate-900"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl border-2 border-slate-950 bg-slate-900 flex items-center justify-center text-slate-500 shrink-0">
+                        <User className="w-6 h-6" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-sm text-white truncate leading-tight">{vendor.fullName}</h3>
                       <p className="text-[11px] font-bold text-emerald-400 truncate">

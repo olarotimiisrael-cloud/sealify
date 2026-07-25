@@ -12,8 +12,6 @@ export const CATEGORIES = [
   { id: 'utility', name: 'Utility & Energy', iconName: 'Zap', count: 15, color: 'bg-yellow-500' },
 ];
 
-const SELLER_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80";
-
 // Detailed catalog items where titles strictly match images
 const DETAILED_PRODUCTS: Record<string, { title: string; image: string; desc: string; price: number; cond: 'Brand New' | 'Like New' | 'Used - Good' }[]> = {
   'Vehicles': [
@@ -167,7 +165,7 @@ export const MOCK_LISTINGS: Listing[] = Object.keys(DETAILED_PRODUCTS).flatMap((
     sellerId: itemIdx % 2 === 0 ? 'usr_1' : 'usr_2',
     sellerName: itemIdx % 2 === 0 ? 'Adebowale Ogunleye' : 'Blessing Okonjo',
     sellerPhone: '+234 813 120 8468',
-    sellerAvatar: SELLER_AVATAR,
+    sellerAvatar: '',
     sellerVerified: true,
     sellerVerificationType: itemIdx % 3 === 0 ? 'business' : 'individual',
     title: prod.title,
@@ -190,7 +188,8 @@ export const ALL_MOCK_USERS: UserProfile[] = [
     email: 'olarotimiisrael@gmail.com',
     fullName: 'Israel Olarotimi',
     phoneNumber: '0813 120 8468',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+    avatarUrl: '',
+    storeBannerUrl: '',
     role: 'admin',
     verified: true,
     verificationType: 'premium',
@@ -202,7 +201,8 @@ export const ALL_MOCK_USERS: UserProfile[] = [
     email: 'adebowale@gmail.com',
     fullName: 'Adebowale Ogunleye',
     phoneNumber: '+234 803 000 0000',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop',
+    avatarUrl: '',
+    storeBannerUrl: '',
     role: 'seller',
     verified: true,
     verificationType: 'business',

@@ -176,7 +176,8 @@ const DEFAULT_ADMIN_USER: UserProfile = {
   email: 'olarotimiisrael@gmail.com',
   fullName: 'Israel Olarotimi (Root Admin)',
   phoneNumber: '+234 813 120 8468',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80',
+  avatarUrl: '',
+  storeBannerUrl: '',
   role: 'admin',
   verified: true,
   verificationType: 'premium',
@@ -431,7 +432,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         location: data.location || 'Ogbomoso, Oyo State',
         member_since: new Date().toISOString(),
         status: 'active',
-        avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.email}`,
+        avatar_url: '',
         business_name: data.businessName || null,
         restriction_reason: null,
         appeal_status: 'none',
@@ -439,7 +440,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       } as any);
 
       setUser(newUser as any);
-      toast.success(`Account created! Welcome to Sealify, ${data.fullName}.`);
+      toast.success(`Account created! Welcome to Sealify, ${data.fullName}. Please upload your profile photo in settings.`);
       addAuditLog('User Registered', `New node created for ${data.email}`, 'user');
     } catch (err) {
       toast.error('Signup failed. Please check your connection.');
@@ -467,7 +468,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       sellerId: user?.id || 'usr_guest',
       sellerName: data.sellerName || user?.fullName || 'Verified Seller',
       sellerPhone: user?.phoneNumber || '+234 813 120 8468',
-      sellerAvatar: user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300',
+      sellerAvatar: user?.avatarUrl || '',
       sellerVerified: user?.verified ?? true,
       sellerVerificationType: user?.verificationType || 'individual',
       title: data.title || 'Untitled Listing',
@@ -611,7 +612,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           otherUser: {
             id: receiverId,
             name: receiverUser?.fullName || targetListing?.sellerName || 'Merchant',
-            avatar: receiverUser?.avatarUrl || targetListing?.sellerAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300'
+            avatar: receiverUser?.avatarUrl || targetListing?.sellerAvatar || ''
           },
           lastMessage: content,
           lastMessageTime: newMsg.createdAt,
