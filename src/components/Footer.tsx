@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock, Gavel, Radio, MessageCircle, ExternalLink, PlayCircle } from 'lucide-react';
+import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock, Gavel, Radio, MessageCircle, ExternalLink, HelpCircle } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import EscrowProtectionModal from './EscrowProtectionModal';
 import Logo from './Logo';
@@ -31,7 +31,7 @@ export const Footer: React.FC = () => {
             <h4 className="text-sm font-black text-white uppercase tracking-wider">Marketplace</h4>
             <ul className="space-y-2 text-xs text-slate-400">
               <li><Link to="/" className="hover:text-emerald-400 transition-colors">Browse All Ads</Link></li>
-              <li><Link to="/how-it-works" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1"><PlayCircle className="w-3.5 h-3.5" /> How it Works & Video</Link></li>
+              <li><Link to="/how-it-works" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors flex items-center gap-1"><HelpCircle className="w-3.5 h-3.5" /> How it Works & Guide</Link></li>
               <li><Link to="/vendors" className="hover:text-emerald-400 transition-colors">Verified Merchants Directory</Link></li>
               <li><button onClick={() => setIsEscrowOpen(true)} className="hover:text-teal-400 text-teal-400/90 font-bold transition-colors text-left">Escrow Protection Protocol</button></li>
               <li><Link to="/post-ad" className="hover:text-emerald-400 transition-colors">Post an Ad</Link></li>

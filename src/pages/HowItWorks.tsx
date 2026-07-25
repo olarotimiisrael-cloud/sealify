@@ -3,7 +3,6 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
-import TutorialVideo from '../components/TutorialVideo';
 import { 
   ShieldCheck, 
   Zap, 
@@ -14,12 +13,14 @@ import {
   ArrowRight,
   Sparkles,
   Lock,
-  Download,
   FileText,
   Users,
   Building2,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Search,
+  MessageSquare,
+  Scale
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -86,8 +87,8 @@ Contact Support: support@sealify.ng | +234 813 120 8468
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-16 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SEO 
-        title="How it Works & Platform Tutorial — Sealify Nigeria" 
-        description="Learn how to buy, sell, and trade safely on Ogbomoso's most trusted classifieds marketplace. Watch our AI video guide."
+        title="How it Works & Platform Guide — Sealify Nigeria" 
+        description="Learn how to buy, sell, and trade safely on Ogbomoso's most trusted classifieds marketplace."
       />
       <Navbar />
 
@@ -101,10 +102,10 @@ Contact Support: support@sealify.ng | +234 813 120 8468
           </div>
           <h1 className="text-3xl sm:text-6xl font-black text-white tracking-tighter leading-none">
             Trading in Ogbomoso,<br/>
-            <span className="text-emerald-500">Perfected by AI.</span>
+            <span className="text-emerald-500 font-extrabold">Simple & Secure.</span>
           </h1>
           <p className="text-slate-400 text-xs sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
-            Sealify is more than a marketplace. It's a secure node network connecting verified buyers and sellers with forensic-grade security and smart logistics.
+            Sealify connects verified buyers and sellers with forensic-grade security, safe meetup locations, and smart logistics across Ogbomoso and Oyo State.
           </p>
 
           <div className="pt-2 flex justify-center gap-3">
@@ -138,25 +139,44 @@ Contact Support: support@sealify.ng | +234 813 120 8468
           </div>
         </div>
 
-        {/* AI Video Component with African Presenter */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-3">
-               <div className="p-2.5 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
-                  <Zap className="w-5 h-5" />
-               </div>
-               <div>
-                  <h2 className="text-lg sm:text-xl font-black text-white">Visual Intelligence Briefing</h2>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Presenter Amina • African English</p>
-               </div>
+        {/* Core Pillars Overview */}
+        <section className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-[2.5rem] p-6 sm:p-10 space-y-8 shadow-2xl">
+          <div className="text-center space-y-2 max-w-xl mx-auto">
+            <h2 className="text-2xl sm:text-3xl font-black text-white">How Sealify Works in 3 Easy Steps</h2>
+            <p className="text-xs text-slate-400">Everything you need to buy and sell safely in your neighborhood</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-slate-950 border border-slate-800/80 p-6 rounded-3xl space-y-3 relative">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-black text-base">
+                1
+              </div>
+              <h3 className="font-extrabold text-base text-white">Discover & Post Free</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Browse localized ads by neighborhood zones (Under G, LAUTECH Gate, Takie) or list your items for free with photos, specs, and AI descriptions.
+              </p>
             </div>
-            <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-black text-emerald-400 uppercase tracking-tighter bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-               <span>AUDIO VISUAL ACTIVE</span>
+
+            <div className="bg-slate-950 border border-slate-800/80 p-6 rounded-3xl space-y-3 relative">
+              <div className="w-10 h-10 rounded-2xl bg-teal-500/10 text-teal-400 border border-teal-500/30 flex items-center justify-center font-black text-base">
+                2
+              </div>
+              <h3 className="font-extrabold text-base text-white">Chat & Arrange Meetup</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Send direct messages, propose price offers, and select a verified safe meetup location (such as Ogbomoso Police HQ) directly inside the chat.
+              </p>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800/80 p-6 rounded-3xl space-y-3 relative">
+              <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/30 flex items-center justify-center font-black text-base">
+                3
+              </div>
+              <h3 className="font-extrabold text-base text-white">Inspect & Seal Deal</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Test the item using our physical inspection checklist, complete payment in person, and issue an official digital sales receipt.
+              </p>
             </div>
           </div>
-          
-          <TutorialVideo />
         </section>
 
         {/* Step-by-Step Instructions Grid */}
@@ -170,7 +190,7 @@ Contact Support: support@sealify.ng | +234 813 120 8468
                <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center border border-emerald-500/30 mb-4">
                   <Camera className="w-7 h-7" />
                </div>
-               <h3 className="text-2xl font-black text-white">1. Selling on Sealify</h3>
+               <h3 className="text-2xl font-black text-white">Selling on Sealify</h3>
                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Convert inventory into liquidity</p>
             </div>
 
@@ -206,7 +226,7 @@ Contact Support: support@sealify.ng | +234 813 120 8468
                <div className="w-14 h-14 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center border border-blue-500/30 mb-4">
                   <ShoppingBag className="w-7 h-7" />
                </div>
-               <h3 className="text-2xl font-black text-white">2. Buying with Confidence</h3>
+               <h3 className="text-2xl font-black text-white">Buying with Confidence</h3>
                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Locate, inspect, and acquire items</p>
             </div>
 
