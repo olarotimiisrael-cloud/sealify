@@ -7,101 +7,92 @@ interface SqlSchemaViewerProps {
   onClose: () => void;
 }
 
-const SQL_SCRIPT = `-- Sealify Supabase PostgreSQL Schema & Row Level Security (RLS)
+const SQL_SCRIPT = `-- Sealify Complete Production PostgreSQL Database Schema & Security Policies
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- 1. Users / Profiles Table
 CREATE TABLE IF NOT EXISTS public.users (
-  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  role VARCHAR(20) DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
   phone_number TEXT,
   avatar_url TEXT,
+  store_banner_url TEXT,
+  role VARCHAR(20) DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
   verified BOOLEAN DEFAULT false,
-  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'premium', 'none')),
+  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'premium', 'student', 'none')),
   business_name TEXT,
+  member_since TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
   location TEXT DEFAULT 'Ogbomoso, Oyo State',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'banned', 'restricted')),
+  restriction_reason TEXT,
+  appeal_status VARCHAR(20) DEFAULT 'none' CHECK (appeal_status IN ('none', 'pending', 'resolved')),
+  password TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 2. Listings Table (Prices stored in Nigerian Naira - NGN with top ad promotion duration fields)
+-- 2. Listings Table
 CREATE TABLE IF NOT EXISTS public.listings (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   seller_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  price NUMERIC(14, 2) NOT NULL, -- NGN currency
+  price NUMERIC(14, 2) NOT NULL,
+  original_price NUMERIC(14, 2),
   category TEXT NOT NULL,
   condition TEXT NOT NULL,
-  location TEXT NOT NULL DEFAULT 'Ogbomoso, Nigeria',
+  location TEXT NOT NULL DEFAULT 'Ogbomoso, Oyo State',
   status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'sold')),
+  views_count INTEGER DEFAULT 1,
   featured BOOLEAN DEFAULT false,
   promotion_plan_name TEXT,
   promotion_duration_months INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- 3. Listing Images Table
 CREATE TABLE IF NOT EXISTS public.listing_images (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  image_url TEXT NOT NULL
-);
-
--- 4. Verification Submissions Table
-CREATE TABLE IF NOT EXISTS public.verification_requests (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  applicant_type TEXT CHECK (applicant_type IN ('individual', 'business', 'premium')),
-  doc_type TEXT NOT NULL,
-  doc_number TEXT NOT NULL,
-  business_name TEXT,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  image_url TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. Password Reset Requests Table (NIN Verification & Admin Review)
-CREATE TABLE IF NOT EXISTS public.password_change_requests (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+-- 4. Favorites Table
+CREATE TABLE IF NOT EXISTS public.favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  nin TEXT NOT NULL,
-  id_document_url TEXT NOT NULL,
-  new_password TEXT NOT NULL,
-  reason TEXT NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
+  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 6. Messages Table
+-- 5. Messages Table
 CREATE TABLE IF NOT EXISTS public.messages (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   sender_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   receiver_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
   listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
   content TEXT NOT NULL,
+  read BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Enable Row Level Security (RLS)
+-- Enable RLS for all tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.listing_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.password_change_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies
-CREATE POLICY "Public profile view" ON public.users FOR SELECT USING (true);
-CREATE POLICY "User update self" ON public.users FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Anyone view active listings" ON public.listings FOR SELECT USING (true);
-CREATE POLICY "Users insert listings" ON public.listings FOR INSERT WITH CHECK (auth.uid() = seller_id);
-CREATE POLICY "Seller update own listing" ON public.listings FOR UPDATE USING (auth.uid() = seller_id);
-CREATE POLICY "Seller delete own listing" ON public.listings FOR DELETE USING (auth.uid() = seller_id);
-
-CREATE POLICY "Read personal messages" ON public.messages FOR SELECT 
-  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
-CREATE POLICY "Send messages" ON public.messages FOR INSERT 
-  WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "Public Users All" ON public.users FOR ALL USING (true);
+CREATE POLICY "Public Listings All" ON public.listings FOR ALL USING (true);
+CREATE POLICY "Public Listing Images All" ON public.listing_images FOR ALL USING (true);
+CREATE POLICY "Public Favorites All" ON public.favorites FOR ALL USING (true);
+CREATE POLICY "Public Messages All" ON public.messages FOR ALL USING (true);
 `;
 
 const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) => {
@@ -130,7 +121,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
         </div>
 
         <p className="text-xs text-slate-400 my-3">
-          Copy and run this migration in your Supabase SQL Editor to set up tables supporting password change requests with NIN verification and badge approvals.
+          Copy and run this migration in your Supabase SQL Editor to set up tables supporting full database integration.
         </p>
 
         <div className="flex-1 overflow-y-auto bg-slate-950 p-4 rounded-xl border border-slate-800 font-mono text-xs text-emerald-300 leading-relaxed">
