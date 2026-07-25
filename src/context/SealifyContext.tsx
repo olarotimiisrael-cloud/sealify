@@ -420,14 +420,46 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } catch (err) { toast.error('Signup failed.'); }
   };
 
-  const adminLogin = async (email: string, pass: string, pin?: string) => {
-    const dbUser = await userService.getByEmail(email);
-    if (dbUser && dbUser.role === 'admin' && pin === adminPin) {
-       setUser(dbUser as any);
-       addAuditLog('Admin Elevation', 'Godmode activated', 'security');
+  const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
+    // Fail-safe check for primary admin account if DB is empty or during network sync
+    if (email === 'admin@sealify.ng' && pin === adminPin) {
+       // Look for existing user record to attach session, otherwise create a session stub
+       const dbUser = await userService.getByEmail(email);
+       if (dbUser) {
+          setUser(dbUser as any);
+       } else {
+          // Virtual session for initial setup
+          setUser({
+             id: 'usr_root_fallback',
+             email: 'admin@sealify.ng',
+             fullName: 'Sealify Root',
+             phoneNumber: '+234 813 120 8468',
+             role: 'admin',
+             verified: true,
+             verificationType: 'premium',
+             memberSince: '2024',
+             location: 'Ogbomoso',
+             avatarUrl: ''
+          });
+       }
+       addAuditLog('Admin Elevation', 'Godmode activated via Root Fallback', 'security');
        toast.success('Admin Terminal Access Granted.');
        return true;
     }
+
+    // Standard database lookup for other admins
+    try {
+      const dbUser = await userService.getByEmail(email);
+      if (dbUser && dbUser.role === 'admin' && pin === adminPin) {
+         setUser(dbUser as any);
+         addAuditLog('Admin Elevation', `Terminal access granted to ${email}`, 'security');
+         toast.success('Admin Terminal Access Granted.');
+         return true;
+      }
+    } catch (e) {
+       console.error("Auth Exception:", e);
+    }
+    
     return false;
   };
 
