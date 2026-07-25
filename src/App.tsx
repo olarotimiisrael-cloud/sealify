@@ -18,13 +18,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import Notifications from "./pages/Notifications";
 import SafetyCenter from "./pages/SafetyCenter";
-import VendorsPage from "./pages/VendorsPage";
 import DisputeResolution from "./pages/DisputeResolution";
 import MarketInsights from "./pages/MarketInsights";
 import BuyerRequests from "./pages/BuyerRequests";
 import HowItWorks from "./pages/HowItWorks";
 import EscrowVerifier from "./pages/EscrowVerifier";
 import CommunityBoard from "./pages/CommunityBoard";
+import Wallet from "./pages/Wallet";
+import VendorsPage from "./pages/VendorsPage";
 
 const App = () => (
   <SealifyProvider>
@@ -54,6 +55,7 @@ const App = () => (
         <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/escrow-verify" element={<EscrowVerifier />} />
         <Route path="/community" element={<CommunityBoard />} />
+        <Route path="/wallet" element={<Wallet />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

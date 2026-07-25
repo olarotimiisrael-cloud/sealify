@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest } from '../types/sealify';
+import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest, Wallet, Transaction } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
 import { supabase } from '@/lib/supabase';
@@ -169,6 +169,12 @@ interface SealifyContextType {
   buyerRequests: BuyerRequest[];
   createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void;
   deleteBuyerRequest: (id: string) => void;
+  
+  // Wallet State
+  wallet: Wallet | null;
+  transactions: Transaction[];
+  requestPayout: (amount: number) => Promise<void>;
+  
   loading: boolean;
   error: string | null;
 }
@@ -222,22 +228,40 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR' },
   ]);
 
-  // Check 24-Hour Inactivity Reminder Trigger
-  useEffect(() => {
-    const lastActiveStr = localStorage.getItem('sealify_last_active');
-    const now = Date.now();
-    localStorage.setItem('sealify_last_active', now.toString());
+  // Wallet and Transactions
+  const [wallet, setWallet] = useState<Wallet | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-    if (lastActiveStr) {
-      const lastActive = parseInt(lastActiveStr, 10);
-      const hoursPassed = (now - lastActive) / (1000 * 60 * 60);
-      if (hoursPassed >= 24) {
-        toast.info("Welcome back! New verified deals are available in Ogbomoso today.", {
-          duration: 5000,
-        });
-      }
+  useEffect(() => {
+    if (user) {
+      // Mock wallet initialization
+      setWallet({
+        id: 'wal_1',
+        userId: user.id,
+        balance: user.totalValueTraded || 0,
+        pendingBalance: 25000,
+        totalWithdrawn: 145000,
+        currency: 'NGN',
+        updatedAt: new Date().toISOString()
+      });
+
+      setTransactions([
+        { id: 'tr_1', walletId: 'wal_1', type: 'sale', amount: 45000, status: 'completed', description: 'Sale of iPhone 11 Pro', createdAt: '2 days ago' },
+        { id: 'tr_2', walletId: 'wal_1', type: 'payout', amount: -30000, status: 'completed', description: 'Bank Withdrawal to GTB', createdAt: '5 days ago' },
+        { id: 'tr_3', walletId: 'wal_1', type: 'promotion', amount: -15000, status: 'completed', description: 'Top Ad Boost: Toyota Corolla', createdAt: '1 week ago' }
+      ]);
     }
-  }, []);
+  }, [user]);
+
+  const requestPayout = async (amount: number) => {
+    if (!wallet || amount > wallet.balance) {
+      toast.error('Insufficient funds for payout');
+      return;
+    }
+    setWallet(prev => prev ? { ...prev, balance: prev.balance - amount, totalWithdrawn: prev.totalWithdrawn + amount } : null);
+    setTransactions(prev => [{ id: `tr_${Date.now()}`, walletId: wallet.id, type: 'payout', amount: -amount, status: 'pending', description: 'Requested Withdrawal', createdAt: 'Just now' }, ...prev]);
+    toast.success('Payout request submitted to admin!');
+  };
 
   // Listen to Supabase Auth State Changes
   useEffect(() => {
@@ -648,6 +672,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       buyerRequests, 
       createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), 
       deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
+      
+      // Wallet State & Logic
+      wallet, transactions, requestPayout,
+      
       loading, error: null
     }}>
       {children}

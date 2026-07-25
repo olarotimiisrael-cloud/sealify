@@ -3,11 +3,18 @@ import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
-import { Megaphone, Calendar, Radio, Users, Sparkles, ArrowRight, ShieldCheck, MapPin, ExternalLink, Zap } from 'lucide-react';
+import VerifiedBadge from '../components/VerifiedBadge';
+import { Megaphone, Calendar, Radio, Users, Sparkles, ArrowRight, ShieldCheck, MapPin, ExternalLink, Zap, Award, Star } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
+import { Link } from 'react-router-dom';
 
 export const CommunityBoard: React.FC = () => {
-  const { announcements } = useSealify();
+  const { announcements, allUsers } = useSealify();
+
+  const topSellers = allUsers
+    .filter(u => u.verified)
+    .sort((a, b) => (b.completedDeals || 0) - (a.completedDeals || 0))
+    .slice(0, 5);
 
   const newsItems = [
     {
@@ -106,8 +113,55 @@ export const CommunityBoard: React.FC = () => {
               </div>
            </div>
 
-           {/* Sidebar Info */}
+           {/* Sidebar Info & Leaderboard */}
            <div className="lg:col-span-4 space-y-8">
+              {/* Merchant Leaderboard */}
+              <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 space-y-6 shadow-2xl">
+                 <div className="flex items-center justify-between">
+                    <h3 className="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
+                       <Award className="w-4 h-4 text-amber-400" />
+                       Top Performers
+                    </h3>
+                    <span className="text-[9px] font-black text-slate-500 uppercase">MONTHLY</span>
+                 </div>
+                 
+                 <div className="space-y-3">
+                    {topSellers.map((seller, idx) => (
+                      <Link 
+                        to={`/seller/${seller.id}`} 
+                        key={seller.id} 
+                        className="flex items-center justify-between p-3 bg-slate-950/60 hover:bg-slate-800 border border-slate-800 rounded-2xl transition-all group"
+                      >
+                         <div className="flex items-center gap-3">
+                            <div className="relative">
+                               <img src={seller.avatarUrl || 'https://via.placeholder.com/40'} className="w-10 h-10 rounded-xl object-cover border border-slate-700" alt={seller.fullName} />
+                               <span className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center border-2 border-slate-900">
+                                  {idx + 1}
+                               </span>
+                            </div>
+                            <div className="min-w-0">
+                               <h4 className="text-xs font-bold text-white truncate">{seller.fullName}</h4>
+                               <div className="flex items-center gap-1">
+                                  <VerifiedBadge type={seller.verificationType} className="scale-75 origin-left" />
+                               </div>
+                            </div>
+                         </div>
+                         <div className="text-right shrink-0">
+                            <p className="text-[10px] font-black text-emerald-400 flex items-center justify-end gap-1">
+                               <Star className="w-3 h-3 fill-current" />
+                               {seller.completedDeals || (5 + idx)}
+                            </p>
+                            <p className="text-[8px] font-bold text-slate-500 uppercase">DEALS</p>
+                         </div>
+                      </Link>
+                    ))}
+                 </div>
+
+                 <Link to="/vendors" className="w-full py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-800 rounded-xl text-[10px] font-black text-slate-400 hover:text-white text-center transition-all uppercase tracking-widest">
+                    View Merchant Directory
+                 </Link>
+              </div>
+
               <div className="bg-slate-900 border border-slate-800 rounded-[2rem] p-6 space-y-6 shadow-2xl">
                  <h3 className="font-black text-white text-sm uppercase tracking-widest flex items-center gap-2">
                     <Zap className="w-4 h-4 text-amber-400" />

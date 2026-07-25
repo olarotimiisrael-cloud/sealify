@@ -23,7 +23,9 @@ import {
   Share2,
   Camera,
   LogOut,
-  User
+  User,
+  Wallet as WalletIcon,
+  ChevronRight
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -31,7 +33,7 @@ import { toast } from 'sonner';
 type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 
 const MyAds: React.FC = () => {
-  const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser } = useSealify();
+  const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser, wallet } = useSealify();
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -149,9 +151,22 @@ const MyAds: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto">
+            {/* Wallet Quick Access */}
+            <Link 
+              to="/wallet"
+              className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-all group"
+            >
+              <WalletIcon className="w-4 h-4" />
+              <div className="text-left">
+                <p className="text-[8px] font-black uppercase leading-none opacity-60">Balance</p>
+                <p className="text-sm font-black leading-tight">{formatNGN(wallet?.balance || 0)}</p>
+              </div>
+              <ChevronRight className="w-4 h-4 ml-1 opacity-40 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+
             <button
               onClick={() => setIsSalesReportOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
               <span>Report</span>
@@ -159,7 +174,7 @@ const MyAds: React.FC = () => {
 
             <Link
               to="/settings"
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"
             >
               <Edit3 className="w-4 h-4 text-purple-400" />
               <span>Settings</span>
@@ -167,7 +182,7 @@ const MyAds: React.FC = () => {
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded-xl text-xs border border-rose-500/20 transition-all"
+              className="flex items-center gap-1.5 px-4 py-3 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded-2xl text-xs border border-rose-500/20 transition-all"
             >
               <LogOut className="w-4 h-4" />
               <span>Sign Out</span>
@@ -175,7 +190,7 @@ const MyAds: React.FC = () => {
 
             <Link
               to="/post-ad"
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-lg transition-colors"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Post Ad</span>

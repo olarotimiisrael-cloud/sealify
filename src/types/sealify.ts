@@ -15,6 +15,27 @@ export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'stu
 
 export type UserStatus = 'active' | 'suspended' | 'banned' | 'restricted';
 
+export interface Wallet {
+  id: string;
+  userId: string;
+  balance: number;
+  pendingBalance: number;
+  totalWithdrawn: number;
+  currency: string;
+  updatedAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  walletId: string;
+  type: 'sale' | 'payout' | 'promotion' | 'refund';
+  amount: number;
+  status: 'pending' | 'completed' | 'failed';
+  description: string;
+  reference?: string;
+  createdAt: string;
+}
+
 export interface CategoryStats {
   category: Category;
   avgPrice: number;
