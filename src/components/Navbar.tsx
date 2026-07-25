@@ -30,7 +30,9 @@ import {
   Users,
   PlayCircle,
   ArrowLeft,
-  Wallet
+  Wallet,
+  Newspaper,
+  BadgeCheck
 } from 'lucide-react';
 
 const languages: { code: SupportedLanguage; label: string }[] = [
@@ -120,9 +122,19 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
+            <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span>Vendors</span>
+            </Link>
+
+            <Link to="/community" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-300 hover:text-amber-200 transition-colors mr-1">
+              <Newspaper className="w-4 h-4 text-amber-400" />
+              <span>Community</span>
+            </Link>
+
             <Link to="/how-it-works" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
               <PlayCircle className="w-4 h-4" />
-              <span>How it Works</span>
+              <span>Guide</span>
             </Link>
 
             <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
@@ -201,7 +213,7 @@ const Navbar: React.FC = () => {
                 </button>
 
                 {showUserDropdown && (
-                  <div className="absolute top-full mt-2 right-0 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+                  <div className="absolute top-full mt-2 right-0 w-56 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs space-y-0.5">
                     <Link to="/my-ads" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <Store className="w-4 h-4 text-emerald-400" />
                       <span>{t('my_ads')}</span>
@@ -209,6 +221,14 @@ const Navbar: React.FC = () => {
                     <Link to="/wallet" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <Wallet className="w-4 h-4 text-blue-400" />
                       <span>My Wallet</span>
+                    </Link>
+                    <Link to="/vendors" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
+                      <Building2 className="w-4 h-4 text-amber-400" />
+                      <span>Merchant Directory</span>
+                    </Link>
+                    <Link to="/escrow-verify" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
+                      <BadgeCheck className="w-4 h-4 text-teal-400" />
+                      <span>Verify Escrow Code</span>
                     </Link>
                     <Link to="/settings" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <SettingsIcon className="w-4 h-4 text-purple-400" />
@@ -250,7 +270,7 @@ const Navbar: React.FC = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-4">
+          <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-3 animate-in fade-in slide-in-from-top-4">
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {languages.map(l => (
                   <button key={l.code} onClick={() => { setLanguage(l.code); setIsMobileMenuOpen(false); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 ${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
@@ -258,9 +278,20 @@ const Navbar: React.FC = () => {
                   </button>
                 ))}
              </div>
-            <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold rounded-xl text-center text-xs">
-              How it Works
-            </Link>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                <Building2 className="w-4 h-4" /> Vendors
+              </Link>
+              <Link to="/community" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-teal-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                <Newspaper className="w-4 h-4" /> Community
+              </Link>
+              <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                <PlayCircle className="w-4 h-4" /> Guide
+              </Link>
+              <Link to="/market-insights" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-blue-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                <TrendingUp className="w-4 h-4" /> Insights
+              </Link>
+            </div>
             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
               {t('requests')}
             </Link>
