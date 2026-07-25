@@ -28,7 +28,6 @@ import {
   KeyRound,
   Mail,
   Eye,
-  EyeOff,
   Check,
   ShieldAlert,
   CreditCard,
@@ -45,7 +44,8 @@ import {
   Flag,
   Globe,
   Settings as SettingsIcon,
-  SearchCode
+  SearchCode,
+  Fingerprint
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
@@ -100,7 +100,6 @@ const AdminDashboard: React.FC = () => {
   const [newEmail, setNewEmail] = useState(adminEmail);
   const [newPassword, setNewPassword] = useState(adminPassword);
   const [newPin, setNewPin] = useState(adminPin);
-  const [showPass, setShowPass] = useState(false);
 
   // Site Meta State
   const [metaName, setMetaName] = useState(siteSettings.siteName);
@@ -202,8 +201,8 @@ const AdminDashboard: React.FC = () => {
             { id: 'overview', label: 'System Overview' },
             { id: 'users', label: `Users (${allUsers.length})` },
             { id: 'listings', label: `Ads (${listings.length})` },
-            { id: 'requests', label: 'Queues' },
-            { id: 'disputes', label: 'Mediation' },
+            { id: 'requests', label: `Queues (${pendingVerifications.length + pendingPromotions.length})` },
+            { id: 'disputes', label: `Mediation (${pendingDisputes.length + pendingReports.length})` },
             { id: 'audit', label: 'Audit Log', icon: SearchCode },
             { id: 'security', label: 'Forensics', icon: Siren },
             { id: 'settings', label: 'Site Meta', icon: Globe },
@@ -222,7 +221,7 @@ const AdminDashboard: React.FC = () => {
           ))}
         </div>
 
-        {/* Tab Content Logic */}
+        {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -255,6 +254,185 @@ const AdminDashboard: React.FC = () => {
                   ))}
                 </div>
               </section>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Users Management */}
+        {activeTab === 'users' && (
+          <div className="space-y-4">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center gap-3"><Search className="w-4 h-4 text-slate-500" /><input type="text" placeholder="Search users by name or email..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="bg-transparent border-none text-xs text-white focus:outline-none w-full" /></div>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden divide-y divide-slate-800 shadow-xl">
+              {filteredUsers.map(u => (
+                <div key={u.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <img src={u.avatarUrl || '/logo.png'} className="w-10 h-10 rounded-xl object-cover border border-emerald-500" alt={u.fullName} />
+                    <div><h4 className="font-bold text-xs text-white">{u.fullName}</h4><p className="text-[11px] text-slate-400 font-mono">{u.email} • {u.role}</p></div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setEditingUser(u)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs">Edit</button>
+                    <button onClick={() => { if (window.confirm(`Delete user ${u.fullName}?`)) deleteUser(u.id); }} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Listings Management */}
+        {activeTab === 'listings' && (
+          <div className="space-y-4">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center gap-3"><Search className="w-4 h-4 text-slate-500" /><input type="text" placeholder="Filter listings by title or category..." value={listingSearch} onChange={(e) => setListingSearch(e.target.value)} className="bg-transparent border-none text-xs text-white focus:outline-none w-full" /></div>
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden divide-y divide-slate-800 shadow-xl">
+               {filteredListings.map(item => (
+                 <div key={item.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-800/40">
+                    <div className="flex items-center gap-3"><img src={item.images[0]} className="w-12 h-12 rounded-xl object-cover border border-slate-800" /><div className="min-w-0"><h4 className="font-bold text-xs text-white truncate max-w-xs">{item.title}</h4><p className="text-[11px] text-emerald-400 font-black">₦{item.price.toLocaleString()} • {item.category}</p></div></div>
+                    <button onClick={() => { if(window.confirm('Delete ad?')) deleteListing(item.id); }} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
+                 </div>
+               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Verification & Promotion Queues */}
+        {activeTab === 'requests' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-white text-base flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-amber-400" />
+                  <span>ID & CAC Verification Queue</span>
+                </h3>
+                <span className="text-[10px] font-black bg-slate-950 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/30">{pendingVerifications.length} Pending</span>
+              </div>
+              <div className="space-y-3">
+                {pendingVerifications.length === 0 ? <p className="text-xs text-slate-500 italic p-4 text-center">No pending identity verification requests.</p> : pendingVerifications.map(req => (
+                  <div key={req.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div><p className="font-bold text-xs text-white">{req.userName}</p><p className="text-[10px] text-slate-400 font-mono">{req.userEmail}</p></div>
+                      <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">{req.type}</span>
+                    </div>
+                    <p className="text-[11px] text-slate-300 font-mono">Doc: {req.docType} ({req.docNumber})</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => processVerificationRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1"><Check className="w-4 h-4" /> Approve</button>
+                      <button onClick={() => processVerificationRequest(req.id, 'rejected')} className="flex-1 py-2 bg-rose-600/20 text-rose-400 font-bold rounded-xl text-xs border border-rose-500/30">Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <div className="flex items-center justify-between">
+                <h3 className="font-black text-white text-base flex items-center gap-2">
+                  <CreditCard className="w-5 h-5 text-purple-400" />
+                  <span>Promotions & Payment Proofs</span>
+                </h3>
+                <span className="text-[10px] font-black bg-slate-950 text-purple-400 px-2.5 py-1 rounded-full border border-purple-500/30">{pendingPromotions.length} Pending</span>
+              </div>
+              <div className="space-y-3">
+                {pendingPromotions.length === 0 ? <p className="text-xs text-slate-500 italic p-4 text-center">No pending promotion payment proofs.</p> : pendingPromotions.map(req => (
+                  <div key={req.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div><p className="font-bold text-xs text-white">Ad ID: {req.listingId}</p><p className="text-xs font-black text-emerald-400">₦{req.amount.toLocaleString()} ({req.planName})</p></div>
+                      <span className="text-[9px] font-mono text-slate-500 uppercase">{req.paymentMethod}</span>
+                    </div>
+                    {req.paymentProofUrl && <p className="text-[10px] text-slate-400 truncate font-mono">Proof: {req.paymentProofUrl}</p>}
+                    <div className="flex gap-2">
+                      <button onClick={() => processPromotionPaymentRequest(req.id, 'approved')} className="flex-1 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs flex items-center justify-center gap-1"><Check className="w-4 h-4" /> Approve Boost</button>
+                      <button onClick={() => processPromotionPaymentRequest(req.id, 'rejected')} className="flex-1 py-2 bg-rose-600/20 text-rose-400 font-bold rounded-xl text-xs border border-rose-500/30">Decline</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Disputes & Reports */}
+        {activeTab === 'disputes' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <h3 className="font-black text-white text-base flex items-center gap-2"><Gavel className="w-5 h-5 text-rose-400" /><span>Trade Dispute Claims</span></h3>
+              <div className="space-y-3">
+                {disputeCases.length === 0 ? <p className="text-xs text-slate-500 italic p-4 text-center">No open trade disputes.</p> : disputeCases.map(disp => (
+                  <div key={disp.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div><p className="font-bold text-xs text-white">{disp.itemTitle}</p><p className="text-[10px] text-slate-400">Claim by: {disp.userEmail} vs {disp.counterparty}</p></div>
+                      <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">{disp.status}</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">{disp.details}</p>
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => processDisputeCase(disp.id, 'resolved')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-lg text-xs">Mark Resolved</button>
+                      <button onClick={() => processDisputeCase(disp.id, 'in_review')} className="flex-1 py-1.5 bg-slate-800 text-amber-300 font-bold rounded-lg text-xs">Set In Review</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <h3 className="font-black text-white text-base flex items-center gap-2"><Flag className="w-5 h-5 text-amber-400" /><span>Reported Listings</span></h3>
+              <div className="space-y-3">
+                {pendingReports.length === 0 ? <p className="text-xs text-slate-500 italic p-4 text-center">No reported ads pending review.</p> : pendingReports.map(rep => (
+                  <div key={rep.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                    <div className="flex justify-between items-start">
+                      <p className="font-bold text-xs text-white">{rep.listingTitle}</p>
+                      <span className="text-[9px] font-mono text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">{rep.reason}</span>
+                    </div>
+                    {rep.details && <p className="text-xs text-slate-400">{rep.details}</p>}
+                    <div className="flex gap-2 pt-2">
+                      <button onClick={() => processReport(rep.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-rose-600 text-white font-black rounded-lg text-xs">Remove Ad</button>
+                      <button onClick={() => processReport(rep.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-lg text-xs">Dismiss Report</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Security Intrusion Forensics */}
+        {activeTab === 'security' && (
+          <div className="space-y-4">
+             <div className="flex items-center justify-between"><h3 className="font-black text-white text-base flex items-center gap-2"><Fingerprint className="w-5 h-5 text-rose-500" /><span>Terminal Intrusion Logs</span></h3></div>
+             <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl divide-y divide-slate-800 font-mono text-xs">
+                {intrusionLogs.length === 0 ? <div className="p-8 text-center text-slate-500 italic">No unauthorized terminal intrusions logged.</div> : intrusionLogs.map(log => (
+                  <div key={log.id} className="p-4 space-y-1 hover:bg-slate-800/40">
+                     <div className="flex justify-between items-center"><span className="text-rose-400 font-black">ATTEMPT_EMAIL: {log.attemptedEmail}</span><span className="text-slate-500 text-[10px]">{log.timestamp}</span></div>
+                     <p className="text-[11px] text-slate-400">{log.mediaStatus}</p>
+                  </div>
+                ))}
+             </div>
+          </div>
+        )}
+
+        {/* Tab: Safe Meetup Spots Manager */}
+        {activeTab === 'spots' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-5 bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <h3 className="font-black text-white text-base flex items-center gap-2"><MapPin className="w-5 h-5 text-emerald-400" /><span>Add Verified Safe Spot</span></h3>
+              <form onSubmit={handleAddSafeSpot} className="space-y-3 text-xs">
+                <div className="space-y-1"><label className="font-bold text-slate-400 uppercase">Spot Name</label><input type="text" required value={spotName} onChange={(e) => setSpotName(e.target.value)} placeholder="e.g. Takie Police Station Gate" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none" /></div>
+                <div className="space-y-1"><label className="font-bold text-slate-400 uppercase">Address / Landmark</label><input type="text" required value={spotAddress} onChange={(e) => setSpotAddress(e.target.value)} placeholder="Full street address" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none" /></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1"><label className="font-bold text-slate-400 uppercase">Zone</label><select value={spotZone} onChange={(e) => setSpotZone(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-white"><option value="LAUTECH Area">LAUTECH Area</option><option value="Takie / Center">Takie / Center</option><option value="Sabo Market Zone">Sabo Market Zone</option><option value="Police HQ">Police HQ</option></select></div>
+                  <div className="space-y-1"><label className="font-bold text-slate-400 uppercase">Category</label><select value={spotCategory} onChange={(e) => setSpotCategory(e.target.value as any)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-2 py-2 text-white"><option value="Police Safe Zone">Police Safe Zone</option><option value="Public Library">Public Library</option><option value="Shopping Mall">Shopping Mall</option><option value="Café">Café</option></select></div>
+                </div>
+                <button type="submit" className="w-full py-3 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2">Publish Safe Spot</button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-7 bg-slate-900 border border-slate-800 p-6 rounded-[2.5rem] space-y-4 shadow-xl">
+              <h3 className="font-black text-white text-base">Active Safe Meetup Spots ({safeSpots.length})</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                {safeSpots.map(s => (
+                  <div key={s.id} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div><p className="font-bold text-white">{s.name}</p><p className="text-[10px] text-slate-400">{s.zone} • {s.address}</p></div>
+                    <button onClick={() => deleteSafeSpot(s.id)} className="p-1.5 text-slate-500 hover:text-rose-400"><Trash2 className="w-4 h-4" /></button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -295,39 +473,7 @@ const AdminDashboard: React.FC = () => {
           </section>
         )}
 
-        {/* Tab: Users Management */}
-        {activeTab === 'users' && (
-          <div className="space-y-4">
-            <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center gap-3"><Search className="w-4 h-4 text-slate-500" /><input type="text" placeholder="Search users..." value={userSearch} onChange={(e) => setUserSearch(e.target.value)} className="bg-transparent border-none text-xs text-white focus:outline-none w-full" /></div>
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden divide-y divide-slate-800">
-              {filteredUsers.map(u => (
-                <div key={u.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <img src={u.avatarUrl || '/logo.png'} className="w-10 h-10 rounded-xl object-cover border border-emerald-500" alt={u.fullName} />
-                    <div><h4 className="font-bold text-xs text-white">{u.fullName}</h4><p className="text-[11px] text-slate-400 font-mono">{u.email} • {u.role}</p></div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setEditingUser(u)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs">Edit</button>
-                    <button onClick={() => { if (window.confirm(`Delete user ${u.fullName}?`)) deleteUser(u.id); }} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Other Tabs Simplified for turn length */}
-        {activeTab === 'listings' && (
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden divide-y divide-slate-800">
-             {filteredListings.map(item => (
-               <div key={item.id} className="p-4 flex items-center justify-between gap-4 hover:bg-slate-800/40">
-                  <div className="flex items-center gap-3"><img src={item.images[0]} className="w-12 h-12 rounded-xl object-cover border border-slate-800" /><div className="min-w-0"><h4 className="font-bold text-xs text-white truncate max-w-xs">{item.title}</h4><p className="text-[11px] text-emerald-400 font-black">₦{item.price.toLocaleString()} • {item.category}</p></div></div>
-                  <button onClick={() => { if(window.confirm('Delete ad?')) deleteListing(item.id); }} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
-               </div>
-             ))}
-          </div>
-        )}
-
+        {/* Tab: Broadcast */}
         {activeTab === 'broadcast' && (
           <section className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-2xl max-w-2xl mx-auto space-y-6">
             <div className="flex items-center gap-3"><div className="p-3 bg-purple-500/10 text-purple-400 rounded-2xl border border-purple-500/20"><BellRing className="w-8 h-8" /></div><div><h2 className="text-xl font-black text-white">System Broadcast Dispatcher</h2><p className="text-xs text-slate-400">Push notification to all Node Users</p></div></div>
