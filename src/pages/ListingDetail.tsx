@@ -13,6 +13,7 @@ import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
+import PriceDropAlertModal from '../components/PriceDropAlertModal';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -37,7 +38,9 @@ import {
   Share2,
   Truck,
   CheckSquare,
-  Volume2
+  Volume2,
+  TrendingDown,
+  Bell
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -59,6 +62,7 @@ const ListingDetail: React.FC = () => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [isVoiceTourOpen, setIsVoiceTourOpen] = useState(false);
+  const [isPriceDropOpen, setIsPriceDropOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -172,6 +176,15 @@ const ListingDetail: React.FC = () => {
             >
               <Volume2 className="w-4 h-4 animate-pulse" />
               <span>AI Voice Tour</span>
+            </button>
+
+            <button
+              onClick={() => setIsPriceDropOpen(true)}
+              className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
+              title="Set Target Price Drop Alert"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="hidden sm:inline">Price Watch</span>
             </button>
 
             <button
@@ -415,6 +428,14 @@ const ListingDetail: React.FC = () => {
         isOpen={isVoiceTourOpen}
         onClose={() => setIsVoiceTourOpen(false)}
         listing={listing}
+      />
+
+      <PriceDropAlertModal
+        isOpen={isPriceDropOpen}
+        onClose={() => setIsPriceDropOpen(false)}
+        listingId={listing.id}
+        listingTitle={listing.title}
+        currentPrice={listing.price}
       />
 
       <StorefrontFlycardModal
