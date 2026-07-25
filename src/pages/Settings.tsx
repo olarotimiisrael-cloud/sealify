@@ -1,29 +1,21 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { usePwaInstall } from '../hooks/usePwaInstall';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import SEO from '../components/SEO';
+import PwaInstallButton from '../components/PwaInstallButton';
 import { 
-  Download, 
   ShieldCheck, 
-  Smartphone, 
   Bell, 
   Fingerprint, 
   Camera, 
   Share2, 
-  Check, 
-  User, 
-  Lock,
-  Globe,
-  HelpCircle,
-  ExternalLink
+  User
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Settings: React.FC = () => {
-  const { user, updateUser } = useSealify();
-  const { isInstallable, install } = usePwaInstall();
+  const { user } = useSealify();
   const [biometricEnabled, setBiometricEnabled] = useState(
     localStorage.getItem('sealify_biometric') === 'true'
   );
@@ -83,36 +75,9 @@ const Settings: React.FC = () => {
           <p className="text-xs text-slate-400 mt-1">Manage native device permissions, security locks, and PWA installation</p>
         </div>
 
-        {/* PWA Section */}
-        <section className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2.5rem] space-y-4 shadow-xl">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
-              <Download className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-white">Native App Installation</h2>
-              <p className="text-xs text-slate-400">Install Sealify directly on your Android or iOS home screen</p>
-            </div>
-          </div>
-          
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Installing Sealify gives you fast one-tap launching, instant deal notifications, and full offline resilience across Ogbomosoland.
-          </p>
-
-          {isInstallable ? (
-            <button
-              onClick={install}
-              className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>INSTALL SEALIFY PWA APP NOW</span>
-            </button>
-          ) : (
-            <div className="p-4 bg-slate-950 rounded-2xl text-xs text-slate-400 border border-slate-800 text-center flex items-center justify-center gap-2">
-              <Check className="w-4 h-4 text-emerald-400" />
-              <span>App is installed or active in PWA standalone mode</span>
-            </div>
-          )}
+        {/* PWA Direct Installation Component */}
+        <section>
+          <PwaInstallButton variant="card" />
         </section>
 
         {/* Permissions & Security */}

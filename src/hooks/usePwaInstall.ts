@@ -3,28 +3,68 @@ import { useState, useEffect } from 'react';
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    const handler = (e: any) => {
+    // Check if app is already running in standalone display mode
+    const isStandalone = 
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true;
+
+    if (isStandalone) {
+      setIsInstalled(true);
+    }
+
+    // Detect iOS devices
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const iosDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIos(iosDevice && !isStandalone);
+
+    // Global listener for beforeinstallprompt event
+    const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setIsInstallable(false);
+      setDeferredPrompt(null);
+    };
 
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
-  const install = async () => {
-    if (!deferredPrompt) return;
+  const install = async (): Promise<boolean> => {
+    if (!deferredPrompt) {
+      return false;
+    }
+
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
+    
     if (outcome === 'accepted') {
+      setIsInstalled(true);
       setIsInstallable(false);
+      setDeferredPrompt(null);
+      return true;
     }
-    setDeferredPrompt(null);
+
+    return false;
   };
 
-  return { isInstallable, install };
+  return {
+    isInstallable,
+    isInstalled,
+    isIos,
+    install
+  };
 }

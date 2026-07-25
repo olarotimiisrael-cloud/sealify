@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { usePwaInstall } from '../hooks/usePwaInstall';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import SEO from '../components/SEO';
 import AdminEditUserModal from '../components/AdminEditUserModal';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
+import PwaInstallButton from '../components/PwaInstallButton';
 import { 
   Download, 
   Users, 
@@ -45,7 +45,8 @@ import {
   Globe,
   Settings as SettingsIcon,
   SearchCode,
-  Fingerprint
+  Fingerprint,
+  MessageCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
@@ -84,8 +85,8 @@ const AdminDashboard: React.FC = () => {
     processReport,
     auditLogs
   } = useSealify();
-  
-  const { isInstallable, install } = usePwaInstall();
+
+  const PWA_DEPLOYED_URL = 'https://sealify.pages.dev';
 
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'requests' | 'disputes' | 'security' | 'audit' | 'settings' | 'spots' | 'broadcast' | 'credentials'>('overview');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
@@ -167,6 +168,17 @@ const AdminDashboard: React.FC = () => {
     toast.success('New Verified Safe Meetup Spot added!');
   };
 
+  const handleCopyPwaLink = () => {
+    navigator.clipboard.writeText(PWA_DEPLOYED_URL);
+    toast.success(`Copied PWA Link: ${PWA_DEPLOYED_URL}`);
+  };
+
+  const handleShareToWhatsAppGroup = () => {
+    const text = `📲 Install the Official Sealify App for Ogbomoso & Oyo State!\n\nClick link to open & install directly to your home screen:\n${PWA_DEPLOYED_URL}`;
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans">
       <SEO title="Admin Terminal — Sealify Master Control" />
@@ -234,10 +246,39 @@ const AdminDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <section className="bg-gradient-to-br from-emerald-950/60 to-slate-900 border border-emerald-500/30 p-8 rounded-[2.5rem] space-y-6 shadow-2xl">
-                <div className="flex items-center gap-3"><div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20"><Download className="w-8 h-8" /></div><div><h2 className="text-xl font-black text-white">App Distribution Hub</h2><p className="text-xs text-slate-400">Share Sealify PWA across Ogbomoso</p></div></div>
-                <div className="space-y-3">
-                  {isInstallable && <button onClick={install} className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl transition-transform active:scale-95 text-xs">INSTALL NATIVE PWA</button>}
-                  <button onClick={() => { navigator.clipboard.writeText(window.location.origin); toast.success('Link copied!'); }} className="w-full py-4 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-emerald-400 font-black rounded-2xl flex items-center justify-center gap-2 text-xs transition-colors"><Share2 className="w-4 h-4" /><span>COPY SHAREABLE WHATSAPP LINK</span></button>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-2xl border border-emerald-500/20">
+                    <Download className="w-8 h-8" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-white">App Distribution & PWA Hub</h2>
+                    <p className="text-xs text-slate-400">Share & install Sealify directly at <strong className="text-emerald-400">https://sealify.pages.dev</strong></p>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                  <span className="text-[10px] font-black uppercase text-slate-500">Official PWA URL</span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-emerald-400 font-bold truncate">{PWA_DEPLOYED_URL}</span>
+                    <button
+                      onClick={handleCopyPwaLink}
+                      className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold rounded-xl text-xs shrink-0 border border-slate-800"
+                    >
+                      Copy URL
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <PwaInstallButton variant="compact" className="w-full justify-center py-3.5" />
+                  
+                  <button 
+                    onClick={handleShareToWhatsAppGroup} 
+                    className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl flex items-center justify-center gap-2 text-xs transition-colors shadow-lg"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Share on WhatsApp Group</span>
+                  </button>
                 </div>
               </section>
 
