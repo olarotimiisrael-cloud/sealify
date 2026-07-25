@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -6,34 +6,22 @@ import SEO from '../components/SEO';
 import EditListingModal from '../components/EditListingModal';
 import PromoteModal from '../components/PromoteModal';
 import VerificationModal from '../components/VerificationModal';
-import AdAnalyticsModal from '../components/AdAnalyticsModal';
 import SalesReportModal from '../components/SalesReportModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { Listing } from '../types/sealify';
 import { 
   Trash2, 
-  CheckCircle, 
   PlusCircle, 
   Edit3, 
   Award, 
-  BarChart2, 
   Crown,
   RefreshCw,
   Eye,
   Package,
-  Sparkles,
-  AlertOctagon,
-  Gavel,
-  ShieldAlert,
-  Send,
-  FileText,
   FileSpreadsheet,
-  QrCode,
   Share2,
-  Clock,
-  KeyRound,
-  ShieldCheck,
+  Camera,
   LogOut
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -44,10 +32,10 @@ type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
 const MyAds: React.FC = () => {
   const { user, logout, listings, deleteListing, markAsSold, updateListing, promoteListing, updateUser } = useSealify();
   const navigate = useNavigate();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
-  const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
   const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
@@ -58,6 +46,20 @@ const MyAds: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const newAvatarUrl = event.target.result as string;
+        updateUser(user.id, { avatarUrl: newAvatarUrl });
+        toast.success('🎉 Profile picture updated!');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const filteredAds = myAds.filter((ad) => {
@@ -86,25 +88,40 @@ const MyAds: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
+    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-16 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SEO title="My Ads & Inventory — Sealify" />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         
         {/* Profile & Summary Header Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+        <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <img 
-              src={user?.avatarUrl} 
-              className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-emerald-500 shadow-md shrink-0" 
-              alt="Avatar"
-            />
+          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+            <div className="relative group shrink-0">
+              <img 
+                src={user?.avatarUrl} 
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-2 border-emerald-500 shadow-xl bg-slate-950" 
+                alt="Avatar"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300';
+                }}
+              />
+              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black hover:scale-110 transition-transform"
+                title="Change Profile Picture"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
             <div className="space-y-1">
               <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white">{user?.fullName}</h1>
+                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">{user?.fullName}</h1>
                 {user?.verified ? (
                   <VerifiedBadge type={user.verificationType || 'individual'} showText />
                 ) : (
@@ -117,11 +134,11 @@ const MyAds: React.FC = () => {
                   </button>
                 )}
               </div>
-              <p className="text-xs text-slate-400">{user?.email}</p>
-              <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start">
-                <span>Active Ads: <strong className="text-emerald-400">{activeCount}</strong></span>
-                <span>Sold: <strong className="text-teal-400">{soldCount}</strong></span>
-                <span>Views: <strong className="text-amber-400">{totalImpressions}</strong></span>
+              <p className="text-xs text-slate-400 font-mono">{user?.email}</p>
+              <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start flex-wrap">
+                <span>Active Ads: <strong className="text-emerald-400 font-black">{activeCount}</strong></span>
+                <span>Sold: <strong className="text-teal-400 font-black">{soldCount}</strong></span>
+                <span>Views: <strong className="text-amber-400 font-black">{totalImpressions}</strong></span>
               </div>
             </div>
           </div>
@@ -135,6 +152,14 @@ const MyAds: React.FC = () => {
               <span>Report</span>
             </button>
 
+            <Link
+              to="/settings"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+            >
+              <Edit3 className="w-4 h-4 text-purple-400" />
+              <span>Settings</span>
+            </Link>
+
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-4 py-2.5 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded-xl text-xs border border-rose-500/20 transition-all"
@@ -145,7 +170,7 @@ const MyAds: React.FC = () => {
 
             <Link
               to="/post-ad"
-              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs shadow-lg transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-colors"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Post Ad</span>

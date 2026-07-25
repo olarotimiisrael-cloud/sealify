@@ -19,7 +19,7 @@ import {
   ShieldCheck, Award, Brain, BarChart, Phone, ChevronRight,
   UserPlus, UserMinus, Layers, ExternalLink, Sparkles, TrendingUp,
   ChevronDown, SlidersHorizontal, Grid, PlusCircle, Crown, HelpCircle, Star,
-  Share2, BellRing, MapPin
+  Share2, BellRing, MapPin, Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -116,6 +116,7 @@ export const AdminDashboard: React.FC = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
+  const topHeaderAvatarRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -195,6 +196,20 @@ export const AdminDashboard: React.FC = () => {
     l.category.toLowerCase().includes(listingSearch.toLowerCase()) ||
     l.sellerName.toLowerCase().includes(listingSearch.toLowerCase())
   );
+
+  // Quick top header photo update
+  const handleTopHeaderAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const newUrl = ev.target?.result as string;
+        updateUser(user.id, { avatarUrl: newUrl });
+        toast.success('🎉 Admin profile photo updated!');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Bulk Selection Handlers
   const handleToggleSelectUser = (id: string) => {
@@ -344,12 +359,26 @@ export const AdminDashboard: React.FC = () => {
       <div className="bg-slate-900/50 border-b border-slate-800/80 backdrop-blur-xl sticky top-[64px] z-30">
         <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden shrink-0">
-              <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-lg flex items-center justify-center border-2 border-slate-900 z-20">
-                <ShieldCheck className="w-3 h-3" />
+            
+            {/* Top Admin Profile Avatar with Instant Upload */}
+            <div className="relative group shrink-0">
+              <div className="w-14 h-14 bg-slate-950 border-2 border-emerald-500/50 rounded-2xl p-0.5 relative shadow-2xl overflow-hidden">
+                <img src={user.avatarUrl} className="w-full h-full object-cover rounded-xl" alt="Root" />
+                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 text-slate-950 rounded-lg flex items-center justify-center border-2 border-slate-900 z-20">
+                  <ShieldCheck className="w-3 h-3" />
+                </div>
               </div>
+              <input type="file" ref={topHeaderAvatarRef} onChange={handleTopHeaderAvatarUpload} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => topHeaderAvatarRef.current?.click()}
+                className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center text-emerald-400 transition-opacity"
+                title="Click to Change Photo"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
             </div>
+
             <div>
               <h1 className="text-xl font-black text-white tracking-tighter uppercase flex items-center gap-2">
                 {user.fullName} Admin Panel
@@ -1443,7 +1472,7 @@ export const AdminDashboard: React.FC = () => {
                 <div className="absolute bottom-3 left-4 flex items-center gap-3">
                   <div className="relative">
                     <img src={adminAvatar || user.avatarUrl} className="w-16 h-16 rounded-xl object-cover border-2 border-emerald-500 bg-slate-900 shadow-xl" />
-                    <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 text-slate-950 rounded-lg shadow">
+                    <button type="button" onClick={() => avatarInputRef.current?.click()} className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 text-slate-950 rounded-lg shadow" title="Upload Admin Photo">
                       <Camera className="w-3 h-3" />
                     </button>
                   </div>
