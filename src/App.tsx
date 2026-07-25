@@ -23,6 +23,8 @@ import DisputeResolution from "./pages/DisputeResolution";
 import MarketInsights from "./pages/MarketInsights";
 import BuyerRequests from "./pages/BuyerRequests";
 import HowItWorks from "./pages/HowItWorks";
+import EscrowVerifier from "./pages/EscrowVerifier";
+import CommunityBoard from "./pages/CommunityBoard";
 
 const App = () => (
   <SealifyProvider>
@@ -50,6 +52,8 @@ const App = () => (
         <Route path="/market-insights" element={<MarketInsights />} />
         <Route path="/requests" element={<BuyerRequests />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/escrow-verify" element={<EscrowVerifier />} />
+        <Route path="/community" element={<CommunityBoard />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
