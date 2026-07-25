@@ -4,7 +4,7 @@ import { useSealify } from '../context/SealifyContext';
 import { 
   X, Check, Edit3, User, Mail, Phone, MapPin, Building2, 
   Shield, Award, Image as ImageIcon, AlertOctagon, Info, Lock, KeyRound, 
-  Package, Trash2, ExternalLink, Camera, Upload, CheckCircle2 
+  Package, Trash2, ExternalLink, Camera, Upload, CheckCircle2, ShieldAlert, Ban, AlertTriangle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -95,6 +95,18 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
 
     toast.success(`User record for "${fullName}" updated!`);
     onClose();
+  };
+
+  const handleDeleteAdForSafetyViolation = (ad: Listing) => {
+    const reason = window.prompt(
+      `PUBLIC SAFETY MODERATION:\nEnter reason for dropping "${ad.title}" (e.g., Hard drug sales, illegal weapons, counterfeit, scam):`,
+      'Public Safety Violation: Illegal / Contraband Item'
+    );
+
+    if (reason !== null) {
+      deleteListing(ad.id);
+      toast.error(`🚨 Listing "${ad.title}" DROPPED! Reason: ${reason}`);
+    }
   };
 
   const handleDeleteAllUserAds = () => {
@@ -334,46 +346,12 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
             </div>
           </div>
 
-          {/* Photo File Upload Box */}
-          <div className="space-y-1.5">
-            <label className="font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1">
-              <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
-              <span>User Profile Photo Upload</span>
-            </label>
-            <input
-              type="file"
-              ref={avatarFileRef}
-              onChange={handleFileUpload}
-              accept="image/*"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => avatarFileRef.current?.click()}
-              className={`w-full py-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 ${
-                avatarUrl ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
-              }`}
-            >
-              {avatarUrl ? (
-                <>
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                  <span className="text-[10px] font-bold text-emerald-400 uppercase">Profile Photo Selected — Click to Change</span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-6 h-6 text-slate-500" />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">Click to Select Photo File From Device</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* User's Posted Classified Ads Section */}
-          <div className="p-4 bg-slate-950 border border-teal-500/30 rounded-2xl space-y-3 pt-3">
+          {/* User's Posted Classified Ads & Public Safety Drop Controls */}
+          <div className="p-4 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-3 pt-3">
              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-teal-400 font-extrabold uppercase tracking-widest">
-                   <Package className="w-4 h-4" />
-                   <span>Ads Posted by User ({userAds.length})</span>
+                <div className="flex items-center gap-2 text-rose-400 font-extrabold uppercase tracking-widest">
+                   <ShieldAlert className="w-4 h-4" />
+                   <span>User Posted Listings ({userAds.length})</span>
                 </div>
                 {userAds.length > 0 && (
                    <button
@@ -389,11 +367,11 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
              {userAds.length === 0 ? (
                 <p className="text-slate-500 text-[11px] italic py-2">No classified ads posted by this user yet.</p>
              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 no-scrollbar">
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1 no-scrollbar">
                    {userAds.map((ad) => (
                       <div key={ad.id} className="p-2.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
                          <div className="flex items-center gap-2.5 min-w-0">
-                            <img src={ad.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-800 shrink-0" />
+                            <img src={ad.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover border border-slate-800 shrink-0 bg-slate-950" />
                             <div className="min-w-0">
                                <p className="font-bold text-white truncate text-xs">{ad.title}</p>
                                <p className="text-[10px] text-emerald-400 font-extrabold">₦{ad.price.toLocaleString()} • {ad.category}</p>
@@ -410,13 +388,15 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
                             >
                                <ExternalLink className="w-3.5 h-3.5" />
                             </a>
+
                             <button
                               type="button"
-                              onClick={() => deleteListing(ad.id)}
-                              className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
-                              title="Delete this ad"
+                              onClick={() => handleDeleteAdForSafetyViolation(ad)}
+                              className="px-2 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 border border-rose-500/30 transition-all"
+                              title="Drop for Public Safety Violation (Drugs/Weapons/Scam)"
                             >
-                               <Trash2 className="w-3.5 h-3.5" />
+                               <Ban className="w-3 h-3 text-rose-400" />
+                               <span>Drop Ad</span>
                             </button>
                          </div>
                       </div>
