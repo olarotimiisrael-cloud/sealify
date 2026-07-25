@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -34,7 +34,12 @@ import {
   SearchCode,
   Fingerprint,
   MessageCircle,
-  Lock
+  Lock,
+  User,
+  Camera,
+  Layout,
+  FileText,
+  Save
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, Listing, SafeMeetupSpotConfig } from '../types/sealify';
@@ -76,7 +81,7 @@ const AdminDashboard: React.FC = () => {
 
   const PWA_DEPLOYED_URL = 'https://sealify.pages.dev';
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'listings' | 'requests' | 'disputes' | 'security' | 'audit' | 'settings' | 'spots' | 'broadcast' | 'credentials'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'users' | 'listings' | 'requests' | 'disputes' | 'security' | 'audit' | 'settings' | 'spots' | 'broadcast' | 'credentials'>('overview');
   const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   
@@ -102,6 +107,29 @@ const AdminDashboard: React.FC = () => {
   const [spotAddress, setSpotAddress] = useState('');
   const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('LAUTECH Area');
   const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
+
+  // Admin Profile Form State
+  const [adminFullName, setAdminFullName] = useState(user?.fullName || '');
+  const [adminPhone, setAdminPhone] = useState(user?.phoneNumber || '');
+  const [adminLocation, setAdminLocation] = useState(user?.location || '');
+  const [adminBio, setAdminBio] = useState(user?.bio || '');
+  const [adminAvatarUrl, setAdminAvatarUrl] = useState(user?.avatarUrl || '');
+  const [adminStoreBannerUrl, setAdminStoreBannerUrl] = useState(user?.storeBannerUrl || '');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const adminAvatarInputRef = useRef<HTMLInputElement>(null);
+  const adminBannerInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (user && user.role === 'admin') {
+      setAdminFullName(user.fullName || '');
+      setAdminPhone(user.phoneNumber || '');
+      setAdminLocation(user.location || '');
+      setAdminBio(user.bio || '');
+      setAdminAvatarUrl(user.avatarUrl || '');
+      setAdminStoreBannerUrl(user.storeBannerUrl || '');
+    }
+  }, [user]);
 
   // Hardened Route Guard: If not an authenticated Admin with verified token signature
   if (!isAdmin) {
@@ -183,6 +211,57 @@ const AdminDashboard: React.FC = () => {
     window.open(waUrl, '_blank');
   };
 
+  const handleAdminAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setAdminAvatarUrl(event.target.result as string);
+        toast.success('New admin avatar loaded. Click "Save Profile Changes" below to apply.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAdminBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setAdminStoreBannerUrl(event.target.result as string);
+        toast.success('New admin banner loaded. Click "Save Profile Changes" below to apply.');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSaveAdminProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminFullName.trim()) {
+      toast.error('Admin Full Name cannot be empty');
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      await updateUser(user.id, {
+        fullName: adminFullName.trim(),
+        phoneNumber: adminPhone.trim(),
+        location: adminLocation.trim(),
+        bio: adminBio.trim(),
+        avatarUrl: adminAvatarUrl.trim(),
+        storeBannerUrl: adminStoreBannerUrl.trim(),
+      });
+      setIsSavingProfile(false);
+      toast.success('🎉 Admin Profile updated successfully!');
+    } catch (err) {
+      setIsSavingProfile(false);
+      toast.error('Failed to update Admin Profile.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans">
       <SEO title="Admin Terminal — Sealify Master Control" />
@@ -216,6 +295,7 @@ const AdminDashboard: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar border-b border-slate-800 pb-3">
           {[
             { id: 'overview', label: 'System Overview' },
+            { id: 'profile', label: 'Admin Profile', icon: User },
             { id: 'users', label: `Users (${allUsers.length})` },
             { id: 'listings', label: `Ads (${listings.length})` },
             { id: 'requests', label: `Queues (${pendingVerifications.length + pendingPromotions.length})` },
@@ -304,6 +384,148 @@ const AdminDashboard: React.FC = () => {
           </div>
         )}
 
+        {/* Tab: Admin Profile */}
+        {activeTab === 'profile' && (
+          <form onSubmit={handleSaveAdminProfile} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl space-y-6 max-w-3xl mx-auto">
+            {/* Cover Photo Header Manager */}
+            <div className="relative h-44 sm:h-56 bg-slate-950 overflow-hidden flex items-center justify-center group">
+              {adminStoreBannerUrl ? (
+                <img
+                  src={adminStoreBannerUrl}
+                  alt="Admin Cover Banner"
+                  className="w-full h-full object-cover opacity-80"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-2 text-slate-600 font-bold uppercase text-xs">
+                  <Layout className="w-5 h-5" />
+                  <span>Upload Admin Cover Photo</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent"></div>
+
+              <input type="file" ref={adminBannerInputRef} onChange={handleAdminBannerUpload} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => adminBannerInputRef.current?.click()}
+                className="absolute top-4 right-4 px-4 py-2.5 bg-slate-950/80 backdrop-blur-md text-emerald-400 hover:text-white rounded-2xl text-xs font-bold border border-slate-800 flex items-center gap-2 shadow-xl hover:scale-105 transition-all"
+              >
+                <Camera className="w-4 h-4" />
+                <span>{adminStoreBannerUrl ? 'Change Cover Photo' : 'Upload Cover Photo'}</span>
+              </button>
+            </div>
+
+            {/* Avatar & Profile Information Fields */}
+            <div className="px-6 sm:px-8 -mt-16 sm:-mt-20 relative z-10 space-y-6 pb-8">
+              {/* Avatar Row */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 text-center sm:text-left">
+                <div className="relative group shrink-0">
+                  {adminAvatarUrl ? (
+                    <img
+                      src={adminAvatarUrl}
+                      alt={adminFullName}
+                      className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
+                    />
+                  ) : (
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
+                      <User className="w-10 h-10" />
+                    </div>
+                  )}
+                  <input type="file" ref={adminAvatarInputRef} onChange={handleAdminAvatarUpload} accept="image/*" className="hidden" />
+                  <button
+                    type="button"
+                    onClick={() => adminAvatarInputRef.current?.click()}
+                    className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black hover:scale-110 transition-transform"
+                    title="Upload Profile Picture"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-1 mb-1">
+                  <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                    <h3 className="text-xl font-black text-white">{adminFullName || 'Admin Name'}</h3>
+                    <VerifiedBadge type="premium" showText />
+                  </div>
+                  <p className="text-xs text-slate-400 font-mono">{user.email}</p>
+                </div>
+              </div>
+
+              {/* Profile Input Fields */}
+              <div className="space-y-4 pt-4 border-t border-slate-800 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <User className="w-4 h-4 text-emerald-400" />
+                      <span>Admin Full Name *</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={adminFullName}
+                      onChange={(e) => setAdminFullName(e.target.value)}
+                      placeholder="e.g. Israel Ogunpade"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                      <Phone className="w-4 h-4 text-emerald-400" />
+                      <span>Official Phone Number *</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      value={adminPhone}
+                      onChange={(e) => setAdminPhone(e.target.value)}
+                      placeholder="+234 813 120 8468"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-emerald-400" />
+                    <span>Admin Node Location *</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={adminLocation}
+                    onChange={(e) => setAdminLocation(e.target.value)}
+                    placeholder="Ogbomoso, Oyo State"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-emerald-500 font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4 text-emerald-400" />
+                    <span>Admin Bio / Storefront Description</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={adminBio}
+                    onChange={(e) => setAdminBio(e.target.value)}
+                    placeholder="Describe the official node operations, support hours, or verification guidelines..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingProfile ? 'Saving Changes...' : 'Save Admin Profile Changes'}</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
         {/* Tab: Users Management */}
         {activeTab === 'users' && (
           <div className="space-y-4">
@@ -316,7 +538,7 @@ const AdminDashboard: React.FC = () => {
                     <div><h4 className="font-bold text-xs text-white">{u.fullName}</h4><p className="text-[11px] text-slate-400 font-mono">{u.email} • {u.role}</p></div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button onClick={() => setEditingUser(u)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-bold rounded-xl text-xs">Edit</button>
+                    <button onClick={() => setEditingUser(u)} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs">Edit</button>
                     <button onClick={() => { if (window.confirm(`Delete user ${u.fullName}?`)) deleteUser(u.id); }} className="p-1.5 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </div>
