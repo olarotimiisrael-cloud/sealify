@@ -53,7 +53,8 @@ export const AdminDashboard: React.FC = () => {
     disputeCases, processDisputeCase, intrusionLogs,
     systemConfig, updateSystemConfig, siteSettings, updateSiteSettings,
     adminPin, updateAdminPin, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
-    reports, processReport, buyerRequests, deleteBuyerRequest, reviews, deleteReview
+    reports, processReport, buyerRequests, deleteBuyerRequest, reviews, deleteReview,
+    loading // <-- add loading from context
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<AdminTab>('analytics');
@@ -141,6 +142,20 @@ export const AdminDashboard: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // If still loading, show loading indicator
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col items-center justify-center pt-20">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 border-2 border-emerald-500 rounded-full flex items-center justify-center animate-spin">
+            <ShieldCheck className="w-6 h-6 text-emerald-400" />
+          </div>
+          <p className="text-xl font-black text-white">Loading Admin Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin || !user) return null;
 
@@ -478,7 +493,7 @@ export const AdminDashboard: React.FC = () => {
                       })}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
@@ -526,7 +541,7 @@ export const AdminDashboard: React.FC = () => {
                         <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                         <span className="font-bold text-white">{s.user}</span>
                         <span className="text-slate-400">{s.action}</span>
-                      </div>
+                      </span>
                       <span className="text-[10px] text-slate-500 font-mono">{s.time}</span>
                     </div>
                   ))}
@@ -573,9 +588,8 @@ export const AdminDashboard: React.FC = () => {
                         Update Plan
                       </button>
                     </div>
-                  ))}
+                  )}
                 </div>
-              </div>
 
               {/* Payment Proofs Queue */}
               <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
@@ -682,7 +696,7 @@ export const AdminDashboard: React.FC = () => {
                     </button>
                   </div>
                 </div>
-              )}
+              })
               
               <div className="overflow-x-auto">
                 <table className="w-full text-xs text-left">
@@ -915,7 +929,7 @@ export const AdminDashboard: React.FC = () => {
                              </div>
                              <div className="bg-slate-950 p-2 rounded-xl border border-slate-800">
                                <p className="font-bold uppercase text-slate-600">Doc ID / RC</p>
-                               <p className="text-white mt-0.5 font-mono">{req.docNumber}</p>
+                               <p className="text-white mt-0.5 font-mono>{req.docNumber}</p>
                              </div>
                           </div>
 
@@ -936,7 +950,7 @@ export const AdminDashboard: React.FC = () => {
                       <KeyRound className="w-4 h-4 text-amber-400" />
                       Secure Reset Queue (NIN)
                     </h3>
-                    <span className="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full">{pendingPasswords.length} Pending</span>
+                    <span className="text-[10px] font-bold bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full>{pendingPasswords.length} Pending</span>
                   </div>
                   <div className="divide-y divide-slate-800">
                     {pendingPasswords.length === 0 ? (
@@ -1040,7 +1054,7 @@ export const AdminDashboard: React.FC = () => {
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
 
@@ -1064,9 +1078,10 @@ export const AdminDashboard: React.FC = () => {
                             <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${c.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>{c.status}</span>
                           </div>
                           <p className="text-slate-400">Claim by <strong className="text-slate-200">{c.userEmail}</strong> against <strong className="text-slate-200">{c.counterparty}</strong></p>
+                          <p className="text-slate-400">Claim by <strong className="text-slate-200">{c.userEmail}</strong> against <strong className="text-slate-200">{c.counterparty}</strong></p>
                           <p className="text-[11px] text-slate-300 italic bg-slate-900 p-2.5 rounded-xl border border-slate-800">"{c.details}"</p>
                           {c.status !== 'resolved' && (
-                            <div className="pt-2 flex gap-2">
+                            <div className="pt-2 flex gap-2>
                               <button onClick={() => processDisputeCase(c.id, 'resolved')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] uppercase">Resolve Claim</button>
                               <button onClick={() => processDisputeCase(c.id, 'in_review')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Mark In Review</button>
                             </div>
@@ -1074,11 +1089,10 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
 
                 {/* Reported Ads */}
-                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y=4 shadow-xl">
                   <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4" />
                     Flagged Ad Reports ({pendingReports.length})
@@ -1089,15 +1103,15 @@ export const AdminDashboard: React.FC = () => {
                   ) : (
                     <div className="space-y-3">
                       {reports.map((r) => (
-                        <div key={r.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                        <div key={r.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs>
                           <div className="flex justify-between items-start">
                             <p className="font-bold text-white">{r.listingTitle}</p>
                             <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${r.status === 'resolved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>{r.status}</span>
                           </div>
                           <p className="text-amber-400 font-semibold">Reason: {r.reason}</p>
-                          {r.details && <p className="text-slate-400 text-[11px]">{r.details}</p>}
+                          {r.details && <p className="text-slate-400 text-[11px]>{r.details}</p>}
                           {r.status === 'pending' && (
-                            <div className="pt-2 flex gap-2">
+                            <div className="pt-2 flex gap-2>
                               <button onClick={() => processReport(r.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-rose-600 text-white font-black rounded-xl text-[10px] uppercase">Delete Ad & Resolve</button>
                               <button onClick={() => processReport(r.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-slate-300 font-bold rounded-xl text-[10px] uppercase border border-slate-700">Dismiss Flag</button>
                             </div>
@@ -1105,9 +1119,9 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
+                  </div>
 
+                </div>
               </div>
             </div>
           )}
@@ -1158,12 +1172,12 @@ export const AdminDashboard: React.FC = () => {
                   {categories.map((cat) => (
                     <div key={cat.id} className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="font-extrabold text-xs text-white truncate">{cat.name}</p>
+                        <p className="font-extrabod text-xs text-white truncate">{cat.name}</p>
                         <p className="text-[10px] text-slate-500">Icon: {cat.iconName}</p>
                       </div>
                       <button onClick={() => deleteCategory(cat.id)} className="p-1.5 bg-slate-900 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded-lg">
                         <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -1184,7 +1198,7 @@ export const AdminDashboard: React.FC = () => {
               ) : (
                 <div className="space-y-3">
                   {intrusionLogs.map((log) => (
-                    <div key={log.id} className="p-4 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-2 text-xs">
+                    <div key={log.id} className="p-4 bg-slate-950 border border-rose-500/30 rounded-2xl space-y-2 text-xs>
                       <div className="flex justify-between items-start">
                         <span className="font-mono text-rose-400 font-bold">{log.attemptedEmail}</span>
                         <span className="text-[10px] text-slate-500 font-mono">{log.timestamp}</span>
@@ -1210,12 +1224,12 @@ export const AdminDashboard: React.FC = () => {
               ) : (
                 <div className="space-y-2">
                   {auditLogs.map((log) => (
-                    <div key={log.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                    <div key={log.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs>
                       <div>
                         <p className="font-bold text-white">{log.action}</p>
-                        <p className="text-slate-400 text-[11px]">{log.details}</p>
+                        <p className="text-slate-400 text-[11px]>{log.details}</p>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">{log.createdAt}</span>
+                      <span className="text-[10px] text-slate-500 font-mono>{log.createdAt}</span>
                     </div>
                   ))}
                 </div>
@@ -1404,7 +1418,7 @@ export const AdminDashboard: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="p-3.5 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div className="p-3.5 bg-slate-950 border border-slice-800 rounded-2xl flex items-center justify-between">
                       <div>
                         <p className="font-bold text-white">AI Anti-Spam Filtering</p>
                         <p className="text-[11px] text-slate-500">Automated fraud detection on listings</p>
@@ -1448,15 +1462,14 @@ export const AdminDashboard: React.FC = () => {
                   {/* Active Announcements List */}
                   <div className="space-y-2 pt-2 border-t border-slate-800">
                     {announcements.map((a) => (
-                      <div key={a.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                      <div key={a.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs>
                         <div className="min-w-0 flex-1 mr-2">
                           <p className="font-bold text-white truncate">{a.title}</p>
                           <p className="text-[10px] text-slate-400 truncate">{a.message}</p>
                         </div>
                         <button onClick={() => deleteAnnouncement(a.id)} className="p-1.5 text-rose-400 hover:bg-rose-500/20 rounded-lg">
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
+                        </div>
                     ))}
                   </div>
                 </div>
@@ -1467,7 +1480,7 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Module 11: Master Profile & Superuser Identity Customizer */}
           {activeTab === 'superuser' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y-6 shadow-2xl animate-in fade-in duration-300">
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-2xl mx-auto space-y=6 shadow-2xl animate-in fade-in duration-300">
               <div className="text-center space-y-1">
                 <div className="w-14 h-14 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
                   <Fingerprint className="w-7 h-7" />
@@ -1502,7 +1515,7 @@ export const AdminDashboard: React.FC = () => {
                     </button>
                   </div>
                   <div>
-                    <h4 className="font-extrabold text-sm text-white">{adminFullName || user.fullName}</h4>
+                    <h4 className="font-extrabod text-sm text-white">{adminFullName || user.fullName}</h4>
                     <span className="text-[10px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
                       {adminBadge} Badge
                     </span>
@@ -1519,29 +1532,29 @@ export const AdminDashboard: React.FC = () => {
 
                   <div className="space-y-1">
                     <label className="font-bold text-slate-300 uppercase">Business / Store Name</label>
-                    <input type="text" value={adminBusinessName} onChange={(e) => setAdminBusinessName(e.target.value)} placeholder="e.g. Sealify Global Executive" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                    <input type="text" value={adminBusinessName} onChange={(e) => setAdminBusinessName(e.target.value)} placeholder="e.g. Sealify Global Executive" className="w-full bg-slate-950 border border-slice-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Login Email ID *</label>
-                    <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono" />
+                    <label className="font-bold text-slice-300 uppercase">Login Email ID *</label>
+                    <input type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="w-full bg-slice-950 border border-slice-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono" />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Contact Phone Number</label>
-                    <input type="tel" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
+                    <label className="font-bold text-slice-300 uppercase">Contact Phone Number</label>
+                    <input type="tel" value={adminPhone} onChange={(e) => setAdminPhone(e.target.value)} className="w-full bg-slice-950 border border-slice-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Verification Badge Tier</label>
+                    <label className="font-bold text-slice-300 uppercase">Verification Badge Tier</label>
                     <select
                       value={adminBadge}
                       onChange={(e) => setAdminBadge(e.target.value as VerificationBadgeType)}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 capitalize"
+                      className="w-full bg-slice-950 border border-slice-800 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-emerald-500 capitalize"
                     >
                       <option value="premium">Premium Verified (Top Vendor)</option>
                       <option value="business">Verified Business (CAC)</option>
@@ -1551,23 +1564,23 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Account Login Password</label>
+                    <label className="font-bold text-slice-300 uppercase">Account Login Password</label>
                     <input
                       type="text"
                       value={adminPassword}
                       onChange={(e) => setAdminPassword(e.target.value)}
                       placeholder="Overwrite current password..."
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
+                      className="w-full bg-slice-950 border border-slice-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Profile Avatar Photo (Device Upload)</label>
+                    <label className="font-bold text-slice-300 uppercase">Profile Avatar Photo (Device Upload)</label>
                     <div className="flex gap-2">
                       <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
-                      <button type="button" onClick={() => avatarInputRef.current?.click()} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2">
+                      <button type="button" onClick={() => avatarInputRef.current?.click()} className="w-full py-2.5 bg-slice-800 hover:bg-slice-700 text-emerald-400 border border-slice-700 rounded-xl font-bold flex items-center justify-center gap-2">
                         <Upload className="w-4 h-4" />
                         <span>Upload Avatar File</span>
                       </button>
@@ -1575,10 +1588,10 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="font-bold text-slate-300 uppercase">Cover Banner (Device Upload)</label>
+                    <label className="font-bold text-slice-300 uppercase">Cover Banner (Device Upload)</label>
                     <div className="flex gap-2">
                       <input type="file" ref={bannerInputRef} onChange={handleBannerUpload} accept="image/*" className="hidden" />
-                      <button type="button" onClick={() => bannerInputRef.current?.click()} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-xl font-bold flex items-center justify-center gap-2">
+                      <button type="button" onClick={() => bannerInputRef.current?.click()} className="w-full py-2.5 bg-slice-800 hover:bg-slice-700 text-emerald-400 border border-slice-700 rounded-xl font-bold flex items-center justify-center gap-2">
                         <Upload className="w-4 h-4" />
                         <span>Upload Cover Banner</span>
                       </button>
@@ -1586,15 +1599,15 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="space-y-1 pt-3 border-t border-slate-800">
-                  <label className="font-bold text-amber-400 uppercase flex items-center gap-1.5">
+                <div className="space-y-1 pt-3 border-t border-slice-800">
+                  <label className="font-bold text-slice-300 uppercase flex items-center gap-1.5">
                     <KeyRound className="w-3.5 h-3.5" />
                     <span>Change Master Security PIN (6-Digit)</span>
                   </label>
-                  <input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Enter new security PIN..." maxLength={6} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" />
+                  <input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Enter new security PIN..." maxLength={6} className="w-full bg-slice-950 border border-slice-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-amber-500 font-mono tracking-widest" />
                 </div>
 
-                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-xl transition-all hover:scale-[1.01]">
+                <button type="submit" className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slice-950 font-black rounded-2xl text-xs shadow-xl transition-all hover:scale-[1.01]">
                   Save Root Credentials & Profile Details
                 </button>
               </form>
@@ -1603,24 +1616,24 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Module 12: Buyer Requests Board Moderation */}
           {activeTab === 'buyer_requests' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl animate-in fade-in duration-300">
+            <div className="bg-slate-900 border border-slice-800 rounded-3xl p-6 space-y-4 shadow-xl animate-in fade-in duration-300">
               <h3 className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
                 <HelpCircle className="w-4 h-4" />
                 Community Buyer Want Board Requests ({buyerRequests.length})
               </h3>
 
               {buyerRequests.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-xs italic">No buyer requests on board.</div>
+                <div className="py-12 text-center text-slice-500 text-xs italic">No buyer requests on board.</div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {buyerRequests.map((req) => (
-                    <div key={req.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                    <div key={req.id} className="p-4 bg-slice-950 border border-slice-800 rounded-2xl space-y-2 text-xs>
                       <div className="flex justify-between items-start">
                         <p className="font-bold text-white">{req.title}</p>
                         <span className="text-[10px] text-emerald-400 font-black">Max: ₦{req.maxBudget.toLocaleString()}</span>
                       </div>
-                      <p className="text-slate-400 leading-relaxed">{req.description}</p>
-                      <div className="pt-2 flex justify-between items-center border-t border-slate-900 text-[10px] text-slate-500">
+                      <p className="text-slice-400 leading-relaxed">{req.description}</p>
+                      <div className="pt-2 flex justify-between items-center border-t border-slice-900 text-[10px] text-slice-500">
                         <span>Posted by {req.userName}</span>
                         <button onClick={() => deleteBuyerRequest(req.id)} className="text-rose-400 font-bold hover:underline">Delete Request</button>
                       </div>
@@ -1633,23 +1646,23 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Module 13: Seller Reviews Audit */}
           {activeTab === 'reviews' && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl animate-in fade-in duration-300">
+            <div className="bg-slice-900 border border-slice-800 rounded-3xl p-6 space-y-4 shadow-xl animate-in fade-in duration-300">
               <h3 className="text-xs font-black uppercase tracking-widest text-yellow-400 flex items-center gap-2">
                 <Star className="w-4 h-4" />
                 Seller Feedback & Reviews Audit ({reviews.length})
               </h3>
 
               {reviews.length === 0 ? (
-                <div className="py-12 text-center text-slate-500 text-xs italic">No buyer reviews submitted.</div>
+                <div className="py-12 text-center text-slice-500 text-xs italic">No buyer reviews submitted.</div>
               ) : (
                 <div className="space-y-3">
                   {reviews.map((rev) => (
-                    <div key={rev.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                    <div key={rev.id} className="p-4 bg-slice-950 border border-slice-800 rounded-2xl flex items-center justify-between text-xs>
                       <div className="space-y-1">
                         <p className="font-bold text-white">{rev.buyerName} ({rev.rating}★)</p>
-                        <p className="text-slate-300 italic">"{rev.comment}"</p>
+                        <p className="text-slice-300 italic">"{rev.comment}"</p>
                       </div>
-                      <button onClick={() => deleteReview(rev.id)} className="p-2 bg-slate-900 text-rose-400 hover:bg-rose-500/20 rounded-xl">
+                      <button onClick={() => deleteReview(rev.id)} className="p-2 bg-slice-900 text-rose-400 hover:bg-rose-500/20 rounded-xl">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
