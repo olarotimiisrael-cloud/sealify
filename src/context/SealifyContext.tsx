@@ -121,7 +121,7 @@ interface SealifyContextType {
   toggleCompareListing: (id: string) => void;
   isInCompare: (id: string) => boolean;
   clearCompare: () => void;
-  createListing: (data: Partial<Listing>) => Promise<boolean>;
+  createListing: (data: Partial<Listing>, files?: File[]) => Promise<boolean>;
   updateListing: (id: string, updatedData: Partial<Listing>) => Promise<void>;
   deleteListing: (id: string) => Promise<void>;
   markAsSold: (id: string) => Promise<void>;
@@ -522,6 +522,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useSealify = () => {
   const context = useContext(SealifyContext);
-  if (!context) throw new Error('useSealify must be used within SealifyProvider');
+  if (!context) throw new Error('useSealify error');
   return context;
 };
