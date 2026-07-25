@@ -10,7 +10,7 @@ import AiAdAssistantModal from '../components/AiAdAssistantModal';
 import { Category, Condition } from '../types/sealify';
 import { 
   X, Plus, ShieldCheck, Upload, 
-  Video, FileVideo, Crown, MapPin, Calculator, Wand2, Image as ImageIcon, Shield, Loader2
+  Video, FileVideo, Crown, MapPin, Calculator, Wand2, Image as ImageIcon, Shield, Loader2, Sliders
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -64,12 +64,19 @@ const PostAd: React.FC = () => {
   const [featuredBoost, setFeaturedBoost] = useState(isAdmin ? true : false);
   const [customSellerName, setCustomSellerName] = useState(user?.fullName || '');
 
+  // Category Specific Specs
+  const [specs, setSpecs] = useState<Record<string, string>>({});
+
   useEffect(() => {
     if (!isAuthenticated) {
       toast.info('Account Required: Please sign up or log in to post an ad on Sealify.');
       setIsAuthOpen(true);
     }
   }, [isAuthenticated]);
+
+  const handleSpecChange = (key: string, val: string) => {
+    setSpecs(prev => ({ ...prev, [key]: val }));
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files;
@@ -124,6 +131,12 @@ const PostAd: React.FC = () => {
 
     setIsSubmitting(true);
 
+    // Clean empty specs
+    const cleanSpecs: Record<string, string> = {};
+    Object.entries(specs).forEach(([k, v]) => {
+      if (v.trim()) cleanSpecs[k] = v.trim();
+    });
+
     const success = await createListing({
       title: title.trim(),
       category,
@@ -135,6 +148,7 @@ const PostAd: React.FC = () => {
       videoUrl: videoUrl || undefined,
       featured: featuredBoost,
       sellerName: isAdmin && customSellerName ? customSellerName : user?.fullName,
+      specifications: cleanSpecs
     }, rawFiles);
 
     setIsSubmitting(false);
@@ -252,7 +266,10 @@ const PostAd: React.FC = () => {
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Category *</label>
                 <select
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as Category)}
+                  onChange={(e) => {
+                    setCategory(e.target.value as Category);
+                    setSpecs({});
+                  }}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-emerald-500"
                 >
                   {CATEGORIES.map((c) => (
@@ -274,6 +291,103 @@ const PostAd: React.FC = () => {
                 </select>
               </div>
             </div>
+
+            {/* Dynamic Specification Fields */}
+            {category === 'Electronics' && (
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <label className="text-xs font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4" />
+                  <span>Electronics Technical Specifications</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Brand (e.g. Apple, HP)"
+                    value={specs['Brand'] || ''}
+                    onChange={(e) => handleSpecChange('Brand', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="RAM (e.g. 8GB, 16GB)"
+                    value={specs['RAM'] || ''}
+                    onChange={(e) => handleSpecChange('RAM', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Storage (e.g. 256GB SSD)"
+                    value={specs['Storage'] || ''}
+                    onChange={(e) => handleSpecChange('Storage', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {category === 'Vehicles' && (
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <label className="text-xs font-extrabold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4" />
+                  <span>Vehicle Specifications</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Year (e.g. 2012)"
+                    value={specs['Year'] || ''}
+                    onChange={(e) => handleSpecChange('Year', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Transmission (Automatic / Manual)"
+                    value={specs['Transmission'] || ''}
+                    onChange={(e) => handleSpecChange('Transmission', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Mileage / Engine (e.g. 120k km / V6)"
+                    value={specs['Engine'] || ''}
+                    onChange={(e) => handleSpecChange('Engine', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {category === 'Real Estate' && (
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <label className="text-xs font-extrabold text-teal-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4" />
+                  <span>Property Features</span>
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Bedrooms (e.g. Self-Contain, 2 Beds)"
+                    value={specs['Bedrooms'] || ''}
+                    onChange={(e) => handleSpecChange('Bedrooms', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Prepaid Meter (Yes / No)"
+                    value={specs['Prepaid Meter'] || ''}
+                    onChange={(e) => handleSpecChange('Prepaid Meter', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Water Source (Borehole / Running Water)"
+                    value={specs['Water Source'] || ''}
+                    onChange={(e) => handleSpecChange('Water Source', e.target.value)}
+                    className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-teal-500"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">

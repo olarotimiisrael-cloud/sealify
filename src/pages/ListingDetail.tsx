@@ -42,7 +42,8 @@ import {
   Volume2,
   TrendingDown,
   Bell,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Sliders
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -171,6 +172,8 @@ const ListingDetail: React.FC = () => {
     toast.success(`Inspection report shared to seller chat!`);
     navigate('/messages');
   };
+
+  const hasSpecs = listing.specifications && Object.keys(listing.specifications).length > 0;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
@@ -318,6 +321,24 @@ const ListingDetail: React.FC = () => {
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
                 </div>
               </div>
+
+              {/* Technical Specs Grid if present */}
+              {hasSpecs && (
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                  <h3 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sliders className="w-4 h-4" />
+                    <span>Technical Specifications</span>
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                    {Object.entries(listing.specifications!).map(([key, val]) => (
+                      <div key={key} className="bg-slate-900 border border-slate-800/80 p-2.5 rounded-xl">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase block">{key}</span>
+                        <span className="font-extrabold text-white truncate block">{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Item Description</h3>
