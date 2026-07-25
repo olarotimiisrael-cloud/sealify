@@ -15,6 +15,7 @@ import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
 import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
 import PriceDropAlertModal from '../components/PriceDropAlertModal';
 import SwapProposalModal from '../components/SwapProposalModal';
+import DealQrScannerModal from '../components/DealQrScannerModal';
 import PriceHistoryChart from '../components/PriceHistoryChart';
 import PriceGuard from '../components/PriceGuard';
 import ListingCard from '../components/ListingCard';
@@ -44,14 +45,15 @@ import {
   TrendingDown,
   Bell,
   ArrowRightLeft,
-  Sliders
+  Sliders,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed } = useSealify();
+  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed, user } = useSealify();
   
   const listing = listings.find((l) => l.id === id);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -68,6 +70,7 @@ const ListingDetail: React.FC = () => {
   const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [isVoiceTourOpen, setIsVoiceTourOpen] = useState(false);
   const [isPriceDropOpen, setIsPriceDropOpen] = useState(false);
+  const [isDealScannerOpen, setIsDealScannerOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -174,7 +177,12 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
+  const handleDealSealedInChat = (receiptText: string) => {
+    sendMessage(listing.id, listing.sellerId, receiptText);
+  };
+
   const hasSpecs = listing.specifications && Object.keys(listing.specifications).length > 0;
+  const isOwner = user?.id === listing.sellerId;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
@@ -185,6 +193,16 @@ const ListingDetail: React.FC = () => {
         <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
             
+            {/* Handover QR Authenticator Trigger */}
+            <button
+              onClick={() => setIsDealScannerOpen(true)}
+              className="p-2 bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1.5 text-xs font-black shadow-lg rounded-xl hover:scale-105 transition-all"
+              title="Verify In-Person Handover QR or PIN Code"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Verify Handover PIN</span>
+            </button>
+
             {/* AI Voice Tour Trigger */}
             <button
               onClick={() => setIsVoiceTourOpen(true)}
@@ -480,6 +498,7 @@ const ListingDetail: React.FC = () => {
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} onSendChecklistToChat={handleSendInspectionReport} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
+      <DealQrScannerModal isOpen={isDealScannerOpen} onClose={() => setIsDealScannerOpen(false)} listing={listing} onDealSealed={handleDealSealedInChat} />
       
       <AiVoiceOverviewModal
         isOpen={isVoiceTourOpen}
