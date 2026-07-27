@@ -366,7 +366,17 @@ export default function AdminDashboard() {
 
         {/* Tab Selector Bar */}
         <div className="bg-slate-900 border border-slate-800 p-2 rounded-2xl flex items-center gap-1.5 overflow-x-auto no-scrollbar shadow-lg">
-          {[\n            { id: 'overview', label: 'Overview & Analytics', icon: Activity, badge: null },\n            { id: 'listings', label: 'Listings & Post Cleanup', icon: Package, badge: `${listings.length}` },\n            { id: 'users', label: 'User Directory & Badges', icon: Users, badge: `${allUsers.length}` },\n            { id: 'verifications', label: 'ID Verifications', icon: Award, badge: pendingVerifications.length > 0 ? `${pendingVerifications.length}` : null },\n            { id: 'promotions', label: 'Top Ad Payments', icon: Crown, badge: pendingPromotions.length > 0 ? `${pendingPromotions.length}` : null },\n            { id: 'disputes', label: 'Disputes & Reports', icon: Gavel, badge: disputeCases.length > 0 ? `${disputeCases.length}` : null },\n            { id: 'announcements', label: 'System Notices', icon: Megaphone, badge: null },\n            { id: 'safespots', label: 'Safe Spots Manager', icon: MapPin, badge: `${safeSpots.length}` },\n            { id: 'security', label: 'Security & Root Config', icon: Lock, badge: intrusionLogs.length > 0 ? `!${intrusionLogs.length}` : null },\n          ].map((t) => {
+          {[
+            { id: 'overview', label: 'Overview & Analytics', icon: Activity, badge: null },
+            { id: 'listings', label: 'Listings & Post Cleanup', icon: Package, badge: `${listings.length}` },
+            { id: 'users', label: 'User Directory & Badges', icon: Users, badge: `${allUsers.length}` },
+            { id: 'verifications', label: 'ID Verifications', icon: Award, badge: pendingVerifications.length > 0 ? `${pendingVerifications.length}` : null },
+            { id: 'promotions', label: 'Top Ad Payments', icon: Crown, badge: pendingPromotions.length > 0 ? `${pendingPromotions.length}` : null },
+            { id: 'disputes', label: 'Disputes & Reports', icon: Gavel, badge: disputeCases.length > 0 ? `${disputeCases.length}` : null },
+            { id: 'announcements', label: 'System Notices', icon: Megaphone, badge: null },
+            { id: 'safespots', label: 'Safe Spots Manager', icon: MapPin, badge: `${safeSpots.length}` },
+            { id: 'security', label: 'Security & Root Config', icon: Lock, badge: intrusionLogs.length > 0 ? `!${intrusionLogs.length}` : null },
+          ].map((t) => {
             const Icon = t.icon;
             const isActive = activeTab === t.id;
             return (
@@ -490,5 +500,752 @@ export default function AdminDashboard() {
 
                 <div className="flex items-center gap-1.5 shrink-0">
                   <button
-                    onClick={() => setListingFilter('all')}\n                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'all' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400'}`}\n                  >\n                    All ({listings.length})\n                  </button>\n                  <button\n                    onClick={() => setListingFilter('sample')}\n                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'sample' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400'}`}\n                  >\n                    Sample Mock Posts ({sampleCount})\n                  </button>\n                  <button\n                    onClick={() => setListingFilter('live')}\n                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'live' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400'}`}\n                  >\n                    User Live Content ({liveUserCount})\n                  </button>\n                </div>\n              </div>\n\n              {/* Bulk Action Controls */}\n              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs flex-wrap gap-2\">\n                <button\n                  onClick={handleSelectAllListings}\n                  className="flex items-center gap-1.5 font-bold text-slate-300 hover:text-white"\n                >\n                  {selectedListingIds.length === filteredListings.length && filteredListings.length > 0 ? (\n                    <CheckSquare className="w-4 h-4 text-rose-500" />\n                  ) : (\n                    <Square className="w-4 h-4 text-slate-600" />\n                  )}\n                  <span>Select All Filtered ({selectedListingIds.length} Selected)</span>\n                </button>\n\n                {selectedListingIds.length > 0 && (\n                  <div className="flex items-center gap-2\">\n                    <button\n                      onClick={handleBulkPurgeSelected}\n                      className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs uppercase shadow flex items-center gap-1"\n                    >\n                      <Trash2 className="w-3.5 h-3.5" />\n                      <span>Delete {selectedListingIds.length} Selected</span>\n                    </button>\n                  </div>\n                )}\n              </div>\n            </div>\n\n            {/* Listings Grid / Table */}\n            <div className="space-y-2\">\n              {filteredListings.length === 0 ? (\n                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs\">\n                  No listings found for this filter query.\n                </div>\n              ) : (\n                filteredListings.map((ad) => {\n                  const isSample = ad.id.startsWith('lst_vehicles_') || ad.id.startsWith('lst_electronics_') || ad.id.startsWith('lst_real_estate_') || ad.id.startsWith('lst_fashion_') || ad.id.startsWith('lst_furniture_') || ad.id.startsWith('lst_services_') || ad.id.startsWith('lst_jobs_') || ad.id.startsWith('lst_beauty_') || ad.id.startsWith('lst_utility_');\n                  const isSelected = selectedListingIds.includes(ad.id);\n\n                  return (\n                    <div\n                      key={ad.id}\n                      className={`p-4 bg-slate-900 border rounded-2xl flex items-center justify-between gap-4 transition-all ${\n                        isSelected ? 'border-rose-500 bg-rose-950/20' : 'border-slate-800'\n                      }`}\n                    >\n                      <div className="flex items-center gap-3 min-w-0\">\n                        <button\n                          type=\"button\"\n                          onClick={() => handleToggleListingSelection(ad.id)}\n                          className="text-slate-500 hover:text-rose-400"\n                        >\n                          {isSelected ? <CheckSquare className="w-4 h-4 text-rose-500" /> : <Square className="w-4 h-4" />}\n                        </button>\n\n                        <img\n                          src={ad.images[0]}\n                          alt=\"\"\n                          className="w-12 h-12 rounded-xl object-cover border border-slate-800 bg-slate-950 shrink-0"\n                        />\n\n                        <div className="min-w-0 space-y-0.5\">\n                          <div className="flex items-center gap-2\">\n                            <h4 className="font-bold text-xs text-white truncate">{ad.title}</h4>\n                            {isSample ? (\n                              <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">\n                                SAMPLE\n                              </span>\n                            ) : (\n                              <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/30">\n                                LIVE USER\n                              </span>\n                            )}\n                          </div>\n                          <p className="text-[11px] text-slate-400\">\n                            ₦{ad.price.toLocaleString()} • {ad.category} • Seller: <strong className="text-slate-200">{ad.sellerName}</strong>\n                          </p>\n                        </div>\n                      </div>\n\n                      <div className="flex items-center gap-2 shrink-0\">\n                        <button\n                          onClick={() => updateListing(ad.id, { featured: !listings.find(l => l.id === ad.id)?.featured })}\n                          className={`p-2 rounded-xl text-xs font-bold border transition-colors ${\n                            ad.featured ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-950 text-slate-500 border-slate-800'\n                          }`}\n                          title=\"Toggle Top Ad Boost\"\n                        >\n                          <Crown className="w-4 h-4" />\n                        </button>\n\n                        <a\n                          href={`/listing/${ad.id}`}\n                          target=\"_blank\"\n                          rel=\"noreferrer\"\n                          className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl border border-slate-800\"\n                          title=\"Preview Listing\"\n                        >\n                          <ExternalLink className="w-4 h-4" />\n                        </a>\n\n                        <button\n                          onClick={() => {\n                            if (window.confirm(`Delete listing \"${ad.title}\"?`)) {\n                              deleteListing(ad.id);\n                              toast.success('Listing deleted!');\n                            }\n                          }}\n                          className="p-2 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl border border-rose-500/20 transition-all\"\n                          title=\"Purge Ad\"\n                        >\n                          <Trash2 className="w-4 h-4" />\n                        </button>\n                      </div>\n                    </div>\n                  );\n                })\n              )}\n            </div>\n          </div>\n        )}\n\n        {/* TAB 3: USER DIRECTORY & BADGES */}\n        {activeTab === 'users' && (\n          <div className="space-y-6 animate-in fade-in duration-300">\n            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl\">\n              <div className="relative flex-1 w-full">\n                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />\n                <input\n                  type="text"\n                  placeholder="Search user by name, email, or location..."\n                  value={userSearch}\n                  onChange={(e) => setUserSearch(e.target.value)}\n                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500 font-medium"\n                />\n              </div>\n\n              <div className="flex items-center gap-1.5 shrink-0">\n                {(['all', 'buyer', 'seller', 'admin'] as const).map(role => (\n                  <button\n                    key={role}\n                    onClick={() => setUserRoleFilter(role)}\n                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${userRoleFilter === role ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400'}`}\n                  >\n                    {role}\n                  </button>\n                ))}\n              </div>\n            </div>\n\n            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">\n              {filteredUsers.map((u) => (\n                <div key={u.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl relative group\">\n                  <div className="flex items-start justify-between gap-3">\n                    <div className="flex items-center gap-3">\n                      <img\n                        src={u.avatarUrl || '/logo.png'}\n                        alt=\"\"\n                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-800 bg-slate-950"\n                      />\n                      <div>\n                        <div className="flex items-center gap-1.5">\n                          <h4 className="font-extrabold text-sm text-white">{u.fullName}</h4>\n                          <VerifiedBadge type={u.verificationType || 'none'} />\n                        </div>\n                        <p className="text-xs text-slate-400 font-mono">{u.email}</p>\n                        <p className="text-[10px] text-slate-500 mt-0.5">{u.location || 'Ogbomoso, Oyo State'}</p>\n                      </div>\n                    </div>\n\n                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${u.role === 'admin' ? 'bg-rose-600 text-white' : u.role === 'seller' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'}`}>\n                      {u.role}\n                    </span>\n                  </div>\n\n                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">\n                    <div className="flex items-center gap-2">\n                      <span className={`w-2 h-2 rounded-full ${u.status === 'active' || !u.status ? 'bg-emerald-400' : 'bg-rose-500'}`}></span>\n                      <span className="text-[11px] font-bold capitalize text-slate-300">{u.status || 'active'}</span>\n                    </div>\n\n                    <div className="flex items-center gap-2">\n                      <button\n                        onClick={() => setEditingUser(u)}\n                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-colors"\n                      >\n                        Edit Record / Permissions\n                      </button>\n                    </div>\n                  </div>\n                </div>\n              ))}\n            </div>\n\n            {/* Add New User Button */}\n            <div className="flex items-center gap-2 mt-4">\n              <button\n                onClick={() => setEditingUser({ id: '', fullName: '', email: '', phoneNumber: '', location: '', businessName: '', role: 'buyer', verified: false } as UserProfile)}\n                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow flex items-center gap-1.5"\n              >\n                <Plus className="w-4 h-4" />\n                <span className="hidden sm:inline">Add User</span>\n              </button>\n            </div>\n\n            <AdminEditUserModal\n              user={editingUser}\n              onClose={() => setEditingUser(null)}\n              onSave={(id, updated) => {\n                if (id) {\n                  updateUser(id, updated);\n                } else {\n                  addUser(updated);\n                }\n              }}\n            />\n          </div>\n        )}\n\n        {/* TAB 4: VERIFICATIONS APPROVAL QUEUE */}\n        {activeTab === 'verifications' && (\n          <div className="space-y-6 animate-in fade-in duration-300">\n            <h3 className="text-lg font-black text-white flex items-center gap-2">\n              <Award className="w-5 h-5 text-amber-400" />\n              <span>Badge Verification Request Queue ({verificationRequests.length})</span>\n            </h3>\n\n            {verificationRequests.length === 0 ? (\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs\">\n                No ID or CAC verification applications in queue.\n              </div>\n            ) : (\n              <div className="space-y-3\">\n                {verificationRequests.map((req) => (\n                  <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl\">\n                    <div className="flex justify-between items-start">\n                      <div>\n                        <h4 className="font-extrabold text-sm text-white">{req.userName}</h4>\n                        <p className="text-xs text-slate-400 font-mono">{req.userEmail} • ID Number: {req.docNumber}</p>\n                      </div>\n\n                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>\n                        {req.status}\n                      </span>\n                    </div>\n\n                    {req.docUrl && (\n                      <div className="p-2 bg-slate-950 rounded-2xl border border-slate-800 max-w-xs\">\n                        <img src={req.docUrl} alt=\"Submitted Document\" className="w-full h-32 object-cover rounded-xl" />\n                      </div>\n                    )}\n\n                    {req.status === 'pending' && (\n                      <div className="flex gap-2 pt-2 border-t border-slate-800\">\n                        <button\n                          onClick={() => {\n                            processVerificationRequest(req.id, 'approved');\n                            updateUser(req.userId, { verified: true, verificationType: req.type });\n                            toast.success(`Badge \"${req.type}\" approved for ${req.userName}!`);\n                          }}\n                          className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow\"\n                        >\n                          Approve Verification Badge\n                        </button>\n                        <button\n                          onClick={() => {\n                            processVerificationRequest(req.id, 'rejected');\n                            toast.error(`Verification rejected for ${req.userName}.`);\n                          }}\n                          className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors\"\n                        >\n                          Decline Request\n                        </button>\n                      </div>\n                    )}\n                  </div>\n                ))}\n              </div>\n            )}\n          </div>\n        )}\n\n        {/* TAB 5: PROMOTIONS & TOP AD PAYMENTS */}\n        {activeTab === 'promotions' && (\n          <div className="space-y-6 animate-in fade-in duration-300">\n            <h3 className="text-lg font-black text-white flex items-center gap-2">\n              <Crown className="w-5 h-5 text-amber-400" />\n              <span>Top Ad Promotion Payment Receipts</span>\n            </h3>\n\n            {promotionPaymentRequests.length === 0 ? (\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs\">\n                No promotion payment claims logged.\n              </div>\n            ) : (\n              <div className="space-y-3\">\n                {promotionPaymentRequests.map((req) => (\n                  <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl\">\n                    <div className="flex justify-between items-start"> \n                      <div>\n                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">{req.planName} ({req.durationMonths} Months)</span>\n                        <p className="text-xl font-black text-emerald-400">₦{req.amount.toLocaleString()}</p>\n                        <p className="text-xs text-slate-400">Listing ID: <strong className="text-white font-mono">{req.listingId}</strong></p>\n                      </div>\n\n                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>\n                        {req.status}\n                      </span>\n                    </div>\n\n                    {req.paymentProofUrl && (\n                      <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800\">\n                        {req.paymentProofUrl.startsWith('data:image') || req.paymentProofUrl.startsWith('http') ? (\n                          <img src={req.paymentProofUrl} alt=\"Receipt\" className="max-h-40 rounded-xl" />\n                        ) : (\n                          <p className="font-mono text-xs text-emerald-400">{req.paymentProofUrl}</p>\n                        )}\n                      </div>\n                    )}\n\n                    {req.status === 'pending' && (\n                      <div className="flex gap-2 pt-2 border-t border-slate-800\">\n                        <button\n                          onClick={() => {\n                            processPromotionPaymentRequest(req.id, 'approved');\n                            updateListing(req.listingId, { featured: true });\n                            toast.success(`Top Ad Boost activated for Listing ID ${req.listingId}!`);\n                          }}\n                          className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow\"\n                        >\n                          Approve Payment & Activate Top Ad\n                        </button>\n                        <button\n                          onClick={() => {\n                            processPromotionPaymentRequest(req.id, 'rejected');\n                            toast.error('Payment claim rejected.');\n                          }}\n                          className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors\"\n                        >\n                          Reject Payment\n                        </button>\n                      </div>\n                    )}\n                  </div>\n                ))}\n              </div>\n            )}\n          </div>\n        )}\n\n        {/* TAB 6: DISPUTES & SAFETY REPORTS */}\n        {activeTab === 'disputes' && (\n          <div className="space-y-6 animate-in fade-in duration-300"> \n            <h3 className="text-lg font-black text-white flex items-center gap-2">\n              <Gavel className="w-5 h-5 text-rose-400" />\n              <span>Marketplace Trade Disputes & Ad Reports</span>\n            </h3>\n\n            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">\n              {/* Disputes List */}\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h4 className="font-bold text-xs uppercase tracking-wider text-rose-400">Trade Disputes ({disputeCases.length})</h4>\n                <div className="space-y-3">\n                  {disputeCases.map((disp) => (\n                    <div key={disp.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2\">\n                      <div className="flex justify-between items-start">\n                        <span className="font-bold text-xs text-white">{disp.itemTitle}</span>\n                        <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">{disp.status}</span>\n                      </div>\n                      <p className="text-xs text-slate-400">Counterparty: {disp.counterparty}</p>\n                      <p className="text-[11px] text-slate-300 leading-relaxed italic\">\"{disp.details}\"</p>\n\n                      <div className="pt-2 flex gap-2">\n                        <button\n                          onClick={() => processDisputeCase(disp.id, 'resolved')}\n                          className="px-3 py-1 bg-emerald-500 text-slate-950 font-extrabold rounded-lg text-[10px]"\n                        >\n                          Mark Resolved\n                        </button>\n                      </div>\n                    </div>\n                  ))}\n                </div>\n              </div>\n\n              {/* Safety Reports */}\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h4 className="font-bold text-xs uppercase tracking-wider text-amber-400">Ad Safety Reports ({reports.length})</h4>\n                <div className="space-y-3">\n                  {reports.map((rep) => (\n                    <div key={rep.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2\">\n                      <div className="flex justify-between items-start">\n                        <span className="font-bold text-xs text-white">{rep.listingTitle}</span>\n                        <span className="text-[9px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">{rep.reason}</span>\n                      </div>\n                      <p className="text-[11px] text-slate-400">{rep.details}</p>\n\n                      <div className="pt-2 flex gap-2">\n                        <button\n                          onClick={() => {\n                            deleteListing(rep.listingId);\n                            processReport(rep.id, 'resolve_delete_ad');\n                            toast.success('Ad dropped and report resolved.');\n                          }}\n                          className="px-3 py-1 bg-rose-600 text-white font-extrabold rounded-lg text-[10px]"\n                        >\n                          Drop Reported Ad\n                        </button>\n                        <button\n                          onClick={() => processReport(rep.id, 'dismiss')}\n                          className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-[10px]"\n                        >\n                          Dismiss Report\n                        </button>\n                      </div>\n                    </div>\n                  ))}\n                </div>\n              </div>\n            </div>\n          </div>\n        )}\n\n        {/* TAB 7: ANNOUNCEMENTS & MASS BROADCAST */}\n        {activeTab === 'announcements' && (\n          <div className="space-y-6 animate-in fade-in duration-300\">\n            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">\n              \n              {/* Form 1: System Notice */}\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">\n                  <Megaphone className="w-4 h-4 text-emerald-400" />\n                  <span>Post App Banner Announcement</span>\n                </h3>\n\n                <form onSubmit={handlePostAnnouncement} className="space-y-3 text-xs\">\n                  <input\n                    type=\"text\"\n                    required\n                    value={annTitle}\n                    onChange={(e) => setAnnTitle(e.target.value)}\n                    placeholder=\"Headline Title (e.g. LAUTECH Gate Safe Spot Live)\"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-rose-500"\n                  />\n                  <textarea\n                    rows={3}\n                    required\n                    value={annMessage}\n                    onChange={(e) => setAnnMessage(e.target.value)}\n                    placeholder=\"Announcement message body...\"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"\n                  />\n                  <select\n                    value={annType}\n                    onChange={(e) => setAnnType(e.target.value as any)}\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"\n                  >\n                    <option value=\"info\">Info (Blue)</option>\n                    <option value=\"warning\">Warning (Amber)</option>\n                    <option value=\"success\">Success (Emerald)</option>\n                    <option value=\"alert\">Alert (Rose)</option>\n                  </select>\n                  <button type=\"submit\" className="w-full py-3 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs shadow\">\n                    Publish Banner Announcement\n                  </button>\n                </form>\n              </div>\n\n              {/* Form 2: Mass Broadcast */}\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">\n                  <Radio className="w-4 h-4 text-purple-400" />\n                  <span>Push Broadcast to All User Inboxes</span>\n                </h3>\n\n                <form onSubmit={handleSendMassBroadcast} className="space-y-3 text-xs\">\n                  <input\n                    type=\"text\"\n                    required\n                    value={broadcastTitle}\n                    onChange={(e) => setBroadcastTitle(e.target.value)}\n                    placeholder=\"Broadcast Subject Headline\"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500"\n                  />\n                  <textarea\n                    rows={4}\n                    required\n                    value={broadcastMsg}\n                    onChange={(e) => setBroadcastMessage(e.target.value)}\n                    placeholder=\"Enter broadcast message body...\"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"\n                  />\n                  <button type=\"submit\" className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black rounded-xl text-xs shadow\">\n                    Send Mass Notification to {allUsers.length} Users\n                  </button>\n                </form>\n              </div>\n\n            </div>\n\n            {/* Active Announcements */}\n            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">\n              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">Active System Banners</h4>\n              <div className="space-y-2">\n                {announcements.map((ann) => (\n                  <div key={ann.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">\n                    <div>\n                      <span className="font-extrabold text-white">{ann.title}: </span>\n                      <span className="text-slate-300">{ann.message}</span>\n                    </div>\n                    <button onClick={() => deleteAnnouncement(ann.id)} className="p-1 text-slate-500 hover:text-rose-400">\n                      <Trash2 className="w-4 h-4" />\n                    </button>\n                  </div>\n                ))}\n              </div>\n            </div>\n          </div>\n        )}\n\n        {/* TAB 8: SAFE SPOTS MANAGER */}\n        {activeTab === 'safespots' && (\n          <div className="space-y-6 animate-in fade-in duration-300">\n            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">\n              <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h3 className="font-black text-sm text-white uppercase tracking-wider">Register Safe Exchange Spot</h3>\n                <form onSubmit={handleAddSafeSpot} className="space-y-3 text-xs\">\n                  <input\n                    type=\"text\"\n                    required\n                    value={spotName}\n                    onChange={(e) => setSpotName(e.target.value)}\n                    placeholder=\"Spot Name (e.g. LAUTECH Library Gate)\"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none"\n                  />\n                  <select\n                    value={spotZone}\n                    onChange={(e) => setSpotZone(e.target.value as any)}\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"\n                  >\n                    <option value="LAUTECH Area">LAUTECH Area</option>\n                    <option value="Takie / Center">Takie / Center</option>\n                    <option value="Sabo Market Zone">Sabo Market Zone</option>\n                    <option value="Police HQ">Police HQ</option>\n                  </select>\n                  <select\n                    value={spotCategory}\n                    onChange={(e) => setSpotCategory(e.target.value as any)}\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"\n                  >\n                    <option value="Police Safe Zone">Police Safe Zone</option>\n                    <option value="Public Library">Public Library</option>\n                    <option value="Shopping Mall">Shopping Mall</option>\n                    <option value="Cafe">Cafe</option>\n                  </select>\n                  <input\n                    type=\"text\"\n                    required\n                    value={spotAddress}\n                    onChange={(e) => setSpotAddress(e.target.value)}\n                    placeholder="Full Address"\n                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none"\n                  />\n                  <button type=\"submit\" className="w-full py-3 bg-teal-500 text-slate-950 font-black rounded-xl text-xs shadow">\n                    Register Exchange Location\n                  </button>\n                </form>\n              </div>\n\n              <div className="lg:col-span-7 space-y-3">\n                <h3 className="font-black text-sm text-white uppercase tracking-wider">Active Verified Safe Spots ({safeSpots.length})</h3>\n                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">\n                  {safeSpots.map((spot) => (\n                    <div key={spot.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">\n                      <div>\n                        <h4 className="font-extrabold text-white">{spot.name}</h4>\n                        <p className="text-[11px] text-slate-400">{spot.zone} • {spot.address}</p>\n                      </div>\n                      <button onClick={() => deleteSafeSpot(spot.id)} className="p-2 text-slate-500 hover:text-rose-400">\n                        <Trash2 className="w-4 h-4" />\n                      </button>\n                    </div>\n                  ))}\n                </div>\n              </div>\n            </div>\n          </div>\n        )}\n\n        {/* TAB 9: SECURITY & ROOT CONFIG */}\n        {activeTab === 'security' && (\n          <div className="space-y-6 animate-in fade-in duration-300">\n            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">\n              \n              {/* Terminal Credentials Update */}\n              <div className="bg-slate-900 border border-rose-500/30 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h3 className="font-black text-sm text-rose-400 uppercase tracking-widest flex items-center gap-2">\n                  <Lock className="w-4 h-4" />\n                  <span>Update Root Credentials & PIN</span>\n                </h3>\n\n                <form onSubmit={handleUpdateAdminPass} className="space-y-3 text-xs">\n                  <div className="space-y-1">\n                    <label className="text-slate-400 font-bold uppercase">Admin Login Email</label>\n                    <input\n                      type="email"\n                      required\n                      value={newAdminEmail}\n                      onChange={(e) => setNewAdminEmail(e.target.value)}\n                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none font-mono"\n                    />\n                  </div>\n\n                  <div className="space-y-1">\n                    <label className="text-slate-400 font-bold uppercase">Admin Access Password</label>\n                    <input\n                      type="text"\n                      required\n                      value={newAdminPass}\n                      onChange={(e) => setNewAdminPassword(e.target.value)}\n                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"\n                    />\n                  </div>\n\n                  <div className="space-y-1">\n                    <label className="text-slate-400 font-bold uppercase">6-Digit Master Security PIN</label>\n                    <input\n                      type="text"\n                      required\n                      maxLength={6}\n                      value={newAdminPin}\n                      onChange={(e) => setNewAdminPin(e.target.value)}\n                      className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-2.5 text-rose-400 font-black focus:outline-none font-mono tracking-widest"\n                    />\n                  </div>\n\n                  <button type="submit" className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-lg uppercase tracking-wider">\n                    Save New Master Credentials\n                  </button>\n                </form>\n              </div>\n\n              {/* System Config Toggles */}\n              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">\n                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />\n                  <span>Global Platform Switches</span>\n                </h3>\n\n                <div className="space-y-3 text-xs">\n                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">\n                    <div>\n                      <p className="font-bold text-white">Maintenance Mode</p>\n                      <p className="text-[10px] text-slate-500">Locks public marketplace feed for updates</p>\n                    </div>\n                    <button\n                      type="button"\n                      onClick={() => updateSystemConfig({ maintenanceMode: !systemConfig.maintenanceMode })}\n                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${systemConfig.maintenanceMode ? 'bg-rose-600' : 'bg-slate-800'}`}\n                    >\n                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${systemConfig.maintenanceMode ? 'translate-x-5' : 'translate-x-0'}`}></div>\n                    </button>\n                  </div>\n\n                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">\n                    <div>\n                      <p className="font-bold text-white">Auto-Approve Classified Ads</p>\n                      <p className="text-[10px] text-slate-500">Post listings instantly without admin pre-review</p>\n                    </div>\n                    <button\n                      type="button"\n                      onClick={() => updateSystemConfig({ autoApproveAds: !systemConfig.autoApproveAds })}\n                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${systemConfig.autoApproveAds ? 'bg-emerald-500' : 'bg-slate-800'}`}\n                    >\n                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${systemConfig.autoApproveAds ? 'translate-x-5' : 'translate-x-0'}`}></div>\n                    </button>
-                  </div>\n\n                  <button\n                    type="button"\n                    onClick={() => setIsSqlSchemaOpen(true)}\n                    className="w-full py-3 bg-slate-950 hover:bg-slate-800 text-emerald-400 font-bold rounded-2xl text-xs border border-emerald-500/30 flex items-center justify-center gap-2 transition-colors"\n                  >\n                    <Database className="w-4 h-4" />\n                    <span>View Supabase SQL Schema Migration Script</span>\n                  </button>\n                </div>\n              </div>\n\n            </div>\n\n            {/* Security Intrusion Log */}\n            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">\n              <h3 className="font-black text-sm text-rose-400 uppercase tracking-widest flex items-center gap-2">\n                <Siren className="w-4 h-4" />\n                <span>Unauthorized Intrusion & Wrong Password Attempts</span>\n              </h3>\n\n              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">\n                {intrusionLogs.length === 0 ? (\n                  <p className="text-slate-500 text-xs italic py-4">No unauthorized access attempts recorded.</p>\n                ) : (\n                  intrusionLogs.map((log) => (\n                    <div key={log.id} className="p-3 bg-slate-950 border border-rose-500/20 rounded-2xl text-xs space-y-1\">\n                      <div className="flex justify-between items-center">\n                        <span className="font-mono font-bold text-rose-400">{log.attemptedEmail}</span>\n                        <span className="text-[9px] font-mono text-slate-500">{log.timestamp}</span>\n                      </div>\n                      <p className="text-[10px] text-slate-400 font-mono">{log.mediaStatus}</p>\n                    </div>\n                  ))\n                )}\n              </div>\n            </div>\n          </div>\n        )}\n\n      </main>\n\n      <Footer />\n      <MobileNav />\n      <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />\n      <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />\n      <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />\n      <AiShoppingAssistantModal isOpen={isAiCopilotOpen} onClose={() => setIsAiCopilotOpen(false)} />\n      <SqlSchemaViewer isOpen={isSqlSchemaOpen} onClose={() => setIsSqlSchemaOpen(false)} />\n    </div>\n  );\n}\n
+                    onClick={() => setListingFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'all' ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400'}`}
+                  >
+                    All ({listings.length})
+                  </button>
+                  <button
+                    onClick={() => setListingFilter('sample')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'sample' ? 'bg-amber-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400'}`}
+                  >
+                    Sample Mock Posts ({sampleCount})
+                  </button>
+                  <button
+                    onClick={() => setListingFilter('live')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${listingFilterType === 'live' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-950 text-slate-400'}`}
+                  >
+                    User Live Content ({liveUserCount})
+                  </button>
+                </div>
+              </div>
+
+              {/* Bulk Action Controls */}
+              <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs flex-wrap gap-2">
+                <button
+                  onClick={handleSelectAllListings}
+                  className="flex items-center gap-1.5 font-bold text-slate-300 hover:text-white"
+                >
+                  {selectedListingIds.length === filteredListings.length && filteredListings.length > 0 ? (
+                    <CheckSquare className="w-4 h-4 text-rose-500" />
+                  ) : (
+                    <Square className="w-4 h-4 text-slate-600" />
+                  )}
+                  <span>Select All Filtered ({selectedListingIds.length} Selected)</span>
+                </button>
+
+                {selectedListingIds.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleBulkPurgeSelected}
+                      className="px-4 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs uppercase shadow flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Delete {selectedListingIds.length} Selected</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Listings Grid / Table */}
+            <div className="space-y-2">
+              {filteredListings.length === 0 ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">
+                  No listings found for this filter query.
+                </div>
+              ) : (
+                filteredListings.map((ad) => {
+                  const isSample = ad.id.startsWith('lst_vehicles_') || ad.id.startsWith('lst_electronics_') || ad.id.startsWith('lst_real_estate_') || ad.id.startsWith('lst_fashion_') || ad.id.startsWith('lst_furniture_') || ad.id.startsWith('lst_services_') || ad.id.startsWith('lst_jobs_') || ad.id.startsWith('lst_beauty_') || ad.id.startsWith('lst_utility_');
+                  const isSelected = selectedListingIds.includes(ad.id);
+
+                  return (
+                    <div
+                      key={ad.id}
+                      className={`p-4 bg-slate-900 border rounded-2xl flex items-center justify-between gap-4 transition-all ${
+                        isSelected ? 'border-rose-500 bg-rose-950/20' : 'border-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleListingSelection(ad.id)}
+                          className="text-slate-500 hover:text-rose-400"
+                        >
+                          {isSelected ? <CheckSquare className="w-4 h-4 text-rose-500" /> : <Square className="w-4 h-4" />}
+                        </button>
+
+                        <img
+                          src={ad.images[0]}
+                          alt=""
+                          className="w-12 h-12 rounded-xl object-cover border border-slate-800 bg-slate-950 shrink-0"
+                        />
+
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-xs text-white truncate">{ad.title}</h4>
+                            {isSample ? (
+                              <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">
+                                SAMPLE
+                              </span>
+                            ) : (
+                              <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/30">
+                                LIVE USER
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400">
+                            ₦{ad.price.toLocaleString()} • {ad.category} • Seller: <strong className="text-slate-200">{ad.sellerName}</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => updateListing(ad.id, { featured: !listings.find(l => l.id === ad.id)?.featured })}
+                          className={`p-2 rounded-xl text-xs font-bold border transition-colors ${
+                            ad.featured ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-950 text-slate-500 border-slate-800'
+                          }`}
+                          title="Toggle Top Ad Boost"
+                        >
+                          <Crown className="w-4 h-4" />
+                        </button>
+
+                        <a
+                          href={`/listing/${ad.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl border border-slate-800"
+                          title="Preview Listing"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Delete listing "${ad.title}"?`)) {
+                              deleteListing(ad.id);
+                              toast.success('Listing deleted!');
+                            }
+                          }}
+                          className="p-2 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl border border-rose-500/20 transition-all"
+                          title="Purge Ad"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: USER DIRECTORY & BADGES */}
+        {activeTab === 'users' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="bg-slate-900 border border-slate-800 p-4 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search user by name, email, or location..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-rose-500 font-medium"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {(['all', 'buyer', 'seller', 'admin'] as const).map(role => (
+                  <button
+                    key={role}
+                    onClick={() => setUserRoleFilter(role)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${userRoleFilter === role ? 'bg-rose-600 text-white' : 'bg-slate-950 text-slate-400'}`}
+                  >
+                    {role}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {filteredUsers.map((u) => (
+                <div key={u.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl relative group">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={u.avatarUrl || '/logo.png'}
+                        alt=""
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-800 bg-slate-950"
+                      />
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="font-extrabold text-sm text-white">{u.fullName}</h4>
+                          <VerifiedBadge type={u.verificationType || 'none'} />
+                        </div>
+                        <p className="text-xs text-slate-400 font-mono">{u.email}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{u.location || 'Ogbomoso, Oyo State'}</p>
+                      </div>
+                    </div>
+
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded ${u.role === 'admin' ? 'bg-rose-600 text-white' : u.role === 'seller' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-800 text-slate-400'}`}>
+                      {u.role}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${u.status === 'active' || !u.status ? 'bg-emerald-400' : 'bg-rose-500'}`}></span>
+                      <span className="text-[11px] font-bold capitalize text-slate-300">{u.status || 'active'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setEditingUser(u)}
+                        className="px-3 py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+                      >
+                        Edit Record / Permissions
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New User Button */}
+            <div className="flex items-center gap-2 mt-4">
+              <button
+                onClick={() => setEditingUser({ id: '', fullName: '', email: '', phoneNumber: '', location: '', businessName: '', role: 'buyer', verified: false } as UserProfile)}
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add User</span>
+              </button>
+            </div>
+
+            <AdminEditUserModal
+              user={editingUser}
+              onClose={() => setEditingUser(null)}
+              onSave={(id, updated) => {
+                if (id) {
+                  updateUser(id, updated);
+                } else {
+                  addUser(updated);
+                }
+              }}
+            />
+          </div>
+        )}
+
+        {/* TAB 4: VERIFICATIONS APPROVAL QUEUE */}
+        {activeTab === 'verifications' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-400" />
+              <span>Badge Verification Request Queue ({verificationRequests.length})</span>
+            </h3>
+
+            {verificationRequests.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">
+                No ID or CAC verification applications in queue.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {verificationRequests.map((req) => (
+                  <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-extrabold text-sm text-white">{req.userName}</h4>
+                        <p className="text-xs text-slate-400 font-mono">{req.userEmail} • ID Number: {req.docNumber}</p>
+                      </div>
+
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>
+                        {req.status}
+                      </span>
+                    </div>
+
+                    {req.docUrl && (
+                      <div className="p-2 bg-slate-950 rounded-2xl border border-slate-800 max-w-xs">
+                        <img src={req.docUrl} alt="Submitted Document" className="w-full h-32 object-cover rounded-xl" />
+                      </div>
+                    )}
+
+                    {req.status === 'pending' && (
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => {
+                            processVerificationRequest(req.id, 'approved');
+                            updateUser(req.userId, { verified: true, verificationType: req.type });
+                            toast.success(`Badge "${req.type}" approved for ${req.userName}!`);
+                          }}
+                          className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow"
+                        >
+                          Approve Verification Badge
+                        </button>
+                        <button
+                          onClick={() => {
+                            processVerificationRequest(req.id, 'rejected');
+                            toast.error(`Verification rejected for ${req.userName}.`);
+                          }}
+                          className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors"
+                        >
+                          Decline Request
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: PROMOTIONS & TOP AD PAYMENTS */}
+        {activeTab === 'promotions' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Crown className="w-5 h-5 text-amber-400" />
+              <span>Top Ad Promotion Payment Receipts</span>
+            </h3>
+
+            {promotionPaymentRequests.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">
+                No promotion payment claims logged.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {promotionPaymentRequests.map((req) => (
+                  <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
+                    <div className="flex justify-between items-start"> 
+                      <div>
+                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">{req.planName} ({req.durationMonths} Months)</span>
+                        <p className="text-xl font-black text-emerald-400">₦{req.amount.toLocaleString()}</p>
+                        <p className="text-xs text-slate-400">Listing ID: <strong className="text-white font-mono">{req.listingId}</strong></p>
+                      </div>
+
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>
+                        {req.status}
+                      </span>
+                    </div>
+
+                    {req.paymentProofUrl && (
+                      <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        {req.paymentProofUrl.startsWith('data:image') || req.paymentProofUrl.startsWith('http') ? (
+                          <img src={req.paymentProofUrl} alt="Receipt" className="max-h-40 rounded-xl" />
+                        ) : (
+                          <p className="font-mono text-xs text-emerald-400">{req.paymentProofUrl}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {req.status === 'pending' && (
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => {
+                            processPromotionPaymentRequest(req.id, 'approved');
+                            updateListing(req.listingId, { featured: true });
+                            toast.success(`Top Ad Boost activated for Listing ID ${req.listingId}!`);
+                          }}
+                          className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow"
+                        >
+                          Approve Payment & Activate Top Ad
+                        </button>
+                        <button
+                          onClick={() => {
+                            processPromotionPaymentRequest(req.id, 'rejected');
+                            toast.error('Payment claim rejected.');
+                          }}
+                          className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors"
+                        >
+                          Reject Payment
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 6: DISPUTES & SAFETY REPORTS */}
+        {activeTab === 'disputes' && (
+          <div className="space-y-6 animate-in fade-in duration-300"> 
+            <h3 className="text-lg font-black text-white flex items-center gap-2">
+              <Gavel className="w-5 h-5 text-rose-400" />
+              <span>Marketplace Trade Disputes & Ad Reports</span>
+            </h3>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Disputes List */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-rose-400">Trade Disputes ({disputeCases.length})</h4>
+                <div className="space-y-3">
+                  {disputeCases.map((disp) => (
+                    <div key={disp.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="font-bold text-xs text-white">{disp.itemTitle}</span>
+                        <span className="text-[9px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded">{disp.status}</span>
+                      </div>
+                      <p className="text-xs text-slate-400">Counterparty: {disp.counterparty}</p>
+                      <p className="text-[11px] text-slate-300 leading-relaxed italic">"{disp.details}"</p>
+
+                      <div className="pt-2 flex gap-2">
+                        <button
+                          onClick={() => processDisputeCase(disp.id, 'resolved')}
+                          className="px-3 py-1 bg-emerald-500 text-slate-950 font-extrabold rounded-lg text-[10px]"
+                        >
+                          Mark Resolved
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Safety Reports */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h4 className="font-bold text-xs uppercase tracking-wider text-amber-400">Ad Safety Reports ({reports.length})</h4>
+                <div className="space-y-3">
+                  {reports.map((rep) => (
+                    <div key={rep.id} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="font-bold text-xs text-white">{rep.listingTitle}</span>
+                        <span className="text-[9px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded">{rep.reason}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">{rep.details}</p>
+
+                      <div className="pt-2 flex gap-2">
+                        <button
+                          onClick={() => {
+                            deleteListing(rep.listingId);
+                            processReport(rep.id, 'resolve_delete_ad');
+                            toast.success('Ad dropped and report resolved.');
+                          }}
+                          className="px-3 py-1 bg-rose-600 text-white font-extrabold rounded-lg text-[10px]"
+                        >
+                          Drop Reported Ad
+                        </button>
+                        <button
+                          onClick={() => processReport(rep.id, 'dismiss')}
+                          className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-[10px]"
+                        >
+                          Dismiss Report
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: ANNOUNCEMENTS & MASS BROADCAST */}
+        {activeTab === 'announcements' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Form 1: System Notice */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-emerald-400" />
+                  <span>Post App Banner Announcement</span>
+                </h3>
+
+                <form onSubmit={handlePostAnnouncement} className="space-y-3 text-xs">
+                  <input
+                    type="text"
+                    required
+                    value={annTitle}
+                    onChange={(e) => setAnnTitle(e.target.value)}
+                    placeholder="Headline Title (e.g. LAUTECH Gate Safe Spot Live)"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-rose-500"
+                  />
+                  <textarea
+                    rows={3}
+                    required
+                    value={annMessage}
+                    onChange={(e) => setAnnMessage(e.target.value)}
+                    placeholder="Announcement message body..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-rose-500"
+                  />
+                  <select
+                    value={annType}
+                    onChange={(e) => setAnnType(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  >
+                    <option value="info">Info (Blue)</option>
+                    <option value="warning">Warning (Amber)</option>
+                    <option value="success">Success (Emerald)</option>
+                    <option value="alert">Alert (Rose)</option>
+                  </select>
+                  <button type="submit" className="w-full py-3 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs shadow">
+                    Publish Banner Announcement
+                  </button>
+                </form>
+              </div>
+
+              {/* Form 2: Mass Broadcast */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                  <Radio className="w-4 h-4 text-purple-400" />
+                  <span>Push Broadcast to All User Inboxes</span>
+                </h3>
+
+                <form onSubmit={handleSendMassBroadcast} className="space-y-3 text-xs">
+                  <input
+                    type="text"
+                    required
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="Broadcast Subject Headline"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <textarea
+                    rows={4}
+                    required
+                    value={broadcastMsg}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    placeholder="Enter broadcast message body..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                  />
+                  <button type="submit" className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black rounded-xl text-xs shadow">
+                    Send Mass Notification to {allUsers.length} Users
+                  </button>
+                </form>
+              </div>
+
+            </div>
+
+            {/* Active Announcements */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-3">
+              <h4 className="font-bold text-xs uppercase tracking-wider text-slate-400">Active System Banners</h4>
+              <div className="space-y-2">
+                {announcements.map((ann) => (
+                  <div key={ann.id} className="p-3 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
+                    <div>
+                      <span className="font-extrabold text-white">{ann.title}: </span>
+                      <span className="text-slate-300">{ann.message}</span>
+                    </div>
+                    <button onClick={() => deleteAnnouncement(ann.id)} className="p-1 text-slate-500 hover:text-rose-400">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: SAFE SPOTS MANAGER */}
+        {activeTab === 'safespots' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="font-black text-sm text-white uppercase tracking-wider">Register Safe Exchange Spot</h3>
+                <form onSubmit={handleAddSafeSpot} className="space-y-3 text-xs">
+                  <input
+                    type="text"
+                    required
+                    value={spotName}
+                    onChange={(e) => setSpotName(e.target.value)}
+                    placeholder="Spot Name (e.g. LAUTECH Library Gate)"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+                  />
+                  <select
+                    value={spotZone}
+                    onChange={(e) => setSpotZone(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  >
+                    <option value="LAUTECH Area">LAUTECH Area</option>
+                    <option value="Takie / Center">Takie / Center</option>
+                    <option value="Sabo Market Zone">Sabo Market Zone</option>
+                    <option value="Police HQ">Police HQ</option>
+                  </select>
+                  <select
+                    value={spotCategory}
+                    onChange={(e) => setSpotCategory(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none"
+                  >
+                    <option value="Police Safe Zone">Police Safe Zone</option>
+                    <option value="Public Library">Public Library</option>
+                    <option value="Shopping Mall">Shopping Mall</option>
+                    <option value="Cafe">Cafe</option>
+                  </select>
+                  <input
+                    type="text"
+                    required
+                    value={spotAddress}
+                    onChange={(e) => setSpotAddress(e.target.value)}
+                    placeholder="Full Address"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+                  />
+                  <button type="submit" className="w-full py-3 bg-teal-500 text-slate-950 font-black rounded-xl text-xs shadow">
+                    Register Exchange Location
+                  </button>
+                </form>
+              </div>
+
+              <div className="lg:col-span-7 space-y-3">
+                <h3 className="font-black text-sm text-white uppercase tracking-wider">Active Verified Safe Spots ({safeSpots.length})</h3>
+                <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+                  {safeSpots.map((spot) => (
+                    <div key={spot.id} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between text-xs">
+                      <div>
+                        <h4 className="font-extrabold text-white">{spot.name}</h4>
+                        <p className="text-[11px] text-slate-400">{spot.zone} • {spot.address}</p>
+                      </div>
+                      <button onClick={() => deleteSafeSpot(spot.id)} className="p-2 text-slate-500 hover:text-rose-400">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 9: SECURITY & ROOT CONFIG */}
+        {activeTab === 'security' && (
+          <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              
+              {/* Terminal Credentials Update */}
+              <div className="bg-slate-900 border border-rose-500/30 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="font-black text-sm text-rose-400 uppercase tracking-widest flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  <span>Update Root Credentials & PIN</span>
+                </h3>
+
+                <form onSubmit={handleUpdateAdminPass} className="space-y-3 text-xs">
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-bold uppercase">Admin Login Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={newAdminEmail}
+                      onChange={(e) => setNewAdminEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none font-mono"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-bold uppercase">Admin Access Password</label>
+                    <input
+                      type="text"
+                      required
+                      value={newAdminPass}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-400 font-bold uppercase">6-Digit Master Security PIN</label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={newAdminPin}
+                      onChange={(e) => setNewAdminPin(e.target.value)}
+                      className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-2.5 text-rose-400 font-black focus:outline-none font-mono tracking-widest"
+                    />
+                  </div>
+
+                  <button type="submit" className="w-full py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-lg uppercase tracking-wider">
+                    Save New Master Credentials
+                  </button>
+                </form>
+              </div>
+
+              {/* System Config Toggles */}
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <h3 className="font-black text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                  <SlidersHorizontal className="w-4 h-4 text-emerald-400" />
+                  <span>Global Platform Switches</span>
+                </h3>
+
+                <div className="space-y-3 text-xs">
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Maintenance Mode</p>
+                      <p className="text-[10px] text-slate-500">Locks public marketplace feed for updates</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateSystemConfig({ maintenanceMode: !systemConfig.maintenanceMode })}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${systemConfig.maintenanceMode ? 'bg-rose-600' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${systemConfig.maintenanceMode ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Auto-Approve Classified Ads</p>
+                      <p className="text-[10px] text-slate-500">Post listings instantly without admin pre-review</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => updateSystemConfig({ autoApproveAds: !systemConfig.autoApproveAds })}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${systemConfig.autoApproveAds ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${systemConfig.autoApproveAds ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsSqlSchemaOpen(true)}
+                    className="w-full py-3 bg-slate-950 hover:bg-slate-800 text-emerald-400 font-bold rounded-2xl text-xs border border-emerald-500/30 flex items-center justify-center gap-2 transition-colors"
+                  >
+                    <Database className="w-4 h-4" />
+                    <span>View Supabase SQL Schema Migration Script</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Security Intrusion Log */}
+            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+              <h3 className="font-black text-sm text-rose-400 uppercase tracking-widest flex items-center gap-2">
+                <Siren className="w-4 h-4" />
+                <span>Unauthorized Intrusion & Wrong Password Attempts</span>
+              </h3>
+
+              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                {intrusionLogs.length === 0 ? (
+                  <p className="text-slate-500 text-xs italic py-4">No unauthorized access attempts recorded.</p>
+                ) : (
+                  intrusionLogs.map((log) => (
+                    <div key={log.id} className="p-3 bg-slate-950 border border-rose-500/20 rounded-2xl text-xs space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-mono font-bold text-rose-400">{log.attemptedEmail}</span>
+                        <span className="text-[9px] font-mono text-slate-500">{log.timestamp}</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400 font-mono">{log.mediaStatus}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      <Footer />
+      <MobileNav />
+      <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
+      <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
+      <AiShoppingAssistantModal isOpen={isAiCopilotOpen} onClose={() => setIsAiCopilotOpen(false)} />
+      <SqlSchemaViewer isOpen={isSqlSchemaOpen} onClose={() => setIsSqlSchemaOpen(false)} />
+    </div>
+  );
+}
