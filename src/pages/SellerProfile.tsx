@@ -14,13 +14,11 @@ import SEO from '../components/SEO';
 import { 
   MapPin, 
   Calendar, 
-  MessageSquare, 
   MessageCircle,
   Package, 
   Star, 
   Award, 
   Phone,
-  Plus,
   Bell,
   Check,
   Share2,
@@ -35,7 +33,7 @@ import {
   Globe,
   Instagram,
   Twitter,
-  ShieldCheck
+  Plus
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -89,7 +87,7 @@ const SellerProfile: React.FC = () => {
       if (event.target?.result) {
         const newAvatarUrl = event.target.result as string;
         updateUser(user.id, { avatarUrl: newAvatarUrl });
-        toast.success('🎉 Profile photo updated!');
+        toast.success('🎉 Profile photo updated & saved to database!');
       }
     };
     reader.readAsDataURL(file);
@@ -103,7 +101,7 @@ const SellerProfile: React.FC = () => {
       if (event.target?.result) {
         const newBannerUrl = event.target.result as string;
         updateUser(user.id, { storeBannerUrl: newBannerUrl });
-        toast.success('🎨 Storefront cover photo updated!');
+        toast.success('🎨 Storefront cover photo updated & saved to database!');
       }
     };
     reader.readAsDataURL(file);

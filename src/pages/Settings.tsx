@@ -15,48 +15,25 @@ import {
   Camera, 
   Share2, 
   User, 
-  Check, 
   Save, 
   Building2, 
   MapPin, 
-  Phone, 
-  Mail, 
-  FileText, 
   Award, 
-  Lock, 
-  Upload, 
-  Layout, 
-  ImageIcon,
-  CheckCircle2,
-  ExternalLink,
-  Shield,
-  KeyRound,
-  Store,
-  CreditCard,
-  Globe,
-  Instagram,
-  Twitter,
-  Clock,
-  Briefcase,
-  Database,
-  RefreshCw,
-  EyeOff,
-  Eye,
-  MessageSquare,
-  Download
+  KeyRound, 
+  Store, 
+  CreditCard, 
+  Globe, 
+  Instagram, 
+  Twitter, 
+  Clock, 
+  Database, 
+  RefreshCw, 
+  Download,
+  Layout,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
-
-const POPULAR_LOCATIONS = [
-  'Under G, Ogbomoso',
-  'LAUTECH Main Gate, Ogbomoso',
-  'Takie Square, Ogbomoso',
-  'Adenike Area, Ogbomoso',
-  'Sabo Market, Ogbomoso',
-  'Aroje & Akala Way, Ogbomoso',
-  'Ibadan, Oyo State',
-];
 
 const NIGERIAN_BANKS = [
   'Access Bank',
@@ -100,7 +77,6 @@ const Settings: React.FC = () => {
   const [websiteUrl, setWebsiteUrl] = useState(user?.websiteUrl || '');
   const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
   const [twitterHandle, setTwitterHandle] = useState(user?.twitterHandle || '');
-  const [whatsappNumber, setWhatsappNumber] = useState(user?.whatsappNumber || user?.phoneNumber || '');
 
   // Communication & Privacy Preferences
   const [emailNotifications, setEmailNotifications] = useState(user?.emailNotifications ?? true);
@@ -138,7 +114,6 @@ const Settings: React.FC = () => {
       setWebsiteUrl(user.websiteUrl || '');
       setInstagramHandle(user.instagramHandle || '');
       setTwitterHandle(user.twitterHandle || '');
-      setWhatsappNumber(user.whatsappNumber || user.phoneNumber || '');
 
       setEmailNotifications(user.emailNotifications ?? true);
       setWhatsappNotifications(user.whatsappNotifications ?? true);
@@ -173,8 +148,10 @@ const Settings: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        setAvatarUrl(event.target.result as string);
-        toast.success('New profile picture loaded. Click "Save Profile Changes" below.');
+        const newAvatar = event.target.result as string;
+        setAvatarUrl(newAvatar);
+        updateUser(user.id, { avatarUrl: newAvatar });
+        toast.success('🎉 Profile picture updated and saved!');
       }
     };
     reader.readAsDataURL(file);
@@ -186,8 +163,10 @@ const Settings: React.FC = () => {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        setStoreBannerUrl(event.target.result as string);
-        toast.success('New store cover banner loaded. Click "Save Profile Changes" to update.');
+        const newBanner = event.target.result as string;
+        setStoreBannerUrl(newBanner);
+        updateUser(user.id, { storeBannerUrl: newBanner });
+        toast.success('🎨 Store cover photo updated and saved!');
       }
     };
     reader.readAsDataURL(file);
@@ -222,7 +201,6 @@ const Settings: React.FC = () => {
         websiteUrl: websiteUrl.trim(),
         instagramHandle: instagramHandle.trim(),
         twitterHandle: twitterHandle.trim(),
-        whatsappNumber: whatsappNumber.trim(),
 
         emailNotifications,
         whatsappNotifications,
@@ -231,7 +209,7 @@ const Settings: React.FC = () => {
       });
 
       setIsSaving(false);
-      toast.success('🎉 Profile & preferences synchronized with database!');
+      toast.success('🎉 Profile & preferences synchronized instantly to Supabase!');
     } catch (e: any) {
       setIsSaving(false);
       toast.error('Failed to save profile changes. Please try again.');
@@ -259,7 +237,7 @@ const Settings: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Profile & Store Settings</h1>
-            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, bank payout account, and storefront branding</p>
+            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, bio, bank payout account, and storefront branding</p>
           </div>
 
           <Link
@@ -280,7 +258,7 @@ const Settings: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-white uppercase tracking-wider">Database Connection</span>
+                <span className="text-xs font-black text-white uppercase tracking-wider">Supabase Live Connection</span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
               </div>
               <p className="text-[11px] text-slate-400 font-mono">Synced: {lastSyncTime} • UID: {user.id.slice(0, 12)}...</p>
@@ -417,6 +395,17 @@ const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bio / Description *</label>
+                  <textarea
+                    rows={3}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    placeholder="Write a brief bio or description for your profile and store..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
+                  />
+                </div>
               </div>
 
               {/* Business / Storefront Metadata */}
@@ -479,17 +468,6 @@ const Settings: React.FC = () => {
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
                     />
                   </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Store Bio / Description</label>
-                  <textarea
-                    rows={3}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                    placeholder="Describe your store offerings, warranty terms, or pickup hours..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3.5 text-xs text-white focus:outline-none focus:border-emerald-500 leading-relaxed font-medium"
-                  />
                 </div>
               </div>
 
@@ -657,33 +635,35 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Role</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setRole('buyer')}
-                    className={`py-3 rounded-xl text-xs font-black transition-all border ${
-                      role === 'buyer'
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    Casual Buyer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setRole('seller')}
-                    className={`py-3 rounded-xl text-xs font-black transition-all border ${
-                      role === 'seller'
-                        ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
-                  >
-                    Merchant / Seller
-                  </button>
+              {user.role !== 'admin' && (
+                <div className="space-y-1.5 pt-2">
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Role</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setRole('buyer')}
+                      className={`py-3 rounded-xl text-xs font-black transition-all border ${
+                        role === 'buyer'
+                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow'
+                          : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
+                    >
+                      Casual Buyer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole('seller')}
+                      className={`py-3 rounded-xl text-xs font-black transition-all border ${
+                        role === 'seller'
+                          ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow'
+                          : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
+                    >
+                      Merchant / Seller
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <button
                 type="submit"
@@ -691,7 +671,7 @@ const Settings: React.FC = () => {
                 className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95"
               >
                 <Save className="w-4 h-4" />
-                <span>{isSaving ? 'Synchronizing to Database...' : 'Save Profile Changes'}</span>
+                <span>{isSaving ? 'Synchronizing to Supabase...' : 'Save Profile Changes'}</span>
               </button>
             </div>
 

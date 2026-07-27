@@ -39,12 +39,22 @@ export const userService = {
         phoneNumber: data.phone_number,
         avatarUrl: data.avatar_url || '/logo.png',
         storeBannerUrl: data.store_banner_url,
+        bio: data.bio,
         role: data.role,
         verified: data.verified,
         verificationType: data.verification_type,
         businessName: data.business_name,
+        cacNumber: data.cac_number,
+        businessHours: data.business_hours,
+        bankName: data.bank_name,
+        accountNumber: data.account_number,
+        accountName: data.account_name,
+        websiteUrl: data.website_url,
+        instagramHandle: data.instagram_handle,
+        twitterHandle: data.twitter_handle,
+        whatsappNumber: data.whatsapp_number,
         location: data.location,
-        memberSince: new Date(data.member_since).toLocaleDateString(),
+        memberSince: new Date(data.member_since || Date.now()).toLocaleDateString(),
         status: data.status,
         restrictionReason: data.restriction_reason,
         appealStatus: data.appeal_status
@@ -67,10 +77,20 @@ export const userService = {
         phoneNumber: u.phone_number,
         avatarUrl: u.avatar_url || '/logo.png',
         storeBannerUrl: u.store_banner_url,
+        bio: u.bio,
         role: u.role,
         verified: u.verified,
         verificationType: u.verification_type,
         businessName: u.business_name,
+        cacNumber: u.cac_number,
+        businessHours: u.business_hours,
+        bankName: u.bank_name,
+        accountNumber: u.account_number,
+        accountName: u.account_name,
+        websiteUrl: u.website_url,
+        instagramHandle: u.instagram_handle,
+        twitterHandle: u.twitter_handle,
+        whatsappNumber: u.whatsapp_number,
         location: u.location,
         memberSince: new Date(u.member_since || Date.now()).toLocaleDateString(),
         status: u.status
@@ -89,10 +109,23 @@ export const userService = {
           email: profile.email,
           full_name: profile.full_name || profile.fullName,
           phone_number: profile.phone_number || profile.phoneNumber,
+          avatar_url: profile.avatar_url || profile.avatarUrl,
+          store_banner_url: profile.store_banner_url || profile.storeBannerUrl,
+          bio: profile.bio,
           role: profile.role || 'buyer',
           location: profile.location || 'Ogbomoso, Oyo State',
           verified: profile.verified || false,
-          verification_type: profile.verification_type || 'none'
+          verification_type: profile.verification_type || profile.verificationType || 'none',
+          business_name: profile.business_name || profile.businessName,
+          cac_number: profile.cac_number || profile.cacNumber,
+          business_hours: profile.business_hours || profile.businessHours,
+          bank_name: profile.bank_name || profile.bankName,
+          account_number: profile.account_number || profile.accountNumber,
+          account_name: profile.account_name || profile.accountName,
+          website_url: profile.website_url || profile.websiteUrl,
+          instagram_handle: profile.instagram_handle || profile.instagramHandle,
+          twitter_handle: profile.twitter_handle || profile.twitterHandle,
+          whatsapp_number: profile.whatsapp_number || profile.whatsappNumber
         }])
         .select();
       if (error) throw error;
@@ -109,10 +142,20 @@ export const userService = {
       if (updates.phoneNumber !== undefined) dbUpdates.phone_number = updates.phoneNumber;
       if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
       if (updates.storeBannerUrl !== undefined) dbUpdates.store_banner_url = updates.storeBannerUrl;
+      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
       if (updates.role !== undefined) dbUpdates.role = updates.role;
       if (updates.verified !== undefined) dbUpdates.verified = updates.verified;
       if (updates.verificationType !== undefined) dbUpdates.verification_type = updates.verificationType;
       if (updates.businessName !== undefined) dbUpdates.business_name = updates.businessName;
+      if (updates.cacNumber !== undefined) dbUpdates.cac_number = updates.cacNumber;
+      if (updates.businessHours !== undefined) dbUpdates.business_hours = updates.businessHours;
+      if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName;
+      if (updates.accountNumber !== undefined) dbUpdates.account_number = updates.accountNumber;
+      if (updates.accountName !== undefined) dbUpdates.account_name = updates.accountName;
+      if (updates.websiteUrl !== undefined) dbUpdates.website_url = updates.websiteUrl;
+      if (updates.instagramHandle !== undefined) dbUpdates.instagram_handle = updates.instagramHandle;
+      if (updates.twitterHandle !== undefined) dbUpdates.twitter_handle = updates.twitterHandle;
+      if (updates.whatsappNumber !== undefined) dbUpdates.whatsapp_number = updates.whatsappNumber;
       if (updates.location !== undefined) dbUpdates.location = updates.location;
       if (updates.status !== undefined) dbUpdates.status = updates.status;
 
