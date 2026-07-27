@@ -1,20 +1,17 @@
 import { supabaseClient } from '../supabase';
 
-export const updateUser = async (userId: string, updates: any) => {
+export const getUsers = async () => {
   try {
-    const { data, error } = await supabaseClient
-      .from('users')
-      .update(updates)
-      .eq('id', userId);
+    const { data, error } = await supabaseClient.from('users').select('*');
 
     if (error) {
-      console.error('Error updating user:', error);
+      console.error('Error fetching users:', error);
       throw error;
     }
 
-    return data[0];
+    return data;
   } catch (error) {
-    console.error('Error updating user:', error);
+    console.error('Error fetching users:', error);
     throw error;
   }
 };
