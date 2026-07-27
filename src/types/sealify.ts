@@ -94,6 +94,8 @@ export interface UserProfile {
   businessName?: string;
   cacNumber?: string;
   businessHours?: string;
+  neighborhoods?: string[];
+  portfolioUrl?: string;
   
   // Bank Settlement Details
   bankName?: string;
