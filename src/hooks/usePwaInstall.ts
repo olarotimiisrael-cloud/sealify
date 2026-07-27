@@ -5,6 +5,7 @@ export function usePwaInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [isSafari, setIsSafari] = useState(false);
 
   useEffect(() => {
     // Check if app is already running in standalone display mode
@@ -16,12 +17,19 @@ export function usePwaInstall() {
       setIsInstalled(true);
     }
 
-    // Detect iOS devices
+    // Detect iOS devices (iPhone, iPad, iPod)
+    // Some newer iPads identify as 'MacIntel' but have touch points
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const iosDevice = /iphone|ipad|ipod/.test(userAgent);
-    setIsIos(iosDevice && !isStandalone);
+    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) || 
+                       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    setIsIos(!!isIosDevice && !isStandalone);
 
-    // Global listener for beforeinstallprompt event
+    // Detect if the browser is Safari (required for iOS installation)
+    const isSafariBrowser = /safari/.test(userAgent) && !/chrome|crios|crmo|firefox|fxios|edge|edgios|opera|opr|opr\/|opr\\/.test(userAgent);
+    setIsSafari(isSafariBrowser);
+
+    // Global listener for beforeinstallprompt event (Android/Chrome/Edge)
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -65,6 +73,7 @@ export function usePwaInstall() {
     isInstallable,
     isInstalled,
     isIos,
+    isSafari,
     install
   };
 }
