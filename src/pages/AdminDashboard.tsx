@@ -19,6 +19,20 @@ const AdminDashboard: React.FC = () => {
     fetchUsers();
   }, []);
 
+  const handleEditUser = async (user: any) => {
+    setIsAddUserModalOpen(true);
+    // Populate the modal with user data for editing
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      await deleteUser(userId);
+      setUsers(users.filter((u) => u.id !== userId));
+    } catch (error) {
+      console.error('Error deleting user:', error);
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-6">Admin Dashboard</h1>
@@ -42,8 +56,8 @@ const AdminDashboard: React.FC = () => {
                 <td>{user.username}</td>
                 <td>{user.email}</td>
                 <td>
-                  <Button onClick={() => console.log('Edit user', user)}>Edit</Button>
-                  <Button onClick={() => console.log('Delete user', user)}>Delete</Button>
+                  <Button onClick={() => handleEditUser(user)}>Edit</Button>
+                  <Button onClick={() => handleDeleteUser(user.id)}>Delete</Button>
                 </td>
               </tr>
             ))}
