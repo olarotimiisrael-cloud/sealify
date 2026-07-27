@@ -105,6 +105,7 @@ interface SealifyContextType {
   listings: Listing[];
   allUsers: UserProfile[];
   updateUser: (id: string, updatedData: Partial<UserProfile>) => Promise<void>;
+    addUser: (data: Partial<UserProfile>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => void;
   bulkDeleteUsers: (userIds: string[]) => void;
@@ -670,20 +671,99 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
-    const updated = await userService.update(id, data);
-    if (user?.id === id) {
-      setUser(prev => prev ? ({ ...prev, ...data, ...(updated || {}) }) : null);
-    }
-    addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
-    fetchData();
-  };
+        // Optimistically update the user in allUsers state immediately
+        setAllUsers(prev =>
+          prev.map(user =>
+            user.id === id ? { ...user, ...data } : user
+          )
+        );
+        
+        // Also update current user if it's the same user being edited
+        if (user?.id === id) {
+          setUser(prev => prev ? ({ ...prev, ...data }) : null);
+        }
+        
+        const updated = await userService.update(id, data);
+        if (updated === null) {
+          // Update failed, revert optimistic update
+          toast.error('Failed to update user. Please try again.');
+          // Refetch to get correct state
+          fetchData();
+          return;
+        }
+        
+        addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
+        toast.success('User updated successfully');
+        fetchData(); // Fetch fresh data to ensure consistency
+      };
 
-  const deleteUser = async (id: string) => { 
-    if (user?.id === id) logout();
-    await userService.delete(id); 
-    addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user'); 
-    fetchData(); 
-  };
+  const deleteUser = async (id: string) => {
+      if (user?.id === id) logout();
+      await userService.delete(id);
+      addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user');
+      fetchData();
+    };
+    
+    const addUser = async (data: Partial<UserProfile>) => {
+      // Prepare user data for insertion
+      const newUser = {
+        id: `usr_${Date.now()}`,
+        email: data.email!,
+        full_name: data.fullName!,
+        phone_number: data.phoneNumber ?? '',
+        role: data.role ?? 'buyer',
+        status: 'active',
+        location: data.location ?? 'Ogbomoso, Oyo State',
+        verified: false,
+        verification_type: 'none'
+      };
+      
+      try {
+        const created = await userService.create(newUser);
+        if (created === null) {
+          throw new Error('Failed to create user');
+        }
+        
+        // Add to optimistically to state
+        setAllUsers(prev => [...prev, {
+          id: newUser.id,
+          email: newUser.email,
+          fullName: newUser.full_name,
+          phoneNumber: newUser.phone_number,
+          avatarUrl: '/logo.png',
+          role: newUser.role as any,
+          status: newUser.status,
+          verified: newUser.verified,
+          memberSince: new Date().toISOString(),
+          location: newUser.location
+        }]);
+        
+        // If the newly created user is the current user (unlikely), update user state
+        if (user?.id === newUser.id) {
+          setUser(prev => ({
+            ...user,
+            id: newUser.id,
+            email: newUser.email,
+            fullName: newUser.full_name,
+            phoneNumber: newUser.phone_number,
+            avatarUrl: '/logo.png',
+            role: newUser.role as any,
+            status: newUser.status,
+            verified: newUser.verified,
+            memberSince: new Date().toISOString(),
+            location: newUser.location
+          }));
+        }
+        
+        addAuditLog('User Created', `Created new user ${newUser.email}`, 'user');
+        toast.success('User created successfully');
+        fetchData(); // Fetch fresh data to ensure consistency
+      } catch (err: any) {
+        toast.error(`Failed to create user: ${err.message ?? 'Unknown error'}`);
+        // Optionally rollback optimistic addition? We'll refetch to correct state
+        fetchData();
+      }
+    };
 
   const checkSearchAlertsForListing = useCallback((listing: Listing) => {
     searchAlerts.forEach(alert => {
