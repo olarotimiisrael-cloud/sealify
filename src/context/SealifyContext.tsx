@@ -1,5 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { Listing, UserProfile, FilterState, Category, Conversation, Message, VerificationBadgeType, PasswordChangeRequest, VerificationRequest, PromotionPaymentRequest, AdReport, AuditLog, SecurityIntrusionLog, DisputeCase, SiteSettings, SearchAlert, Review, CategoryStats, BuyerRequest, Wallet, Transaction } from '../types/sealify';
+import { 
+  Listing, 
+  UserProfile, 
+  FilterState, 
+  Category, 
+  Conversation, 
+  Message, 
+  VerificationBadgeType, 
+  PasswordChangeRequest, 
+  VerificationRequest, 
+  PromotionPaymentRequest, 
+  AdReport, 
+  AuditLog, 
+  SecurityIntrusionLog, 
+  DisputeCase, 
+  SiteSettings, 
+  SearchAlert, 
+  Review, 
+  CategoryStats, 
+  BuyerRequest, 
+  Wallet, 
+  Transaction,
+  UserStatus,
+  SystemAnnouncement,
+  MarketplaceDeal,
+  SafeMeetupSpotConfig
+} from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
 import { ALL_MOCK_USERS, MOCK_LISTINGS, MOCK_CONVERSATIONS } from '@/data/mockData';
@@ -16,23 +42,6 @@ export interface AppNotification {
   linkUrl?: string;
 }
 
-export interface SystemAnnouncement {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'alert';
-  active: boolean;
-  createdAt: string;
-}
-
-export interface MarketplaceDeal {
-  id: string;
-  itemTitle: string;
-  price: number;
-  location: string;
-  time: string;
-}
-
 export interface SystemConfig {
   maintenanceMode: boolean;
   autoApproveAds: boolean;
@@ -45,17 +54,6 @@ export interface PromotionPlanConfig {
   label: string;
   rate: number; 
   badge: string;
-}
-
-export interface SafeMeetupSpotConfig {
-  id: string;
-  name: string;
-  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
-  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
-  address: string;
-  distance: string;
-  hours: string;
-  cctvVerified: boolean;
 }
 
 interface AnalyticsData {
@@ -105,7 +103,7 @@ interface SealifyContextType {
   listings: Listing[];
   allUsers: UserProfile[];
   updateUser: (id: string, updatedData: Partial<UserProfile>) => Promise<void>;
-    addUser: (data: Partial<UserProfile>) => Promise<void>;
+  addUser: (data: Partial<UserProfile>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
   bulkUpdateUsers: (userIds: string[], updates: Partial<UserProfile>) => void;
   bulkDeleteUsers: (userIds: string[]) => void;
@@ -632,7 +630,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         phoneNumber: data.phoneNumber!,
         avatarUrl: '/logo.png',
         role: (data.role as any) || 'buyer',
-        status: 'active',
+        status: 'active' as UserStatus,
         verified: false,
         memberSince: new Date().toISOString(),
         location: 'Ogbomoso, Oyo State'
@@ -671,61 +669,69 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateUser = async (id: string, data: Partial<UserProfile>) => {
-        // Optimistically update the user in allUsers state immediately
-        setAllUsers(prev =>
-          prev.map(user =>
-            user.id === id ? { ...user, ...data } : user
-          )
-        );
-        
-        // Also update current user if it's the same user being edited
-        if (user?.id === id) {
-          setUser(prev => prev ? ({ ...prev, ...data }) : null);
-        }
-        
-        const updated = await userService.update(id, data);
-        if (updated === null) {
-          // Update failed, revert optimistic update
-          toast.error('Failed to update user. Please try again.');
-          // Refetch to get correct state
-          fetchData();
-          return;
-        }
-        
-        addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
-        toast.success('User updated successfully');
-        fetchData(); // Fetch fresh data to ensure consistency
-      };
+    setAllUsers(prev =>
+      prev.map(user =>
+        user.id === id ? { ...user, ...data } : user
+      )
+    );
+    
+    if (user?.id === id) {
+      setUser(prev => prev ? ({ ...prev, ...data }) : null);
+    }
+    
+    const updated = await userService.update(id, data);
+    if (updated === null) {
+      toast.error('Failed to update user. Please try again.');
+      fetchData();
+      return;
+    }
+    
+    addAuditLog('User Record Updated', `Modified profile for user ID ${id}`, 'user');
+    toast.success('User updated successfully');
+    fetchData(); 
+  };
 
   const deleteUser = async (id: string) => {
-      if (user?.id === id) logout();
-      await userService.delete(id);
-      addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user');
-      fetchData();
+    if (user?.id === id) logout();
+    await userService.delete(id);
+    addAuditLog('User Purged', `Deleted account for user ID ${id}`, 'user');
+    fetchData();
+  };
+    
+  const addUser = async (data: Partial<UserProfile>) => {
+    const newUser = {
+      id: `usr_${Date.now()}`,
+      email: data.email!,
+      full_name: data.fullName!,
+      phone_number: data.phoneNumber ?? '',
+      role: data.role ?? 'buyer',
+      status: 'active' as UserStatus,
+      location: data.location ?? 'Ogbomoso, Oyo State',
+      verified: false,
+      verification_type: 'none' as VerificationBadgeType
     };
     
-    const addUser = async (data: Partial<UserProfile>) => {
-      // Prepare user data for insertion
-      const newUser = {
-        id: `usr_${Date.now()}`,
-        email: data.email!,
-        full_name: data.fullName!,
-        phone_number: data.phoneNumber ?? '',
-        role: data.role ?? 'buyer',
-        status: 'active',
-        location: data.location ?? 'Ogbomoso, Oyo State',
-        verified: false,
-        verification_type: 'none'
-      };
+    try {
+      const created = await userService.create(newUser);
+      if (created === null) {
+        throw new Error('Failed to create user');
+      }
       
-      try {
-        const created = await userService.create(newUser);
-        if (created === null) {
-          throw new Error('Failed to create user');
-        }
-        
-        // Add to optimistically to state
-        setAllUsers(prev => [...prev, {
+      setAllUsers(prev => [...prev, {
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.full_name,
+        phoneNumber: newUser.phone_number,
+        avatarUrl: '/logo.png',
+        role: newUser.role as any,
+        status: newUser.status,
+        verified: newUser.verified,
+        memberSince: new Date().toISOString(),
+        location: newUser.location
+      }]);
+      
+      if (user?.id === newUser.id) {
+        setUser(prev => ({
           id: newUser.id,
           email: newUser.email,
           fullName: newUser.full_name,
@@ -736,34 +742,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           verified: newUser.verified,
           memberSince: new Date().toISOString(),
           location: newUser.location
-        }]);
-        
-        // If the newly created user is the current user (unlikely), update user state
-        if (user?.id === newUser.id) {
-          setUser(prev => ({
-            ...user,
-            id: newUser.id,
-            email: newUser.email,
-            fullName: newUser.full_name,
-            phoneNumber: newUser.phone_number,
-            avatarUrl: '/logo.png',
-            role: newUser.role as any,
-            status: newUser.status,
-            verified: newUser.verified,
-            memberSince: new Date().toISOString(),
-            location: newUser.location
-          }));
-        }
-        
-        addAuditLog('User Created', `Created new user ${newUser.email}`, 'user');
-        toast.success('User created successfully');
-        fetchData(); // Fetch fresh data to ensure consistency
-      } catch (err: any) {
-        toast.error(`Failed to create user: ${err.message ?? 'Unknown error'}`);
-        // Optionally rollback optimistic addition? We'll refetch to correct state
-        fetchData();
+        }));
       }
-    };
+      
+      addAuditLog('User Created', `Created new user ${newUser.email}`, 'user');
+      toast.success('User created successfully');
+      fetchData(); 
+    } catch (err: any) {
+      toast.error(`Failed to create user: ${err.message ?? 'Unknown error'}`);
+      fetchData();
+    }
+  };
 
   const checkSearchAlertsForListing = useCallback((listing: Listing) => {
     searchAlerts.forEach(alert => {
@@ -972,7 +961,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       language, setLanguage, t, categories, 
       addCategory: (c) => setCategories(prev => [...prev, c]), deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? {...c, name} : c)),
       analytics, marketStats, login, signup, sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), verifyPhoneOtp: async () => true, 
-      adminLogin, logout, listings, allUsers, updateUser, deleteUser,
+      adminLogin, logout, listings, allUsers, updateUser, addUser, deleteUser,
       bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)), bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
       bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)), bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
       savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,

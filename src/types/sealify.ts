@@ -302,3 +302,20 @@ export interface SafeMeetupSpotConfig {
   hours: string;
   cctvVerified: boolean;
 }
+
+export interface SystemAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'alert';
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MarketplaceDeal {
+  id: string;
+  itemTitle: string;
+  price: number;
+  location: string;
+  time: string;
+}

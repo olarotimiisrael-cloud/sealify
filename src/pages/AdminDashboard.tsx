@@ -13,6 +13,7 @@ import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
 import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
+import VerifiedBadge from '../components/VerifiedBadge';
 import { 
   X, CheckCircle2, Plus, 
   Shield, 
@@ -46,7 +47,10 @@ import {
   Crown,
   Clock,
   ExternalLink,
-  RefreshCw
+  RefreshCw,
+  Award,
+  CheckSquare,
+  Database
 } from 'lucide-react';
 import { UserProfile, Listing, UserStatus } from '../types/sealify';
 import { toast } from 'sonner';
@@ -137,7 +141,7 @@ export default function AdminDashboard() {
   // Safe Spot Form State
   const [spotName, setSpotName] = useState('');
   const [spotZone, setSpotZone] = useState<'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ'>('Takie / Center');
-  const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Cafe'>('Police Safe Zone');
+  const [spotCategory, setSpotCategory] = useState<'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café'>('Police Safe Zone');
   const [spotAddress, setSpotAddress] = useState('');
 
   // Mass Broadcast Modal
@@ -433,7 +437,7 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* Quick Action Banner for Sample Cleanup */}
+            {/* Quick Action Banner for Sample Cleanup Tool */}
             <div className="p-6 bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-950 border-2 border-rose-500/40 rounded-3xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl">
               <div className="space-y-1 text-center sm:text-left">
                 <h3 className="text-lg font-black text-white flex items-center justify-center sm:justify-start gap-2">
@@ -1073,7 +1077,7 @@ export default function AdminDashboard() {
                     <option value="Police Safe Zone">Police Safe Zone</option>
                     <option value="Public Library">Public Library</option>
                     <option value="Shopping Mall">Shopping Mall</option>
-                    <option value="Cafe">Cafe</option>
+                    <option value="Café">Café</option>
                   </select>
                   <input
                     type="text"
