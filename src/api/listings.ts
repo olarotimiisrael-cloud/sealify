@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { getSql, queryDb, queryOneDb, executeDb, transactionDb } from "../db/hyperdrive";
+import { getSql } from "../db/hyperdrive";
+import { createClient } from "@supabase/supabase-js";
 
 export const listingsRoutes = new Hono();
 
@@ -28,7 +29,7 @@ listingsRoutes.get("/", async (c) => {
     let paramIndex = 2;
 
     if (category && category !== "All") {
-      whereClause += ` AND l.category = $${paramIndex}`;
+      whereClause += ` AND l.category_id = $${paramIndex}`;
       params.push(category);
       paramIndex++;
     }
@@ -58,7 +59,7 @@ listingsRoutes.get("/", async (c) => {
     }
 
     if (searchQuery) {
-      whereClause += ` AND (l.title ILIKE $${paramIndex} OR l.description ILIKE $${paramIndex} OR l.category ILIKE $${paramIndex})`;
+      whereClause += ` AND (l.title ILIKE $${paramIndex} OR l.description ILIKE $${paramIndex} OR l.category_id ILIKE $${paramIndex})`;
       params.push(`%${searchQuery}%`);
       paramIndex++;
     }
@@ -183,7 +184,7 @@ listingsRoutes.post("/", async (c) => {
     
     const result = await sql`
       INSERT INTO listings (
-        seller_id, title, description, price, category, condition, location,
+        seller_id, title, description, price, category_id, condition, location,
         images, video_url, specifications, featured, status, views_count, created_at, updated_at
       ) VALUES (
         ${user.id}, ${title}, ${description}, ${price}, ${category}, ${condition}, ${location},
@@ -232,7 +233,7 @@ listingsRoutes.put("/:id", async (c) => {
     }
 
     const allowedFields = [
-      'title', 'description', 'price', 'category', 'condition', 'location',
+      'title', 'description', 'price', 'category_id', 'condition', 'location',
       'images', 'video_url', 'specifications', 'featured', 'status',
       'promotion_plan_name', 'promotion_duration_months', 'promotion_start_date', 'promotion_end_date'
     ];
@@ -388,10 +389,10 @@ listingsRoutes.get("/meta/categories", async (c) => {
     const sql = getSql(env);
 
     const categories = await sql`
-      SELECT category, COUNT(*) as count
+      SELECT category_id as category, COUNT(*) as count
       FROM listings
       WHERE status = 'active'
-      GROUP BY category
+      GROUP BY category_id
       ORDER BY count DESC
     `;
 
