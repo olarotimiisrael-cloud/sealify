@@ -49,7 +49,7 @@ app.all("*", async (c) => {
   const response = await requestHandler(c.req.raw, {
     env: c.env,
     ctx: c.executionCtx
-  });
+  } as any);
   return response;
 });
 
