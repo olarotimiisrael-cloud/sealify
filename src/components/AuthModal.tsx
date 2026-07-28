@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Logo from './Logo';
-import { X, ShieldCheck, Mail, Lock, UserCheck, KeyRound, LogIn, UserPlus, Smartphone, User, CheckCircle2, ChevronRight, Terminal, Info, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, LogIn, UserPlus, Smartphone, User, Sparkles, Terminal } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthModalProps {
@@ -19,12 +19,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>(initialTab);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Auth fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
 
   if (!isOpen) return null;
 
@@ -60,7 +58,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
         password,
         fullName: fullName.trim(),
         phoneNumber: phone.trim(),
-        role
       });
       setIsSubmitting(false);
       onClose();
@@ -84,7 +81,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
 
         <div className="text-center space-y-2 mb-6">
           <Logo size="lg" className="justify-center" />
-          <h2 className="text-2xl font-black text-white tracking-tight uppercase">Sealify Marketplace Access</h2>
+          <h2 className="text-2xl font-black text-white tracking-tight uppercase">Sealify Marketplace</h2>
           <p className="text-xs text-slate-400">Nigeria's Trusted Local Classifieds Network • Ogbomoso Hub</p>
         </div>
 
@@ -96,7 +93,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               activeTab === 'login' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'
             }`}
           >
-            <LogIn className="w-3.5 h-3.5" /> 1. Log In
+            <LogIn className="w-3.5 h-3.5" /> Log In
           </button>
           <button
             type="button"
@@ -105,7 +102,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               activeTab === 'signup' ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400'
             }`}
           >
-            <UserPlus className="w-3.5 h-3.5" /> 2. Sign Up
+            <UserPlus className="w-3.5 h-3.5" /> Sign Up
           </button>
         </div>
 
@@ -144,7 +141,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               disabled={isSubmitting}
               className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95 disabled:opacity-50"
             >
-              {isSubmitting ? 'Logging in...' : 'Log In to Profile'}
+              {isSubmitting ? 'Logging in...' : 'Log In to Account'}
             </button>
           </form>
         ) : (
@@ -152,7 +149,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
               <p className="text-[10px] text-emerald-300 font-semibold leading-tight">
-                <strong>Instant Unrestricted Access:</strong> You can browse, chat, and post ads immediately upon account creation.
+                <strong>Instant Unrestricted Access:</strong> Buy and sell immediately after account creation.
               </p>
             </div>
 
@@ -172,7 +169,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Active Phone / WhatsApp Number *</label>
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Phone Number *</label>
               <div className="relative">
                 <Smartphone className="w-4 h-4 text-emerald-400 absolute left-3.5 top-3" />
                 <input
@@ -216,29 +213,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setRole('buyer')}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${role === 'buyer' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
-              >
-                I'm a Buyer
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('seller')}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${role === 'seller' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
-              >
-                I'm a Seller
-              </button>
-            </div>
-
             <button 
               type="submit" 
               disabled={isSubmitting}
               className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95 disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+              {isSubmitting ? 'Creating Account...' : 'Create Free Account'}
             </button>
           </form>
         )}
@@ -250,7 +230,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
           </p>
         </div>
 
-        {/* Root Access Door */}
         <Link 
           to="/admin/login" 
           onClick={onClose}
