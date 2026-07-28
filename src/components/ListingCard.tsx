@@ -170,7 +170,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
             </div>
 
             <Link to={`/listing/${listing.id}`}>
-              <h3 className="text-xs sm:text-sm font-bold text-slate-100 line-clamp-2 hover:text-emerald-400 transition-colors leading-snug">
+              <h3 className="text-xs sm:text-sm font-bold text-slate-100 line-clamp-1 hover:text-emerald-400 transition-colors leading-snug">
                 {listing.title}
               </h3>
             </Link>

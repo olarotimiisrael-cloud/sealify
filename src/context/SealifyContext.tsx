@@ -656,7 +656,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fullName: data.fullName!,
         phoneNumber: data.phoneNumber!,
         avatarUrl: '/logo.png',
-        role: (data.role as any) || 'buyer',
+        role: 'buyer' as const,
         status: 'active' as UserStatus,
         verified: false,
         memberSince: new Date().toISOString(),

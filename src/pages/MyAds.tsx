@@ -290,9 +290,7 @@ const MyAds: React.FC = () => {
               <button
                 key={f}
                 onClick={() => setStatusFilter(f)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all capitalize ${
-                  statusFilter === f ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'
-                }`}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${statusFilter === f ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-400 hover:text-white'}`}
               >
                 {f}
               </button>
