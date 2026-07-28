@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, queryDb, queryOneDb, executeDb } from "../db/hyperdrive";
+import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
 export const messagesRoutes = new Hono();
@@ -215,3 +215,6 @@ messagesRoutes.put("/conversations/:id/read", async (c) => {
     return c.json({ error: "Failed to mark as read" }, 500);
   }
 });
+
+// Import Supabase client
+import { createClient } from "@supabase/supabase-js";
