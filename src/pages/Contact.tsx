@@ -1,4 +1,3 @@
-py-1)">
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
