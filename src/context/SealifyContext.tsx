@@ -981,6 +981,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return { visitors: 142 + Math.floor(Math.random() * 20), activeAds: listings.filter(l => l.status === 'active').length, totalChats: conversations.length, totalRevenue: promotionPaymentRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0), userGrowth: Math.round((allUsers.length / 10) * 100) / 10, categoryDistribution: categories.map(c => ({ name: c.name, count: listings.filter(l => l.category === c.name).length, color: c.color })), activeSessions: [{ id: 'sess_1', user: 'Guest_Node', action: 'Searching', time: 'Just now' }] };
   }, [listings, allUsers, conversations, promotionPaymentRequests, categories]);
 
+  // Define activeCategory derived from filters
+  const activeCategory = filters.category;
+
   const contextValue = useMemo(() => ({
     user, setUser, isAuthenticated: !!user, isAdmin,
     adminEmail, adminPassword, adminPin, updateAdminCredentials,
@@ -1000,7 +1003,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,
     toggleSaveListing: async (id) => { if (user) { const exists = savedListingIds.includes(id); await favoriteService.toggle(user.id, id, exists); setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); } },
     isSaved: (id) => savedListingIds.includes(id), filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
-    activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
+    activeCategory, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
     compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
     isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
     createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
