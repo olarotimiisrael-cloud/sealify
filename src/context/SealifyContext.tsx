@@ -699,40 +699,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
     
   const addUser = async (data: Partial<UserProfile>) => {
-    const newUser = {
-      id: `usr_${Date.now()}`,
-      email: data.email!,
-      full_name: data.fullName!,
-      phone_number: data.phoneNumber ?? '',
-      role: data.role ?? 'buyer',
-      status: 'active' as UserStatus,
-      location: data.location ?? 'Ogbomoso, Oyo State',
-      verified: false,
-      verification_type: 'none' as VerificationBadgeType
-    };
-    
-    try {
-      const created = await userService.create(newUser);
-      if (created === null) {
-        throw new Error('Failed to create user');
-      }
+      const newUserId = `usr_${Date.now()}`;
+      const newUser = {
+        id: newUserId,
+        email: data.email!,
+        full_name: data.fullName!,
+        phone_number: data.phoneNumber ?? '',
+        role: data.role ?? 'buyer',
+        status: 'active' as UserStatus,
+        location: data.location ?? 'Ogbomoso, Oyo State',
+        verified: false,
+        verification_type: 'none' as VerificationBadgeType
+      };
       
-      setAllUsers(prev => [...prev, {
-        id: newUser.id,
-        email: newUser.email,
-        fullName: newUser.full_name,
-        phoneNumber: newUser.phone_number,
-        avatarUrl: '/logo.png',
-        role: newUser.role as any,
-        status: newUser.status,
-        verified: newUser.verified,
-        memberSince: new Date().toISOString(),
-        location: newUser.location
-      }]);
-      
-      if (user?.id === newUser.id) {
-        setUser(prev => ({
-          id: newUser.id,
+      try {
+        const created = await userService.create(newUser);
+        if (created === null) {
+          throw new Error('Failed to create user');
+        }
+        
+        const newUserProfile: UserProfile = {
+          id: newUserId,
           email: newUser.email,
           fullName: newUser.full_name,
           phoneNumber: newUser.phone_number,
@@ -742,17 +729,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           verified: newUser.verified,
           memberSince: new Date().toISOString(),
           location: newUser.location
-        }));
+        };
+        
+        setAllUsers(prev => [...prev, newUserProfile]);
+        
+        if (user?.id === newUserId) {
+          setUser(newUserProfile);
+        }
+        
+        addAuditLog('User Created', `Created new user ${newUser.email}`, 'user');
+        toast.success('User created successfully');
+        fetchData();
+      } catch (err: any) {
+        toast.error(`Failed to create user: ${err.message ?? 'Unknown error'}`);
+        fetchData();
       }
-      
-      addAuditLog('User Created', `Created new user ${newUser.email}`, 'user');
-      toast.success('User created successfully');
-      fetchData(); 
-    } catch (err: any) {
-      toast.error(`Failed to create user: ${err.message ?? 'Unknown error'}`);
-      fetchData();
-    }
-  };
+    };
 
   const checkSearchAlertsForListing = useCallback((listing: Listing) => {
     searchAlerts.forEach(alert => {

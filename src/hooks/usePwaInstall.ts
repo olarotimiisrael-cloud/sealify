@@ -5,9 +5,8 @@ export function usePwaInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false); // ADDED MISSING STATE
+  const [isAndroid, setIsAndroid] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
-  const [promptEvent, setPromptEvent] = useState<any>(null);
 
   useEffect(() => {
     const checkStandalone = () => {
@@ -27,7 +26,7 @@ export function usePwaInstall() {
     setIsIos(!!isIosDevice);
 
     const isAndroidDevice = /android/.test(ua);
-    setIsAndroid(!!isAndroidDevice); // USED CORRECT SETTER
+    setIsAndroid(!!isAndroidDevice);
 
     const isSafariBrowser = /safari/.test(ua) && !/chrome|crios|crmo|firefox|fxios|edge|edgios|opera|opr/.test(ua);
     setIsSafari(!!isSafariBrowser);
@@ -36,7 +35,6 @@ export function usePwaInstall() {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
-      setPromptEvent(e);
     };
 
     const handleAppInstalled = () => {
@@ -85,7 +83,6 @@ export function usePwaInstall() {
     isIos,
     isAndroid,
     isSafari,
-    install,
-    promptEvent
+    install
   };
 }
