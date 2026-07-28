@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { toast as sonnerToast } from 'sonner';
 
 type TestStatus = 'pending' | 'success' | 'error';
 
