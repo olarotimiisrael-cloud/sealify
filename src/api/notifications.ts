@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, queryDb, queryOneDb, executeDb } from "../db/hyperdrive";
+import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
 export const notificationsRoutes = new Hono();
@@ -160,3 +160,6 @@ notificationsRoutes.delete("/:id", async (c) => {
     return c.json({ error: "Failed to delete notification" }, 500);
   }
 });
+
+// Import Supabase client
+import { createClient } from "@supabase/supabase-js";
