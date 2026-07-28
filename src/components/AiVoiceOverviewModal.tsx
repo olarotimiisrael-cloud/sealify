@@ -171,7 +171,7 @@ export const AiVoiceOverviewModal: React.FC<AiVoiceOverviewModalProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-sm text-white">{currentPresenter.name}</span>
-                <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 uppercase">
+                <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 uppercase">
                   ENGLISH VOICE
                 </span>
               </div>

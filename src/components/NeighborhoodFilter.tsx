@@ -76,7 +76,7 @@ export const NeighborhoodFilter: React.FC = () => {
             >
               <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-slate-950' : 'text-teal-400'}`} />
               <span className="whitespace-nowrap">{zone.name}</span>
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono ${
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono ${
                 isSelected ? 'bg-slate-950/20 text-slate-950 font-black' : 'bg-slate-900 text-slate-400'
               }`}>
                 {matchingCount}
