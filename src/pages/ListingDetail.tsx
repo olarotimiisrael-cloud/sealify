@@ -83,7 +83,7 @@ const ListingDetail: React.FC = () => {
   if (!listing) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
-        <SEO title="Listing Not Found — Sealify" />
+        <SEO title="Listing Not Found" />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
@@ -186,7 +186,12 @@ const ListingDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-28 md:pb-0 font-sans">
-      <SEO title={`${listing.title} — ${formattedPrice} | Sealify`} />
+      <SEO 
+        title={`${listing.title} — ${formattedPrice}`} 
+        description={listing.description}
+        image={listing.images[0]}
+        type="article"
+      />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">

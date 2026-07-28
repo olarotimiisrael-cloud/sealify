@@ -21,7 +21,7 @@ export const SEO: React.FC<SEOProps> = ({
   const finalTitle = title ? `${title} | ${siteSettings.siteName}` : siteSettings.siteName;
   const finalDescription = (description || siteSettings.siteDescription).substring(0, 160);
   
-  // Use absolute URL for image previews (essential for X/Facebook crawlers)
+  // Use absolute URL for image previews (essential for WhatsApp/X crawlers)
   const finalImage = image?.startsWith('http') 
     ? image 
     : `${window.location.origin}${image || siteSettings.ogImage}`;
@@ -30,6 +30,7 @@ export const SEO: React.FC<SEOProps> = ({
     document.title = finalTitle;
 
     const setMetaTag = (attrName: string, attrValue: string, content: string) => {
+      // Handle both 'name' and 'property' attributes
       let element = document.querySelector(`meta[${attrName}="${attrValue}"]`);
       if (!element) {
         element = document.createElement('meta');
@@ -39,10 +40,10 @@ export const SEO: React.FC<SEOProps> = ({
       element.setAttribute('content', content);
     };
 
-    // Primary Metadata
+    // Standard Meta
     setMetaTag('name', 'description', finalDescription);
 
-    // Open Graph / Facebook / LinkedIn / WhatsApp
+    // Open Graph / Facebook / WhatsApp
     setMetaTag('property', 'og:type', type);
     setMetaTag('property', 'og:title', finalTitle);
     setMetaTag('property', 'og:description', finalDescription);
@@ -58,7 +59,7 @@ export const SEO: React.FC<SEOProps> = ({
     setMetaTag('name', 'twitter:image', finalImage);
     setMetaTag('name', 'twitter:url', url);
     
-    // Theme and Mobile
+    // Theme
     setMetaTag('name', 'theme-color', '#10b981');
   }, [finalTitle, finalDescription, finalImage, url, type, siteSettings.siteName]);
 
