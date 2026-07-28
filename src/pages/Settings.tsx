@@ -616,7 +616,7 @@ const Settings: React.FC = () => {
                       <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">Email Digest & Alerts</p>
-                          <p className="text-[10px] text-slate-500">Receive weekly marketplace deals</p>
+                          <p className="text-[10px] text-slate-400">Receive weekly marketplace deals</p>
                         </div>
                         <button
                           type="button"
@@ -630,7 +630,7 @@ const Settings: React.FC = () => {
                       <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">WhatsApp Direct Messages</p>
-                          <p className="text-[10px] text-slate-500">Allow buyers to chat via WhatsApp</p>
+                          <p className="text-[10px] text-slate-400">Allow buyers to chat via WhatsApp</p>
                         </div>
                         <button
                           type="button"
@@ -644,7 +644,7 @@ const Settings: React.FC = () => {
                       <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">Mask Phone Number</p>
-                          <p className="text-[10px] text-slate-500">Hide phone from non-logged users</p>
+                          <p className="text-[10px] text-slate-400">Hide phone from non-logged users</p>
                         </div>
                         <button
                           type="button"
@@ -658,7 +658,7 @@ const Settings: React.FC = () => {
                       <div className="p-3.5 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
                         <div>
                           <p className="font-bold text-white">Hide Street Location</p>
-                          <p className="text-[10px] text-slate-500">Display only city (Ogbomoso)</p>
+                          <p className="text-[10px] text-slate-400">Display only city (Ogbomoso)</p>
                         </div>
                         <button
                           type="button"

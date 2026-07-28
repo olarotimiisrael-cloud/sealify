@@ -14,16 +14,34 @@ export interface DbUser {
   phone_number: string | null;
   avatar_url: string | null;
   store_banner_url: string | null;
+  bio: string | null;
   role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
-  verification_type: 'individual' | 'business' | 'premium' | 'none';
+  verification_type: 'individual' | 'business' | 'premium' | 'student' | 'none';
   business_name: string | null;
+  business_category: string | null;
+  business_address: string | null;
+  cac_number: string | null;
+  business_hours: string | null;
+  bank_name: string | null;
+  account_number: string | null;
+  account_name: string | null;
+  website_url: string | null;
+  instagram_handle: string | null;
+  twitter_handle: string | null;
+  whatsapp_number: string | null;
+  email_notifications: boolean;
+  whatsapp_notifications: boolean;
+  hide_phone_publicly: boolean;
+  hide_location_publicly: boolean;
   location: string;
   member_since: string;
   status: 'active' | 'suspended' | 'banned' | 'restricted';
   restriction_reason: string | null;
   appeal_status: 'none' | 'pending' | 'resolved';
-  password: string | null;
+  total_value_traded: number;
+  completed_deals: number;
+  password_hash: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,16 +49,18 @@ export interface DbUser {
 export interface DbListing {
   id: string;
   seller_id: string;
+  category_id: string | null;
+  subcategory_id: string | null;
   title: string;
   description: string;
   price: number;
   original_price: number | null;
-  category: string;
   condition: string;
   location: string;
-  status: 'active' | 'sold';
+  status: 'active' | 'sold' | 'draft' | 'pending_review';
   images: string[];
   video_url: string | null;
+  specifications: Record<string, string> | null;
   views_count: number;
   featured: boolean;
   promotion_plan_name: string | null;
@@ -50,7 +70,6 @@ export interface DbListing {
   payment_status: 'pending' | 'verified' | 'failed';
   payment_proof_url: string | null;
   amount_paid: number | null;
-  specifications: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }
@@ -185,42 +204,37 @@ export interface DbBuyerRequest {
   created_at: string;
 }
 
-export interface DbSearchAlert {
+export interface DbWallet {
   id: string;
   user_id: string;
-  query: string;
-  category: string;
-  max_price: number | null;
-  location: string;
-  match_count: number;
-  created_at: string;
-}
-
-export interface DbAnnouncement {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'alert';
-  active: boolean;
-  created_at: string;
-}
-
-export interface DbSystemConfig {
-  id: string;
-  key: string;
-  value: boolean;
+  balance: number;
+  pending_balance: number;
+  total_withdrawn: number;
+  currency: string;
   updated_at: string;
 }
 
-export interface DbSiteSettings {
+export interface DbTransaction {
   id: string;
-  logo_url: string;
-  site_name: string;
-  site_description: string;
-  og_image: string;
-  contact_email: string;
-  contact_phone: string;
-  updated_at: string;
+  wallet_id: string;
+  type: string;
+  amount: number;
+  status: string;
+  description: string;
+  created_at: string;
+}
+
+export interface DbEscrowTransaction {
+  id: string;
+  listing_id: string;
+  buyer_id: string;
+  seller_id: string;
+  amount: number;
+  status: string;
+  handover_code: string;
+  qr_code_url: string | null;
+  inspection_location: string | null;
+  created_at: string;
 }
 
 export interface DbIntrusionLog {
@@ -239,4 +253,91 @@ export interface DbRecentDeal {
   price: number;
   location: string;
   time: string;
+}
+
+export interface DbCategory {
+  id: string;
+  name: string;
+  icon_name: string;
+  color: string;
+  description: string | null;
+  parent_id: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface DbSubcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  description: string | null;
+  icon_name: string | null;
+  listing_type: 'product' | 'service';
+  spec_fields: any;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export interface DbSafeSpot {
+  id: string;
+  name: string;
+  zone: string;
+  category: string;
+  address: string;
+  distance: string | null;
+  hours: string | null;
+  cctv_verified: boolean;
+  latitude: number | null;
+  longitude: number | null;
+  is_active: boolean;
+}
+
+export interface DbSystemConfig {
+  id: string;
+  key: string;
+  value: boolean;
+  description: string | null;
+  updated_at: string;
+}
+
+export interface DbSiteSettings {
+  id: string;
+  logo_url: string | null;
+  site_name: string;
+  site_description: string;
+  og_image: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  updated_at: string;
+}
+
+export interface DbPromotionPlan {
+  id: string;
+  months: number;
+  label: string;
+  rate: number;
+  badge: string | null;
+  is_active: boolean;
+}
+
+export interface DbSearchAlert {
+  id: string;
+  user_id: string;
+  query: string;
+  category_id: string | null;
+  max_price: number | null;
+  location: string | null;
+  match_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface DbAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  active: boolean;
+  target_roles: string[];
+  created_at: string;
 }

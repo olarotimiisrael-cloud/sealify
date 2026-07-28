@@ -30,6 +30,8 @@ import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
 import { 
   userService, 
   listingService, 
+  categoryService,
+  subcategoryService,
   messageService, 
   notificationService, 
   verificationService, 
@@ -112,6 +114,7 @@ interface SealifyContextType {
   setLanguage: (lang: SupportedLanguage) => void;
   t: (key: string) => string;
   categories: { id: string, name: string, iconName: string, count: number, color: string }[];
+  subcategories: { id: string, categoryId: string, name: string, description: string, iconName: string, listingType: 'product' | 'service', specFields: any }[];
   addCategory: (cat: { id: string, name: string, iconName: string, count: number, color: string }) => void;
   deleteCategory: (id: string) => void;
   updateCategory: (id: string, name: string) => void;
@@ -328,12 +331,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
     { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 0, color: 'bg-teal-500' },
     { id: 'fashion', name: 'Fashion', iconName: 'Shirt', count: 0, color: 'bg-pink-500' },
-    { id: 'furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
+    { id: 'home_furniture', name: 'Home & Furniture', iconName: 'Armchair', count: 0, color: 'bg-amber-500' },
     { id: 'services', name: 'Services', iconName: 'Wrench', count: 0, color: 'bg-cyan-500' },
     { id: 'jobs', name: 'Jobs', iconName: 'Briefcase', count: 0, color: 'bg-indigo-500' },
-    { id: 'beauty', name: 'Beauty & Health', iconName: 'Sparkles', count: 0, color: 'bg-rose-500' },
-    { id: 'utility', name: 'Utility & Energy', iconName: 'Zap', count: 0, color: 'bg-yellow-500' },
+    { id: 'beauty_health', name: 'Beauty & Health', iconName: 'Sparkles', count: 0, color: 'bg-rose-500' },
+    { id: 'utility_energy', name: 'Utility & Energy', iconName: 'Zap', count: 0, color: 'bg-yellow-500' },
+    { id: 'solar_clean_energy', name: 'Solar & Clean Energy', iconName: 'Sun', count: 0, color: 'bg-yellow-500' },
   ]);
+  
+  const [subcategories, setSubcategories] = useState<{ id: string, categoryId: string, name: string, description: string, iconName: string, listingType: 'product' | 'service', specFields: any }[]>([]);
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [intrusionLogs, setIntrusionLogs] = useState<SecurityIntrusionLog[]>([]);
@@ -414,6 +420,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const [
         dbUsers, 
         dbListings, 
+        dbCategories,
+        dbSubcategories,
         dbVerifications, 
         dbPasswords, 
         dbPromoPay, 
@@ -433,6 +441,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ] = await Promise.allSettled([
         userService.getAll(),
         listingService.getAll(),
+        categoryService.getAll(),
+        subcategoryService.getAll?.() || Promise.resolve([]),
         verificationService.getAll(),
         passwordRequestService.getAll(),
         promotionService.getAll(),
@@ -469,7 +479,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           title: l.title,
           description: l.description,
           price: Number(l.price) || 0,
-          category: l.category,
+          category: l.category_id || 'Electronics',
           condition: l.condition,
           location: l.location,
           status: l.status || 'active',
@@ -488,6 +498,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const mockIds = new Set(MOCK_LISTINGS.map(item => item.id));
         const uniqueLocal = localCustom.filter(item => !mockIds.has(item.id));
         setListings([...uniqueLocal, ...MOCK_LISTINGS]);
+      }
+
+      if (dbCategories.status === 'fulfilled' && dbCategories.value) {
+        setCategories(dbCategories.value.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          iconName: c.icon_name,
+          count: 0,
+          color: c.color
+        })));
+      }
+
+      if (dbSubcategories.status === 'fulfilled' && dbSubcategories.value) {
+        setSubcategories(dbSubcategories.value.map((s: any) => ({
+          id: s.id,
+          categoryId: s.category_id,
+          name: s.name,
+          description: s.description,
+          iconName: s.icon_name,
+          listingType: s.listing_type,
+          specFields: s.spec_fields
+        })));
       }
 
       if (dbVerifications.status === 'fulfilled' && dbVerifications.value) setVerificationRequests(dbVerifications.value as any);
@@ -836,7 +868,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           title: data.title,
           description: data.description,
           price: data.price,
-          category: data.category,
+          category_id: data.category,
           condition: data.condition,
           location: data.location || 'Ogbomoso, Oyo State',
           status: 'active',
@@ -997,8 +1029,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
       safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),
       exportDatabaseBackup: () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`); dlAnchorElem.click(); toast.success("Database Backup Exported!"); },
-      language, setLanguage, t, categories, 
-      addCategory: (c) => setCategories(prev => [...prev, c]), deleteCategory: (id) => setCategories(p => p.filter(c => c.id !== id)), updateCategory: (id, name) => setCategories(p => p.map(c => c.id === id ? {...c, name} : c)),
+      language, setLanguage, t, categories, subcategories, 
+      addCategory: (c) => { setCategories(prev => [...prev, c]); categoryService.create(c).then(() => fetchData()); }, 
+      deleteCategory: (id) => { setCategories(p => p.filter(c => c.id !== id)); categoryService.delete(id).then(() => fetchData()); }, 
+      updateCategory: (id, name) => { setCategories(p => p.map(c => c.id === id ? {...c, name} : c)); categoryService.update(id, { name }).then(() => fetchData()); },
       analytics, marketStats, login, signup, sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), verifyPhoneOtp: async () => true, 
       adminLogin, logout, listings, allUsers, updateUser, addUser, deleteUser,
       bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)), bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
@@ -1015,7 +1049,20 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
       clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
       addNotification,
-      broadcastMassNotification: (title, message) => { allUsers.forEach(u => notificationService.create({ user_id: u.id, type: 'system', title, description: message })); addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); toast.success(`Broadcasted: ${title}`); },
+      broadcastMassNotification: (title, message) => { allUsers.forEach(u => notificationService.create({      broadcastMassNotification: (title, message, targetRole = 'all') => { 
+        allUsers.forEach(u => {
+          if (targetRole === 'all' || u.role === targetRole) {
+            notificationService.create({ 
+              user_id: u.id, 
+              type: 'system', 
+              title, 
+              description: message 
+            });
+          }
+        });
+        addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); 
+        toast.success(`Broadcasted: ${title}`); 
+      },
       dispatchPromotionalEmailDigest,
       passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
       processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),

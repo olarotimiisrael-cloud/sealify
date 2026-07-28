@@ -33,7 +33,8 @@ import {
   Globe,
   Instagram,
   Twitter,
-  Plus
+  Plus,
+  Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -75,6 +76,7 @@ const SellerProfile: React.FC = () => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const sellerReviews = reviews.filter(r => r.sellerId === id);
   const totalViews = sellerListings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
@@ -255,13 +257,22 @@ const SellerProfile: React.FC = () => {
 
             <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-end w-full sm:w-auto">
               {isMe ? (
-                <Link
-                  to="/settings"
-                  className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span>Edit Profile & Store Settings</span>
-                </Link>
+                <>
+                  <button
+                    onClick={() => setIsEditProfileOpen(true)}
+                    className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 shadow"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Edit Profile & Store Settings</span>
+                  </button>
+                  <Link
+                    to="/settings"
+                    className="px-5 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl text-xs flex items-center gap-2 shadow"
+                  >
+                    <Settings className="w-4 h-4" />
+                    <span>Account Settings</span>
+                  </Link>
+                </>
               ) : (
                 <button
                   onClick={handleToggleFollow}
@@ -570,6 +581,13 @@ const SellerProfile: React.FC = () => {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
       />
+
+      {isMe && (
+        <EditProfileModal
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+        />
+      )}
 
       <Footer />
       <MobileNav />

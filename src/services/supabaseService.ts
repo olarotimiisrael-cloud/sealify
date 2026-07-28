@@ -1,25 +1,29 @@
 import { supabase } from '../lib/supabase';
 import { 
-  UserProfile, 
-  Listing, 
-  VerificationRequest, 
-  PasswordChangeRequest, 
-  PromotionPaymentRequest, 
-  AdReport, 
-  AuditLog, 
-  SecurityIntrusionLog, 
-  DisputeCase, 
-  SiteSettings, 
-  SearchAlert, 
-  Review, 
-  CategoryStats, 
-  BuyerRequest, 
-  Wallet, 
-  Transaction,
-  SafeMeetupSpotConfig,
-  SystemAnnouncement,
-  MarketplaceDeal
+  DbUser, 
+  DbListing, 
+  DbVerificationRequest, 
+  DbPasswordRequest, 
+  DbPromotionPayment, 
+  DbReport, 
+  DbAuditLog, 
+  DbDisputeCase, 
+  DbSiteSettings, 
+  DbSearchAlert, 
+  DbReview, 
+  DbCategoryStats, 
+  DbBuyerRequest, 
+  DbWallet, 
+  DbTransaction,
+  DbSafeSpot,
+  DbSystemAnnouncement,
+  DbMarketplaceDeal,
+  DbCategory,
+  DbSubcategory,
+  DbSystemConfig,
+  DbPromotionPlan
 } from '../types/sealify';
+import { toast } from 'sonner';
 
 // Helper to handle Supabase errors properly
 const handleSupabaseError = (error: any, operation: string) => {
@@ -30,7 +34,7 @@ const handleSupabaseError = (error: any, operation: string) => {
 
 // 1. User Service
 export const userService = {
-  getProfile: async (id: string): Promise<UserProfile | null> => {
+  getProfile: async (id: string): Promise<DbUser | null> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -39,16 +43,14 @@ export const userService = {
         .maybeSingle();
       
       if (error) handleSupabaseError(error, 'getProfile');
-      if (!data) return null;
-      
-      return mapDbUserToProfile(data);
+      return data;
     } catch (e) {
       console.error('getProfile failed:', e);
       return null;
     }
   },
   
-  getAll: async (): Promise<UserProfile[]> => {
+  getAll: async (): Promise<DbUser[]> => {
     try {
       const { data, error } = await supabase
         .from('users')
@@ -56,93 +58,40 @@ export const userService = {
         .order('created_at', { ascending: false });
       
       if (error) handleSupabaseError(error, 'getAllUsers');
-      return (data || []).map(mapDbUserToProfile);
+      return data || [];
     } catch (e) {
       console.error('getAllUsers failed:', e);
       return [];
     }
   },
   
-  create: async (profile: Partial<UserProfile>): Promise<UserProfile | null> => {
+  create: async (profile: Partial<DbUser>): Promise<DbUser | null> => {
     try {
-      const dbUser = {
-        id: profile.id,
-        email: profile.email,
-        full_name: profile.fullName,
-        phone_number: profile.phoneNumber,
-        avatar_url: profile.avatarUrl || '/logo.png',
-        store_banner_url: profile.storeBannerUrl,
-        bio: profile.bio,
-        role: profile.role || 'buyer',
-        location: profile.location || 'Ogbomoso, Oyo State',
-        verified: profile.verified || false,
-        verification_type: profile.verificationType || 'none',
-        business_name: profile.businessName,
-        cac_number: profile.cacNumber,
-        business_hours: profile.businessHours,
-        bank_name: profile.bankName,
-        account_number: profile.accountNumber,
-        account_name: profile.accountName,
-        website_url: profile.websiteUrl,
-        instagram_handle: profile.instagramHandle,
-        twitter_handle: profile.twitterHandle,
-        whatsapp_number: profile.whatsappNumber,
-        status: profile.status || 'active',
-        member_since: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('users')
-        .insert([dbUser])
+        .insert([profile])
         .select()
         .single();
       
       if (error) handleSupabaseError(error, 'createUser');
-      if (!data) return null;
-      
-      return mapDbUserToProfile(data);
+      return data;
     } catch (e) {
       console.error('createUser failed:', e);
       return null;
     }
   },
   
-  update: async (id: string, updates: Partial<UserProfile>): Promise<UserProfile | null> => {
+  update: async (id: string, updates: Partial<DbUser>): Promise<DbUser | null> => {
     try {
-      const dbUpdates: any = {};
-      if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
-      if (updates.phoneNumber !== undefined) dbUpdates.phone_number = updates.phoneNumber;
-      if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
-      if (updates.storeBannerUrl !== undefined) dbUpdates.store_banner_url = updates.storeBannerUrl;
-      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
-      if (updates.role !== undefined) dbUpdates.role = updates.role;
-      if (updates.verified !== undefined) dbUpdates.verified = updates.verified;
-      if (updates.verificationType !== undefined) dbUpdates.verification_type = updates.verificationType;
-      if (updates.businessName !== undefined) dbUpdates.business_name = updates.businessName;
-      if (updates.cacNumber !== undefined) dbUpdates.cac_number = updates.cacNumber;
-      if (updates.businessHours !== undefined) dbUpdates.business_hours = updates.businessHours;
-      if (updates.bankName !== undefined) dbUpdates.bank_name = updates.bankName;
-      if (updates.accountNumber !== undefined) dbUpdates.account_number = updates.accountNumber;
-      if (updates.accountName !== undefined) dbUpdates.account_name = updates.accountName;
-      if (updates.websiteUrl !== undefined) dbUpdates.website_url = updates.websiteUrl;
-      if (updates.instagramHandle !== undefined) dbUpdates.instagram_handle = updates.instagramHandle;
-      if (updates.twitterHandle !== undefined) dbUpdates.twitter_handle = updates.twitterHandle;
-      if (updates.whatsappNumber !== undefined) dbUpdates.whatsapp_number = updates.whatsappNumber;
-      if (updates.location !== undefined) dbUpdates.location = updates.location;
-      if (updates.status !== undefined) dbUpdates.status = updates.status;
-      dbUpdates.updated_at = new Date().toISOString();
-      
       const { data, error } = await supabase
         .from('users')
-        .update(dbUpdates)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
       
       if (error) handleSupabaseError(error, 'updateUser');
-      if (!data) return null;
-      
-      return mapDbUserToProfile(data);
+      return data;
     } catch (e) {
       console.error('updateUser failed:', e);
       return null;
@@ -165,43 +114,9 @@ export const userService = {
   }
 };
 
-// Map database user to UserProfile type
-function mapDbUserToProfile(data: any): UserProfile {
-  return {
-    id: data.id,
-    email: data.email,
-    fullName: data.full_name,
-    phoneNumber: data.phone_number,
-    avatarUrl: data.avatar_url || '/logo.png',
-    storeBannerUrl: data.store_banner_url,
-    bio: data.bio,
-    role: data.role,
-    verified: data.verified,
-    verificationType: data.verification_type,
-    businessName: data.business_name,
-    cacNumber: data.cac_number,
-    businessHours: data.business_hours,
-    bankName: data.bank_name,
-    accountNumber: data.account_number,
-    accountName: data.account_name,
-    websiteUrl: data.website_url,
-    instagramHandle: data.instagram_handle,
-    twitterHandle: data.twitter_handle,
-    whatsappNumber: data.whatsapp_number,
-    location: data.location,
-    memberSince: data.member_since ? new Date(data.member_since).toLocaleDateString() : new Date().toLocaleDateString(),
-    status: data.status,
-    restrictionReason: data.restriction_reason,
-    appealStatus: data.appeal_status
-  };
-}
-
-export const updateUser = userService.update;
-export const deleteUser = userService.delete;
-
 // 2. Listing Service
 export const listingService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbListing[]> => {
     try {
       const { data, error } = await supabase
         .from('listings')
@@ -220,22 +135,11 @@ export const listingService = {
     }
   },
   
-  create: async (listing: any, images: string[]): Promise<any> => {
+  create: async (listing: Partial<DbListing>, images: string[]): Promise<DbListing | null> => {
     try {
       const { data: newListing, error } = await supabase
         .from('listings')
-        .insert([{
-          seller_id: listing.seller_id,
-          title: listing.title,
-          description: listing.description,
-          price: listing.price,
-          category: listing.category,
-          condition: listing.condition,
-          location: listing.location,
-          status: 'active',
-          featured: listing.featured || false,
-          specifications: listing.specifications || {}
-        }])
+        .insert([listing])
         .select()
         .single();
       
@@ -243,9 +147,10 @@ export const listingService = {
       if (!newListing) return null;
       
       if (images && images.length > 0) {
-        const imageInserts = images.map(url => ({
+        const imageInserts = images.map((url, index) => ({
           listing_id: newListing.id,
-          image_url: url
+          image_url: url,
+          sort_order: index
         }));
         const { error: imgError } = await supabase.from('listing_images').insert(imageInserts);
         if (imgError) console.error('Image insert error:', imgError);
@@ -258,29 +163,11 @@ export const listingService = {
     }
   },
   
-  update: async (id: string, updates: any): Promise<any> => {
+  update: async (id: string, updates: Partial<DbListing>): Promise<DbListing | null> => {
     try {
-      const dbUpdates: any = {};
-      if (updates.title !== undefined) dbUpdates.title = updates.title;
-      if (updates.description !== undefined) dbUpdates.description = updates.description;
-      if (updates.price !== undefined) dbUpdates.price = updates.price;
-      if (updates.condition !== undefined) dbUpdates.condition = updates.condition;
-      if (updates.location !== undefined) dbUpdates.location = updates.location;
-      if (updates.status !== undefined) dbUpdates.status = updates.status;
-      if (updates.featured !== undefined) dbUpdates.featured = updates.featured;
-      if (updates.specifications !== undefined) dbUpdates.specifications = updates.specifications;
-      if (updates.promotionPlanName !== undefined) dbUpdates.promotion_plan_name = updates.promotionPlanName;
-      if (updates.promotionDurationMonths !== undefined) dbUpdates.promotion_duration_months = updates.promotionDurationMonths;
-      if (updates.promotionStartDate !== undefined) dbUpdates.promotion_start_date = updates.promotionStartDate;
-      if (updates.promotionEndDate !== undefined) dbUpdates.promotion_end_date = updates.promotionEndDate;
-      if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
-      if (updates.paymentProofUrl !== undefined) dbUpdates.payment_proof_url = updates.paymentProofUrl;
-      if (updates.amountPaid !== undefined) dbUpdates.amount_paid = updates.amountPaid;
-      dbUpdates.updated_at = new Date().toISOString();
-      
       const { data, error } = await supabase
         .from('listings')
-        .update(dbUpdates)
+        .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
         .single();
@@ -309,18 +196,159 @@ export const listingService = {
   }
 };
 
-// 3. Message Service
+// 3. Category Service
+export const categoryService = {
+  getAll: async (): Promise<DbCategory[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (error) handleSupabaseError(error, 'getCategories');
+      return data || [];
+    } catch (e) {
+      console.error('getCategories failed:', e);
+      return [];
+    }
+  },
+  
+  getWithSubcategories: async (): Promise<(DbCategory & { subcategories: DbSubcategory[] })[]> => {
+    try {
+      const { data: categories, error: catError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (catError) handleSupabaseError(catError, 'getCategoriesWithSubs');
+      
+      const { data: subcategories, error: subError } = await supabase
+        .from('subcategories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (subError) handleSupabaseError(subError, 'getSubcategories');
+      
+      return (categories || []).map(cat => ({
+        ...cat,
+        subcategories: (subcategories || []).filter(sub => sub.category_id === cat.id)
+      }));
+    } catch (e) {
+      console.error('getCategoriesWithSubs failed:', e);
+      return [];
+    }
+  },
+  
+  create: async (category: Partial<DbCategory>): Promise<DbCategory | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .insert([category])
+        .select()
+        .single();
+      
+      if (error) handleSupabaseError(error, 'createCategory');
+      return data;
+    } catch (e) {
+      console.error('createCategory failed:', e);
+      return null;
+    }
+  },
+  
+  update: async (id: string, updates: Partial<DbCategory>): Promise<DbCategory | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) handleSupabaseError(error, 'updateCategory');
+      return data;
+    } catch (e) {
+      console.error('updateCategory failed:', e);
+      return null;
+    }
+  },
+  
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) handleSupabaseError(error, 'deleteCategory');
+      return true;
+    } catch (e) {
+      console.error('deleteCategory failed:', e);
+      return false;
+    }
+  }
+};
+
+// 4. Subcategory Service
+export const subcategoryService = {
+  create: async (subcategory: Partial<DbSubcategory>): Promise<DbSubcategory | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .insert([subcategory])
+        .select()
+        .single();
+      
+      if (error) handleSupabaseError(error, 'createSubcategory');
+      return data;
+    } catch (e) {
+      console.error('createSubcategory failed:', e);
+      return null;
+    }
+  },
+  
+  update: async (id: string, updates: Partial<DbSubcategory>): Promise<DbSubcategory | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) handleSupabaseError(error, 'updateSubcategory');
+      return data;
+    } catch (e) {
+      console.error('updateSubcategory failed:', e);
+      return null;
+    }
+  },
+  
+  delete: async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('subcategories')
+        .delete()
+        .eq('id', id);
+      
+      if (error) handleSupabaseError(error, 'deleteSubcategory');
+      return true;
+    } catch (e) {
+      console.error('deleteSubcategory failed:', e);
+      return false;
+    }
+  }
+};
+
+// 5. Message Service
 export const messageService = {
   sendMessage: async (msg: any): Promise<any> => {
     try {
       const { data, error } = await supabase
         .from('messages')
-        .insert([{
-          sender_id: msg.sender_id,
-          receiver_id: msg.receiver_id,
-          listing_id: msg.listing_id,
-          content: msg.content
-        }])
+        .insert([msg])
         .select()
         .single();
       
@@ -333,19 +361,13 @@ export const messageService = {
   }
 };
 
-// 4. Notification Service
+// 6. Notification Service
 export const notificationService = {
   create: async (notif: any): Promise<any> => {
     try {
       const { data, error } = await supabase
         .from('notifications')
-        .insert([{
-          user_id: notif.user_id,
-          type: notif.type,
-          title: notif.title,
-          description: notif.description,
-          link_url: notif.link_url || notif.linkUrl
-        }])
+        .insert([notif])
         .select()
         .single();
       
@@ -380,9 +402,9 @@ export const notificationService = {
   }
 };
 
-// 5. Verification Service
+// 7. Verification Service
 export const verificationService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbVerificationRequest[]> => {
     try {
       const { data, error } = await supabase.from('verification_requests').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getVerifications');
@@ -397,15 +419,7 @@ export const verificationService = {
     try {
       const { data, error } = await supabase
         .from('verification_requests')
-        .insert([{
-          user_id: req.userId,
-          user_name: req.userName,
-          user_email: req.userEmail,
-          type: req.type,
-          doc_type: req.docType,
-          doc_number: req.docNumber,
-          doc_url: req.docUrl
-        }])
+        .insert([req])
         .select()
         .single();
       
@@ -429,9 +443,9 @@ export const verificationService = {
   }
 };
 
-// 6. Password Request Service
+// 8. Password Request Service
 export const passwordRequestService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbPasswordRequest[]> => {
     try {
       const { data, error } = await supabase.from('password_requests').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getPasswordRequests');
@@ -446,15 +460,7 @@ export const passwordRequestService = {
     try {
       const { data, error } = await supabase
         .from('password_requests')
-        .insert([{
-          user_id: req.userId,
-          user_email: req.userEmail,
-          user_name: req.userName,
-          nin: req.nin,
-          id_document_url: req.id_document_url,
-          new_password: req.newPassword,
-          reason: req.reason
-        }])
+        .insert([req])
         .select()
         .single();
       
@@ -478,9 +484,9 @@ export const passwordRequestService = {
   }
 };
 
-// 7. Promotion Service
+// 9. Promotion Service
 export const promotionService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbPromotionPayment[]> => {
     try {
       const { data, error } = await supabase.from('promotion_payments').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getPromotions');
@@ -495,15 +501,7 @@ export const promotionService = {
     try {
       const { data, error } = await supabase
         .from('promotion_payments')
-        .insert([{
-          user_id: req.userId,
-          listing_id: req.listingId,
-          amount: req.amount,
-          payment_method: req.paymentMethod,
-          payment_proof_url: req.paymentProofUrl,
-          plan_name: req.planName,
-          duration_months: req.durationMonths
-        }])
+        .insert([req])
         .select()
         .single();
       
@@ -527,9 +525,9 @@ export const promotionService = {
   }
 };
 
-// 8. Dispute Service
+// 10. Dispute Service
 export const disputeService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbDisputeCase[]> => {
     try {
       const { data, error } = await supabase.from('disputes').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getDisputes');
@@ -544,17 +542,7 @@ export const disputeService = {
     try {
       const { data, error } = await supabase
         .from('disputes')
-        .insert([{
-          user_id: disp.userId,
-          user_email: disp.userEmail,
-          receipt_ref: disp.receiptRef,
-          item_title: disp.itemTitle,
-          counterparty: disp.counterparty,
-          category: disp.category,
-          reason: disp.reason,
-          details: disp.details,
-          evidence_url: disp.evidenceUrl
-        }])
+        .insert([disp])
         .select()
         .single();
       
@@ -578,9 +566,9 @@ export const disputeService = {
   }
 };
 
-// 9. Report Service
+// 11. Report Service
 export const reportService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbReport[]> => {
     try {
       const { data, error } = await supabase.from('reports').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getReports');
@@ -595,13 +583,7 @@ export const reportService = {
     try {
       const { data, error } = await supabase
         .from('reports')
-        .insert([{
-          listing_id: rep.listingId,
-          listing_title: rep.listingTitle,
-          reporter_name: rep.reporterName,
-          reason: rep.reason,
-          details: rep.details
-        }])
+        .insert([rep])
         .select()
         .single();
       
@@ -625,9 +607,9 @@ export const reportService = {
   }
 };
 
-// 10. Audit Service
+// 12. Audit Service
 export const auditService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbAuditLog[]> => {
     try {
       const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getAuditLogs');
@@ -642,11 +624,7 @@ export const auditService = {
     try {
       const { data, error } = await supabase
         .from('audit_logs')
-        .insert([{
-          action: log.action,
-          details: log.details,
-          type: log.type
-        }])
+        .insert([log])
         .select()
         .single();
       
@@ -659,9 +637,9 @@ export const auditService = {
   }
 };
 
-// 11. Review Service
+// 13. Review Service
 export const reviewService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbReview[]> => {
     try {
       const { data, error } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getReviews');
@@ -676,14 +654,7 @@ export const reviewService = {
     try {
       const { data, error } = await supabase
         .from('reviews')
-        .insert([{
-          seller_id: rev.sellerId,
-          buyer_id: rev.buyerId,
-          buyer_name: rev.buyerName,
-          buyer_avatar: rev.buyerAvatar,
-          rating: rev.rating,
-          comment: rev.comment
-        }])
+        .insert([rev])
         .select()
         .single();
       
@@ -707,9 +678,9 @@ export const reviewService = {
   }
 };
 
-// 12. Buyer Request Service
+// 14. Buyer Request Service
 export const buyerRequestService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbBuyerRequest[]> => {
     try {
       const { data, error } = await supabase.from('buyer_requests').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getBuyerRequests');
@@ -724,16 +695,7 @@ export const buyerRequestService = {
     try {
       const { data, error } = await supabase
         .from('buyer_requests')
-        .insert([{
-          user_id: req.userId,
-          user_name: req.userName,
-          user_avatar: req.userAvatar,
-          title: req.title,
-          category: req.category,
-          max_budget: req.maxBudget,
-          location: req.location,
-          description: req.description
-        }])
+        .insert([req])
         .select()
         .single();
       
@@ -757,7 +719,7 @@ export const buyerRequestService = {
   }
 };
 
-// 13. Favorite Service
+// 15. Favorite Service
 export const favoriteService = {
   getByUserId: async (userId: string): Promise<string[]> => {
     try {
@@ -797,9 +759,9 @@ export const favoriteService = {
   }
 };
 
-// 14. Announcement Service
+// 16. Announcement Service
 export const announcementService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbSystemAnnouncement[]> => {
     try {
       const { data, error } = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
       if (error) handleSupabaseError(error, 'getAnnouncements');
@@ -814,12 +776,7 @@ export const announcementService = {
     try {
       const { data, error } = await supabase
         .from('announcements')
-        .insert([{
-          title: ann.title,
-          message: ann.message,
-          type: ann.type,
-          active: ann.active
-        }])
+        .insert([ann])
         .select()
         .single();
       
@@ -843,18 +800,16 @@ export const announcementService = {
   }
 };
 
-// 15. System Config Service
+// 17. System Config Service
 export const systemConfigService = {
-  getAll: async (): Promise<any> => {
+  getAll: async (): Promise<DbSystemConfig[]> => {
     try {
       const { data, error } = await supabase.from('system_configs').select('*');
       if (error) handleSupabaseError(error, 'getSystemConfig');
-      const config: any = {};
-      (data || []).forEach(c => { config[c.key] = c.value; });
-      return config;
+      return data || [];
     } catch (e) {
       console.error('getSystemConfig failed:', e);
-      return {};
+      return [];
     }
   },
   
@@ -872,24 +827,24 @@ export const systemConfigService = {
   }
 };
 
-// 16. Site Settings Service
+// 18. Site Settings Service
 export const siteSettingsService = {
-  get: async (): Promise<any> => {
+  get: async (): Promise<DbSiteSettings | null> => {
     try {
       const { data, error } = await supabase.from('site_settings').select('*').maybeSingle();
       if (error) handleSupabaseError(error, 'getSiteSettings');
-      return data || null;
+      return data;
     } catch (e) {
       console.error('getSiteSettings failed:', e);
       return null;
     }
   },
   
-  update: async (settings: any): Promise<any> => {
+  update: async (settings: Partial<DbSiteSettings>): Promise<DbSiteSettings | null> => {
     try {
       const { data, error } = await supabase
         .from('site_settings')
-        .upsert([settings])
+        .upsert([{ ...settings, updated_at: new Date().toISOString() }])
         .select()
         .single();
       if (error) handleSupabaseError(error, 'updateSiteSettings');
@@ -901,11 +856,11 @@ export const siteSettingsService = {
   }
 };
 
-// 17. Safe Spot Service
+// 19. Safe Spot Service
 export const safeSpotService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbSafeSpot[]> => {
     try {
-      const { data, error } = await supabase.from('safe_spots').select('*');
+      const { data, error } = await supabase.from('safe_spots').select('*').eq('is_active', true);
       if (error) handleSupabaseError(error, 'getSafeSpots');
       return data || [];
     } catch (e) {
@@ -914,19 +869,11 @@ export const safeSpotService = {
     }
   },
   
-  create: async (spot: any): Promise<any> => {
+  create: async (spot: Partial<DbSafeSpot>): Promise<DbSafeSpot | null> => {
     try {
       const { data, error } = await supabase
         .from('safe_spots')
-        .insert([{
-          name: spot.name,
-          zone: spot.zone,
-          category: spot.category,
-          address: spot.address,
-          distance: spot.distance,
-          hours: spot.hours,
-          cctv_verified: spot.cctvVerified
-        }])
+        .insert([spot])
         .select()
         .single();
       
@@ -950,11 +897,11 @@ export const safeSpotService = {
   }
 };
 
-// 18. Promotion Plan Service
+// 20. Promotion Plan Service
 export const promotionPlanService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbPromotionPlan[]> => {
     try {
-      const { data, error } = await supabase.from('promotion_plans').select('*');
+      const { data, error } = await supabase.from('promotion_plans').select('*').eq('is_active', true);
       if (error) handleSupabaseError(error, 'getPromotionPlans');
       return data || [];
     } catch (e) {
@@ -964,9 +911,9 @@ export const promotionPlanService = {
   }
 };
 
-// 19. Search Alert Service
+// 21. Search Alert Service
 export const searchAlertService = {
-  getAll: async (userId: string): Promise<any[]> => {
+  getAll: async (userId: string): Promise<DbSearchAlert[]> => {
     try {
       const { data, error } = await supabase
         .from('search_alerts')
@@ -984,13 +931,7 @@ export const searchAlertService = {
     try {
       const { data, error } = await supabase
         .from('search_alerts')
-        .insert([{
-          user_id: alert.user_id,
-          query: alert.query,
-          category: alert.category,
-          max_price: alert.maxPrice,
-          location: alert.location
-        }])
+        .insert([alert])
         .select()
         .single();
       
@@ -1014,9 +955,9 @@ export const searchAlertService = {
   }
 };
 
-// 20. Intrusion Service
+// 22. Intrusion Service
 export const intrusionService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbIntrusionLog[]> => {
     try {
       const { data, error } = await supabase.from('intrusion_logs').select('*').order('timestamp', { ascending: false });
       if (error) handleSupabaseError(error, 'getIntrusionLogs');
@@ -1031,11 +972,7 @@ export const intrusionService = {
     try {
       const { data, error } = await supabase
         .from('intrusion_logs')
-        .insert([{
-          attempted_email: log.attempted_email,
-          media_status: log.media_status,
-          timestamp: log.timestamp
-        }])
+        .insert([log])
         .select()
         .single();
       
@@ -1048,9 +985,9 @@ export const intrusionService = {
   }
 };
 
-// 21. Recent Deals Service
+// 23. Recent Deals Service
 export const recentDealsService = {
-  getAll: async (): Promise<any[]> => {
+  getAll: async (): Promise<DbMarketplaceDeal[]> => {
     try {
       const { data, error } = await supabase.from('recent_deals').select('*').order('time', { ascending: false });
       if (error) handleSupabaseError(error, 'getRecentDeals');
@@ -1065,12 +1002,7 @@ export const recentDealsService = {
     try {
       const { data, error } = await supabase
         .from('recent_deals')
-        .insert([{
-          item_title: deal.item_title,
-          price: deal.price,
-          location: deal.location,
-          time: deal.time
-        }])
+        .insert([deal])
         .select()
         .single();
       
@@ -1083,7 +1015,7 @@ export const recentDealsService = {
   }
 };
 
-// 22. Storage Service
+// 24. Storage Service
 export const storageService = {
   uploadFile: async (bucket: string, path: string, file: File): Promise<string> => {
     try {

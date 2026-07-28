@@ -178,7 +178,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
             <button
               type="button"
               onClick={() => avatarInputRef.current?.click()}
-              className="p-2.5 bg-emerald-500 text-slate-950 rounded-xl font-bold hover:scale-105 transition-transform"
+              className="p-2.5 bg-emerald-500 text-slate-950 rounded-xl font-black hover:scale-105 transition-transform"
             >
               <Camera className="w-4 h-4" />
             </button>

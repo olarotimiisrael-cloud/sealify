@@ -301,7 +301,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Business Category</label>
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Business Category</label>
                   <select
                     value={businessCategory}
                     onChange={(e) => setBusinessCategory(e.target.value)}
