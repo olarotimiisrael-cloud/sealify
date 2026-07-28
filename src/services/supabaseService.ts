@@ -1036,6 +1036,3 @@ export const storageService = {
     }
   }
 };
-
-// Import toast for error notifications
-import { toast } from 'sonner';
