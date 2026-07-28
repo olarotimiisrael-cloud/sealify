@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, query, queryOne, execute, transaction } from "../db/hyperdrive";
+import { getSql, queryDb, queryOneDb, executeDb, transactionDb } from "../db/hyperdrive";
 
 export const listingsRoutes = new Hono();
 

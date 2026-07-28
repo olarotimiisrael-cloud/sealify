@@ -393,7 +393,7 @@ adminRoutes.put("/settings", async (c) => {
     
     await sql.unsafe(
       `INSERT INTO site_settings (${insertCols}, updated_at) VALUES (${insertVals}, NOW()) ON CONFLICT (id) DO UPDATE SET ${setClause}, updated_at = NOW()`,
-      [...values]
+      values as any[]
     );
 
     return c.json({ success: true });

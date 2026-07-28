@@ -45,7 +45,5 @@ export async function executeDb(env: HyperdriveEnv, query: string, params: any[]
 
 export async function transactionDb<T>(env: HyperdriveEnv, fn: (tx: TransactionSql<any>) => Promise<T>): Promise<T> {
   const sql = getSql(env);
-  return await sql.begin(async (tx) => {
-    return await fn(tx);
-  });
+  return await sql.begin(fn);
 }

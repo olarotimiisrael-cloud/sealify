@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, query, queryOne, execute } from "../db/hyperdrive";
+import { getSql, queryDb, queryOneDb, executeDb } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
 export const messagesRoutes = new Hono();
