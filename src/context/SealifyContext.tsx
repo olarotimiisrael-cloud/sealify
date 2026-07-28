@@ -27,7 +27,30 @@ import {
   SafeMeetupSpotConfig
 } from '../types/sealify';
 import { TRANSLATIONS, SupportedLanguage } from '@/translations/languages';
-import { userService, listingService, messageService, notificationService, verificationService, passwordRequestService, promotionService, disputeService, reportService, auditService, reviewService, buyerRequestService, favoriteService, announcementService, systemConfigService, siteSettingsService, safeSpotService, promotionPlanService, searchAlertService, intrusionService, recentDealsService, storageService } from '@/services/supabaseService';
+import { 
+  userService, 
+  listingService, 
+  messageService, 
+  notificationService, 
+  verificationService, 
+  passwordRequestService, 
+  promotionService, 
+  disputeService, 
+  reportService, 
+  auditService, 
+  reviewService, 
+  buyerRequestService, 
+  favoriteService, 
+  announcementService, 
+  systemConfigService, 
+  siteSettingsService, 
+  safeSpotService, 
+  promotionPlanService, 
+  searchAlertService, 
+  intrusionService, 
+  recentDealsService, 
+  storageService 
+} from '@/services/supabaseService';
 import { ALL_MOCK_USERS, MOCK_LISTINGS, MOCK_CONVERSATIONS } from '@/data/mockData';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
@@ -213,6 +236,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>(() => new Date().toLocaleTimeString());
+  const [error, setError] = useState<string | null>(null);
 
   const [adminEmail, setAdminEmail] = useState<string>(() => localStorage.getItem('sealify_admin_email') || 'admin@sealify.ng');
   const [adminPassword, setAdminPassword] = useState<string>(() => localStorage.getItem('sealify_admin_password') || 'Admin1234');
@@ -366,34 +390,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success('Payout request submitted to admin!');
   };
 
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        const profile = await userService.getProfile(session.user.id);
-        if (profile) {
-          setUser({ ...profile, status: 'active' } as any);
-        } else {
-          setUser(prev => prev || {
-            id: session.user.id,
-            email: session.user.email || '',
-            fullName: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
-            phoneNumber: session.user.user_metadata?.phone || '',
-            avatarUrl: session.user.user_metadata?.avatar_url || '/logo.png',
-            role: 'buyer',
-            status: 'active',
-            verified: false,
-            memberSince: new Date().toISOString(),
-            location: 'Ogbomoso, Oyo State'
-          });
-        }
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
   const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
     if (user) {
       const newNotif: AppNotification = {
@@ -413,8 +409,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const fetchData = useCallback(async () => {
     setIsSyncing(true);
+    setError(null);
     try {
-      const [dbUsers, dbListings, dbVerifications, dbPasswords, dbPromoPay, dbBuyerReqs, dbReviews, dbAnnouncements, dbReports, dbDisputes, dbLogs, dbThreats, dbSpots, dbConfigs, dbMeta, dbPlans, dbDeals, dbAlerts] = await Promise.allSettled([
+      const [
+        dbUsers, 
+        dbListings, 
+        dbVerifications, 
+        dbPasswords, 
+        dbPromoPay, 
+        dbBuyerReqs, 
+        dbReviews, 
+        dbAnnouncements, 
+        dbReports, 
+        dbDisputes, 
+        dbLogs, 
+        dbThreats, 
+        dbSpots, 
+        dbConfigs, 
+        dbMeta, 
+        dbPlans, 
+        dbDeals, 
+        dbAlerts
+      ] = await Promise.allSettled([
         userService.getAll(),
         listingService.getAll(),
         verificationService.getAll(),
@@ -492,6 +508,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(false);
       setIsSyncing(false);
     } catch (err) {
+      console.error('fetchData error:', err);
+      setError('Failed to sync with database');
       setLoading(false);
       setIsSyncing(false);
     }
@@ -514,34 +532,56 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const login = async (email: string, password?: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password: password || 'password123' });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password: password || 'password123' 
+      });
+      
       if (error) { 
         toast.error(error.message); 
         return false; 
       }
+      
+      if (!data.user) {
+        toast.error('Authentication failed - no user returned');
+        return false;
+      }
+
+      // Fetch profile from database
       const profile = await userService.getProfile(data.user.id);
+      
       if (profile) {
         setUser({ ...profile, status: 'active' } as any);
       } else {
-        const found = allUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-        setUser(found ? { ...found, status: 'active' } : {
+        // Profile doesn't exist in DB - create it
+        console.log('Profile not found in DB, creating...');
+        const newProfile = {
           id: data.user.id,
-          email,
-          fullName: email.split('@')[0],
-          phoneNumber: '',
-          avatarUrl: '/logo.png',
-          role: 'buyer',
-          status: 'active',
+          email: data.user.email || email,
+          fullName: data.user.user_metadata?.full_name || email.split('@')[0],
+          phoneNumber: data.user.user_metadata?.phone || '',
+          avatarUrl: data.user.user_metadata?.avatar_url || '/logo.png',
+          role: 'buyer' as const,
+          status: 'active' as UserStatus,
           verified: false,
           memberSince: new Date().toISOString(),
           location: 'Ogbomoso, Oyo State'
-        });
+        };
+        
+        const created = await userService.create(newProfile);
+        if (created) {
+          setUser(created);
+        } else {
+          setUser(newProfile);
+        }
       }
+      
       toast.success('Welcome back to Sealify!');
       fetchData();
       return true;
-    } catch (err) {
-      toast.error('Authentication failure.');
+    } catch (err: any) {
+      console.error('Login error:', err);
+      toast.error(err.message || 'Authentication failure.');
       return false;
     }
   };
@@ -603,27 +643,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       });
       
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      
       const newUserId = authData?.user?.id || `usr_${Date.now()}`;
 
       const newProfile = {
-        id: newUserId,
-        email: data.email!,
-        full_name: data.fullName!,
-        phone_number: data.phoneNumber!,
-        role: data.role || 'buyer',
-        status: 'active',
-        location: 'Ogbomoso, Oyo State',
-        verified: false,
-        verification_type: 'none'
-      };
-
-      try {
-        await userService.create(newProfile);
-      } catch (e) {
-        console.warn('DB profile insert notice:', e);
-      }
-      
-      const newUserProfile: UserProfile = {
         id: newUserId,
         email: data.email!,
         fullName: data.fullName!,
@@ -636,18 +663,38 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         location: 'Ogbomoso, Oyo State'
       };
 
-      setUser(newUserProfile);
+      // Create profile in database
+      const created = await userService.create(newProfile);
+      if (!created) {
+        toast.error('Failed to create user profile in database. Please contact support.');
+        return;
+      }
+
+      setUser(created);
       dispatchWelcomeGreetingEmail(newUserId, data.email!, data.fullName!);
       toast.success(`🎉 Welcome to Sealify, ${data.fullName}! Your account is active and unrestricted.`, { duration: 6000 });
       fetchData();
     } catch (err: any) { 
+      console.error('Signup error:', err);
       toast.error(err.message || "Signup failed."); 
     }
   };
 
   const adminLogin = async (email: string, pass: string, pin?: string): Promise<boolean> => {
     if (email.toLowerCase().trim() === adminEmail.toLowerCase().trim() && pass === adminPassword && pin === adminPin) {
-      const adminProfile: UserProfile = { id: 'usr_admin_default', email: adminEmail, fullName: 'Sealify Official', phoneNumber: '+234 813 120 8468', avatarUrl: '/logo.png', role: 'admin', status: 'active', verified: true, verificationType: 'premium', memberSince: new Date().toISOString(), location: 'Ogbomoso, Oyo State' };
+      const adminProfile: UserProfile = { 
+        id: 'usr_admin_default', 
+        email: adminEmail, 
+        fullName: 'Sealify Official', 
+        phoneNumber: '+234 813 120 8468', 
+        avatarUrl: '/logo.png', 
+        role: 'admin', 
+        status: 'active', 
+        verified: true, 
+        verificationType: 'premium', 
+        memberSince: new Date().toISOString(), 
+        location: 'Ogbomoso, Oyo State' 
+      };
       
       const sessionToken = generateAdminSessionToken(adminEmail);
       sessionStorage.setItem('sealify_admin_session_token', sessionToken);
@@ -988,7 +1035,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
       buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
       wallet, transactions, requestPayout,
-      loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error: null
+      loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error
     }}>
       {children}
     </SealifyContext.Provider>
