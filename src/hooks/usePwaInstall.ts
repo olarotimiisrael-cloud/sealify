@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
-  const [isAndroid, setIsAndroid] = useState(false);
   const [isSafari, setIsSafari] = useState(false);
+  const [promptEvent, setPromptEvent] = useState<any>(null);
+  const isIosModalShown = useRef(false);
 
   useEffect(() => {
     // Check if app is already running in standalone display mode
     const checkStandalone = () => {
       const isStandaloneMode = 
-        window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone === true ||
+        window.matchMedia('(display-mode: standalone)').matches || 
+        (window.navigator as any).standalone === true || 
         document.referrer.includes('android-app://');
       return !!isStandaloneMode;
     };
@@ -40,6 +41,7 @@ export function usePwaInstall() {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
+      setPromptEvent(e);
     };
 
     const handleAppInstalled = () => {
@@ -63,6 +65,14 @@ export function usePwaInstall() {
     }
 
     try {
+      // For iOS Safari, we can't use the beforeinstallprompt event
+      // Instead, we'll show a modal with instructions
+      if (isIos || isSafari) {
+        // iOS doesn't support the beforeinstallprompt event
+        // We'll handle this in the UI component
+        return false;
+      }
+
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
@@ -84,6 +94,7 @@ export function usePwaInstall() {
     isIos,
     isAndroid,
     isSafari,
-    install
+    install,
+    promptEvent
   };
 }
