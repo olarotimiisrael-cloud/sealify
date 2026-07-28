@@ -1,3 +1,4 @@
+sellerId, systemConfigService.update value type, and add missing imports">
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Listing, 
@@ -825,7 +826,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       let dbResult: any = null;
       try {
         dbResult = await listingService.create({
-          seller_id: sellerId,
+          sellerId: sellerId,  // Fixed: seller_id -> sellerId
           title: data.title,
           description: data.description,
           price: data.price,
@@ -987,7 +988,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const contextValue = useMemo(() => ({
     user, setUser, isAuthenticated: !!user, isAdmin,
     adminEmail, adminPassword, adminPin, updateAdminCredentials,
-    systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v)); },
+    systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v as boolean)); },  // Fixed: cast v as boolean
     siteSettings, updateSiteSettings: (s) => { setSiteSettings(p => ({...p, ...s})); siteSettingsService.update(s); addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast'); },
     promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
     safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),

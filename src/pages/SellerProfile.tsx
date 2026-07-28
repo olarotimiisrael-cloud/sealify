@@ -11,6 +11,7 @@ import ReviewModal from '../components/ReviewModal';
 import AuthModal from '../components/AuthModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SEO from '../components/SEO';
+import EditProfileModal from '../components/EditProfileModal';  // Added missing import
 import { 
   MapPin, 
   Calendar, 

@@ -10,6 +10,7 @@ export const CATEGORIES = [
   { id: 'jobs', name: 'Jobs', iconName: 'Briefcase', count: 3, color: 'bg-indigo-500' },
   { id: 'beauty', name: 'Beauty & Health', iconName: 'Sparkles', count: 3, color: 'bg-rose-500' },
   { id: 'utility', name: 'Utility & Energy', iconName: 'Zap', count: 3, color: 'bg-yellow-500' },
+  { id: 'solar', name: 'Solar & Clean Energy', iconName: 'Sun', count: 3, color: 'bg-yellow-500' },
 ];
 
 interface CatalogItem {
@@ -282,6 +283,35 @@ const CATALOG_DATA: Record<Category, CatalogItem[]> = {
       cond: 'Brand New',
       featured: false,
       loc: 'Takie, Ogbomoso'
+    }
+  ],
+  'Solar & Clean Energy': [
+    {
+      title: '5kW Hybrid Solar Inverter System',
+      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop',
+      desc: 'Complete 5kW hybrid solar system with 8x 450W panels, 48V 200Ah lithium battery, and smart monitoring. Perfect for homes and small businesses.',
+      price: 2850000,
+      cond: 'Brand New',
+      featured: true,
+      loc: 'Ogbomoso Hub'
+    },
+    {
+      title: '450W Monocrystalline Solar Panel (Grade A)',
+      image: 'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&auto=format&fit=crop',
+      desc: 'High efficiency monocrystalline solar panel. 21.5% conversion efficiency. 25-year performance warranty.',
+      price: 185000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Ogbomoso Hub'
+    },
+    {
+      title: '48V 200Ah LiFePO4 Solar Battery',
+      image: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=800&auto=format&fit=crop',
+      desc: 'Long-life lithium iron phosphate battery. 6000+ cycles at 80% DoD. Built-in BMS with Bluetooth monitoring.',
+      price: 650000,
+      cond: 'Brand New',
+      featured: false,
+      loc: 'Ogbomoso Hub'
     }
   ]
 };
