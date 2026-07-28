@@ -41,13 +41,13 @@ app.route("/api/admin", adminRoutes);
 
 // React Router SSR handler for all other routes
 const requestHandler = createRequestHandler(
-  () => import("virtual:react-router/server-build"),
+  () => import("virtual:react-router/server-build") as Promise<any>,
   import.meta.env.MODE
 );
 
 app.all("*", async (c) => {
   const response = await requestHandler(c.req.raw, {
-    cloudflare: { env: c.env, ctx: c.executionCtx }
+    context: { env: c.env, ctx: c.executionCtx }
   });
   return response;
 });
