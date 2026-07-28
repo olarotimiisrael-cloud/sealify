@@ -98,15 +98,8 @@ import {
   Wifi,
   Bluetooth,
   Usb,
-  Hdd,
   Monitor,
   Printer,
-  Scanner,
-  Fax,
-  Landline,
-  Mobile,
-  Tablet,
-  Watch,
   Headphones,
   Mic,
   Speaker,
@@ -120,15 +113,8 @@ import {
   Wifi as WifiIcon,
   Bluetooth as BluetoothIcon,
   Usb as UsbIcon,
-  Hdd as HddIcon,
   Monitor as MonitorIcon,
   Printer as PrinterIcon,
-  Scanner as ScannerIcon,
-  Fax as FaxIcon,
-  Landline as LandlineIcon,
-  Mobile as MobileIcon,
-  Tablet as TabletIcon,
-  Watch as WatchIcon,
   Headphones as HeadphonesIcon,
   Mic as MicIcon,
   Speaker as SpeakerIcon,
@@ -139,6 +125,8 @@ import {
   MemoryStick as MemoryStickIcon,
   Battery as BatteryIcon,
   Power as PowerIcon,
+  TrendingDown,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
@@ -545,7 +533,7 @@ const Settings: React.FC = () => {
                     >
                       <WalletIcon className="w-4 h-4" />
                       <div className="text-left">
-                        <p className="text-[8px] font-black uppercase leading-none opacity-60">Wallet Balance</p>
+                        <p className="text-[8px] font-black uppercase leading-none opacity-60">Balance</p>
                         <p className="text-sm font-black leading-tight">{formatNGN(wallet?.balance || 0)}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 ml-1 opacity-40 group-hover:translate-x-0.5 transition-transform" />
@@ -1352,7 +1340,7 @@ const Settings: React.FC = () => {
                 
                 <section className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-[2.5rem] space-y-6 shadow-xl">
                   <h2 className="text-lg font-black text-white flex items-center gap-2">
-                    <Settings className="w-5 h-5 text-emerald-400" /> 
+                    <SettingsIcon className="w-5 h-5 text-emerald-400" /> 
                     <span>App Features & Capabilities</span>
                   </h2>
                   

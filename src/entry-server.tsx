@@ -1,4 +1,4 @@
-import { createRequestHandler } from "react-router";
+import { createRequestHandler } from "react-router-dom";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { handle } from "hono/cloudflare-pages";
@@ -13,7 +13,7 @@ import { adminRoutes } from "./api/admin";
 import { healthRoutes } from "./api/health";
 
 type Env = {
-  HYPERDRIVE: Hyperdrive;
+  HYPERDRIVE: any;
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
 };
@@ -52,4 +52,4 @@ app.all("*", async (c) => {
   return response;
 });
 
-export const onRequest: PagesFunction<Env> = handle(app);
+export const onRequest: any = handle(app);

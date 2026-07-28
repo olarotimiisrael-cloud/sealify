@@ -3,8 +3,14 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
+interface TestResult {
+  name: string;
+  status: 'pending' | 'success' | 'error';
+  message: string;
+}
+
 export const DatabaseTest: React.FC = () => {
-  const [tests, setTests] = useState<Array<{name: string, status: 'pending' | 'success' | 'error', message: string}>>([
+  const [tests, setTests] = useState<TestResult[]>([
     { name: 'Supabase Client Init', status: 'pending', message: '' },
     { name: 'Users Table Exists', status: 'pending', message: '' },
     { name: 'Listings Table Exists', status: 'pending', message: '' },

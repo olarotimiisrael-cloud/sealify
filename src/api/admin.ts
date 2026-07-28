@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, query, queryOne, execute, transaction } from "../db/hyperdrive";
+import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
 export const adminRoutes = new Hono();
@@ -29,7 +29,6 @@ async function requireAdmin(c: any, next: any) {
     return c.json({ error: "Forbidden: Admin access required" }, 403);
   }
 
-  c.set("adminUser", user);
   c.set("sql", sql);
   await next();
 }
