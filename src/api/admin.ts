@@ -378,14 +378,23 @@ adminRoutes.put("/settings", async (c) => {
       }
     }
 
+    // Build dynamic query using template literals
     const keys = Object.keys(updates);
     const values = Object.values(updates);
     
-    await sql`
-      INSERT INTO site_settings (${sql(keys)}, updated_at)
-      VALUES (${sql(values)}, NOW())
-      ON CONFLICT (id) DO UPDATE SET ${sql(updates)}, updated_at = NOW()
-    `;
+    if (keys.length === 0) {
+      return c.json({ success: true });
+    }
+
+    // Use raw query for dynamic upsert
+    const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+    const insertCols = keys.join(', ');
+    const insertVals = keys.map((_, i) => `$${i + 1}`).join(', ');
+    
+    await sql.unsafe(
+      `INSERT INTO site_settings (${insertCols}, updated_at) VALUES (${insertVals}, NOW()) ON CONFLICT (id) DO UPDATE SET ${setClause}, updated_at = NOW()`,
+      [...values]
+    );
 
     return c.json({ success: true });
   } catch (error) {

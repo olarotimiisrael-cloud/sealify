@@ -1,4 +1,4 @@
-import postgres from "postgres";
+import postgres, { Sql, TransactionSql } from "postgres";
 
 export interface HyperdriveEnv {
   HYPERDRIVE: any;
@@ -27,23 +27,23 @@ export async function closeSql() {
   }
 }
 
-// Database helper functions
-export async function query<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T[]> {
+// Database helper functions - renamed to avoid conflicts
+export async function queryDb<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T[]> {
   const sql = getSql(env);
   return await sql.unsafe(query, params) as T[];
 }
 
-export async function queryOne<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T | null> {
-  const results = await query<T>(env, query, params);
+export async function queryOneDb<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T | null> {
+  const results = await queryDb<T>(env, query, params);
   return results[0] || null;
 }
 
-export async function execute(env: HyperdriveEnv, query: string, params: any[] = []): Promise<any> {
+export async function executeDb(env: HyperdriveEnv, query: string, params: any[] = []): Promise<any> {
   const sql = getSql(env);
   return await sql.unsafe(query, params);
 }
 
-export async function transaction<T>(env: HyperdriveEnv, fn: (sql: ReturnType<typeof postgres>) => Promise<T>): Promise<T> {
+export async function transactionDb<T>(env: HyperdriveEnv, fn: (tx: TransactionSql<any>) => Promise<T>): Promise<T> {
   const sql = getSql(env);
   return await sql.begin(async (tx) => {
     return await fn(tx);
