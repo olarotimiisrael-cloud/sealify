@@ -49,11 +49,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
       toast.info('Please log in to initiate chat');
       return;
     }
-    sendMessage(
-      listing.id, 
-      listing.sellerId, 
-      `Hi ${listing.sellerName}, I am interested in "${listing.title}" listed for ${formatNGN(listing.price)}. Is it available for meetup?`
-    );
+    sendMessage(listing.id, listing.sellerId, `Hi ${listing.sellerName}, I am interested in "${listing.title}" listed for ${formatNGN(listing.price)}. Is it available for meetup?`);
     onClose();
     navigate('/messages');
   };
