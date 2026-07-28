@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS public.listings (
 );
 
 -- ============================================
--- LISTING IMAGES TABLE (for Supabase Storage integration)
+-- LISTING IMAGES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.listing_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS public.listing_images (
 );
 
 -- ============================================
--- FAVORITES / SAVED LISTINGS
+-- FAVORITES TABLE
 -- ============================================
 CREATE TABLE IF NOT EXISTS public.favorites (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -699,7 +699,7 @@ CREATE TRIGGER update_escrow_transactions_updated_at BEFORE UPDATE ON public.esc
 -- SEED INITIAL DATA
 -- ============================================
 
--- Insert default categories
+-- Insert default categories including Solar & Clean Energy
 INSERT INTO public.categories (id, name, icon_name, color, description, sort_order) VALUES
   ('vehicles', 'Vehicles', 'Car', 'bg-blue-500', 'Cars, motorcycles, trucks, and other vehicles', 1),
   ('electronics', 'Electronics', 'Smartphone', 'bg-purple-500', 'Phones, laptops, gadgets, and electronic devices', 2),
@@ -767,7 +767,7 @@ ON CONFLICT (key) DO UPDATE SET
 
 -- Insert default site settings
 INSERT INTO public.site_settings (logo_url, site_name, site_description, og_image, contact_email, contact_phone) VALUES
-  ('/logo.png', 'Sealify Nigeria', 'Nigeria''s Trusted Local Marketplace for Ogbomosoland & Oyo State.', '/og-image.png', 'support@sealify.ng', '+234 813 120 8468')
+  ('/logo.png', 'Sealify Nigeria', 'Nigeria''s Trusted Local Marketplace.', '/og-image.png', 'support@sealify.ng', '+234 813 120 8468')
 ON CONFLICT DO NOTHING;
 
 -- Insert default safe meetup spots for Ogbomoso
@@ -780,7 +780,3 @@ INSERT INTO public.safe_spots (name, zone, category, address, distance, hours, c
   ('Adenike Area Community Center', 'LAUTECH Area', 'Café', 'Adenike Community Center, Ogbomoso', 'Student Zone', '7:00 AM - 9:00 PM', true, 8.1520, 4.2620),
   ('General Hospital Security Post', 'Takie / Center', 'Police Safe Zone', 'Ogbomoso General Hospital, Takie, Ogbomoso', 'Hospital Zone', '24/7', true, 8.1380, 4.2530)
 ON CONFLICT DO NOTHING;
-
--- Insert default admin user (password: Admin1234, PIN: 336699)
--- Note: This should be created via Supabase Auth first, then profile inserted
--- The admin login is handled in the application layer with hardcoded credentials
