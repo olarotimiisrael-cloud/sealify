@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const listingsRoutes = new Hono();
 
-// Get all listings with filters
 listingsRoutes.get("/", async (c) => {
   try {
     const env = c.env as any;
@@ -91,7 +90,6 @@ listingsRoutes.get("/", async (c) => {
       LIMIT ${limitNum} OFFSET ${offsetNum}
     `;
 
-    // Get total count
     const countResult = await sql`
       SELECT COUNT(*) as total FROM listings l
       ${sql(whereClause)}
@@ -109,7 +107,6 @@ listingsRoutes.get("/", async (c) => {
   }
 });
 
-// Get single listing
 listingsRoutes.get("/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -133,7 +130,6 @@ listingsRoutes.get("/:id", async (c) => {
       return c.json({ error: "Listing not found" }, 404);
     }
 
-    // Increment view count
     await sql`UPDATE listings SET views_count = views_count + 1 WHERE id = ${id}`;
 
     return c.json({ listing: listing[0] });
@@ -143,7 +139,6 @@ listingsRoutes.get("/:id", async (c) => {
   }
 });
 
-// Create listing
 listingsRoutes.post("/", async (c) => {
   try {
     const env = c.env as any;
@@ -200,7 +195,6 @@ listingsRoutes.post("/", async (c) => {
   }
 });
 
-// Update listing
 listingsRoutes.put("/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -223,7 +217,6 @@ listingsRoutes.put("/:id", async (c) => {
     const body = await c.req.json();
     const sql = getSql(env);
 
-    // Check ownership
     const existing = await sql`SELECT seller_id FROM listings WHERE id = ${id}`;
     if (existing.length === 0) {
       return c.json({ error: "Listing not found" }, 404);
@@ -259,7 +252,6 @@ listingsRoutes.put("/:id", async (c) => {
   }
 });
 
-// Delete listing
 listingsRoutes.delete("/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -281,7 +273,6 @@ listingsRoutes.delete("/:id", async (c) => {
     const id = c.req.param("id");
     const sql = getSql(env);
 
-    // Check ownership
     const existing = await sql`SELECT seller_id FROM listings WHERE id = ${id}`;
     if (existing.length === 0) {
       return c.json({ error: "Listing not found" }, 404);
@@ -299,7 +290,6 @@ listingsRoutes.delete("/:id", async (c) => {
   }
 });
 
-// Mark as sold
 listingsRoutes.post("/:id/sold", async (c) => {
   try {
     const env = c.env as any;
@@ -340,7 +330,6 @@ listingsRoutes.post("/:id/sold", async (c) => {
   }
 });
 
-// Toggle featured
 listingsRoutes.post("/:id/featured", async (c) => {
   try {
     const env = c.env as any;
@@ -382,7 +371,6 @@ listingsRoutes.post("/:id/featured", async (c) => {
   }
 });
 
-// Get categories with counts
 listingsRoutes.get("/meta/categories", async (c) => {
   try {
     const env = c.env as any;
@@ -402,6 +390,3 @@ listingsRoutes.get("/meta/categories", async (c) => {
     return c.json({ error: "Failed to fetch categories" }, 500);
   }
 });
-
-// Import Supabase client
-import { createClient } from "@supabase/supabase-js";

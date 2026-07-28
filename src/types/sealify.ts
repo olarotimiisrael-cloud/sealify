@@ -7,7 +7,8 @@ export type Category =
   | 'Services'
   | 'Jobs'
   | 'Beauty & Health'
-  | 'Utility & Energy';
+  | 'Utility & Energy'
+  | 'Solar & Clean Energy';
 
 export type Condition = 'Brand New' | 'Like New' | 'Used - Good' | 'Used - Fair';
 
@@ -42,7 +43,7 @@ export interface CategoryStats {
   minPrice: number;
   maxPrice: number;
   totalAds: number;
-  demandScore: number; // 0 to 100
+  demandScore: number;
   trend: 'up' | 'down' | 'stable';
 }
 
@@ -122,6 +123,10 @@ export interface UserProfile {
   appealStatus?: 'none' | 'pending' | 'resolved';
   totalValueTraded?: number;
   completedDeals?: number;
+  
+  // Added for AdminSettingsModal and EditProfileModal
+  businessCategory?: string;
+  businessAddress?: string;
 }
 
 export interface SecurityIntrusionLog {
@@ -180,21 +185,6 @@ export interface PromotionPaymentRequest {
   durationMonths: number;
 }
 
-export interface DisputeCase {
-  id: string;
-  userId: string;
-  userEmail: string;
-  receiptRef: string;
-  itemTitle: string;
-  counterparty: string;
-  category: string;
-  reason: string;
-  details: string;
-  evidenceUrl?: string;
-  status: 'pending' | 'in_review' | 'resolved';
-  createdAt: string;
-}
-
 export interface AdReport {
   id: string;
   listingId: string;
@@ -213,6 +203,95 @@ export interface AuditLog {
   type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute' | 'finance';
   createdAt: string;
 }
+
+export interface DisputeCase {
+  id: string;
+  userId: string;
+  userEmail: string;
+  receiptRef: string;
+  itemTitle: string;
+  counterparty: string;
+  category: string;
+  reason: string;
+  details: string;
+  evidenceUrl?: string;
+  status: 'pending' | 'in_review' | 'resolved';
+  createdAt: string;
+}
+
+export interface SearchAlert {
+  id: string;
+  userId: string;
+  query: string;
+  category: Category | 'All';
+  maxPrice: number | null;
+  location: string;
+  createdAt: string;
+  matchCount: number;
+}
+
+export interface FilterState {
+  searchQuery: string;
+  category: Category | 'All';
+  minPrice: number | null;
+  maxPrice: number | null;
+  condition: Condition | 'All';
+  location: string;
+  sortBy: 'newest' | 'price-asc' | 'price-desc';
+}
+
+export interface SafeMeetupSpotConfig {
+  id: string;
+  name: string;
+  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
+  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
+  address: string;
+  distance: string;
+  hours: string;
+  cctvVerified: boolean;
+}
+
+export interface SystemAnnouncement {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'alert';
+  active: boolean;
+  createdAt: string;
+}
+
+export interface MarketplaceDeal {
+  id: string;
+  itemTitle: string;
+  price: number;
+  location: string;
+  time: string;
+}
+
+// Alias types for supabaseService.ts compatibility
+export type DbUser = UserProfile;
+export type DbListing = Listing;
+export type DbVerificationRequest = VerificationRequest;
+export type DbPasswordRequest = PasswordChangeRequest;
+export type DbPromotionPayment = PromotionPaymentRequest;
+export type DbReport = AdReport;
+export type DbAuditLog = AuditLog;
+export type DbDisputeCase = DisputeCase;
+export type DbSiteSettings = SiteSettings;
+export type DbSearchAlert = SearchAlert;
+export type DbReview = Review;
+export type DbCategoryStats = CategoryStats;
+export type DbBuyerRequest = BuyerRequest;
+export type DbWallet = Wallet;
+export type DbTransaction = Transaction;
+export type DbSafeSpot = SafeMeetupSpotConfig;
+export type DbSystemAnnouncement = SystemAnnouncement;
+export type DbMarketplaceDeal = MarketplaceDeal;
+export type DbCategory = { id: string; name: string; icon_name: string; color: string; description?: string; parent_id?: string; sort_order: number; is_active: boolean; created_at: string; updated_at: string };
+export type DbSubcategory = { id: string; category_id: string; name: string; description?: string; icon_name?: string; listing_type: 'product' | 'service'; spec_fields: any; sort_order: number; is_active: boolean; created_at: string; updated_at: string };
+export type DbSystemConfig = { id: string; key: string; value: boolean; description?: string; updated_at: string };
+export type DbPromotionPlan = { id: string; months: number; label: string; rate: number; badge?: string; is_active: boolean; created_at: string; updated_at: string };
+export type DbIntrusionLog = SecurityIntrusionLog;
 
 export interface Listing {
   id: string;
@@ -269,53 +348,4 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   messages: Message[];
-}
-
-export interface SearchAlert {
-  id: string;
-  userId: string;
-  query: string;
-  category: Category | 'All';
-  maxPrice: number | null;
-  location: string;
-  createdAt: string;
-  matchCount: number;
-}
-
-export interface FilterState {
-  searchQuery: string;
-  category: Category | 'All';
-  minPrice: number | null;
-  maxPrice: number | null;
-  condition: Condition | 'All';
-  location: string;
-  sortBy: 'newest' | 'price-asc' | 'price-desc';
-}
-
-export interface SafeMeetupSpotConfig {
-  id: string;
-  name: string;
-  zone: 'LAUTECH Area' | 'Takie / Center' | 'Sabo Market Zone' | 'Police HQ';
-  category: 'Police Safe Zone' | 'Public Library' | 'Shopping Mall' | 'Café';
-  address: string;
-  distance: string;
-  hours: string;
-  cctvVerified: boolean;
-}
-
-export interface SystemAnnouncement {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'warning' | 'success' | 'alert';
-  active: boolean;
-  createdAt: string;
-}
-
-export interface MarketplaceDeal {
-  id: string;
-  itemTitle: string;
-  price: number;
-  location: string;
-  time: string;
 }

@@ -21,18 +21,17 @@ import {
   DbCategory,
   DbSubcategory,
   DbSystemConfig,
-  DbPromotionPlan
+  DbPromotionPlan,
+  DbIntrusionLog
 } from '../types/sealify';
 import { toast } from 'sonner';
 
-// Helper to handle Supabase errors properly
 const handleSupabaseError = (error: any, operation: string) => {
   console.error(`[Supabase Error] ${operation}:`, error);
   toast.error(`Database error: ${error?.message || 'Unknown error'}`);
   throw error;
 };
 
-// 1. User Service
 export const userService = {
   getProfile: async (id: string): Promise<DbUser | null> => {
     try {
@@ -114,7 +113,6 @@ export const userService = {
   }
 };
 
-// 2. Listing Service
 export const listingService = {
   getAll: async (): Promise<DbListing[]> => {
     try {
@@ -196,7 +194,6 @@ export const listingService = {
   }
 };
 
-// 3. Category Service
 export const categoryService = {
   getAll: async (): Promise<DbCategory[]> => {
     try {
@@ -291,8 +288,23 @@ export const categoryService = {
   }
 };
 
-// 4. Subcategory Service
 export const subcategoryService = {
+  getAll: async (): Promise<DbSubcategory[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('subcategories')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+      
+      if (error) handleSupabaseError(error, 'getSubcategories');
+      return data || [];
+    } catch (e) {
+      console.error('getSubcategories failed:', e);
+      return [];
+    }
+  },
+  
   create: async (subcategory: Partial<DbSubcategory>): Promise<DbSubcategory | null> => {
     try {
       const { data, error } = await supabase
@@ -342,7 +354,6 @@ export const subcategoryService = {
   }
 };
 
-// 5. Message Service
 export const messageService = {
   sendMessage: async (msg: any): Promise<any> => {
     try {
@@ -361,7 +372,6 @@ export const messageService = {
   }
 };
 
-// 6. Notification Service
 export const notificationService = {
   create: async (notif: any): Promise<any> => {
     try {
@@ -402,7 +412,6 @@ export const notificationService = {
   }
 };
 
-// 7. Verification Service
 export const verificationService = {
   getAll: async (): Promise<DbVerificationRequest[]> => {
     try {
@@ -443,7 +452,6 @@ export const verificationService = {
   }
 };
 
-// 8. Password Request Service
 export const passwordRequestService = {
   getAll: async (): Promise<DbPasswordRequest[]> => {
     try {
@@ -484,7 +492,6 @@ export const passwordRequestService = {
   }
 };
 
-// 9. Promotion Service
 export const promotionService = {
   getAll: async (): Promise<DbPromotionPayment[]> => {
     try {
@@ -525,7 +532,6 @@ export const promotionService = {
   }
 };
 
-// 10. Dispute Service
 export const disputeService = {
   getAll: async (): Promise<DbDisputeCase[]> => {
     try {
@@ -566,7 +572,6 @@ export const disputeService = {
   }
 };
 
-// 11. Report Service
 export const reportService = {
   getAll: async (): Promise<DbReport[]> => {
     try {
@@ -607,7 +612,6 @@ export const reportService = {
   }
 };
 
-// 12. Audit Service
 export const auditService = {
   getAll: async (): Promise<DbAuditLog[]> => {
     try {
@@ -637,7 +641,6 @@ export const auditService = {
   }
 };
 
-// 13. Review Service
 export const reviewService = {
   getAll: async (): Promise<DbReview[]> => {
     try {
@@ -678,7 +681,6 @@ export const reviewService = {
   }
 };
 
-// 14. Buyer Request Service
 export const buyerRequestService = {
   getAll: async (): Promise<DbBuyerRequest[]> => {
     try {
@@ -719,7 +721,6 @@ export const buyerRequestService = {
   }
 };
 
-// 15. Favorite Service
 export const favoriteService = {
   getByUserId: async (userId: string): Promise<string[]> => {
     try {
@@ -759,7 +760,6 @@ export const favoriteService = {
   }
 };
 
-// 16. Announcement Service
 export const announcementService = {
   getAll: async (): Promise<DbSystemAnnouncement[]> => {
     try {
@@ -800,7 +800,6 @@ export const announcementService = {
   }
 };
 
-// 17. System Config Service
 export const systemConfigService = {
   getAll: async (): Promise<DbSystemConfig[]> => {
     try {
@@ -827,7 +826,6 @@ export const systemConfigService = {
   }
 };
 
-// 18. Site Settings Service
 export const siteSettingsService = {
   get: async (): Promise<DbSiteSettings | null> => {
     try {
@@ -856,7 +854,6 @@ export const siteSettingsService = {
   }
 };
 
-// 19. Safe Spot Service
 export const safeSpotService = {
   getAll: async (): Promise<DbSafeSpot[]> => {
     try {
@@ -897,7 +894,6 @@ export const safeSpotService = {
   }
 };
 
-// 20. Promotion Plan Service
 export const promotionPlanService = {
   getAll: async (): Promise<DbPromotionPlan[]> => {
     try {
@@ -911,7 +907,6 @@ export const promotionPlanService = {
   }
 };
 
-// 21. Search Alert Service
 export const searchAlertService = {
   getAll: async (userId: string): Promise<DbSearchAlert[]> => {
     try {
@@ -955,7 +950,6 @@ export const searchAlertService = {
   }
 };
 
-// 22. Intrusion Service
 export const intrusionService = {
   getAll: async (): Promise<DbIntrusionLog[]> => {
     try {
@@ -985,7 +979,6 @@ export const intrusionService = {
   }
 };
 
-// 23. Recent Deals Service
 export const recentDealsService = {
   getAll: async (): Promise<DbMarketplaceDeal[]> => {
     try {
@@ -1015,7 +1008,6 @@ export const recentDealsService = {
   }
 };
 
-// 24. Storage Service
 export const storageService = {
   uploadFile: async (bucket: string, path: string, file: File): Promise<string> => {
     try {

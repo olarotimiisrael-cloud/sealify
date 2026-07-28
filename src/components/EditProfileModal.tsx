@@ -121,7 +121,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             <p className="text-xs text-slate-400">Manage your personal and business information</p>
           </div>
 
-          {/* Media Section */}
           <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
             <h3 className="font-bold text-sm text-white flex items-center gap-2">
               <Image className="w-4 h-4 text-emerald-400" />
@@ -129,7 +128,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Avatar */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Profile Avatar</label>
                 <div className="relative">
@@ -152,7 +150,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 </div>
               </div>
 
-              {/* Cover/Banner */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Cover / Banner Photo</label>
                 <div className="relative aspect-video bg-slate-800 rounded-2xl overflow-hidden border border-slate-700">
@@ -177,7 +174,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </div>
           </div>
 
-          {/* Personal Details */}
           <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
             <h3 className="font-bold text-sm text-white flex items-center gap-2">
               <User className="w-4 h-4 text-emerald-400" />
@@ -234,7 +230,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </div>
           </div>
 
-          {/* Business Details */}
           <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
             <h3 className="font-bold text-sm text-white flex items-center gap-2">
               <Building2 className="w-4 h-4 text-amber-400" />
@@ -289,7 +284,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </div>
           </div>
 
-          {/* Save Button */}
           <button
             type="submit"
             disabled={isSaving}

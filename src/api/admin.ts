@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const adminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
-// Middleware to check admin
 async function requireAdmin(c: any, next: any) {
   const env = c.env as any;
   const authHeader = c.req.header("Authorization");
@@ -35,7 +34,6 @@ async function requireAdmin(c: any, next: any) {
 
 adminRoutes.use("/*", requireAdmin);
 
-// Get all users (admin only)
 adminRoutes.get("/users", async (c) => {
   try {
     const sql = c.get("sql");
@@ -102,7 +100,6 @@ adminRoutes.get("/users", async (c) => {
   }
 });
 
-// Get user by ID
 adminRoutes.get("/users/:id", async (c) => {
   try {
     const sql = c.get("sql");
@@ -114,7 +111,6 @@ adminRoutes.get("/users/:id", async (c) => {
       return c.json({ error: "User not found" }, 404);
     }
 
-    // Get user's listings count
     const listingsCount = await sql`
       SELECT COUNT(*) as count FROM listings WHERE seller_id = ${id}
     `;
@@ -129,7 +125,6 @@ adminRoutes.get("/users/:id", async (c) => {
   }
 });
 
-// Update user (admin or self)
 adminRoutes.put("/users/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -151,7 +146,6 @@ adminRoutes.put("/users/:id", async (c) => {
     const id = c.req.param("id");
     const sql = getSql(env);
 
-    // Check if admin or self
     const requester = await sql`SELECT role FROM users WHERE id = ${user.id}`;
     const isAdmin = requester.length > 0 && requester[0].role === 'admin';
     
@@ -169,7 +163,6 @@ adminRoutes.put("/users/:id", async (c) => {
       'email_notifications', 'whatsapp_notifications', 'hide_phone_publicly', 'hide_location_publicly'
     ];
 
-    // Admin-only fields
     if (isAdmin) {
       allowedFields.push('role', 'status', 'verified', 'verification_type', 'restriction_reason', 'appeal_status');
     }
@@ -199,7 +192,6 @@ adminRoutes.put("/users/:id", async (c) => {
   }
 });
 
-// Delete user (admin only)
 adminRoutes.delete("/users/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -218,7 +210,6 @@ adminRoutes.delete("/users/:id", async (c) => {
       return c.json({ error: "Invalid token" }, 401);
     }
 
-    // Check if admin
     const sql = getSql(env);
     const requester = await sql`SELECT role FROM users WHERE id = ${user.id}`;
     if (requester.length === 0 || requester[0].role !== 'admin') {
@@ -227,7 +218,6 @@ adminRoutes.delete("/users/:id", async (c) => {
 
     const id = c.req.param("id");
     
-    // Don't allow deleting self
     if (user.id === id) {
       return c.json({ error: "Cannot delete your own account" }, 400);
     }
@@ -241,7 +231,6 @@ adminRoutes.delete("/users/:id", async (c) => {
   }
 });
 
-// Get user's listings
 adminRoutes.get("/users/:id/listings", async (c) => {
   try {
     const env = c.env as any;
@@ -263,7 +252,6 @@ adminRoutes.get("/users/:id/listings", async (c) => {
   }
 });
 
-// Get user's reviews
 adminRoutes.get("/users/:id/reviews", async (c) => {
   try {
     const env = c.env as any;
@@ -284,6 +272,3 @@ adminRoutes.get("/users/:id/reviews", async (c) => {
     return c.json({ error: "Failed to fetch reviews" }, 500);
   }
 });
-
-// Import Supabase client
-import { createClient } from "@supabase/supabase-js";

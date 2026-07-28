@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const notificationsRoutes = new Hono();
 
-// Get notifications for current user
 notificationsRoutes.get("/", async (c) => {
   try {
     const env = c.env as any;
@@ -59,7 +58,6 @@ notificationsRoutes.get("/", async (c) => {
   }
 });
 
-// Mark notification as read
 notificationsRoutes.put("/:id/read", async (c) => {
   try {
     const env = c.env as any;
@@ -98,7 +96,6 @@ notificationsRoutes.put("/:id/read", async (c) => {
   }
 });
 
-// Mark all notifications as read
 notificationsRoutes.put("/read-all", async (c) => {
   try {
     const env = c.env as any;
@@ -130,7 +127,6 @@ notificationsRoutes.put("/read-all", async (c) => {
   }
 });
 
-// Delete notification
 notificationsRoutes.delete("/:id", async (c) => {
   try {
     const env = c.env as any;
@@ -160,6 +156,3 @@ notificationsRoutes.delete("/:id", async (c) => {
     return c.json({ error: "Failed to delete notification" }, 500);
   }
 });
-
-// Import Supabase client
-import { createClient } from "@supabase/supabase-js";

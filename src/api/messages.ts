@@ -4,7 +4,6 @@ import { createClient } from "@supabase/supabase-js";
 
 export const messagesRoutes = new Hono();
 
-// Get conversations for current user
 messagesRoutes.get("/conversations", async (c) => {
   try {
     const env = c.env as any;
@@ -52,7 +51,6 @@ messagesRoutes.get("/conversations", async (c) => {
   }
 });
 
-// Get messages for a conversation
 messagesRoutes.get("/conversations/:id/messages", async (c) => {
   try {
     const env = c.env as any;
@@ -74,7 +72,6 @@ messagesRoutes.get("/conversations/:id/messages", async (c) => {
     const conversationId = c.req.param("id");
     const sql = getSql(env);
 
-    // Verify user is part of conversation
     const conv = await sql`
       SELECT * FROM conversations 
       WHERE id = ${conversationId} 
@@ -93,7 +90,6 @@ messagesRoutes.get("/conversations/:id/messages", async (c) => {
       ORDER BY m.created_at ASC
     `;
 
-    // Mark as read
     await sql`
       UPDATE messages SET read = true 
       WHERE conversation_id = ${conversationId} AND receiver_id = ${user.id}
@@ -106,7 +102,6 @@ messagesRoutes.get("/conversations/:id/messages", async (c) => {
   }
 });
 
-// Send message
 messagesRoutes.post("/conversations", async (c) => {
   try {
     const env = c.env as any;
@@ -134,7 +129,6 @@ messagesRoutes.post("/conversations", async (c) => {
 
     const sql = getSql(env);
 
-    // Check if conversation exists
     let conversation = await sql`
       SELECT * FROM conversations 
       WHERE listing_id = ${listingId} 
@@ -145,7 +139,6 @@ messagesRoutes.post("/conversations", async (c) => {
     let conversationId: string;
 
     if (conversation.length === 0) {
-      // Create new conversation
       const result = await sql`
         INSERT INTO conversations (listing_id, participant_1, participant_2, last_message, last_message_time, created_at, updated_at)
         VALUES (${listingId}, ${user.id}, ${receiverId}, ${content}, NOW(), NOW(), NOW())
@@ -154,7 +147,6 @@ messagesRoutes.post("/conversations", async (c) => {
       conversationId = result[0].id;
     } else {
       conversationId = conversation[0].id;
-      // Update last message
       await sql`
         UPDATE conversations 
         SET last_message = ${content}, last_message_time = NOW(), updated_at = NOW()
@@ -162,14 +154,12 @@ messagesRoutes.post("/conversations", async (c) => {
       `;
     }
 
-    // Insert message
     const messageResult = await sql`
       INSERT INTO messages (conversation_id, sender_id, receiver_id, listing_id, content, read, created_at)
       VALUES (${conversationId}, ${user.id}, ${receiverId}, ${listingId}, ${content}, false, NOW())
       RETURNING *
     `;
 
-    // Create notification for receiver
     await sql`
       INSERT INTO notifications (user_id, type, title, description, link_url, read, created_at)
       VALUES (${receiverId}, 'message', 'New Message', 'You have a new message', '/messages', false, NOW())
@@ -182,7 +172,6 @@ messagesRoutes.post("/conversations", async (c) => {
   }
 });
 
-// Mark messages as read
 messagesRoutes.put("/conversations/:id/read", async (c) => {
   try {
     const env = c.env as any;
@@ -215,6 +204,3 @@ messagesRoutes.put("/conversations/:id/read", async (c) => {
     return c.json({ error: "Failed to mark as read" }, 500);
   }
 });
-
-// Import Supabase client
-import { createClient } from "@supabase/supabase-js";

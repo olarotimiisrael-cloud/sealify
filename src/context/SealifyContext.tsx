@@ -207,7 +207,7 @@ interface SealifyContextType {
   loading: boolean;
   isSyncing: boolean;
   lastSyncTime: string;
-  syncDatabase: () => Promise<void>;
+  syncDatabase: () => Promise<void>();
   error: string | null;
 }
 
@@ -406,7 +406,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         userService.getAll(),
         listingService.getAll(),
         categoryService.getAll(),
-        subcategoryService.getAll?.() || Promise.resolve([]),
+        subcategoryService.getAll(),
         verificationService.getAll(),
         passwordRequestService.getAll(),
         promotionService.getAll(),
@@ -543,13 +543,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return false;
       }
 
-      // Fetch profile from database
       const profile = await userService.getProfile(data.user.id);
       
       if (profile) {
         setUser({ ...profile, status: 'active' } as any);
       } else {
-        // Profile doesn't exist in DB - create it
         console.log('Profile not found in DB, creating...');
         const newProfile = {
           id: data.user.id,
@@ -659,7 +657,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         location: 'Ogbomoso, Oyo State'
       };
 
-      // Create profile in database
       const created = await userService.create(newProfile);
       if (!created) {
         toast.error('Failed to create user profile in database. Please contact support.');
@@ -1044,7 +1041,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     deleteSearchAlert: (id) => searchAlertService.delete(id).then(() => fetchData()),
     reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
     buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
-    wallet, transactions, requestPayout,
+    wallet, transactions, requestPayout: async (amount: number) => {
+      if (!wallet || wallet.balance < amount) {
+        toast.error('Insufficient balance');
+        return;
+      }
+      setWallet(prev => prev ? { ...prev, balance: prev.balance - amount, pendingBalance: prev.pendingBalance + amount } : null);
+      setTransactions(prev => [{ id: `txn_${Date.now()}`, walletId: wallet?.id || '', type: 'payout', amount: -amount, status: 'pending', description: 'Withdrawal to bank', createdAt: new Date().toISOString() }, ...prev]);
+      toast.success(`Payout of ₦${amount.toLocaleString()} requested`);
+    },
     loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error
   }), [
     user, isAdmin, adminEmail, adminPassword, adminPin, systemConfig, siteSettings, promotionPlans, safeSpots,

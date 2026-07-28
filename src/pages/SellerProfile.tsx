@@ -62,7 +62,6 @@ const SellerProfile: React.FC = () => {
   const sellerPhone = sellerUser?.phoneNumber || sampleListing?.sellerPhone || '+234 813 120 8468';
   const memberSince = sellerUser?.memberSince || '2023';
 
-  // Extended Seller Details
   const bankName = sellerUser?.bankName;
   const accountNumber = sellerUser?.accountNumber;
   const businessHours = sellerUser?.businessHours || 'Mon - Sat: 8:00 AM - 7:00 PM';
@@ -166,7 +165,6 @@ const SellerProfile: React.FC = () => {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        {/* Profile Banner & Header Card */}
         <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
           <div className="h-44 sm:h-56 w-full bg-slate-950 relative overflow-hidden flex items-center justify-center group">
             {sellerBanner ? (
@@ -199,7 +197,7 @@ const SellerProfile: React.FC = () => {
           </div>
 
           <div className="p-6 sm:p-8 -mt-16 sm:-mt-20 relative z-10 flex flex-col sm:flex-row items-center sm:items-end justify-between gap-6 text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-5">
               <div className="relative group shrink-0">
                 {sellerAvatar ? (
                   <img
@@ -223,13 +221,13 @@ const SellerProfile: React.FC = () => {
                       className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black hover:scale-110 transition-transform"
                       title="Upload Profile Picture"
                     >
-                      <Camera className="w-4 h-4" />
+                      <Camera className="w-3.5 h-3.5" />
                     </button>
                   </>
                 )}
               </div>
 
-              <div className="space-y-1 mb-1">
+              <div className="space-y-1">
                 <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
                   <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{sellerName}</h1>
                   {sellerVerified && (
@@ -315,7 +313,6 @@ const SellerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Social Links & Bio */}
           <div className="px-6 sm:px-8 pb-4 space-y-3">
             {sellerBio && (
               <div className="p-3.5 bg-slate-950/80 border border-slate-800 rounded-2xl text-xs text-slate-300 leading-relaxed font-medium flex items-start gap-2.5">

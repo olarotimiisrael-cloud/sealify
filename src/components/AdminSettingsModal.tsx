@@ -129,7 +129,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
           <X className="w-5 h-5" />
         </button>
 
-        {/* Tab Navigation */}
         <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-6">
           <button
             type="button"
@@ -170,7 +169,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               <p className="text-xs text-slate-400">Manage your administrative profile and storefront</p>
             </div>
 
-            {/* Media Section */}
             <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
               <h3 className="font-bold text-sm text-white flex items-center gap-2">
                 <Image className="w-4 h-4 text-emerald-400" />
@@ -224,7 +222,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               </div>
             </div>
 
-            {/* Personal Details */}
             <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
               <h3 className="font-bold text-sm text-white flex items-center gap-2">
                 <User className="w-4 h-4 text-emerald-400" />
@@ -281,7 +278,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               </div>
             </div>
 
-            {/* Business Details */}
             <div className="space-y-4 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
               <h3 className="font-bold text-sm text-white flex items-center gap-2">
                 <Building2 className="w-4 h-4 text-amber-400" />
@@ -301,7 +297,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-300 uppercase tracking-widest">Business Category</label>
+                  <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Business Category</label>
                   <select
                     value={businessCategory}
                     onChange={(e) => setBusinessCategory(e.target.value)}
