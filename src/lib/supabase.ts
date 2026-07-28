@@ -13,6 +13,7 @@ export interface DbUser {
   full_name: string;
   phone_number: string | null;
   avatar_url: string | null;
+  store_banner_url: string | null;
   role: 'buyer' | 'seller' | 'admin';
   verified: boolean;
   verification_type: 'individual' | 'business' | 'premium' | 'none';
