@@ -47,8 +47,7 @@ const requestHandler = createRequestHandler(
 
 app.all("*", async (c) => {
   const response = await requestHandler(c.req.raw, {
-    env: c.env,
-    ctx: c.executionCtx
+    cloudflare: { env: c.env, ctx: c.executionCtx }
   });
   return response;
 });
