@@ -3,9 +3,11 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
+type TestStatus = 'pending' | 'success' | 'error';
+
 interface TestResult {
   name: string;
-  status: 'pending' | 'success' | 'error';
+  status: TestStatus;
   message: string;
 }
 
@@ -21,7 +23,7 @@ export const DatabaseTest: React.FC = () => {
 
   const runTests = async () => {
     setRunning(true);
-    const newTests = [...tests].map(t => ({...t, status: 'pending' as const}));
+    const newTests = [...tests].map(t => ({...t, status: 'pending' as TestStatus}));
     setTests(newTests);
 
     // Test 1: Client init

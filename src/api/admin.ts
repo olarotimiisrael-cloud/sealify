@@ -378,9 +378,12 @@ adminRoutes.put("/settings", async (c) => {
       }
     }
 
+    const keys = Object.keys(updates);
+    const values = Object.values(updates);
+    
     await sql`
-      INSERT INTO site_settings (${sql(Object.keys(updates))}, updated_at)
-      VALUES (${sql(Object.values(updates))}, NOW())
+      INSERT INTO site_settings (${sql(keys)}, updated_at)
+      VALUES (${sql(values)}, NOW())
       ON CONFLICT (id) DO UPDATE SET ${sql(updates)}, updated_at = NOW()
     `;
 
