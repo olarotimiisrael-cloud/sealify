@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Using the environment variables configured in Cloudflare Pages
-const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qldwkoapgenmohuqnidr.supabase.co';
-const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFsZHdrb2FwZ2VubW9odXFuaWRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ2NDc4MDUsImV4cCI6MjEwMDIyMzgwNX0.sHM7fxGLqDgGFe6QwjSCv-U1YcZgWq_EUlP5gSdHwfg';
+const supabaseUrl = import.meta.env.NEXT_PUBLIC_SUPABASE_URL || 'https://eliwjdafimaugnwvadlr.supabase.co';
+const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY || 'sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
