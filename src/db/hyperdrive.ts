@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 export interface HyperdriveEnv {
-  HYPERDRIVE: any; // Hyperdrive type not available in this context
+  HYPERDRIVE: any;
 }
 
 let sql: ReturnType<typeof postgres> | null = null;

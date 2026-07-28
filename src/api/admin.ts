@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
-export const adminRoutes = new Hono();
+export const adminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
 // Middleware to check admin
 async function requireAdmin(c: any, next: any) {
