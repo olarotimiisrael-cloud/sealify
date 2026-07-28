@@ -24,7 +24,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [role, setRole] = useState<'buyer' | 'seller'>('buyer');
 
   if (!isOpen) return null;
 
@@ -60,7 +59,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
         password,
         fullName: fullName.trim(),
         phoneNumber: phone.trim(),
-        role
+        role: 'buyer'
       });
       setIsSubmitting(false);
       onClose();
@@ -214,23 +213,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTab = 'lo
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
                 />
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setRole('buyer')}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${role === 'buyer' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
-              >
-                I'm a Buyer
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole('seller')}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all border ${role === 'seller' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-950 border-slate-800 text-slate-400'}`}
-              >
-                I'm a Seller
-              </button>
             </div>
 
             <button 
