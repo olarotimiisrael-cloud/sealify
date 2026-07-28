@@ -1,16 +1,15 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false); // ADDED MISSING STATE
   const [isSafari, setIsSafari] = useState(false);
   const [promptEvent, setPromptEvent] = useState<any>(null);
-  const isIosModalShown = useRef(false);
 
   useEffect(() => {
-    // Check if app is already running in standalone display mode
     const checkStandalone = () => {
       const isStandaloneMode = 
         window.matchMedia('(display-mode: standalone)').matches || 
@@ -23,20 +22,16 @@ export function usePwaInstall() {
 
     const ua = (window.navigator.userAgent || '').toLowerCase();
     
-    // iOS detection (iPhone, iPad, iPod, including iPadOS)
     const isIosDevice = /iphone|ipad|ipod/.test(ua) || 
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     setIsIos(!!isIosDevice);
 
-    // Android detection
     const isAndroidDevice = /android/.test(ua);
-    setIsAndroid(!!isAndroidDevice);
+    setIsAndroid(!!isAndroidDevice); // USED CORRECT SETTER
 
-    // iOS Safari detection
     const isSafariBrowser = /safari/.test(ua) && !/chrome|crios|crmo|firefox|fxios|edge|edgios|opera|opr/.test(ua);
     setIsSafari(!!isSafariBrowser);
 
-    // Global listener for beforeinstallprompt event (Android / Chrome / Edge)
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -65,11 +60,7 @@ export function usePwaInstall() {
     }
 
     try {
-      // For iOS Safari, we can't use the beforeinstallprompt event
-      // Instead, we'll show a modal with instructions
       if (isIos || isSafari) {
-        // iOS doesn't support the beforeinstallprompt event
-        // We'll handle this in the UI component
         return false;
       }
 
