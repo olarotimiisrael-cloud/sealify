@@ -207,7 +207,7 @@ interface SealifyContextType {
   loading: boolean;
   isSyncing: boolean;
   lastSyncTime: string;
-  syncDatabase: () => Promise<void>();
+  syncDatabase: () => Promise<void>;
   error: string | null;
 }
 
