@@ -360,42 +360,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_interests', JSON.stringify(userInterests));
   }, [userInterests]);
 
-  useEffect(() => {
-    if (user) {
-      setWallet({
-        id: 'wal_1',
-        userId: user.id,
-        balance: user.totalValueTraded || 0,
-        pendingBalance: 25000,
-        totalWithdrawn: 145000,
-        currency: 'NGN',
-        updatedAt: new Date().toISOString()
-      });
-
-      setTransactions([
-        { id: 'tr_1', walletId: 'wal_1', type: 'sale', amount: 45000, status: 'completed', description: 'Sale of iPhone 11 Pro', createdAt: '2 days ago' },
-        { id: 'tr_2', walletId: 'wal_1', type: 'payout', amount: -30000, status: 'completed', description: 'Bank Withdrawal to GTB', createdAt: '5 days ago' },
-        { id: 'tr_3', walletId: 'wal_1', type: 'promotion', amount: -15000, status: 'completed', description: 'Top Ad Boost: Toyota Corolla', createdAt: '1 week ago' }
-      ]);
-
-      favoriteService.getByUserId(user.id).then(favIds => {
-        if (favIds && favIds.length > 0) {
-          setSavedListingIds(favIds);
-        }
-      });
-    }
-  }, [user]);
-
-  const requestPayout = async (amount: number) => {
-    if (!wallet || amount > wallet.balance) {
-      toast.error('Insufficient funds for payout');
-      return;
-    }
-    setWallet(prev => prev ? { ...prev, balance: prev.balance - amount, totalWithdrawn: prev.totalWithdrawn + amount } : null);
-    setTransactions(prev => [{ id: `tr_${Date.now()}`, walletId: wallet.id, type: 'payout', amount: -amount, status: 'pending', description: 'Requested Withdrawal', createdAt: 'Just now' }, ...prev]);
-    toast.success('Payout request submitted to admin!');
-  };
-
   const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
     if (user) {
       const newNotif: AppNotification = {
@@ -1020,70 +984,79 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return { visitors: 142 + Math.floor(Math.random() * 20), activeAds: listings.filter(l => l.status === 'active').length, totalChats: conversations.length, totalRevenue: promotionPaymentRequests.filter(r => r.status === 'approved').reduce((sum, r) => sum + r.amount, 0), userGrowth: Math.round((allUsers.length / 10) * 100) / 10, categoryDistribution: categories.map(c => ({ name: c.name, count: listings.filter(l => l.category === c.name).length, color: c.color })), activeSessions: [{ id: 'sess_1', user: 'Guest_Node', action: 'Searching', time: 'Just now' }] };
   }, [listings, allUsers, conversations, promotionPaymentRequests, categories]);
 
+  const contextValue = useMemo(() => ({
+    user, setUser, isAuthenticated: !!user, isAdmin,
+    adminEmail, adminPassword, adminPin, updateAdminCredentials,
+    systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v)); },
+    siteSettings, updateSiteSettings: (s) => { setSiteSettings(p => ({...p, ...s})); siteSettingsService.update(s); addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast'); },
+    promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
+    safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),
+    exportDatabaseBackup: () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`); dlAnchorElem.click(); toast.success("Database Backup Exported!"); },
+    language, setLanguage, t, categories, subcategories, 
+    addCategory: (c) => { setCategories(prev => [...prev, c]); categoryService.create(c).then(() => fetchData()); }, 
+    deleteCategory: (id) => { setCategories(p => p.filter(c => c.id !== id)); categoryService.delete(id).then(() => fetchData()); }, 
+    updateCategory: (id, name) => { setCategories(p => p.map(c => c.id === id ? {...c, name} : c)); categoryService.update(id, { name }).then(() => fetchData()); },
+    analytics, marketStats, login, signup, sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), verifyPhoneOtp: async () => true, 
+    adminLogin, logout, listings, allUsers, updateUser, addUser, deleteUser,
+    bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)), bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
+    bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)), bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
+    savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,
+    toggleSaveListing: async (id) => { if (user) { const exists = savedListingIds.includes(id); await favoriteService.toggle(user.id, id, exists); setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); } },
+    isSaved: (id) => savedListingIds.includes(id), filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
+    activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
+    compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
+    isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
+    createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
+    conversations, sendMessage,
+    notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
+    markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
+    clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
+    addNotification,
+    broadcastMassNotification: (title, message, targetRole = 'all') => { 
+      allUsers.forEach(u => {
+        if (targetRole === 'all' || u.role === targetRole) {
+          notificationService.create({ 
+            user_id: u.id, 
+            type: 'system', 
+            title, 
+            description: message 
+          });
+        }
+      });
+      addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); 
+      toast.success(`Broadcasted: ${title}`); 
+    },
+    dispatchPromotionalEmailDigest,
+    passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
+    processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),
+    verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(() => fetchData()),
+    processVerificationRequest: (id, s) => verificationService.updateStatus(id, s).then(() => { addAuditLog('Verification Processed', `Request ID ${id} set to ${s}`, 'verification'); fetchData(); }),
+    promotionPaymentRequests, submitPromotionPaymentRequest: (r) => promotionService.create(r).then(() => fetchData()),
+    processPromotionPaymentRequest: (id, s) => promotionService.updateStatus(id, s).then(() => { addAuditLog('Finance Approval', `Promotion Payment ID ${id} ${s}`, 'finance'); fetchData(); }),
+    announcements, addAnnouncement: (a) => announcementService.create(a).then(() => fetchData()), toggleAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()), deleteAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()),
+    reports, submitReport: (r) => reportService.create(r).then(() => fetchData()), processReport: (id) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
+    disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(() => fetchData()),
+    processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(() => { addAuditLog('Dispute Mediated', `Dispute ID ${id} set to ${s}`, 'dispute'); fetchData(); }),
+    auditLogs, addAuditLog,
+    recentDeals, sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location || 'Ogbomoso', time: 'Just now' }).then(() => fetchData()),
+    intrusionLogs, recordIntrusion: (e, m) => intrusionService.create({ attempted_email: e, media_status: m, timestamp: new Date().toISOString() }).then(() => { addAuditLog('Unauthorized Access Attempt', `Email: ${e} | Payload: ${m}`, 'intrusion'); fetchData(); }),
+    searchAlerts, saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(() => fetchData()),
+    deleteSearchAlert: (id) => searchAlertService.delete(id).then(() => fetchData()),
+    reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
+    buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
+    wallet, transactions, requestPayout,
+    loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error
+  }), [
+    user, isAdmin, adminEmail, adminPassword, adminPin, systemConfig, siteSettings, promotionPlans, safeSpots,
+    language, categories, subcategories, analytics, marketStats, listings, allUsers, savedListingIds,
+    recentlyViewedIds, userInterests, filters, activeCategory, compareListingIds, conversations,
+    notifications, passwordRequests, verificationRequests, promotionPaymentRequests, announcements,
+    reports, disputeCases, auditLogs, recentDeals, intrusionLogs, searchAlerts, reviews, buyerRequests,
+    wallet, transactions, loading, isSyncing, lastSyncTime, error
+  ]);
+
   return (
-    <SealifyContext.Provider value={{
-      user, setUser, isAuthenticated: !!user, isAdmin,
-      adminEmail, adminPassword, adminPin, updateAdminCredentials,
-      systemConfig, updateSystemConfig: (upd) => { setSystemConfig(p => ({...p, ...upd})); Object.entries(upd).forEach(([k, v]) => systemConfigService.update(k, v)); },
-      siteSettings, updateSiteSettings: (s) => { setSiteSettings(p => ({...p, ...s})); siteSettingsService.update(s); addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast'); },
-      promotionPlans, updatePromotionPlanRate: (m, r) => setPromotionPlans(p => p.map(plan => plan.months === m ? {...plan, rate: r} : plan)),
-      safeSpots, addSafeSpot: (s) => safeSpotService.create(s).then(() => fetchData()), deleteSafeSpot: (id) => safeSpotService.delete(id).then(() => fetchData()),
-      exportDatabaseBackup: () => { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ listings, allUsers, reviews, siteSettings }, null, 2)); const dlAnchorElem = document.createElement('a'); dlAnchorElem.setAttribute("href", dataStr); dlAnchorElem.setAttribute("download", `Sealify_DB_Backup_${Date.now()}.json`); dlAnchorElem.click(); toast.success("Database Backup Exported!"); },
-      language, setLanguage, t, categories, subcategories, 
-      addCategory: (c) => { setCategories(prev => [...prev, c]); categoryService.create(c).then(() => fetchData()); }, 
-      deleteCategory: (id) => { setCategories(p => p.filter(c => c.id !== id)); categoryService.delete(id).then(() => fetchData()); }, 
-      updateCategory: (id, name) => { setCategories(p => p.map(c => c.id === id ? {...c, name} : c)); categoryService.update(id, { name }).then(() => fetchData()); },
-      analytics, marketStats, login, signup, sendPhoneOtp: async () => Math.floor(100000 + Math.random() * 900000).toString(), verifyPhoneOtp: async () => true, 
-      adminLogin, logout, listings, allUsers, updateUser, addUser, deleteUser,
-      bulkUpdateUsers: (ids, upd) => ids.forEach(id => updateUser(id, upd)), bulkDeleteUsers: (ids) => ids.forEach(id => deleteUser(id)),
-      bulkUpdateListings: (ids, upd) => ids.forEach(id => updateListing(id, upd)), bulkDeleteListings: (ids) => ids.forEach(id => deleteListing(id)),
-      savedListingIds, recentlyViewedIds, userInterests, addRecentlyViewed,
-      toggleSaveListing: async (id) => { if (user) { const exists = savedListingIds.includes(id); await favoriteService.toggle(user.id, id, exists); setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]); } },
-      isSaved: (id) => savedListingIds.includes(id), filters, setFilters, resetFilters: () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' }),
-      activeCategory: filters.category, setActiveCategory: (c) => setFilters(f => ({...f, category: c})),
-      compareListingIds, toggleCompareListing: (id) => setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p),
-      isInCompare: (id) => compareListingIds.includes(id), clearCompare: () => setCompareListingIds([]),
-      createListing, updateListing, deleteListing, markAsSold, toggleFeaturedListing: async (id) => updateListing(id, { featured: !listings.find(l => l.id === id)?.featured }), promoteListing: async (id, dur, plan) => updateListing(id, { featured: true, promotionPlanName: plan, promotionDurationMonths: dur }), 
-      conversations, sendMessage,
-      notifications, markNotificationRead: (id) => notificationService.markRead(id).then(() => fetchData()), 
-      markAllNotificationsRead: () => Promise.all(notifications.map(n => notificationService.markRead(n.id))).then(() => fetchData()), 
-      clearNotification: (id) => notificationService.clear(id).then(() => fetchData()),
-      addNotification,
-      broadcastMassNotification: (title, message) => { allUsers.forEach(u => notificationService.create({      broadcastMassNotification: (title, message, targetRole = 'all') => { 
-        allUsers.forEach(u => {
-          if (targetRole === 'all' || u.role === targetRole) {
-            notificationService.create({ 
-              user_id: u.id, 
-              type: 'system', 
-              title, 
-              description: message 
-            });
-          }
-        });
-        addAuditLog('Mass Broadcast', `Headline: ${title}`, 'broadcast'); 
-        toast.success(`Broadcasted: ${title}`); 
-      },
-      dispatchPromotionalEmailDigest,
-      passwordRequests, submitPasswordRequest: (r) => passwordRequestService.create(r).then(() => fetchData()),
-      processPasswordRequest: (id, s) => passwordRequestService.updateStatus(id, s).then(() => fetchData()),
-      verificationRequests, submitVerificationRequest: (r) => verificationService.create(r).then(() => fetchData()),
-      processVerificationRequest: (id, s) => verificationService.updateStatus(id, s).then(() => { addAuditLog('Verification Processed', `Request ID ${id} set to ${s}`, 'verification'); fetchData(); }),
-      promotionPaymentRequests, submitPromotionPaymentRequest: (r) => promotionService.create(r).then(() => fetchData()),
-      processPromotionPaymentRequest: (id, s) => promotionService.updateStatus(id, s).then(() => { addAuditLog('Finance Approval', `Promotion Payment ID ${id} ${s}`, 'finance'); fetchData(); }),
-      announcements, addAnnouncement: (a) => announcementService.create(a).then(() => fetchData()), toggleAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()), deleteAnnouncement: (id) => announcementService.delete(id).then(() => fetchData()),
-      reports, submitReport: (r) => reportService.create(r).then(() => fetchData()), processReport: (id) => reportService.updateStatus(id, 'resolved').then(() => fetchData()),
-      disputeCases, submitDisputeCase: (d) => disputeService.create(d).then(() => fetchData()),
-      processDisputeCase: (id, s) => disputeService.updateStatus(id, s).then(() => { addAuditLog('Dispute Mediated', `Dispute ID ${id} set to ${s}`, 'dispute'); fetchData(); }),
-      auditLogs, addAuditLog,
-      recentDeals, sealDeal: (l, b, p) => recentDealsService.create({ item_title: l, price: p, location: user?.location || 'Ogbomoso', time: 'Just now' }).then(() => fetchData()),
-      intrusionLogs, recordIntrusion: (e, m) => intrusionService.create({ attempted_email: e, media_status: m, timestamp: new Date().toISOString() }).then(() => { addAuditLog('Unauthorized Access Attempt', `Email: ${e} | Payload: ${m}`, 'intrusion'); fetchData(); }),
-      searchAlerts, saveSearchAlert: (a) => searchAlertService.create({ ...a, user_id: user?.id }).then(() => fetchData()),
-      deleteSearchAlert: (id) => searchAlertService.delete(id).then(() => fetchData()),
-      reviews, addReview: (r) => reviewService.create(r).then(() => fetchData()), deleteReview: (id) => reviewService.delete(id).then(() => fetchData()),
-      buyerRequests, createBuyerRequest: (r) => buyerRequestService.create(r).then(() => fetchData()), deleteBuyerRequest: (id) => buyerRequestService.delete(id).then(() => fetchData()),
-      wallet, transactions, requestPayout,
-      loading, isSyncing, lastSyncTime, syncDatabase: fetchData, error
-    }}>
+    <SealifyContext.Provider value={contextValue}>
       {children}
     </SealifyContext.Provider>
   );

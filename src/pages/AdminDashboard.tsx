@@ -383,10 +383,46 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="space-y-2">
-              {filteredListings.length === 0 ? <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">No listings found for this filter query.</div> : filteredListings.map((ad) => {
-                const isSample = ad.id.startsWith('lst_vehicles_') || ad.id.startsWith('lst_electronics_') || ad.id.startsWith('lst_real_estate_') || ad.id.startsWith('lst_fashion_') || ad.id.startsWith('lst_furniture_') || ad.id.startsWith('lst_services_') || ad.id.startsWith('lst_jobs_') || ad.id.startsWith('lst_beauty_') || ad.id.startsWith('lst_utility_');
-                const isSelected = selectedListingIds.includes(ad.id);
-                return (<div key={ad.id} className={`p-4 bg-slate-900 border rounded-2xl flex items-center justify-between gap-4 transition-all ${isSelected ? 'border-rose-500 bg-rose-950/20' : 'border-slate-800'}`}><div className="flex items-center gap-3 min-w-0"><button type="button" onClick={() => handleToggleListingSelection(ad.id)} className="text-slate-500 hover:text-rose-400">{isSelected ? <CheckSquare className="w-4 h-4 text-rose-500" /> : <Square className="w-4 h-4" />}</button><img src={ad.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover border border-slate-800 bg-slate-950 shrink-0" /><div className="min-w-0 space-y-0.5"><div className="flex items-center gap-2"><h4 className="font-bold text-xs text-white truncate">{ad.title}</h4>{isSample ? <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">SAMPLE</span> : <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500" />LIVE USER</span>}</div><p className="text-[11px] text-slate-400">₦{ad.price.toLocaleString()} • {ad.category} • Seller: <strong className="text-slate-200">{ad.sellerName}</strong></p></div></div><div className="flex items-center gap-2 shrink-0"><button onClick={() => updateListing(ad.id, { featured: !listings.find(l => l.id === ad.id)?.featured })} className={`p-2 rounded-xl text-xs font-bold border transition-colors ${ad.featured ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-950 text-slate-500 border-slate-800'}`} title="Toggle Top Ad Boost"><Crown className="w-4 h-4" /></button><a href={`/listing/${ad.id}`} target="_blank" rel="noreferrer" className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl border border-slate-800" title="Preview Listing"><ExternalLink className="w-4 h-4" /></a><button onClick={() => { if (window.confirm(`Delete listing "${ad.title}"?`)) { deleteListing(ad.id); toast.success('Listing deleted!'); } }} className="p-2 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl border border-rose-500/20 transition-all" title="Purge Ad"><Trash2 className="w-4 h-4" /></button></div></div>);})}
+              {filteredListings.length === 0 ? (
+                <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">No listings found for this filter query.</div>
+              ) : (
+                filteredListings.map((ad) => {
+                  const isSample = ad.id.startsWith('lst_vehicles_') || ad.id.startsWith('lst_electronics_') || ad.id.startsWith('lst_real_estate_') || ad.id.startsWith('lst_fashion_') || ad.id.startsWith('lst_furniture_') || ad.id.startsWith('lst_services_') || ad.id.startsWith('lst_jobs_') || ad.id.startsWith('lst_beauty_') || ad.id.startsWith('lst_utility_');
+                  const isSelected = selectedListingIds.includes(ad.id);
+                  return (
+                    <div key={ad.id} className={`p-4 bg-slate-900 border rounded-2xl flex items-center justify-between gap-4 transition-all ${isSelected ? 'border-rose-500 bg-rose-950/20' : 'border-slate-800'}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button type="button" onClick={() => handleToggleListingSelection(ad.id)} className="text-slate-500 hover:text-rose-400">
+                          {isSelected ? <CheckSquare className="w-4 h-4 text-rose-500" /> : <Square className="w-4 h-4" />}
+                        </button>
+                        <img src={ad.images[0]} alt="" className="w-12 h-12 rounded-xl object-cover border border-slate-800 bg-slate-950 shrink-0" />
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-xs text-white truncate">{ad.title}</h4>
+                            {isSample ? (
+                              <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-1.5 py-0.2 rounded border border-amber-500/30">SAMPLE</span>
+                            ) : (
+                              <span className="text-[8px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500">LIVE USER</span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-400">₦{ad.price.toLocaleString()} • {ad.category} • Seller: <strong className="text-slate-200">{ad.sellerName}</strong></p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button onClick={() => updateListing(ad.id, { featured: !listings.find(l => l.id === ad.id)?.featured })} className={`p-2 rounded-xl text-xs font-bold border transition-colors ${ad.featured ? 'bg-amber-500/20 text-amber-400 border-amber-500/30' : 'bg-slate-950 text-slate-500 border-slate-800'}`} title="Toggle Top Ad Boost">
+                          <Crown className="w-4 h-4" />
+                        </button>
+                        <a href={`/listing/${ad.id}`} target="_blank" rel="noreferrer" className="p-2 bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl border border-slate-800" title="Preview Listing">
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                        <button onClick={() => { if (window.confirm(`Delete listing "${ad.title}"?`)) { deleteListing(ad.id); toast.success('Listing deleted!'); } }} className="p-2 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl border border-rose-500/20 transition-all" title="Purge Ad">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         )}
