@@ -351,9 +351,9 @@ const MyAds: React.FC = () => {
                     <span>Stats</span>
                   </button>
 
-                  <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
+                  <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors" title="Generate Social Promo Card">
                     <Share2 className="w-3.5 h-3.5" />
-                    <span>Flyer</span>
+                    <span>Promo Card</span>
                   </button>
 
                   {ad.status === 'active' && (

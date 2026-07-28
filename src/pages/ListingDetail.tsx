@@ -239,10 +239,10 @@ const ListingDetail: React.FC = () => {
             <button
               onClick={() => setIsFlyerOpen(true)}
               className="p-2 bg-slate-900 border border-slate-800 rounded-xl text-amber-400 hover:text-white flex items-center gap-1 text-xs font-bold shadow-lg"
-              title="Create Promo Flyer"
+              title="Generate Social Promo Card"
             >
               <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">WhatsApp Flyer</span>
+              <span className="hidden sm:inline">Social Promo Card</span>
             </button>
 
             <button
