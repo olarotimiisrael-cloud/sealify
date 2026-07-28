@@ -407,7 +407,58 @@ export default function AdminDashboard() {
         {activeTab === 'promotions' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <h3 className="text-lg font-black text-white flex items-center gap-2"><Crown className="w-5 h-5 text-amber-400" /><span>Top Ad Promotion Payment Receipts</span></h3>
-            {promotionPaymentRequests.length === 0 ? <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">No promotion payment claims logged.</div> : <div className="space-y-3">{promotionPaymentRequests.map((req) => (<div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl"><div className="flex justify-between items-start"><div><span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">{req.planName} ({req.durationMonths} Months)</span><p className="text-xl font-black text-emerald-400">₦{req.amount.toLocaleString()}</p><p className="text-xs text-slate-400">Listing ID: <strong className="text-white font-mono">{req.listingId}</strong></p></div><span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>{req.status}</span></div>{req.paymentProofUrl && <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">{req.paymentProofUrl.startsWith('data:image') || req.paymentProofUrl.startsWith('http') ? <img src={req.paymentProofUrl} alt="Receipt" className="max-h-40 rounded-xl" /> : <p className="font-mono text-xs text-emerald-400">{req.paymentProofUrl}</p>}</div>{req.status === 'pending' && <div className="flex gap-2 pt-2 border-t border-slate-800"><button onClick={() => { processPromotionPaymentRequest(req.id, 'approved'); updateListing(req.listingId, { featured: true }); toast.success(`Top Ad Boost activated for Listing ID ${req.listingId}!`); }} className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow">Approve Payment & Activate Top Ad</button><button onClick={() => { processPromotionPaymentRequest(req.id, 'rejected'); toast.error('Payment claim rejected.'); }} className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors">Reject Payment</button></div>}</div>))}</div>}
+            {promotionPaymentRequests.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-500 text-xs">No promotion payment claims logged.</div>
+            ) : (
+              <div className="space-y-3">
+                {promotionPaymentRequests.map((req) => (
+                  <div key={req.id} className="p-5 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 shadow-xl">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-widest block">{req.planName} ({req.durationMonths} Months)</span>
+                        <p className="text-xl font-black text-emerald-400">₦{req.amount.toLocaleString()}</p>
+                        <p className="text-xs text-slate-400">Listing ID: <strong className="text-white font-mono">{req.listingId}</strong></p>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${req.status === 'pending' ? 'bg-amber-500/20 text-amber-400' : req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-600/20 text-rose-400'}`}>
+                        {req.status}
+                      </span>
+                    </div>
+                    {req.paymentProofUrl && (
+                      <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                        {req.paymentProofUrl.startsWith('data:image') || req.paymentProofUrl.startsWith('http') ? (
+                          <img src={req.paymentProofUrl} alt="Receipt" className="max-h-40 rounded-xl" />
+                        ) : (
+                          <p className="font-mono text-xs text-emerald-400">{req.paymentProofUrl}</p>
+                        )}
+                      </div>
+                    )}
+                    {req.status === 'pending' && (
+                      <div className="flex gap-2 pt-2 border-t border-slate-800">
+                        <button
+                          onClick={() => {
+                            processPromotionPaymentRequest(req.id, 'approved');
+                            updateListing(req.listingId, { featured: true });
+                            toast.success(`Top Ad Boost activated for Listing ID ${req.listingId}!`);
+                          }}
+                          className="px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow"
+                        >
+                          Approve Payment & Activate Top Ad
+                        </button>
+                        <button
+                          onClick={() => {
+                            processPromotionPaymentRequest(req.id, 'rejected');
+                            toast.error('Payment claim rejected.');
+                          }}
+                          className="px-5 py-2 bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white font-bold rounded-xl text-xs transition-colors"
+                        >
+                          Reject Payment
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
