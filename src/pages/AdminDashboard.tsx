@@ -16,6 +16,7 @@ import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
 import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import VerifiedBadge from '../components/VerifiedBadge';
 import DatabaseTest from '../components/DatabaseTest';
+import DatabaseSchemaGenerator from '../components/DatabaseSchemaGenerator';
 import { 
   X, CheckCircle2, Plus, 
   Shield, 
@@ -69,7 +70,8 @@ type AdminTab =
   | 'announcements' 
   | 'safespots' 
   | 'security'
-  | 'dbtest';
+  | 'dbtest'
+  | 'database';
 
 export default function AdminDashboard() {
   const {
@@ -311,6 +313,7 @@ export default function AdminDashboard() {
             { id: 'safespots', label: 'Safe Spots Manager', icon: MapPin, badge: `${safeSpots.length}` },
             { id: 'security', label: 'Security & Root Config', icon: Lock, badge: intrusionLogs.length > 0 ? `!${intrusionLogs.length}` : null },
             { id: 'dbtest', label: 'Database Connection Test', icon: Database, badge: null },
+            { id: 'database', label: 'Database Schema & SQL', icon: Database, badge: null },
           ].map((t) => {
             const Icon = t.icon;
             const isActive = activeTab === t.id;
@@ -548,6 +551,12 @@ export default function AdminDashboard() {
         {activeTab === 'dbtest' && (
           <div className="animate-in fade-in duration-300">
             <DatabaseTest />
+          </div>
+        )}
+
+        {activeTab === 'database' && (
+          <div className="animate-in fade-in duration-300">
+            <DatabaseSchemaGenerator />
           </div>
         )}
 
