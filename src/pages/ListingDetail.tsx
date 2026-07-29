@@ -80,16 +80,24 @@ const ListingDetail: React.FC = () => {
     }
   }, [listing?.id, addRecentlyViewed]);
 
+  // Early return with proper fallback if listing not found
   if (!listing) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
         <SEO title="Listing Not Found" />
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <h2 className="text-2xl font-bold text-white mb-2">Listing Not Found</h2>
-          <Link to="/" className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs">
-            Back to Home
-          </Link>
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full shadow-xl space-y-4">
+            <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/20">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Listing Not Found</h2>
+            <p className="text-xs text-slate-400">The listing you're looking for doesn't exist or has been removed.</p>
+            <Link to="/" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-bold rounded-xl text-xs">
+              <ArrowRight className="w-4 h-4" />
+              <span>Back to Marketplace</span>
+            </Link>
+          </div>
         </div>
         <MobileNav />
       </div>
@@ -113,7 +121,7 @@ const ListingDetail: React.FC = () => {
 
   const formattedPrice = formatNGN(listing.price);
 
-  const whatsappUrl = `https://wa.me/${listing.sellerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+  const whatsappUrl = `https://wa.me/${listing.sellerPhone?.replace(/[^0-9]/g, '') || ''}?text=${encodeURIComponent(
     `Hello, I am interested in your item on Sealify: "${listing.title}" (${formattedPrice})`
   )}`;
 
@@ -189,7 +197,7 @@ const ListingDetail: React.FC = () => {
       <SEO 
         title={`${listing.title} — ${formattedPrice}`} 
         description={listing.description}
-        image={listing.images[0]}
+        image={listing.images?.[0]}
         type="article"
       />
       <Navbar />
@@ -290,7 +298,7 @@ const ListingDetail: React.FC = () => {
                   <video src={listing.videoUrl} className="w-full h-full bg-black object-contain" controls />
                 ) : (
                   <img
-                    src={listing.images[activeImageIndex]}
+                    src={listing.images?.[activeImageIndex] || listing.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80'}
                     alt={listing.title}
                     className="w-full h-full object-contain hover:scale-105 transition-transform duration-300 cursor-pointer"
                     onClick={() => setIsLightboxOpen(true)}
@@ -306,7 +314,7 @@ const ListingDetail: React.FC = () => {
               </div>
 
               <div className="flex gap-2 overflow-x-auto pb-1 items-center">
-                {listing.images.map((img, idx) => (
+                {listing.images?.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => { setViewMode('image'); setActiveImageIndex(idx); }}
@@ -412,7 +420,7 @@ const ListingDetail: React.FC = () => {
 
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <img src={listing.sellerAvatar} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500" alt={listing.sellerName} />
+                  <img src={listing.sellerAvatar || '/logo.png'} className="w-14 h-14 rounded-2xl object-cover border-2 border-emerald-500" alt={listing.sellerName} />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h4 className="font-bold text-white text-base">{listing.sellerName}</h4>
@@ -502,7 +510,7 @@ const ListingDetail: React.FC = () => {
       <SafeMeetupModal isOpen={isMeetupOpen} onClose={() => setIsMeetupOpen(false)} itemTitle={listing.title} onSelectSpot={handleSelectMeetupSpot} />
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} onSendChecklistToChat={handleSendInspectionReport} />
-      <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
+      <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images || []} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
       <DealQrScannerModal isOpen={isDealScannerOpen} onClose={() => setIsDealScannerOpen(false)} listing={listing} onDealSealed={handleDealSealedInChat} />
       
       <AiVoiceOverviewModal
@@ -525,7 +533,7 @@ const ListingDetail: React.FC = () => {
         title={listing.title}
         price={listing.price}
         location={listing.location}
-        image={listing.images[0]}
+        image={listing.images?.[0]}
         sellerName={listing.sellerName}
         sellerPhone={listing.sellerPhone}
         verificationType={listing.sellerVerificationType}

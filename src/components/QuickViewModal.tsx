@@ -84,7 +84,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
     navigate('/messages');
   };
 
-  const whatsappUrl = `https://wa.me/${listing.sellerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+  const whatsappUrl = `https://wa.me/${listing.sellerPhone?.replace(/[^0-9]/g, '') || ''}?text=${encodeURIComponent(
     `Hello ${listing.sellerName}, I saw your ad on Sealify: "${listing.title}" (${formatNGN(listing.price)})`
   )}`;
 
@@ -109,17 +109,17 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
             <div className="space-y-3">
               <div className="relative aspect-[4/3] bg-slate-950 rounded-2xl overflow-hidden border border-slate-800">
                 <img
-                  src={listing.images[activeImageIdx] || listing.images[0]}
+                  src={listing.images?.[activeImageIdx] || listing.images?.[0] || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=600&q=80'}
                   alt={listing.title}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute bottom-2 left-2 bg-slate-950/80 backdrop-blur-md px-2.5 py-1 rounded-xl border border-slate-800 text-[10px] text-slate-300 flex items-center gap-1 font-bold">
                   <Eye className="w-3 h-3 text-emerald-400" />
-                  <span>{listing.viewsCount} views</span>
+                  <span>{listing.viewsCount}</span>
                 </div>
               </div>
 
-              {listing.images.length > 1 && (
+              {listing.images && listing.images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
                   {listing.images.map((img, idx) => (
                     <button
@@ -189,7 +189,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({
                 {/* Seller snippet */}
                 <div className="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img src={listing.sellerAvatar} alt="" className="w-10 h-10 rounded-xl object-cover border border-emerald-500 shrink-0" />
+                    <img src={listing.sellerAvatar || '/logo.png'} alt="" className="w-10 h-10 rounded-xl object-cover border border-emerald-500 shrink-0" />
                     <div className="min-w-0">
                       <p className="font-bold text-xs text-white truncate">{listing.sellerName}</p>
                       {listing.sellerVerified && <VerifiedBadge type={listing.sellerVerificationType || 'individual'} showText />}
