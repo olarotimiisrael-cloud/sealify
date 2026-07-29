@@ -1,7 +1,6 @@
-', and removing dangling parenthesis">
 import React, { useState, useMemo } from 'react';
-import { 
-  Database, Table, Columns, Key, Link, ChevronDown, ChevronUp, 
+import {
+  Database, Table, Columns, Key, Link, ChevronDown, ChevronUp,
   Search, Download, Copy, CheckCircle, AlertCircle, Loader2,
   Minimize2, Maximize2, RotateCcw, Shield
 } from 'lucide-react';
@@ -919,7 +918,7 @@ const DatabaseDiagramViewer: React.FC = () => {
 
   const filteredTables = useMemo(() => {
     if (!searchQuery) return SCHEMA_DATA;
-    return SCHEMA_DATA.filter(t => 
+    return SCHEMA_DATA.filter(t =>
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.columns.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
     );
@@ -952,7 +951,7 @@ const DatabaseDiagramViewer: React.FC = () => {
 
   const generateMermaidDiagram = () => {
     let diagram = 'erDiagram\n';
-    
+
     SCHEMA_DATA.forEach(table => {
       diagram += `    ${table.name.toUpperCase()} {\n`;
       table.columns.forEach(col => {
@@ -975,6 +974,7 @@ const DatabaseDiagramViewer: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-white">Interactive Database Diagram</h2>
@@ -994,6 +994,7 @@ const DatabaseDiagramViewer: React.FC = () => {
         </div>
       </div>
 
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <StatCard icon={Database} label="Tables" value={stats.tables} color="text-blue-400" />
         <StatCard icon={Columns} label="Columns" value={stats.columns} color="text-purple-400" />
@@ -1005,6 +1006,7 @@ const DatabaseDiagramViewer: React.FC = () => {
         <StatCard icon={CheckCircle} label="Total Objects" value={stats.tables + stats.indexes + stats.foreignKeys + stats.policies + stats.storageBuckets + stats.storagePolicies} color="text-emerald-400" />
       </div>
 
+      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3.5 top-3 text-slate-500" size={18} />
         <input
@@ -1016,6 +1018,7 @@ const DatabaseDiagramViewer: React.FC = () => {
         />
       </div>
 
+      {/* View Mode Toggle */}
       <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1 rounded-xl">
         <button
           onClick={() => setViewMode('er')}
@@ -1067,6 +1070,7 @@ const DatabaseDiagramViewer: React.FC = () => {
         </div>
       )}
 
+      {/* Storage Buckets */}
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardHeader className="border-amber-500/20">
           <CardTitle className="flex items-center gap-2 text-amber-400">
@@ -1095,7 +1099,7 @@ const DatabaseDiagramViewer: React.FC = () => {
                     {bucket.policies.length} RLS Policies
                   </span>
                 </div>
-                <pre className="text-xs text-slate-300 bg-slate-900 p-3 rounded-lg overflow-x-auto"><code>{bucket.policies.map(p => 
+                <pre className="text-xs text-slate-300 bg-slate-900 p-3 rounded-lg overflow-x-auto"><code>{bucket.policies.map(p =>
 `CREATE POLICY "${p.name}" ON storage.objects FOR ${p.command} ${p.using ? `USING (${p.using})` : ''} ${p.withCheck ? `WITH CHECK (${p.withCheck})` : ''};`
 ).join('\n\n')}</code></pre>
               </div>
@@ -1124,9 +1128,9 @@ const StatCard: React.FC<{ icon: React.FC<{ className?: string }>; label: string
   </Card>
 );
 
-const TableCard: React.FC<{ 
-  table: TableSchema; 
-  isExpanded: boolean; 
+const TableCard: React.FC<{
+  table: TableSchema;
+  isExpanded: boolean;
   onToggle: () => void;
 }> = ({ table, isExpanded, onToggle }) => {
   return (
@@ -1266,6 +1270,6 @@ const TableCard: React.FC<{
       )}
     </Card>
   );
-);
+};
 
 export default DatabaseDiagramViewer;
