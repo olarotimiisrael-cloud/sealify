@@ -910,7 +910,7 @@ const STORAGE_BUCKETS = [
   },
 ];
 
-export const DatabaseDiagramViewer: React.FC = () => {
+const DatabaseDiagramViewer: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedTables, setExpandedTables] = useState<Set<string>>(new Set(['profiles', 'ads']));
   const [viewMode, setViewMode] = useState<'er' | 'list'>('er');
