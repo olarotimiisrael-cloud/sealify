@@ -17,6 +17,7 @@ import SqlSchemaViewer from '../components/SqlSchemaViewer';
 import VerifiedBadge from '../components/VerifiedBadge';
 import DatabaseTest from '../components/DatabaseTest';
 import DatabaseSchemaGenerator from '../components/DatabaseSchemaGenerator';
+import DatabaseDiagramViewer from '../components/DatabaseDiagramViewer';
 import { 
   X, CheckCircle2, Plus, 
   Shield, 
@@ -55,7 +56,14 @@ import {
   CheckSquare,
   Database,
   Settings,
-  KeyRound as KeyRoundIcon
+  KeyRound as KeyRoundIcon,
+  GitBranch,
+  Play,
+  StopCircle,
+  AlertTriangle,
+  Server,
+  HardDrive,
+  Zap
 } from 'lucide-react';
 import { UserProfile, Listing, UserStatus } from '../types/sealify';
 import { toast } from 'sonner';
@@ -71,7 +79,9 @@ type AdminTab =
   | 'safespots' 
   | 'security'
   | 'dbtest'
-  | 'database';
+  | 'database'
+  | 'diagram'
+  | 'migrate';
 
 export default function AdminDashboard() {
   const {
@@ -314,6 +324,8 @@ export default function AdminDashboard() {
             { id: 'security', label: 'Security & Root Config', icon: Lock, badge: intrusionLogs.length > 0 ? `!${intrusionLogs.length}` : null },
             { id: 'dbtest', label: 'Database Connection Test', icon: Database, badge: null },
             { id: 'database', label: 'Database Schema & SQL', icon: Database, badge: null },
+            { id: 'diagram', label: 'Visual Schema Diagram', icon: GitBranch, badge: null },
+            { id: 'migrate', label: 'Migration Executor', icon: Play, badge: null },
           ].map((t) => {
             const Icon = t.icon;
             const isActive = activeTab === t.id;
@@ -557,6 +569,18 @@ export default function AdminDashboard() {
         {activeTab === 'database' && (
           <div className="animate-in fade-in duration-300">
             <DatabaseSchemaGenerator />
+          </div>
+        )}
+
+        {activeTab === 'diagram' && (
+          <div className="animate-in fade-in duration-300">
+            <DatabaseDiagramViewer />
+          </div>
+        )}
+
+        {activeTab === 'migrate' && (
+          <div className="animate-in fade-in duration-300">
+            <MigrationExecutor />
           </div>
         )}
 
