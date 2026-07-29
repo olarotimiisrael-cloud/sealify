@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { 
   Database, Table, Columns, Key, Link, ChevronDown, ChevronUp, 
   Search, Download, Copy, CheckCircle, AlertCircle, Loader2,
-  Minimize2, Maximize2, RotateCcw
+  Minimize2, Maximize2, RotateCcw, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -733,7 +733,7 @@ const SCHEMA_DATA: TableSchema[] = [
       { name: 'id', type: 'UUID', primaryKey: true, nullable: false },
       { name: 'logo_url', type: 'TEXT' },
       { name: 'site_name', type: 'TEXT', default: "'Sealify Nigeria'" },
-      { name: 'site_description', type: 'TEXT', default: "'Nigeria''s Trusted Local Marketplace.'" },
+      { name: 'site_description', type: 'TEXT', default: "'Nigeria\\'s Trusted Local Marketplace.'" },
       { name: 'og_image', type: 'TEXT' },
       { name: 'contact_email', type: 'TEXT' },
       { name: 'contact_phone', type: 'TEXT' },
@@ -932,7 +932,7 @@ export const DatabaseDiagramViewer: React.FC = () => {
     policies: SCHEMA_DATA.reduce((sum, t) => sum + t.policies.length, 0),
     storageBuckets: STORAGE_BUCKETS.length,
     storagePolicies: STORAGE_BUCKETS.reduce((sum, b) => sum + b.policies.length, 0),
-  }, []);
+  }), []);
 
   const toggleTable = (name: string) => {
     setExpandedTables(prev => {
@@ -1195,11 +1195,11 @@ const TableCard: React.FC<{
                         <td className="p-2 text-slate-300">{col.type}</td>
                         <td className="p-2 text-slate-400 flex items-center gap-1">
                           {col.primaryKey && <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[9px] rounded border border-amber-500/30">PK</span>}
-                          {col.references && <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] rounded border border-blue-500/30">FK → {col.references.table}.{col.references.column}</span>}
+                          {col.references && <span className="px-1.5 py-0.5 bg-blue-500/20 text-blue-400 text-[9px] rounded border border-blue-500/30">FK &rarr; {col.references.table}.{col.references.column}</span>}
                           {col.unique && <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[9px] rounded border border-emerald-500/30">UNIQUE</span>}
                           {col.nullable === false && !col.primaryKey && <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-400 text-[9px] rounded border border-rose-500/30">NOT NULL</span>}
                         </td>
-                        <td className="p-2 text-slate-500">{col.default || '—'}</td>
+                        <td className="p-2 text-slate-500">{col.default || '&mdash;'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1237,7 +1237,7 @@ const TableCard: React.FC<{
                   {table.foreignKeys.map((fk, i) => (
                     <div key={i} className="p-2 bg-slate-950 border border-slate-800 rounded-lg flex items-center gap-2 text-xs">
                       <span className="font-mono text-blue-400">{fk.column}</span>
-                      <span className="text-slate-500">→</span>
+                      <span className="text-slate-500">&rarr;</span>
                       <span className="font-mono text-emerald-400">{fk.references.table}.{fk.references.column}</span>
                       {fk.onDelete && <span className="text-[9px] text-slate-500 px-1.5 py-0.5 bg-slate-900 rounded">ON DELETE {fk.onDelete}</span>}
                     </div>
@@ -1280,6 +1280,6 @@ const TableCard: React.FC<{
       )}
     </Card>
   );
-};
+);
 
 export default DatabaseDiagramViewer;
