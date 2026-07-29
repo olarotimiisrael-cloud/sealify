@@ -197,7 +197,7 @@ interface SealifyContextType {
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => void;
   deleteReview: (id: string) => void;
   buyerRequests: BuyerRequest[];
-  createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void.
+  createBuyerRequest: (req: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => void;
   deleteBuyerRequest: (id: string) => void;
   
   wallet: Wallet | null;
