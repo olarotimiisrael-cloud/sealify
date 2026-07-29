@@ -1082,7 +1082,7 @@ export const DatabaseDiagramViewer: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-slate-400">
-            Run these commands in Supabase Dashboard > Storage to create buckets and apply RLS policies.
+            Run these commands in Supabase Dashboard &gt; Storage to create buckets and apply RLS policies.
           </p>
           <div className="space-y-3">
             {STORAGE_BUCKETS.map(bucket => (
