@@ -1,4 +1,4 @@
-character and remove extra closing">
+', and removing dangling parenthesis">
 import React, { useState, useMemo } from 'react';
 import { 
   Database, Table, Columns, Key, Link, ChevronDown, ChevronUp, 
