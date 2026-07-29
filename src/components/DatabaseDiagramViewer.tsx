@@ -1,4 +1,4 @@
-character">
+character and remove extra closing">
 import React, { useState, useMemo } from 'react';
 import { 
   Database, Table, Columns, Key, Link, ChevronDown, ChevronUp, 
@@ -975,7 +975,6 @@ const DatabaseDiagramViewer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-black text-white">Interactive Database Diagram</h2>
@@ -995,7 +994,6 @@ const DatabaseDiagramViewer: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <StatCard icon={Database} label="Tables" value={stats.tables} color="text-blue-400" />
         <StatCard icon={Columns} label="Columns" value={stats.columns} color="text-purple-400" />
@@ -1007,7 +1005,6 @@ const DatabaseDiagramViewer: React.FC = () => {
         <StatCard icon={CheckCircle} label="Total Objects" value={stats.tables + stats.indexes + stats.foreignKeys + stats.policies + stats.storageBuckets + stats.storagePolicies} color="text-emerald-400" />
       </div>
 
-      {/* Search */}
       <div className="relative max-w-md">
         <Search className="absolute left-3.5 top-3 text-slate-500" size={18} />
         <input
@@ -1019,7 +1016,6 @@ const DatabaseDiagramViewer: React.FC = () => {
         />
       </div>
 
-      {/* View Toggle */}
       <div className="flex items-center gap-2 bg-slate-900/50 border border-slate-800 p-1 rounded-xl">
         <button
           onClick={() => setViewMode('er')}
@@ -1036,7 +1032,6 @@ const DatabaseDiagramViewer: React.FC = () => {
       </div>
 
       {viewMode === 'er' ? (
-        /* ER Diagram View */
         <Card className="border-slate-800 bg-slate-900/50 overflow-hidden">
           <CardHeader className="border-slate-800">
             <CardTitle className="flex items-center gap-2">
@@ -1060,7 +1055,6 @@ const DatabaseDiagramViewer: React.FC = () => {
           </CardContent>
         </Card>
       ) : (
-        /* Table List View */
         <div className="space-y-4">
           {filteredTables.map(table => (
             <TableCard
@@ -1073,7 +1067,6 @@ const DatabaseDiagramViewer: React.FC = () => {
         </div>
       )}
 
-      {/* Storage Buckets Section */}
       <Card className="border-amber-500/30 bg-amber-500/5">
         <CardHeader className="border-amber-500/20">
           <CardTitle className="flex items-center gap-2 text-amber-400">
@@ -1136,10 +1129,6 @@ const TableCard: React.FC<{
   isExpanded: boolean; 
   onToggle: () => void;
 }> = ({ table, isExpanded, onToggle }) => {
-  const fkCount = table.foreignKeys.length;
-  const indexCount = table.indexes.length;
-  const policyCount = table.policies.length;
-
   return (
     <Card className="border-slate-800 bg-slate-900/50 overflow-hidden">
       <CardHeader className="border-slate-800 p-4 cursor-pointer" onClick={onToggle}>
@@ -1173,7 +1162,6 @@ const TableCard: React.FC<{
       {isExpanded && (
         <CardContent className="p-0 pb-4">
           <div className="space-y-4 px-4">
-            {/* Columns */}
             <div className="px-4 pt-2">
               <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
                 <Columns className="h-4 w-4" />
@@ -1208,7 +1196,6 @@ const TableCard: React.FC<{
               </div>
             </div>
 
-            {/* Indexes */}
             {table.indexes.length > 0 && (
               <div className="px-4 border-t border-slate-800">
                 <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -1227,7 +1214,6 @@ const TableCard: React.FC<{
               </div>
             )}
 
-            {/* Foreign Keys */}
             {table.foreignKeys.length > 0 && (
               <div className="px-4 border-t border-slate-800">
                 <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -1247,7 +1233,6 @@ const TableCard: React.FC<{
               </div>
             )}
 
-            {/* RLS Policies */}
             {table.policies.length > 0 && (
               <div className="px-4 border-t border-slate-800 pb-4">
                 <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-2">
