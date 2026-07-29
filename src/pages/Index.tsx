@@ -342,7 +342,7 @@ export default function Index() {
                   to={`/listing/${item.id}`}
                   className="min-w-[180px] sm:min-w-[200px] bg-slate-950 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
                 >
-                  <img src={item.images[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" />
+                  <img src={item.images?.[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" />
                   <div className="min-w-0 space-y-0.5">
                     <p className="text-xs font-bold text-white truncate group-hover:text-emerald-400 transition-colors">{item.title}</p>
                     <p className="text-xs font-black text-emerald-400">{formatNGN(item.price)}</p>
