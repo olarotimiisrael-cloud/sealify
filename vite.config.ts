@@ -3,9 +3,10 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 import { nitro } from "nitro/vite";
+import dyadComponentTagger from '@dyad-sh/react-vite-component-tagger';
 
 export default defineConfig({
-  plugins: [react(), nitro()],
+  plugins: [dyadComponentTagger(), react(), nitro()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
