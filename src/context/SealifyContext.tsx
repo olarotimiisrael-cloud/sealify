@@ -218,13 +218,20 @@ const generateAdminSessionToken = (email: string) => {
   return btoa(`${email.toLowerCase()}:${salt}:${new Date().toDateString()}`);
 };
 
-const getStoredCustomListings = (): Listing[] => {
+const safeParseJSON = <T>(key: string, fallback: T): T => {
   try {
-    const saved = localStorage.getItem('sealify_custom_listings');
-    return saved ? JSON.parse(saved) : [];
+    const saved = localStorage.getItem(key);
+    if (!saved) return fallback;
+    return JSON.parse(saved) as T;
   } catch (e) {
-    return [];
+    console.warn(`Failed to parse ${key} from localStorage:`, e);
+    localStorage.removeItem(key);
+    return fallback;
   }
+};
+
+const getStoredCustomListings = (): Listing[] => {
+  return safeParseJSON<Listing[]>('sealify_custom_listings', []);
 };
 
 const saveStoredCustomListings = (customListings: Listing[]) => {
@@ -246,24 +253,24 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [adminPin, setAdminPin] = useState<string>(() => localStorage.getItem('sealify_admin_pin') || '336699');
 
   const [user, setUser] = useState<UserProfile | null>(() => {
-    const saved = localStorage.getItem('sealify_active_user');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed.role === 'admin') {
-          const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
-          const expectedToken = generateAdminSessionToken(adminEmail);
-          if (!sessionToken || sessionToken !== expectedToken) {
-            console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected.');
-            return { ...parsed, role: 'buyer', status: 'active' };
-          }
+    try {
+      const saved = localStorage.getItem('sealify_active_user');
+      if (!saved) return null;
+      const parsed = JSON.parse(saved);
+      if (parsed.role === 'admin') {
+        const sessionToken = sessionStorage.getItem('sealify_admin_session_token');
+        const expectedToken = generateAdminSessionToken(adminEmail);
+        if (!sessionToken || sessionToken !== expectedToken) {
+          console.warn('🚨 SECURITY ALERT: Unverified or tampered admin session token detected.');
+          return { ...parsed, role: 'buyer', status: 'active' };
         }
-        return { ...parsed, status: 'active' };
-      } catch (e) {
-        return null;
       }
+      return { ...parsed, status: 'active' };
+    } catch (e) {
+      console.warn('Failed to parse user from localStorage:', e);
+      localStorage.removeItem('sealify_active_user');
+      return null;
     }
-    return null;
   });
 
   const isAdmin = useMemo(() => {
@@ -282,10 +289,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  const [userInterests, setUserInterests] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem('sealify_interests');
-    return saved ? JSON.parse(saved) : {};
-  });
+  const [userInterests, setUserInterests] = useState<Record<string, number>>(() => 
+    safeParseJSON<Record<string, number>>('sealify_interests', {})
+  );
 
   const updateAdminCredentials = (newEmail: string, newPassword: string, newPin: string) => {
     setAdminEmail(newEmail);
@@ -321,11 +327,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [reports, setReports] = useState<AdReport[]>([]);
   const [disputeCases, setDisputeCases] = useState<DisputeCase[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
-  const [savedListingIds, setSavedListingIds] = useState<string[]>([]);
-  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
+  const [savedListingIds, setSavedListingIds] = useState<string[]>(() => 
+    safeParseJSON<string[]>('sealify_saved', ['lst_2'])
+  );
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => 
+    safeParseJSON<string[]>('sealify_recently_viewed', [])
+  );
   const [compareListingIds, setCompareListingIds] = useState<string[]>([]);
-  const [language, setLanguage] = useState<SupportedLanguage>('en');
-  const [filters, setFilters] = useState<FilterState>({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
+  const [language, setLanguage] = useState<SupportedLanguage>(() => 
+    (localStorage.getItem('sealify_language') as SupportedLanguage) || 'en'
+  );
+  const [filters, setFilters] = useState<FilterState>(() => 
+    safeParseJSON<FilterState>('sealify_filters', { 
+      searchQuery: '', 
+      category: 'All', 
+      minPrice: null, 
+      maxPrice: null, 
+      condition: 'All', 
+      location: '', 
+      sortBy: 'newest' 
+    })
+  );
   const [categories, setCategories] = useState([
     { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 0, color: 'bg-blue-500' },
     { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 0, color: 'bg-purple-500' },
@@ -360,6 +382,22 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     localStorage.setItem('sealify_interests', JSON.stringify(userInterests));
   }, [userInterests]);
 
+  useEffect(() => {
+    localStorage.setItem('sealify_language', language);
+  }, [language]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_filters', JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_saved', JSON.stringify(savedListingIds));
+  }, [savedListingIds]);
+
+  useEffect(() => {
+    localStorage.setItem('sealify_recently_viewed', JSON.stringify(recentlyViewedIds));
+  }, [recentlyViewedIds]);
+
   const addNotification = useCallback((n: Omit<AppNotification, 'id' | 'time' | 'read'>) => {
     if (user) {
       const newNotif: AppNotification = {
@@ -378,6 +416,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   const fetchData = useCallback(async () => {
+    if (isSyncing) return;
     setIsSyncing(true);
     setError(null);
     try {
@@ -509,7 +548,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setLoading(false);
       setIsSyncing(false);
     }
-  }, [user]);
+  }, [user, isSyncing]);
 
   useEffect(() => {
     fetchData();
@@ -823,27 +862,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const sellerVerificationType = user?.verificationType || 'none';
 
       let dbResult: any = null;
-            try {
-              dbResult = await listingService.create({
-                sellerId: sellerId,
-                title: data.title,
-                description: data.description,
-                price: data.price,
-                category: data.category,
-                condition: data.condition,
-                location: data.location || 'Ogbomoso, Oyo State',
-                status: 'active',
-                featured: data.featured || false,
-                specifications: data.specifications || {},
-                sellerName,
-                sellerPhone,
-                sellerAvatar,
-                sellerVerified,
-                sellerVerificationType
-              }, uploadedUrls);
-            } catch (e) {
-              console.warn('Listing DB insert notice:', e);
-            }
+      try {
+        dbResult = await listingService.create({
+          sellerId: sellerId,
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          category: data.category,
+          condition: data.condition,
+          location: data.location || 'Ogbomoso, Oyo State',
+          status: 'active',
+          featured: data.featured || false,
+          specifications: data.specifications || {},
+          sellerName,
+          sellerPhone,
+          sellerAvatar,
+          sellerVerified,
+          sellerVerificationType
+        }, uploadedUrls);
+      } catch (e) {
+        console.warn('Listing DB insert notice:', e);
+      }
 
       const newListing: Listing = {
         id: dbResult?.id || `lst_user_${Date.now()}`,
