@@ -19,32 +19,32 @@ import DatabaseTest from '../components/DatabaseTest';
 import DatabaseSchemaGenerator from '../components/DatabaseSchemaGenerator';
 import DatabaseDiagramViewer from '../components/DatabaseDiagramViewer';
 import MigrationExecutor from '../components/MigrationExecutor';
-import { 
-  X, CheckCircle2, Plus, 
-  Shield, 
-  Users, 
-  Package, 
-  Check, 
-  Edit3, 
-  AlertOctagon, 
-  Info, 
-  Lock, 
-  KeyRound, 
-  Radio, 
-  MapPin, 
-  Search, 
-  SlidersHorizontal, 
-  TrendingUp, 
-  Siren, 
-  Mail, 
-  Download, 
-  Square, 
-  Send, 
-  Filter, 
-  BarChart3, 
-  ShieldAlert, 
-  Gavel, 
-  Sparkles, 
+import {
+  X, CheckCircle2, Plus,
+  Shield,
+  Users,
+  Package,
+  Check,
+  Edit3,
+  AlertOctagon,
+  Info,
+  Lock,
+  KeyRound,
+  Radio,
+  MapPin,
+  Search,
+  SlidersHorizontal,
+  TrendingUp,
+  Siren,
+  Mail,
+  Download,
+  Square,
+  Send,
+  Filter,
+  BarChart3,
+  ShieldAlert,
+  Gavel,
+  Sparkles,
   Terminal,
   Activity,
   Megaphone,
@@ -64,7 +64,9 @@ import {
   AlertTriangle,
   Server,
   HardDrive,
-  Zap
+  Zap,
+  CreditCard,
+  Wallet
 } from 'lucide-react';
 import { UserProfile, Listing, UserStatus } from '../types/sealify';
 import { toast } from 'sonner';
@@ -146,13 +148,13 @@ const AdminDashboard: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('all');
   const [filterRole, setFilterRole] = useState<'buyer' | 'seller' | 'admin' | 'all'>('all');
-  const [filterVerified, setFilterVerified] = useState<boolean | 'all'>('all');
+  const [filterVerified, setFilterVerified] = useState<'all' | 'true' | 'false'>('all');
 
   const filteredUsers = allUsers.filter(u => {
     if (searchQuery && !u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) && !u.email.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (filterStatus !== 'all' && u.status !== filterStatus) return false;
     if (filterRole !== 'all' && u.role !== filterRole) return false;
-    if (filterVerified !== 'all' && u.verified !== filterVerified) return false;
+    if (filterVerified !== 'all' && u.verified !== (filterVerified === 'true')) return false;
     return true;
   });
 
@@ -173,7 +175,7 @@ const AdminDashboard: React.FC = () => {
     totalRevenue: promotionPaymentRequests.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0),
   };
 
-  const tabs = [
+  const tabs: { id: 'overview' | 'users' | 'listings' | 'moderation' | 'finance' | 'security' | 'database' | 'settings' | 'broadcast' | 'schema' | 'migration' | 'analytics'; label: string; icon: React.FC<{ className?: string }> }[] = [
     { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'listings', label: 'Listings', icon: Package },
@@ -286,7 +288,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex justify-between items-start">
                           <div>
                             <p className="font-bold text-rose-300 text-xs">{log.attemptedEmail}</p>
-                            <p className="text-[10px] text-slate-400">{log.deviceInfo}</p>
+                            <p className="text-[10px] text-slate-400">{log.deviceInfo.userAgent}</p>
                           </div>
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded ${log.status === 'flagged' ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                             {log.status.toUpperCase()}
@@ -328,7 +330,7 @@ const AdminDashboard: React.FC = () => {
                     <option value="seller">Seller</option>
                     <option value="admin">Admin</option>
                   </select>
-                  <select value={filterVerified} onChange={(e) => setFilterVerified(e.target.value === 'all' ? 'all' : e.target.value === 'true')} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
+                  <select value={filterVerified} onChange={(e) => setFilterVerified(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none">
                     <option value="all">All</option>
                     <option value="true">Verified</option>
                     <option value="false">Unverified</option>
@@ -501,7 +503,7 @@ const AdminDashboard: React.FC = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-bold text-rose-300">{log.attemptedEmail}</p>
-                        <p className="text-[10px] text-slate-400 font-mono">{log.deviceInfo}</p>
+                        <p className="text-[10px] text-slate-400 font-mono">{log.deviceInfo.userAgent}</p>
                         <p className="text-[9px] text-slate-500">{log.timestamp}</p>
                       </div>
                       <span className={`px-2 py-1 rounded text-[10px] font-bold ${log.status === 'flagged' ? 'bg-rose-500/20 text-rose-400' : log.status === 'reported' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
@@ -679,7 +681,7 @@ const StatCard: React.FC<{ label: string; value: number | string; icon: React.FC
   </div>
 );
 
-const QuickStat: React.FC<{ title: string; value: number; icon: React.FC<{ className?: string }>; color: string; subtitle?: string }> = ({
+const QuickStat: React.FC<{ title: string; value: number | string; icon: React.FC<{ className?: string }>; color: string; subtitle?: string }> = ({
   title, value, icon: Icon, color, subtitle
 }) => (
   <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">

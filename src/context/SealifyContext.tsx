@@ -823,28 +823,27 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const sellerVerificationType = user?.verificationType || 'none';
 
       let dbResult: any = null;
-      try {
-        dbResult = await listingService.create({
-          sellerId: sellerId,
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          category_id: data.category,
-          condition: data.condition,
-          location: data.location || 'Ogbomoso, Oyo State',
-          status: 'active',
-          featured: data.featured || false,
-          specifications: data.specifications || {},
-          sellerName,
-          sellerEmail: user?.email,
-          sellerPhone,
-          sellerAvatar,
-          sellerVerified,
-          sellerVerificationType
-        }, uploadedUrls);
-      } catch (e) {
-        console.warn('Listing DB insert notice:', e);
-      }
+            try {
+              dbResult = await listingService.create({
+                sellerId: sellerId,
+                title: data.title,
+                description: data.description,
+                price: data.price,
+                category: data.category,
+                condition: data.condition,
+                location: data.location || 'Ogbomoso, Oyo State',
+                status: 'active',
+                featured: data.featured || false,
+                specifications: data.specifications || {},
+                sellerName,
+                sellerPhone,
+                sellerAvatar,
+                sellerVerified,
+                sellerVerificationType
+              }, uploadedUrls);
+            } catch (e) {
+              console.warn('Listing DB insert notice:', e);
+            }
 
       const newListing: Listing = {
         id: dbResult?.id || `lst_user_${Date.now()}`,
@@ -874,7 +873,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setListings(prev => [newListing, ...prev]);
       checkSearchAlertsForListing(newListing);
-      addAuditLog('Listing Created', `Published new ad: "${newListing.title}"`, 'ad');
+      addAuditLog('Listing Created', `Published new ad: "${newListing.title}"`, 'listing');
 
       return true;
     } catch (e: any) { 
@@ -891,7 +890,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     saveStoredCustomListings(updatedStored);
 
     await listingService.update(id, updatedData); 
-    addAuditLog('Listing Modified', `Updated ad details for ID ${id}`, 'ad'); 
+    addAuditLog('Listing Modified', `Updated ad details for ID ${id}`, 'listing');
     fetchData(); 
   };
 
@@ -903,7 +902,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     saveStoredCustomListings(updatedStored);
 
     await listingService.delete(id); 
-    addAuditLog('Listing Deleted', `Dropped ad from feed ID ${id}`, 'ad'); 
+    addAuditLog('Listing Deleted', `Dropped ad from feed ID ${id}`, 'listing');
     fetchData(); 
   };
 

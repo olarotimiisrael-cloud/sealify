@@ -257,6 +257,7 @@ export interface SystemAnnouncement {
   message: string;
   type: 'info' | 'warning' | 'success' | 'alert';
   active: boolean;
+  targetRoles?: ('buyer' | 'seller')[];
   createdAt: string;
 }
 
