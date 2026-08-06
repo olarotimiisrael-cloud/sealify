@@ -58,7 +58,7 @@ export const CategoryBar: React.FC = () => {
             <span>LAUTECH Hostel Finder</span>
           </button>
 
-          {categories.map((cat) => {
+          {categories.map((cat: CategoryConfig) => {
             const isSelected = activeCategory === cat.name;
             const IconComponent = iconMap[cat.iconName] || LayoutGrid;
 

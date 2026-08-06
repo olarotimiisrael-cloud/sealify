@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, Wallet, Transaction, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification } from '@/types/sealify';
+import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, Wallet, Transaction, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 
@@ -38,8 +38,8 @@ interface SealifyContextType {
   updateAdminCredentials: (email: string, password: string, pin: string) => void;
   
   // System config
-  systemConfig: Record<string, boolean>;
-  updateSystemConfig: (updates: Record<string, boolean>) => void;
+  systemConfig: Record<string, boolean | number>;
+  updateSystemConfig: (updates: Record<string, boolean | number>) => void;
   
   // Site settings
   siteSettings: { siteName: string; siteDescription: string; ogImage: string; contactEmail: string; contactPhone: string } | null;
@@ -63,9 +63,9 @@ interface SealifyContextType {
   t: (key: string) => string;
   
   // Categories
-  categories: Category[];
+  categories: CategoryConfig[];
   subcategories: any[];
-  addCategory: (category: Category) => void;
+  addCategory: (category: CategoryConfig) => void;
   deleteCategory: (id: string) => void;
   updateCategory: (id: string, name: string) => void;
   
@@ -89,6 +89,8 @@ interface SealifyContextType {
   deleteUser: (id: string) => void;
   bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
   bulkDeleteUsers: (ids: string[]) => void;
+  bulkUpdateListings: (ids: string[], updates: Partial<Listing>) => void;
+  bulkDeleteListings: (ids: string[]) => void;
   
   // Favorites
   savedListingIds: string[];
@@ -148,7 +150,7 @@ interface SealifyContextType {
   deleteAnnouncement: (id: string) => Promise<void>;
   reports: any[];
   submitReport: (report: any) => Promise<void>;
-  processReport: (id: string) => Promise<void>;
+  processReport: (id: string, status: string) => Promise<void>;
   disputeCases: any[];
   submitDisputeCase: (dispute: any) => Promise<void>;
   processDisputeCase: (id: string, status: string) => Promise<void>;
@@ -190,7 +192,7 @@ interface SealifyContextType {
 const SealifyContext = createContext<SealifyContextType | undefined>(undefined);
 
 // Mock data for initial state
-const MOCK_CATEGORIES: Category[] = [
+const MOCK_CATEGORIES: CategoryConfig[] = [
   { id: 'vehicles', name: 'Vehicles', iconName: 'Car', count: 3, color: 'bg-blue-500' },
   { id: 'electronics', name: 'Electronics', iconName: 'Smartphone', count: 3, color: 'bg-purple-500' },
   { id: 'real_estate', name: 'Real Estate', iconName: 'Home', count: 3, color: 'bg-teal-500' },
@@ -541,12 +543,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [adminEmail, setAdminEmail] = useState('admin@sealify.ng');
   const [adminPassword, setAdminPassword] = useState('sealify2024');
   const [adminPin, setAdminPin] = useState('123456');
-  const [systemConfig, setSystemConfig] = useState<Record<string, boolean>>(MOCK_SYSTEM_CONFIG);
+  const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
   const [promotionPlans, setPromotionPlans] = useState(MOCK_PROMOTION_PLANS);
   const [safeSpots, setSafeSpots] = useState(MOCK_SAFE_SPOTS);
   const [language, setLanguage] = useState<'en' | 'yo' | 'ha' | 'ig' | 'zh'>('en');
-  const [categories, setCategories] = useState<Category[]>(MOCK_CATEGORIES);
+  const [categories, setCategories] = useState<CategoryConfig[]>(MOCK_CATEGORIES);
   const [subcategories, setSubcategories] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState({
     visitors: 12450,
@@ -708,7 +710,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const toggleSaveListing = async (id: string) => {
     if (user) {
       const exists = savedListingIds.includes(id);
-      await favoriteService.toggle(user.id, id, exists);
+      await favoriteService.toggleFavorite(user.id, id, exists);
       setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]);
     }
   };
@@ -806,17 +808,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const markNotificationRead = async (id: string) => {
-    await notificationService.markRead(id);
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const markAllNotificationsRead = async () => {
-    await Promise.all(notifications.map(n => notificationService.markRead(n.id)));
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const clearNotification = async (id: string) => {
-    await notificationService.clear(id);
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
@@ -868,8 +867,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setReports(prev => [{ ...report, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
   };
 
-  const processReport = async (id: string) => {
-    setReports(prev => prev.map(r => r.id === id ? { ...r, status: 'resolved' } : r));
+  const processReport = async (id: string, status: string) => {
+    setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitDisputeCase = async (dispute: any) => {
@@ -995,7 +994,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setPromotionPlans(prev => prev.map(p => p.months === months ? { ...p, rate } : p));
   };
 
-  const addCategory = (category: Category) => {
+  const addCategory = (category: CategoryConfig) => {
     setCategories(prev => [...prev, category]);
   };
 
@@ -1028,14 +1027,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     adminPin,
     updateAdminCredentials,
     systemConfig,
-    updateSystemConfig: (updates: Record<string, boolean>) => {
+    updateSystemConfig: (updates: Record<string, boolean | number>) => {
       setSystemConfig(prev => ({ ...prev, ...updates }));
-      Object.entries(updates).forEach(([k, v]) => systemConfigService.update(k, v));
+      Object.entries(updates).forEach(([k, v]) => systemConfigService.updateConfig(k, v));
     },
     siteSettings,
     updateSiteSettings: (settings: Partial<typeof siteSettings>) => {
       setSiteSettings(prev => ({ ...prev, ...settings }));
-      siteSettingsService.update(settings);
+      siteSettingsService.updateSettings(settings);
       addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast');
     },
     promotionPlans,

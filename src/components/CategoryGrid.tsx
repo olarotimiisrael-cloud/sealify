@@ -47,7 +47,7 @@ export const CategoryGrid: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-2 sm:gap-3">
-        {categories.map((cat) => {
+        {categories.map((cat: CategoryConfig) => {
           const IconComponent = iconMap[cat.iconName] || LayoutGrid;
           const isSelected = activeCategory === cat.name;
           const matchingCount = listings.filter((l) => l.category === cat.name).length;

@@ -16,6 +16,14 @@ export type VerificationBadgeType = 'individual' | 'business' | 'premium' | 'stu
 
 export type UserStatus = 'active' | 'suspended' | 'banned' | 'restricted';
 
+export interface CategoryConfig {
+  id: string;
+  name: Category;
+  iconName: string;
+  color: string;
+  count?: number;
+}
+
 export interface Wallet {
   id: string;
   userId: string;
@@ -221,7 +229,7 @@ export interface DisputeCase {
 
 export interface SearchAlert {
   id: string;
-  userId: string;
+  userId userId: string;
   query: string;
   category: Category | 'All';
   maxPrice: number | null;
@@ -349,4 +357,24 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   messages: Message[];
+}
+
+export interface AppNotification {
+  id: string;
+  type: 'price_drop' | 'message' | 'offer' | 'alert_match' | 'system' | 'recommendation' | 'payment' | 'security' | 'verification' | 'promotion';
+  title: string;
+  description: string;
+  time: string;
+  read: boolean;
+  linkUrl?: string;
+}
+
+export interface SearchFilter {
+  query: string;
+  category: Category | 'All';
+  minPrice: number | null;
+  maxPrice: number | null;
+  condition: Condition | 'All';
+  location: string;
+  sortBy: 'newest' | 'price-asc' | 'price-desc' | 'popular';
 }
