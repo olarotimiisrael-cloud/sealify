@@ -655,7 +655,6 @@ const AdminDashboard: React.FC = () => {
             onClose={() => setIsSettingsOpen(false)}
           />
         )}
-      </div>
     </main>
 
     <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
