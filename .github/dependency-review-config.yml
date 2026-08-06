@@ -1,0 +1,16 @@
+fail-on-severity: moderate
+allow-ghsas:
+  # Allow known low-risk vulnerabilities that are false positives or have no fix
+  - GHSA-xvch-5gv4-984h  # protobufjs - dev dependency only
+  - GHSA-9j87-hf3v-528m  # @babel/traverse - dev dependency only
+deny-licenses:
+  - GPL-3.0
+  - AGPL-3.0
+allowed-licenses:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - CC0-1.0
+  - Unlicense
