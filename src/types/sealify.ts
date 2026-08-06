@@ -229,7 +229,7 @@ export interface DisputeCase {
 
 export interface SearchAlert {
   id: string;
-  userId userId: string;
+  userId: string;
   query: string;
   category: Category | 'All';
   maxPrice: number | null;
