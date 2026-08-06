@@ -18,6 +18,7 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import DatabaseTest from '../components/DatabaseTest';
 import DatabaseSchemaGenerator from '../components/DatabaseSchemaGenerator';
 import DatabaseDiagramViewer from '../components/DatabaseDiagramViewer';
+import MigrationExecutor from '../components/MigrationExecutor';
 import { 
   X, CheckCircle2, Plus, 
   Shield, 

@@ -46,7 +46,9 @@ import {
   Bell,
   ArrowRightLeft,
   Sliders,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
