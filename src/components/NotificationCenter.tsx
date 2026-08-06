@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Bell, TrendingDown, MessageSquare, Tag, Sparkles, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useSealify, AppNotification } from '../context/SealifyContext';
+import { useSealify } from '../context/SealifyContext';
 
 interface NotificationCenterProps {
   isOpen: boolean;
@@ -13,7 +13,7 @@ export const NotificationCenter: React.FC<NotificationCenterProps> = ({ isOpen, 
 
   if (!isOpen) return null;
 
-  const getIcon = (type: AppNotification['type']) => {
+  const getIcon = (type: string) => {
     switch (type) {
       case 'price_drop':
         return <TrendingDown className="w-4 h-4 text-emerald-400" />;

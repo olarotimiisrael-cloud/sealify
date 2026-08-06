@@ -65,7 +65,7 @@ export const CategoryBar: React.FC = () => {
             return (
               <button
                 key={cat.id}
-                onClick={() => setActiveCategory(isSelected ? 'All' : (cat.name as Category))}
+                onClick={() => setActiveCategory(isSelected ? 'All' : cat.name)}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
                   isSelected
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'

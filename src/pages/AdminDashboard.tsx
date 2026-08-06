@@ -118,13 +118,13 @@ const AdminDashboard: React.FC = () => {
     adminUsers: allUsers.filter(u => u.role === 'admin').length,
     totalListings: listings.length,
     activeListings: listings.filter(l => l.status === 'active').length,
-    totalRevenue: promotionPaymentRequests.filter(p => p.status === 'approved').reduce((sum, p) => sum + p.amount, 0),
+    totalRevenue: promotionPlans.filter(p => p.isActive).reduce((sum, p) => sum + p.rate, 0),
     pendingReports: reports.filter(r => r.status === 'pending').length,
     openDisputes: disputeCases.filter(d => d.status === 'pending').length,
     pendingVerifications: verificationRequests.filter(v => v.status === 'pending').length,
     pendingPromotions: promotionPaymentRequests.filter(p => p.status === 'pending').length,
     pendingPasswords: passwordRequests.filter(p => p.status === 'pending').length,
-  }), [allUsers, listings, promotionPaymentRequests, reports, disputeCases, verificationRequests, passwordRequests]);
+  }), [allUsers, listings, promotionPlans, reports, disputeCases, verificationRequests, passwordRequests]);
 
   // Quick action handlers
   const handleBulkAction = (action: string) => {
@@ -586,8 +586,8 @@ const AdminDashboard: React.FC = () => {
                           <p className="text-[10px] text-slate-400">Reason: {r.reason}</p>
                           <p className="text-[10px] text-slate-500">By: {r.reporterName || 'Anonymous'}</p>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={() => processReport(r.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">Resolve</button>
-                            <button onClick={() => processReport(r.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-rose-400 font-bold rounded-xl text-[10px] border border-slate-700">Dismiss</button>
+                            <button onClick={() => processReport(r.id, 'resolved')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">Resolve</button>
+                            <button onClick={() => processReport(r.id, 'dismissed')} className="flex-1 py-1.5 bg-slate-800 text-rose-400 font-bold rounded-xl text-[10px] border border-slate-700">Dismiss</button>
                           </div>
                         </div>
                       ))}
@@ -989,22 +989,13 @@ const AdminDashboard: React.FC = () => {
               <h2 className="text-xl font-black text-white">Database Administration</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <DatabaseTest
-                  onClose={() => setIsDatabaseTestOpen(false)}
-                />
+                <DatabaseTest />
                 
-                <SqlSchemaViewer
-                  isOpen={isSqlViewerOpen}
-                  onClose={() => setIsSqlViewerOpen(false)}
-                />
-
-                <DatabaseSchemaGenerator
-                  onClose={() => setIsSchemaGeneratorOpen(false)}
-                />
-
-                <MigrationExecutor
-                  onClose={() => setIsMigrationOpen(false)}
-                />
+                <SqlSchemaViewer />
+                
+                <DatabaseSchemaGenerator />
+                
+                <MigrationExecutor />
               </div>
 
               <div className="pt-6 border-t border-slate-800">

@@ -389,7 +389,7 @@ export const notificationService = {
     }
   },
   
-  markRead: async (id: string): Promise<boolean> => {
+  markNotificationRead: async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
       if (error) handleSupabaseError(error, 'markNotificationRead');
@@ -400,7 +400,7 @@ export const notificationService = {
     }
   },
   
-  clear: async (id: string): Promise<boolean> => {
+  clearNotification: async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase.from('notifications').delete().eq('id', id);
       if (error) handleSupabaseError(error, 'clearNotification');
@@ -721,45 +721,6 @@ export const buyerRequestService = {
   }
 };
 
-export const favoriteService = {
-  getByUserId: async (userId: string): Promise<string[]> => {
-    try {
-      const { data, error } = await supabase
-        .from('favorites')
-        .select('listing_id')
-        .eq('user_id', userId);
-      
-      if (error) handleSupabaseError(error, 'getFavorites');
-      return (data || []).map(f => f.listing_id);
-    } catch (e) {
-      console.error('getFavorites failed:', e);
-      return [];
-    }
-  },
-  
-  toggle: async (userId: string, listingId: string, exists: boolean): Promise<boolean> => {
-    try {
-      if (exists) {
-        const { error } = await supabase
-          .from('favorites')
-          .delete()
-          .eq('user_id', userId)
-          .eq('listing_id', listingId);
-        if (error) handleSupabaseError(error, 'removeFavorite');
-      } else {
-        const { error } = await supabase
-          .from('favorites')
-          .insert([{ user_id: userId, listing_id: listingId }]);
-        if (error) handleSupabaseError(error, 'addFavorite');
-      }
-      return true;
-    } catch (e) {
-      console.error('toggleFavorite failed:', e);
-      return false;
-    }
-  }
-};
-
 export const announcementService = {
   getAll: async (): Promise<DbSystemAnnouncement[]> => {
     try {
@@ -812,7 +773,7 @@ export const systemConfigService = {
     }
   },
   
-  update: async (key: string, value: boolean): Promise<boolean> => {
+  updateConfig: async (key: string, value: boolean): Promise<boolean> => {
     try {
       const { error } = await supabase
         .from('system_configs')
@@ -838,7 +799,7 @@ export const siteSettingsService = {
     }
   },
   
-  update: async (settings: Partial<DbSiteSettings>): Promise<DbSiteSettings | null> => {
+  updateSettings: async (settings: Partial<DbSiteSettings>): Promise<DbSiteSettings | null> => {
     try {
       const { data, error } = await supabase
         .from('site_settings')
@@ -1025,6 +986,45 @@ export const storageService = {
     } catch (e) {
       console.error('uploadFile failed:', e);
       return '';
+    }
+  }
+};
+
+export const favoriteService = {
+  getByUserId: async (userId: string): Promise<string[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('favorites')
+        .select('listing_id')
+        .eq('user_id', userId);
+      
+      if (error) handleSupabaseError(error, 'getFavorites');
+      return (data || []).map(f => f.listing_id);
+    } catch (e) {
+      console.error('getFavorites failed:', e);
+      return [];
+    }
+  },
+  
+  toggleFavorite: async (userId: string, listingId: string, exists: boolean): Promise<boolean> => {
+    try {
+      if (exists) {
+        const { error } = await supabase
+          .from('favorites')
+          .delete()
+          .eq('user_id', userId)
+          .eq('listing_id', listingId);
+        if (error) handleSupabaseError(error, 'removeFavorite');
+      } else {
+        const { error } = await supabase
+          .from('favorites')
+          .insert([{ user_id: userId, listing_id: listingId }]);
+        if (error) handleSupabaseError(error, 'addFavorite');
+      }
+      return true;
+    } catch (e) {
+      console.error('toggleFavorite failed:', e);
+      return false;
     }
   }
 };

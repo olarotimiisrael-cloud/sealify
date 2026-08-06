@@ -55,9 +55,9 @@ export const SOLAR_CATEGORY_CONFIG = {
 };
 
 export const SolarCategoryConfig: React.FC = () => {
-  const { categories, addCategory, updateCategory } = useSealify();
+  const { categories, addCategory } = useSealify();
 
-  const solarExists = categories.some(c => c.name === 'Solar & Clean Energy');
+  const solarExists = categories.some((c) => c.name === 'Solar & Clean Energy');
 
   return (
     <div className="p-4 bg-slate-900/50 border border-slate-800 rounded-2xl space-y-4">

@@ -55,7 +55,7 @@ export const CategoryGrid: React.FC = () => {
           return (
             <button
               key={cat.id}
-              onClick={() => setActiveCategory(isSelected ? 'All' : (cat.name as Category))}
+              onClick={() => setActiveCategory(isSelected ? 'All' : cat.name)}
               className={`flex flex-col items-center p-2.5 sm:p-3 rounded-2xl border transition-all duration-200 group text-center cursor-pointer active:scale-95 ${
                 isSelected
                   ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg shadow-emerald-500/20 font-black'

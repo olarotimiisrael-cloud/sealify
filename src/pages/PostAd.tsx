@@ -159,7 +159,12 @@ const PostAd: React.FC = () => {
     }
     setIsSubmitting(true);
     const success = await createListing({
-      title, category, condition, price: Number(price), location, description, images, featured: featuredBoost, specifications: specs
+      title, category, condition, price: Number(price), location, description, images, featured: featuredBoost, specifications: specs,
+      sellerName: user?.fullName || '',
+      sellerPhone: user?.phoneNumber || '',
+      sellerAvatar: user?.avatarUrl || '',
+      sellerVerified: user?.verified || false,
+      sellerVerificationType: user?.verificationType,
     }, rawFiles);
     setIsSubmitting(false);
     if (success) navigate('/my-ads');
