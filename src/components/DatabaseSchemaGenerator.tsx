@@ -695,28 +695,28 @@ ALTER TABLE public.buyer_request_responses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wallets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.escrow_orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.password_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promotion_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.intrusion_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_configs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promotion_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.safe_spots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.recent_deals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.search_alerts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.subcategories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.escrow_orders ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.password_requests ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.promotion_payments ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.intrusion_logs ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.system_configs ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.promotion_plans ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.safe_spots ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.recent_deals ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.search_alerts ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY.
+ALTER TABLE public.subcategories ENABLE ROW LEVEL SECURITY.
 
 -- ============================================================================
 -- PROFILES POLICIES (Fixed: Use auth.uid() directly, no self-query)
@@ -873,7 +873,7 @@ CREATE POLICY "Users can view their own notifications" ON public.notifications
 FOR SELECT USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can update their own notifications" ON public.notifications 
-FOR UPDATE USING (auth.uid() = user_id);
+FOR UPDATE USING (auth.uid() = user_id).
 
 CREATE POLICY "System can create notifications" ON public.notifications 
 FOR INSERT WITH CHECK (TRUE);
@@ -890,10 +890,10 @@ FOR ALL USING (auth.uid() = user_id);
 -- ============================================================================
 
 CREATE POLICY "Users can view their own verification requests" ON public.verification_requests 
-FOR SELECT USING (auth.uid() = user_id);
+FOR SELECT USING (auth.uid() = user_id).
 
 CREATE POLICY "Users can create verification requests" ON public.verification_requests 
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+FOR INSERT WITH CHECK (auth.uid() = user_id).
 
 CREATE POLICY "Admins can manage all verification requests" ON public.verification_requests 
 FOR ALL USING (public.is_admin());
@@ -903,179 +903,179 @@ FOR ALL USING (public.is_admin());
 -- ============================================================================
 
 CREATE POLICY "Users can view their own password requests" ON public.password_requests 
-FOR SELECT USING (auth.uid() = user_id);
+FOR SELECT USING (auth.uid() = user_id).
 
 CREATE POLICY "Users can create password requests" ON public.password_requests 
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+FOR INSERT WITH CHECK (auth.uid() = user_id).
 
 CREATE POLICY "Admins can manage all password requests" ON public.password_requests 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- PROMOTION_PAYMENTS POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Users can view their own promotion payments" ON public.promotion_payments 
-FOR SELECT USING (auth.uid() = user_id);
+FOR SELECT USING (auth.uid() = user_id).
 
 CREATE POLICY "Users can create promotion payments" ON public.promotion_payments 
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+FOR INSERT WITH CHECK (auth.uid() = user_id).
 
 CREATE POLICY "Admins can manage all promotion payments" ON public.promotion_payments 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- REVIEWS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Reviews are viewable by everyone" ON public.reviews 
-FOR SELECT USING (TRUE);
+FOR SELECT USING (TRUE).
 
 CREATE POLICY "Buyers can create reviews" ON public.reviews 
-FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+FOR INSERT WITH CHECK (auth.uid() = buyer_id).
 
 CREATE POLICY "Admins can manage all reviews" ON public.reviews 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- REPORTS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Reporters can view their own reports" ON public.reports 
-FOR SELECT USING (auth.uid() = reporter_id);
+FOR SELECT USING (auth.uid() = reporter_id).
 
 CREATE POLICY "Anyone can create reports" ON public.reports 
-FOR INSERT WITH CHECK (TRUE);
+FOR INSERT WITH CHECK (TRUE).
 
 CREATE POLICY "Admins can manage all reports" ON public.reports 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- DISPUTES POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Users can view their own disputes" ON public.disputes 
-FOR SELECT USING (auth.uid() = user_id);
+FOR SELECT USING (auth.uid() = user_id).
 
 CREATE POLICY "Users can create disputes" ON public.disputes 
-FOR INSERT WITH CHECK (auth.uid() = user_id);
+FOR INSERT WITH CHECK (auth.uid() = user_id).
 
 CREATE POLICY "Admins can manage all disputes" ON public.disputes 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- AUDIT_LOGS POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Admins can view audit logs" ON public.audit_logs 
-FOR SELECT USING (public.is_admin());
+FOR SELECT USING (public.is_admin()).
 
 CREATE POLICY "System can create audit logs" ON public.audit_logs 
-FOR INSERT WITH CHECK (TRUE);
+FOR INSERT WITH CHECK (TRUE).
 
 -- ============================================================================
 -- INTRUSION_LOGS POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Admins can view intrusion logs" ON public.intrusion_logs 
-FOR SELECT USING (public.is_admin());
+FOR SELECT USING (public.is_admin()).
 
 CREATE POLICY "System can create intrusion logs" ON public.intrusion_logs 
-FOR INSERT WITH CHECK (TRUE);
+FOR INSERT WITH CHECK (TRUE).
 
 -- ============================================================================
 -- SYSTEM_CONFIGS POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Admins can manage system configs" ON public.system_configs 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 CREATE POLICY "Public can view system configs" ON public.system_configs 
-FOR SELECT USING (TRUE);
+FOR SELECT USING (TRUE).
 
 -- ============================================================================
 -- SITE_SETTINGS POLICIES (Fixed: Use is_admin function)
 -- ============================================================================
 
 CREATE POLICY "Admins can manage site settings" ON public.site_settings 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 CREATE POLICY "Public can view site settings" ON public.site_settings 
-FOR SELECT USING (TRUE);
+FOR SELECT USING (TRUE).
 
 -- ============================================================================
 -- PROMOTION_PLANS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view active promotion plans" ON public.promotion_plans 
-FOR SELECT USING (is_active = TRUE);
+FOR SELECT USING (is_active = TRUE).
 
 CREATE POLICY "Admins can manage promotion plans" ON public.promotion_plans 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- SAFE_SPOTS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view active safe spots" ON public.safe_spots 
-FOR SELECT USING (is_active = TRUE);
+FOR SELECT USING (is_active = TRUE).
 
 CREATE POLICY "Admins can manage safe spots" ON public.safe_spots 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- ANNOUNCEMENTS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view active announcements" ON public.announcements 
-FOR SELECT USING (active = TRUE);
+FOR SELECT USING (active = TRUE).
 
 CREATE POLICY "Admins can manage announcements" ON public.announcements 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- RECENT_DEALS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view recent deals" ON public.recent_deals 
-FOR SELECT USING (TRUE);
+FOR SELECT USING (TRUE).
 
 CREATE POLICY "System can create recent deals" ON public.recent_deals 
-FOR INSERT WITH CHECK (TRUE);
+FOR INSERT WITH CHECK (TRUE).
 
 -- ============================================================================
 -- SEARCH_ALERTS POLICIES
 -- ============================================================================
 
 CREATE POLICY "Users can manage their own search alerts" ON public.search_alerts 
-FOR ALL USING (auth.uid() = user_id);
+FOR ALL USING (auth.uid() = user_id).
 
 -- ============================================================================
 -- FAVORITES POLICIES
 -- ============================================================================
 
 CREATE POLICY "Users can manage their own favorites" ON public.favorites 
-FOR ALL USING (auth.uid() = user_id);
+FOR ALL USING (auth.uid() = user_id).
 
 -- ============================================================================
 -- CATEGORIES POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view active categories" ON public.categories 
-FOR SELECT USING (is_active = TRUE);
+FOR SELECT USING (is_active = TRUE).
 
 CREATE POLICY "Admins can manage categories" ON public.categories 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- SUBCATEGORIES POLICIES
 -- ============================================================================
 
 CREATE POLICY "Public can view active subcategories" ON public.subcategories 
-FOR SELECT USING (is_active = TRUE);
+FOR SELECT USING (is_active = TRUE).
 
 CREATE POLICY "Admins can manage subcategories" ON public.subcategories 
-FOR ALL USING (public.is_admin());
+FOR ALL USING (public.is_admin()).
 
 -- ============================================================================
 -- APPLY UPDATED_AT TRIGGERS

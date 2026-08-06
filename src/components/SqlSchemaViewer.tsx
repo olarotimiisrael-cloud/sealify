@@ -497,7 +497,7 @@ CREATE POLICY "Public Intrusion Logs All" ON public.intrusion_logs FOR ALL USING
 CREATE POLICY "Public Recent Deals All" ON public.recent_deals FOR ALL USING (true);
 `;
 
-const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) => {
+const SqlSchemaViewer: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = React.useState(false);
 
   if (!isOpen) return null;
@@ -536,7 +536,7 @@ const SqlSchemaViewer: React.FC<SqlSchemaViewerProps> = ({ isOpen, onClose }) =>
             onClick={handleCopy}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl text-xs transition-colors shadow"
           >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 w-4" />}
             <span>{copied ? 'Copied!' : 'Copy SQL Script'}</span>
           </button>
         </div>
