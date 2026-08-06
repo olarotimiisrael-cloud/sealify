@@ -53,35 +53,37 @@ export const LoadingScreen: React.FC = () => {
           </div>
 
           <div className="flex flex-col items-center gap-3">
-            <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-in stretch-in duration-1000 delay-500"></div>
-
-            <p className="text-sm sm:text-lg font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-700">
-              <span className="text-emerald-500">Trusted</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-              <span>in Ogbomoso</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-              <span className="text-emerald-500">Nigeria</span>
-            </p>
+             <div className="h-[1px] w-24 bg-gradient-to-r from-transparent via-emerald-500 to-transparent animate-in stretch-in duration-1000 delay-500"></div>
+             
+             <p className="text-sm sm:text-lg font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-1000 delay-700">
+                <span className="text-emerald-500">Trusted</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                <span>in Ogbomoso</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+                <span className="text-emerald-500">Nigeria</span>
+             </p>
           </div>
         </div>
       </div>
 
       <div className="absolute bottom-12 left-0 right-0 flex justify-center gap-8 text-[10px] font-black text-slate-600 uppercase tracking-widest animate-in fade-in duration-1000 delay-1000">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-500/50" />
-          <span>Verified Node</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Zap className="w-4 h-4 text-emerald-500/50" />
-          <span>Real-time</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-emerald-400/50" />
-          <span>Oyo State</span>
-        </div>
+         <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-500/50" />
+            <span>Verified Node</span>
+         </div>
+         <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4 text-emerald-500/50" />
+            <span>Real-time</span>
+         </div>
+         <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-emerald-400/50" />
+            <span>Oyo State</span>
+         </div>
       </div>
 
       <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-[2200ms] ease-out w-full origin-left animate-in slide-in-from-left-full"></div>
     </div>
   );
 };
+
+export default LoadingScreen;

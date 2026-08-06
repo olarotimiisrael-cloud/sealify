@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { getSql, queryDb, queryOneDb, executeDb } from "../db/hyperdrive";
+import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
 export const usersRoutes = new Hono();
@@ -25,7 +25,7 @@ usersRoutes.get("/", async (c) => {
 
     // Check if admin
     const sql = getSql(env);
-    const profile = await sql`SELECT role FROM users WHERE id = ${user.id}`;
+    const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
     if (profile.length === 0 || profile[0].role !== 'admin') {
       return c.json({ error: "Forbidden: Admin access required" }, 403);
     }
@@ -71,14 +71,14 @@ usersRoutes.get("/", async (c) => {
     const offsetNum = parseInt(offset) || 0;
 
     const users = await sql`
-      SELECT * FROM users
+      SELECT * FROM profiles
       ${sql(whereClause)}
       ORDER BY created_at DESC
       LIMIT ${limitNum} OFFSET ${offsetNum}
     `;
 
     const countResult = await sql`
-      SELECT COUNT(*) as total FROM users ${sql(whereClause)}
+      SELECT COUNT(*) as total FROM profiles ${sql(whereClause)}
     `;
 
     return c.json({
@@ -100,7 +100,7 @@ usersRoutes.get("/:id", async (c) => {
     const sql = getSql(env);
     const id = c.req.param("id");
 
-    const user = await sql`SELECT * FROM users WHERE id = ${id}`;
+    const user = await sql`SELECT * FROM profiles WHERE id = ${id}`;
 
     if (user.length === 0) {
       return c.json({ error: "User not found" }, 404);
@@ -108,7 +108,7 @@ usersRoutes.get("/:id", async (c) => {
 
     // Get user's listings count
     const listingsCount = await sql`
-      SELECT COUNT(*) as count FROM listings WHERE seller_id = ${id}
+      SELECT COUNT(*) as count FROM ads WHERE seller_id = ${id}
     `;
 
     return c.json({
@@ -144,7 +144,7 @@ usersRoutes.put("/:id", async (c) => {
     const sql = getSql(env);
 
     // Check if admin or self
-    const requester = await sql`SELECT role FROM users WHERE id = ${user.id}`;
+    const requester = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
     const isAdmin = requester.length > 0 && requester[0].role === 'admin';
     
     if (!isAdmin && user.id !== id) {
@@ -174,7 +174,7 @@ usersRoutes.put("/:id", async (c) => {
     }
 
     const result = await sql`
-      UPDATE users SET 
+      UPDATE profiles SET 
         ${sql(updates)}
       WHERE id = ${id}
       RETURNING *
@@ -212,7 +212,7 @@ usersRoutes.delete("/:id", async (c) => {
 
     // Check if admin
     const sql = getSql(env);
-    const requester = await sql`SELECT role FROM users WHERE id = ${user.id}`;
+    const requester = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
     if (requester.length === 0 || requester[0].role !== 'admin') {
       return c.json({ error: "Forbidden: Admin access required" }, 403);
     }
@@ -224,7 +224,7 @@ usersRoutes.delete("/:id", async (c) => {
       return c.json({ error: "Cannot delete your own account" }, 400);
     }
 
-    await sql`DELETE FROM users WHERE id = ${id}`;
+    await sql`DELETE FROM profiles WHERE id = ${id}`;
 
     return c.json({ success: true });
   } catch (error) {
@@ -242,7 +242,7 @@ usersRoutes.get("/:id/listings", async (c) => {
     const { status = "active", limit = "20", offset = "0" } = c.req.query();
 
     const listings = await sql`
-      SELECT * FROM listings 
+      SELECT * FROM ads 
       WHERE seller_id = ${id} AND status = ${status}
       ORDER BY created_at DESC
       LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
@@ -265,7 +265,7 @@ usersRoutes.get("/:id/reviews", async (c) => {
     const reviews = await sql`
       SELECT r.*, u.full_name as buyer_name, u.avatar_url as buyer_avatar
       FROM reviews r
-      LEFT JOIN users u ON r.buyer_id = u.id
+      LEFT JOIN profiles u ON r.buyer_id = u.id
       WHERE r.seller_id = ${id}
       ORDER BY r.created_at DESC
     `;
