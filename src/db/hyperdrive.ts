@@ -27,7 +27,7 @@ export async function closeSql() {
   }
 }
 
-// Database helper functions - renamed to avoid conflicts
+// Helper functions
 export async function queryDb<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T[]> {
   const sql = getSql(env);
   return await sql.unsafe(query, params) as T[];

@@ -27,17 +27,17 @@ messagesRoutes.get("/conversations", async (c) => {
     const conversations = await sql`
       SELECT 
         c.*,
-        l.title as listing_title,
-        l.images as listing_images,
-        l.price as listing_price,
-        u.full_name as other_user_name,
-        u.avatar_url as other_user_avatar
+        a.title as listing_title,
+        a.images as listing_images,
+        a.price as listing_price,
+        p.full_name as other_user_name,
+        p.avatar_url as other_user_avatar
       FROM conversations c
-      LEFT JOIN listings l ON c.listing_id = l.id
-      LEFT JOIN users u ON (
+      LEFT JOIN ads a ON c.ad_id = a.id
+      LEFT JOIN profiles p ON (
         CASE 
-          WHEN c.participant_1 = ${user.id} THEN c.participant_2 = u.id
-          ELSE c.participant_1 = u.id
+          WHEN c.participant_1 = ${user.id} THEN c.participant_2 = p.id
+          ELSE c.participant_1 = p.id
         END
       )
       WHERE c.participant_1 = ${user.id} OR c.participant_2 = ${user.id}
@@ -83,9 +83,9 @@ messagesRoutes.get("/conversations/:id/messages", async (c) => {
     }
 
     const messages = await sql`
-      SELECT m.*, u.full_name as sender_name, u.avatar_url as sender_avatar
+      SELECT m.*, p.full_name as sender_name, p.avatar_url as sender_avatar
       FROM messages m
-      LEFT JOIN users u ON m.sender_id = u.id
+      LEFT JOIN profiles p ON m.sender_id = p.id
       WHERE m.conversation_id = ${conversationId}
       ORDER BY m.created_at ASC
     `;
@@ -121,27 +121,27 @@ messagesRoutes.post("/conversations", async (c) => {
     }
 
     const body = await c.req.json();
-    const { listingId, receiverId, content } = body;
+    const { ad_id, receiver_id, content } = body;
 
-    if (!listingId || !receiverId || !content) {
-      return c.json({ error: "listingId, receiverId, and content are required" }, 400);
+    if (!ad_id || !receiver_id || !content) {
+      return c.json({ error: "ad_id, receiver_id, and content are required" }, 400);
     }
 
     const sql = getSql(env);
 
     let conversation = await sql`
       SELECT * FROM conversations 
-      WHERE listing_id = ${listingId} 
-      AND ((participant_1 = ${user.id} AND participant_2 = ${receiverId})
-      OR (participant_1 = ${receiverId} AND participant_2 = ${user.id}))
+      WHERE ad_id = ${ad_id} 
+      AND ((participant_1 = ${user.id} AND participant_2 = ${receiver_id})
+      OR (participant_1 = ${receiver_id} AND participant_2 = ${user.id}))
     `;
 
     let conversationId: string;
 
     if (conversation.length === 0) {
       const result = await sql`
-        INSERT INTO conversations (listing_id, participant_1, participant_2, last_message, last_message_time, created_at, updated_at)
-        VALUES (${listingId}, ${user.id}, ${receiverId}, ${content}, NOW(), NOW(), NOW())
+        INSERT INTO conversations (ad_id, participant_1, participant_2, last_message, last_message_time, created_at, updated_at)
+        VALUES (${ad_id}, ${user.id}, ${receiver_id}, ${content}, NOW(), NOW(), NOW())
         RETURNING id
       `;
       conversationId = result[0].id;
@@ -155,14 +155,14 @@ messagesRoutes.post("/conversations", async (c) => {
     }
 
     const messageResult = await sql`
-      INSERT INTO messages (conversation_id, sender_id, receiver_id, listing_id, content, read, created_at)
-      VALUES (${conversationId}, ${user.id}, ${receiverId}, ${listingId}, ${content}, false, NOW())
+      INSERT INTO messages (conversation_id, sender_id, receiver_id, ad_id, content, status, read, created_at)
+      VALUES (${conversationId}, ${user.id}, ${receiver_id}, ${ad_id}, ${content}, 'sent', false, NOW())
       RETURNING *
     `;
 
     await sql`
-      INSERT INTO notifications (user_id, type, title, description, link_url, read, created_at)
-      VALUES (${receiverId}, 'message', 'New Message', 'You have a new message', '/messages', false, NOW())
+      INSERT INTO notifications (user_id, type, title, description, link_url, created_at)
+      VALUES (${receiver_id}, 'message', 'New Message', 'You have a new message', '/messages', NOW())
     `;
 
     return c.json({ message: messageResult[0], conversationId }, 201);

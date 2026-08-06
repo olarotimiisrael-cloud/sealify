@@ -47,12 +47,26 @@ authRoutes.post("/register", async (c) => {
     const userId = authData.user.id;
     
     await sql`
-      INSERT INTO users (id, email, full_name, phone_number, role, status, location, verified, verification_type, created_at, updated_at)
+      INSERT INTO profiles (id, email, full_name, phone_number, role, status, location, verified, verification_type, created_at, updated_at)
       VALUES (${userId}, ${email}, ${fullName}, ${phoneNumber || null}, 'buyer', 'active', 'Ogbomoso, Oyo State', false, 'none', NOW(), NOW())
       ON CONFLICT (id) DO UPDATE SET
         full_name = EXCLUDED.full_name,
         phone_number = EXCLUDED.phone_number,
         updated_at = NOW()
+    `;
+
+    // Create wallet
+    await sql`
+      INSERT INTO wallets (user_id, balance, pending_balance, total_withdrawn, currency, updated_at)
+      VALUES (${userId}, 0, 0, 0, 'NGN', NOW())
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+
+    // Create user settings
+    await sql`
+      INSERT INTO user_settings (user_id, email_notifications, whatsapp_notifications, push_notifications, price_drop_alerts, new_message_alerts, weekly_digest, promotion_expiry_reminders, language, theme, created_at, updated_at)
+      VALUES (${userId}, true, true, true, true, true, true, true, 'en', 'dark', NOW(), NOW())
+      ON CONFLICT (user_id) DO NOTHING
     `;
 
     return c.json({
@@ -97,7 +111,7 @@ authRoutes.post("/login", async (c) => {
     // Get user profile from database
     const sql = getSql(env);
     const profile = await sql`
-      SELECT * FROM users WHERE id = ${data.user.id}
+      SELECT * FROM profiles WHERE id = ${data.user.id}
     `;
 
     return c.json({
@@ -136,7 +150,7 @@ authRoutes.get("/me", async (c) => {
 
     const sql = getSql(env);
     const profile = await sql`
-      SELECT * FROM users WHERE id = ${user.id}
+      SELECT * FROM profiles WHERE id = ${user.id}
     `;
 
     return c.json({ user: profile[0] || null });
@@ -169,7 +183,7 @@ authRoutes.put("/profile", async (c) => {
     const sql = getSql(env);
     
     const allowedFields = [
-      'full_name', 'phone_number', 'avatar_url', 'store_banner_url',
+      'full_name', 'phone_number', 'avatar_url', 'cover_url',
       'bio', 'location', 'business_name', 'cac_number', 'business_hours',
       'bank_name', 'account_number', 'account_name',
       'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',
@@ -184,12 +198,12 @@ authRoutes.put("/profile", async (c) => {
     }
 
     await sql`
-      UPDATE users SET 
+      UPDATE profiles SET 
         ${sql(updates)}
       WHERE id = ${user.id}
     `;
 
-    const updated = await sql`SELECT * FROM users WHERE id = ${user.id}`;
+    const updated = await sql`SELECT * FROM profiles WHERE id = ${user.id}`;
     return c.json({ user: updated[0] });
   } catch (error) {
     console.error("Update profile error:", error);

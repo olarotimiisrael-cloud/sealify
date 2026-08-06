@@ -14,17 +14,13 @@ healthRoutes.get("/health", (c) => {
 healthRoutes.get("/health/db", async (c) => {
   try {
     const env = c.env as any;
-    const sql = env.HYPERDRIVE ? env.HYPERDRIVE.connectionString : null;
+    const sql = env.HYPERDRIVE ? getSql(env) : null;
     
     if (!sql) {
       return c.json({ status: "unhealthy", error: "No database connection" }, 503);
     }
     
-    // Test connection
-    const postgres = (await import("postgres")).default;
-    const client = postgres(sql, { max: 1 });
-    await client`SELECT 1`;
-    await client.end();
+    await sql`SELECT 1`;
     
     return c.json({ status: "healthy", database: "connected" });
   } catch (error) {

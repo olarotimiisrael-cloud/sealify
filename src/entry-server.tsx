@@ -6,7 +6,6 @@ import { handle } from "hono/cloudflare-pages";
 // Import API routes
 import { authRoutes } from "./api/auth";
 import { listingsRoutes } from "./api/listings";
-import { usersRoutes } from "./api/users";
 import { messagesRoutes } from "./api/messages";
 import { notificationsRoutes } from "./api/notifications";
 import { adminRoutes } from "./api/admin";
@@ -16,6 +15,8 @@ type Env = {
   HYPERDRIVE: any;
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
+  // ... other secrets
 };
 
 const app = new Hono<{ Bindings: Env }>();
