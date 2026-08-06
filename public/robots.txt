@@ -1,14 +1,31 @@
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://sealify.ng/sitemap.xml
+
+# Disallow admin and private routes
+Disallow: /admin/
+Disallow: /api/
+Disallow: /settings
+Disallow: /my-ads
+Disallow: /messages
+Disallow: /wallet
+Disallow: /notifications
+
+# Allow important pages
+Allow: /
+Allow: /listing/
+Allow: /seller/
+Allow: /vendors
+Allow: /post-ad
+Allow: /search
+Allow: /community
+Allow: /market-insights
+Allow: /how-it-works
+Allow: /safety
+Allow: /faq
+Allow: /help-center
+Allow: /contact
+Allow: /escrow-verify
+Allow: /requests
