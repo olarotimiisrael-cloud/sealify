@@ -75,7 +75,7 @@ export default function Index() {
     if (qParam || catParam || locParam) {
       setFilters((prev) => ({
         ...prev,
-        searchQuery: qParam || prev.searchQuery,
+        query: qParam || prev.query,
         category: (catParam as any) || prev.category,
         location: locParam || prev.location,
       }));
@@ -84,7 +84,7 @@ export default function Index() {
 
   const handleHeroSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters(prev => ({ ...prev, searchQuery: heroSearch.trim() }));
+    setFilters(prev => ({ ...prev, query: heroSearch.trim() }));
   };
 
   const activeAnnouncements = announcements.filter((a) => a.active);
@@ -92,8 +92,8 @@ export default function Index() {
   const filteredListings = listings.filter((item) => {
     if (activeCategory !== 'All' && item.category !== activeCategory) return false;
     if (filters.category !== 'All' && item.category !== filters.category) return false;
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
+    if (filters.query) {
+      const query = filters.query.toLowerCase();
       const matchTitle = item.title.toLowerCase().includes(query);
       const matchDesc = item.description.toLowerCase().includes(query);
       const matchCat = item.category.toLowerCase().includes(query);
@@ -148,7 +148,7 @@ export default function Index() {
   };
 
   const hasActiveFilters = Boolean(
-    filters.searchQuery || 
+    filters.query || 
     filters.category !== 'All' || 
     filters.location || 
     filters.minPrice !== null || 
@@ -212,7 +212,7 @@ export default function Index() {
                    <button 
                      key={tag} 
                      type="button"
-                     onClick={() => { setHeroSearch(tag); setFilters(f => ({...f, searchQuery: tag})); }}
+                     onClick={() => { setHeroSearch(tag); setFilters(f => ({...f, query: tag})); }}
                      className="text-[11px] font-bold text-slate-400 hover:text-emerald-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full transition-colors"
                    >
                      {tag}
@@ -362,10 +362,10 @@ export default function Index() {
           <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-2xl flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Active Filters:</span>
 
-            {filters.searchQuery && (
+            {filters.query && (
               <span className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-xl">
-                <span>Keyword: "{filters.searchQuery}"</span>
-                <button onClick={() => setFilters(f => ({ ...f, searchQuery: '' }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                <span>Keyword: "{filters.query}"</span>
+                <button onClick={() => setFilters(f => ({ ...f, query: '' }))} className="hover:text-white"><X className="w-3.5 h-3.5" /></button>
               </span>
             )}
 
@@ -407,9 +407,9 @@ export default function Index() {
                 {sortedListings.length} ads
               </span>
             </div>
-            {filters.searchQuery && (
+            {filters.query && (
               <p className="text-xs text-slate-400 mt-1">
-                Showing results for "<strong className="text-emerald-400">{filters.searchQuery}</strong>"
+                Showing results for "<strong className="text-emerald-400">{filters.query}</strong>"
               </p>
             )}
           </div>

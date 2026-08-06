@@ -576,7 +576,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [userInterests, setUserInterests] = useState<Record<string, number>>({});
   const [filters, setFilters] = useState<SearchFilter>({
-    searchQuery: '',
+    query: '',
     category: 'All',
     minPrice: null,
     maxPrice: null,
@@ -717,7 +717,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const isSaved = (id: string) => savedListingIds.includes(id);
 
-  const resetFilters = () => setFilters({ searchQuery: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
+  const resetFilters = () => setFilters({ query: '', category: 'All', minPrice: null, maxPrice: null, condition: 'All', location: '', sortBy: 'newest' });
 
   const toggleCompareListing = (id: string) => {
     setCompareListingIds(p => p.includes(id) ? p.filter(i => i !== id) : p.length < 3 ? [...p, id] : p);

@@ -15,14 +15,14 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   const handleSaveCurrentFilter = () => {
-    const query = filters.searchQuery || (filters.category !== 'All' ? filters.category : '');
+    const query = filters.query || (filters.category !== 'All' ? filters.category : '');
     if (!query && !filters.location) {
       toast.error('Please enter a search keyword or location before saving an alert');
       return;
     }
 
     saveSearchAlert({
-      query: filters.searchQuery || `${filters.category} items`,
+      query: filters.query || `${filters.category} items`,
       category: filters.category,
       maxPrice: filters.maxPrice,
       location: filters.location || 'Any Location',
@@ -32,7 +32,7 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
   const handleApplyAlert = (alert: SearchAlert) => {
     setFilters((prev) => ({
       ...prev,
-      searchQuery: alert.query.includes('items') ? '' : alert.query,
+      query: alert.query.includes('items') ? '' : alert.query,
       category: alert.category,
       maxPrice: alert.maxPrice,
       location: alert.location === 'Any Location' ? '' : alert.location,
@@ -64,7 +64,7 @@ export const SavedAlertsModal: React.FC<SavedAlertsModalProps> = ({ isOpen, onCl
         <div className="my-4 p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
           <div className="text-xs min-w-0">
             <p className="font-bold text-white truncate">
-              {filters.searchQuery || (filters.category !== 'All' ? filters.category : 'Active Filter')}
+              {filters.query || (filters.category !== 'All' ? filters.category : 'Active Filter')}
             </p>
             <p className="text-[10px] text-slate-400 truncate">
               {filters.location ? `In ${filters.location}` : 'All Locations'} • {filters.maxPrice ? `Under ₦${filters.maxPrice.toLocaleString()}` : 'Any Price'}

@@ -367,6 +367,7 @@ export interface AppNotification {
   time: string;
   read: boolean;
   linkUrl?: string;
+  createdAt?: string;
 }
 
 export interface SearchFilter {
