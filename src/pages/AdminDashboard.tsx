@@ -586,8 +586,8 @@ const AdminDashboard: React.FC = () => {
                           <p className="text-[10px] text-slate-400">Reason: {r.reason}</p>
                           <p className="text-[10px] text-slate-500">By: {r.reporterName || 'Anonymous'}</p>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={() => processReport(r.id)} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">Resolve</button>
-                            <button onClick={() => processReport(r.id)} className="flex-1 py-1.5 bg-slate-800 text-rose-400 font-bold rounded-xl text-[10px] border border-slate-700">Dismiss</button>
+                            <button onClick={() => processReport(r.id, 'resolve_delete_ad')} className="flex-1 py-1.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px]">Resolve</button>
+                            <button onClick={() => processReport(r.id, 'dismiss')} className="flex-1 py-1.5 bg-slate-800 text-rose-400 font-bold rounded-xl text-[10px] border border-slate-700">Dismiss</button>
                           </div>
                         </div>
                       ))}
@@ -989,37 +989,22 @@ const AdminDashboard: React.FC = () => {
               <h2 className="text-xl font-black text-white">Database Administration</h2>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button onClick={() => setIsDatabaseTestOpen(true)} className="p-6 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all text-left group">
-                  <div className="p-3 bg-blue-500/10 text-blue-400 rounded-xl group-hover:scale-110 transition-transform mb-4">
-                    <Database className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-white">Connection Test</h3>
-                  <p className="text-xs text-slate-400 mt-1">Verify Supabase connectivity & RLS</p>
-                </button>
+                <DatabaseTest
+                  onClose={() => setIsDatabaseTestOpen(false)}
+                />
                 
-                <button onClick={() => setIsSqlViewerOpen(true)} className="p-6 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all text-left group">
-                  <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl group-hover:scale-110 transition-transform mb-4">
-                    <FileText className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-white">SQL Schema Viewer</h3>
-                  <p className="text-xs text-slate-400 mt-1">View complete migration script</p>
-                </button>
+                <SqlSchemaViewer
+                  isOpen={isSqlViewerOpen}
+                  onClose={() => setIsSqlViewerOpen(false)}
+                />
 
-                <button onClick={() => setIsSchemaGeneratorOpen(true)} className="p-6 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all text-left group">
-                  <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl group-hover:scale-110 transition-transform mb-4">
-                    <Download className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-white">Schema Generator</h3>
-                  <p className="text-xs text-slate-400 mt-1">Generate & download .sql files</p>
-                </button>
+                <DatabaseSchemaGenerator
+                  onClose={() => setIsSchemaGeneratorOpen(false)}
+                />
 
-                <button onClick={() => setIsMigrationOpen(true)} className="p-6 bg-slate-950 border border-slate-800 rounded-2xl hover:border-emerald-500/50 transition-all text-left group">
-                  <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl group-hover:scale-110 transition-transform mb-4">
-                    <Zap className="w-6 h-6" />
-                  </div>
-                  <h3 className="font-bold text-white">Migration Executor</h3>
-                  <p className="text-xs text-slate-400 mt-1">Run pending migrations</p>
-                </button>
+                <MigrationExecutor
+                  onClose={() => setIsMigrationOpen(false)}
+                />
               </div>
 
               <div className="pt-6 border-t border-slate-800">
@@ -1118,21 +1103,6 @@ const AdminDashboard: React.FC = () => {
         <SqlSchemaViewer
           isOpen={isSqlViewerOpen}
           onClose={() => setIsSqlViewerOpen(false)}
-        />
-
-        <DatabaseSchemaGenerator
-          isOpen={isSchemaGeneratorOpen}
-          onClose={() => setIsSchemaGeneratorOpen(false)}
-        />
-
-        <MigrationExecutor
-          isOpen={isMigrationOpen}
-          onClose={() => setIsMigrationOpen(false)}
-        />
-
-        <DatabaseTest
-          isOpen={isDatabaseTestOpen}
-          onClose={() => setIsDatabaseTestOpen(false)}
         />
       </main>
 
