@@ -7,11 +7,81 @@ import { toast } from 'sonner';
 const SQL_SCHEMA = `-- ============================================================================
 -- SEALIFY NIGERIA - COMPLETE POSTGRESQL DATABASE SCHEMA
 -- Generated for Supabase | Includes Tables, Indexes, RLS Policies, Storage Buckets
+-- FIXED: Infinite recursion in RLS policies resolved
 -- ============================================================================
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ============================================================================
+-- HELPER FUNCTIONS (Security Definer to avoid recursion)
+-- ============================================================================
+
+-- Function to check if user is admin (Security Definer bypasses RLS)
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID DEFAULT auth.uid())
+RETURNS BOOLEAN 
+LANGUAGE plpgsql 
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = user_id AND role = 'admin'
+    );
+END;
+$$;
+
+-- Function to get user role (Security Definer bypasses RLS)
+CREATE OR REPLACE FUNCTION public.get_user_role(user_id UUID DEFAULT auth.uid())
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    user_role TEXT;
+BEGIN
+    SELECT role INTO user_role FROM public.profiles WHERE id = user_id;
+    RETURN COALESCE(user_role, 'buyer');
+END;
+$$;
+
+-- Function to generate unique handover codes for escrow
+CREATE OR REPLACE FUNCTION public.generate_handover_code()
+RETURNS TEXT LANGUAGE plpgsql AS $$
+DECLARE
+    code TEXT;
+BEGIN
+    LOOP
+        code := 'ESC-' || LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
+        IF NOT EXISTS (SELECT 1 FROM public.escrow_orders WHERE handover_code = code) THEN
+            RETURN code;
+        END IF;
+    END LOOP;
+END; $$;
+
+-- Function to get user's wallet (create if not exists)
+CREATE OR REPLACE FUNCTION public.get_or_create_wallet(user_id UUID DEFAULT auth.uid())
+RETURNS UUID LANGUAGE plpgsql AS $$
+DECLARE
+    wallet_id UUID;
+BEGIN
+    SELECT id INTO wallet_id FROM public.wallets WHERE user_id = get_or_create_wallet.user_id;
+    IF wallet_id IS NULL THEN
+        INSERT INTO public.wallets (user_id) VALUES (get_or_create_wallet.user_id) RETURNING id INTO wallet_id;
+    END IF;
+    RETURN wallet_id;
+END; $$;
+
+-- Trigger function for updated_at
+CREATE OR REPLACE FUNCTION public.handle_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END; $$;
 
 -- ============================================================================
 -- 1. PROFILES TABLE (Extended users table with business info)
@@ -613,7 +683,7 @@ CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON public.favorites(user_id);
 CREATE INDEX IF NOT EXISTS idx_favorites_ad_id ON public.favorites(ad_id);
 
 -- ============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES - FIXED: No infinite recursion
 -- ============================================================================
 
 -- Enable RLS on all tables
@@ -648,206 +718,369 @@ ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subcategories ENABLE ROW LEVEL SECURITY;
 
--- Profiles Policies
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (TRUE);
-CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Admins can manage all profiles" ON public.profiles FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+-- ============================================================================
+-- PROFILES POLICIES (Fixed: Use auth.uid() directly, no self-query)
+-- ============================================================================
 
--- Ads Policies
-CREATE POLICY "Active ads are viewable by everyone" ON public.ads FOR SELECT USING (status = 'active' OR seller_id = auth.uid());
-CREATE POLICY "Sellers can create ads" ON public.ads FOR INSERT WITH CHECK (auth.uid() = seller_id);
-CREATE POLICY "Sellers can update their own ads" ON public.ads FOR UPDATE USING (auth.uid() = seller_id);
-CREATE POLICY "Sellers can delete their own ads" ON public.ads FOR DELETE USING (auth.uid() = seller_id);
-CREATE POLICY "Admins can manage all ads" ON public.ads FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
+-- Public profiles are viewable by everyone
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles 
+FOR SELECT USING (TRUE);
 
--- Ad Images Policies
-CREATE POLICY "Ad images are viewable by everyone" ON public.ad_images FOR SELECT USING (TRUE);
-CREATE POLICY "Sellers can manage their ad images" ON public.ad_images FOR ALL USING (
+-- Users can insert their own profile
+CREATE POLICY "Users can insert their own profile" ON public.profiles 
+FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Users can update their own profile
+CREATE POLICY "Users can update their own profile" ON public.profiles 
+FOR UPDATE USING (auth.uid() = id);
+
+-- Admins can manage all profiles (Fixed: Use security definer function)
+CREATE POLICY "Admins can manage all profiles" ON public.profiles 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- ADS POLICIES (Fixed: Use auth.uid() for seller checks)
+-- ============================================================================
+
+-- Active ads are viewable by everyone, sellers can see their own drafts
+CREATE POLICY "Active ads are viewable by everyone" ON public.ads 
+FOR SELECT USING (status = 'active' OR seller_id = auth.uid());
+
+-- Sellers can create ads
+CREATE POLICY "Sellers can create ads" ON public.ads 
+FOR INSERT WITH CHECK (auth.uid() = seller_id);
+
+-- Sellers can update their own ads
+CREATE POLICY "Sellers can update their own ads" ON public.ads 
+FOR UPDATE USING (auth.uid() = seller_id);
+
+-- Sellers can delete their own ads
+CREATE POLICY "Sellers can delete their own ads" ON public.ads 
+FOR DELETE USING (auth.uid() = seller_id);
+
+-- Admins can manage all ads (Fixed: Use security definer function)
+CREATE POLICY "Admins can manage all ads" ON public.ads 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- AD_IMAGES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Ad images are viewable by everyone" ON public.ad_images 
+FOR SELECT USING (TRUE);
+
+CREATE POLICY "Sellers can manage their ad images" ON public.ad_images 
+FOR ALL USING (
     EXISTS (SELECT 1 FROM public.ads WHERE id = ad_id AND seller_id = auth.uid())
 );
 
--- Buyer Requests Policies
-CREATE POLICY "Buyer requests are viewable by everyone" ON public.buyer_requests FOR SELECT USING (TRUE);
-CREATE POLICY "Users can create buyer requests" ON public.buyer_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own requests" ON public.buyer_requests FOR UPDATE USING (auth.uid() = user_id);
+-- ============================================================================
+-- BUYER_REQUESTS POLICIES
+-- ============================================================================
 
--- Buyer Request Responses Policies
-CREATE POLICY "Responses viewable by request owner and responder" ON public.buyer_request_responses FOR SELECT USING (
+CREATE POLICY "Buyer requests are viewable by everyone" ON public.buyer_requests 
+FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can create buyer requests" ON public.buyer_requests 
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own requests" ON public.buyer_requests 
+FOR UPDATE USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- BUYER_REQUEST_RESPONSES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Responses viewable by request owner and responder" ON public.buyer_request_responses 
+FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.buyer_requests WHERE id = request_id AND user_id = auth.uid())
     OR seller_id = auth.uid()
 );
-CREATE POLICY "Sellers can respond to requests" ON public.buyer_request_responses FOR INSERT WITH CHECK (auth.uid() = seller_id);
-CREATE POLICY "Request owners can update response status" ON public.buyer_request_responses FOR UPDATE USING (
+
+CREATE POLICY "Sellers can respond to requests" ON public.buyer_request_responses 
+FOR INSERT WITH CHECK (auth.uid() = seller_id);
+
+CREATE POLICY "Request owners can update response status" ON public.buyer_request_responses 
+FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.buyer_requests WHERE id = request_id AND user_id = auth.uid())
 );
 
--- Conversations Policies
-CREATE POLICY "Participants can view their conversations" ON public.conversations FOR SELECT USING (
-    auth.uid() = participant_1 OR auth.uid() = participant_2
-);
-CREATE POLICY "Participants can create conversations" ON public.conversations FOR INSERT WITH CHECK (
-    auth.uid() = participant_1 OR auth.uid() = participant_2
-);
-CREATE POLICY "Participants can update their conversations" ON public.conversations FOR UPDATE USING (
-    auth.uid() = participant_1 OR auth.uid() = participant_2
-);
+-- ============================================================================
+-- CONVERSATIONS POLICIES
+-- ============================================================================
 
--- Messages Policies
-CREATE POLICY "Participants can view messages" ON public.messages FOR SELECT USING (
+CREATE POLICY "Participants can view their conversations" ON public.conversations 
+FOR SELECT USING (auth.uid() = participant_1 OR auth.uid() = participant_2);
+
+CREATE POLICY "Participants can create conversations" ON public.conversations 
+FOR INSERT WITH CHECK (auth.uid() = participant_1 OR auth.uid() = participant_2);
+
+CREATE POLICY "Participants can update their conversations" ON public.conversations 
+FOR UPDATE USING (auth.uid() = participant_1 OR auth.uid() = participant_2);
+
+-- ============================================================================
+-- MESSAGES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Participants can view messages" ON public.messages 
+FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.conversations WHERE id = conversation_id AND (participant_1 = auth.uid() OR participant_2 = auth.uid()))
 );
-CREATE POLICY "Participants can send messages" ON public.messages FOR INSERT WITH CHECK (auth.uid() = sender_id);
-CREATE POLICY "Receivers can mark messages as read" ON public.messages FOR UPDATE USING (auth.uid() = receiver_id).
 
--- Wallets Policies
-CREATE POLICY "Users can view their own wallet" ON public.wallets FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "System can manage wallets" ON public.wallets FOR ALL USING (TRUE).
+CREATE POLICY "Participants can send messages" ON public.messages 
+FOR INSERT WITH CHECK (auth.uid() = sender_id);
 
--- Transactions Policies
-CREATE POLICY "Users can view their own transactions" ON public.transactions FOR SELECT USING (
+CREATE POLICY "Receivers can mark messages as read" ON public.messages 
+FOR UPDATE USING (auth.uid() = receiver_id);
+
+-- ============================================================================
+-- WALLETS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can view their own wallet" ON public.wallets 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "System can manage wallets" ON public.wallets 
+FOR ALL USING (TRUE);
+
+-- ============================================================================
+-- TRANSACTIONS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can view their own transactions" ON public.transactions 
+FOR SELECT USING (
     EXISTS (SELECT 1 FROM public.wallets WHERE id = wallet_id AND user_id = auth.uid())
 );
 
--- Escrow Orders Policies
-CREATE POLICY "Participants can view escrow orders" ON public.escrow_orders FOR SELECT USING (
-    auth.uid() = buyer_id OR auth.uid() = seller_id
-).
-CREATE POLICY "Buyers can create escrow orders" ON public.escrow_orders FOR INSERT WITH CHECK (auth.uid() = buyer_id).
-CREATE POLICY "Participants can update escrow orders" ON public.escrow_orders FOR UPDATE USING (
-    auth.uid() = buyer_id OR auth.uid() = seller_id
-).
-
--- Notifications Policies
-CREATE POLICY "Users can view their own notifications" ON public.notifications FOR SELECT USING (auth.uid() = user_id).
-CREATE POLICY "Users can update their own notifications" ON public.notifications FOR UPDATE USING (auth.uid() = user_id).
-CREATE POLICY "System can create notifications" ON public.notifications FOR INSERT WITH CHECK (TRUE).
-
--- User Settings Policies
-CREATE POLICY "Users can manage their own settings" ON public.user_settings FOR ALL USING (auth.uid() = user_id).
-
--- Verification Requests Policies
-CREATE POLICY "Users can view their own verification requests" ON public.verification_requests FOR SELECT USING (auth.uid() = user_id).
-CREATE POLICY "Users can create verification requests" ON public.verification_requests FOR INSERT WITH CHECK (auth.uid() = user_id).
-CREATE POLICY "Admins can manage all verification requests" ON public.verification_requests FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Password Requests Policies
-CREATE POLICY "Users can view their own password requests" ON public.password_requests FOR SELECT USING (auth.uid() = user_id).
-CREATE POLICY "Users can create password requests" ON public.password_requests FOR INSERT WITH CHECK (auth.uid() = user_id).
-CREATE POLICY "Admins can manage all password requests" ON public.password_requests FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Promotion Payments Policies
-CREATE POLICY "Users can view their own promotion payments" ON public.promotion_payments FOR SELECT USING (auth.uid() = user_id).
-CREATE POLICY "Users can create promotion payments" ON public.promotion_payments FOR INSERT WITH CHECK (auth.uid() = user_id).
-CREATE POLICY "Admins can manage all promotion payments" ON public.promotion_payments FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Reviews Policies
-CREATE POLICY "Reviews are viewable by everyone" ON public.reviews FOR SELECT USING (TRUE).
-CREATE POLICY "Buyers can create reviews" ON public.reviews FOR INSERT WITH CHECK (auth.uid() = buyer_id).
-CREATE POLICY "Admins can manage all reviews" ON public.reviews FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Reports Policies
-CREATE POLICY "Reporters can view their own reports" ON public.reports FOR SELECT USING (auth.uid() = reporter_id).
-CREATE POLICY "Anyone can create reports" ON public.reports FOR INSERT WITH CHECK (TRUE).
-CREATE POLICY "Admins can manage all reports" ON public.reports FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Disputes Policies
-CREATE POLICY "Users can view their own disputes" ON public.disputes FOR SELECT USING (auth.uid() = user_id).
-CREATE POLICY "Users can create disputes" ON public.disputes FOR INSERT WITH CHECK (auth.uid() = user_id).
-CREATE POLICY "Admins can manage all disputes" ON public.disputes FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Audit Logs Policies
-CREATE POLICY "Admins can view audit logs" ON public.audit_logs FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-CREATE POLICY "System can create audit logs" ON public.audit_logs FOR INSERT WITH CHECK (TRUE).
-
--- Intrusion Logs Policies
-CREATE POLICY "Admins can view intrusion logs" ON public.intrusion_logs FOR SELECT USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-CREATE POLICY "System can create intrusion logs" ON public.intrusion_logs FOR INSERT WITH CHECK (TRUE).
-
--- System Configs Policies
-CREATE POLICY "Admins can manage system configs" ON public.system_configs FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-CREATE POLICY "Public can view system configs" ON public.system_configs FOR SELECT USING (TRUE).
-
--- Site Settings Policies
-CREATE POLICY "Admins can manage site settings" ON public.site_settings FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-CREATE POLICY "Public can view site settings" ON public.site_settings FOR SELECT USING (TRUE).
-
--- Promotion Plans Policies
-CREATE POLICY "Public can view active promotion plans" ON public.promotion_plans FOR SELECT USING (is_active = TRUE).
-CREATE POLICY "Admins can manage promotion plans" ON public.promotion_plans FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Safe Spots Policies
-CREATE POLICY "Public can view active safe spots" ON public.safe_spots FOR SELECT USING (is_active = TRUE).
-CREATE POLICY "Admins can manage safe spots" ON public.safe_spots FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Announcements Policies
-CREATE POLICY "Public can view active announcements" ON public.announcements FOR SELECT USING (active = TRUE).
-CREATE POLICY "Admins can manage announcements" ON public.announcements FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Recent Deals Policies
-CREATE POLICY "Public can view recent deals" ON public.recent_deals FOR SELECT USING (TRUE).
-CREATE POLICY "System can create recent deals" ON public.recent_deals FOR INSERT WITH CHECK (TRUE).
-
--- Search Alerts Policies
-CREATE POLICY "Users can manage their own search alerts" ON public.search_alerts FOR ALL USING (auth.uid() = user_id).
-
--- Favorites Policies
-CREATE POLICY "Users can manage their own favorites" ON public.favorites FOR ALL USING (auth.uid() = user_id).
-
--- Categories Policies
-CREATE POLICY "Public can view active categories" ON public.categories FOR SELECT USING (is_active = TRUE).
-CREATE POLICY "Admins can manage categories" ON public.categories FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
--- Subcategories Policies
-CREATE POLICY "Public can view active subcategories" ON public.subcategories FOR SELECT USING (is_active = TRUE).
-CREATE POLICY "Admins can manage subcategories" ON public.subcategories FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-).
-
 -- ============================================================================
--- TRIGGERS FOR UPDATED_AT TIMESTAMPS
+-- ESCROW_ORDERS POLICIES
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END; $$;
+CREATE POLICY "Participants can view escrow orders" ON public.escrow_orders 
+FOR SELECT USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
 
--- Apply updated_at trigger to all tables with updated_at column
+CREATE POLICY "Buyers can create escrow orders" ON public.escrow_orders 
+FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+CREATE POLICY "Participants can update escrow orders" ON public.escrow_orders 
+FOR UPDATE USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
+
+-- ============================================================================
+-- NOTIFICATIONS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can view their own notifications" ON public.notifications 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own notifications" ON public.notifications 
+FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "System can create notifications" ON public.notifications 
+FOR INSERT WITH CHECK (TRUE);
+
+-- ============================================================================
+-- USER_SETTINGS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can manage their own settings" ON public.user_settings 
+FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- VERIFICATION_REQUESTS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Users can view their own verification requests" ON public.verification_requests 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create verification requests" ON public.verification_requests 
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can manage all verification requests" ON public.verification_requests 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- PASSWORD_REQUESTS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Users can view their own password requests" ON public.password_requests 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create password requests" ON public.password_requests 
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can manage all password requests" ON public.password_requests 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- PROMOTION_PAYMENTS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Users can view their own promotion payments" ON public.promotion_payments 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create promotion payments" ON public.promotion_payments 
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can manage all promotion payments" ON public.promotion_payments 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- REVIEWS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Reviews are viewable by everyone" ON public.reviews 
+FOR SELECT USING (TRUE);
+
+CREATE POLICY "Buyers can create reviews" ON public.reviews 
+FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+
+CREATE POLICY "Admins can manage all reviews" ON public.reviews 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- REPORTS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Reporters can view their own reports" ON public.reports 
+FOR SELECT USING (auth.uid() = reporter_id);
+
+CREATE POLICY "Anyone can create reports" ON public.reports 
+FOR INSERT WITH CHECK (TRUE);
+
+CREATE POLICY "Admins can manage all reports" ON public.reports 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- DISPUTES POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Users can view their own disputes" ON public.disputes 
+FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create disputes" ON public.disputes 
+FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Admins can manage all disputes" ON public.disputes 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- AUDIT_LOGS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Admins can view audit logs" ON public.audit_logs 
+FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "System can create audit logs" ON public.audit_logs 
+FOR INSERT WITH CHECK (TRUE);
+
+-- ============================================================================
+-- INTRUSION_LOGS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Admins can view intrusion logs" ON public.intrusion_logs 
+FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "System can create intrusion logs" ON public.intrusion_logs 
+FOR INSERT WITH CHECK (TRUE);
+
+-- ============================================================================
+-- SYSTEM_CONFIGS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Admins can manage system configs" ON public.system_configs 
+FOR ALL USING (public.is_admin());
+
+CREATE POLICY "Public can view system configs" ON public.system_configs 
+FOR SELECT USING (TRUE);
+
+-- ============================================================================
+-- SITE_SETTINGS POLICIES (Fixed: Use is_admin function)
+-- ============================================================================
+
+CREATE POLICY "Admins can manage site settings" ON public.site_settings 
+FOR ALL USING (public.is_admin());
+
+CREATE POLICY "Public can view site settings" ON public.site_settings 
+FOR SELECT USING (TRUE);
+
+-- ============================================================================
+-- PROMOTION_PLANS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view active promotion plans" ON public.promotion_plans 
+FOR SELECT USING (is_active = TRUE);
+
+CREATE POLICY "Admins can manage promotion plans" ON public.promotion_plans 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- SAFE_SPOTS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view active safe spots" ON public.safe_spots 
+FOR SELECT USING (is_active = TRUE);
+
+CREATE POLICY "Admins can manage safe spots" ON public.safe_spots 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- ANNOUNCEMENTS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view active announcements" ON public.announcements 
+FOR SELECT USING (active = TRUE);
+
+CREATE POLICY "Admins can manage announcements" ON public.announcements 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- RECENT_DEALS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view recent deals" ON public.recent_deals 
+FOR SELECT USING (TRUE);
+
+CREATE POLICY "System can create recent deals" ON public.recent_deals 
+FOR INSERT WITH CHECK (TRUE);
+
+-- ============================================================================
+-- SEARCH_ALERTS POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can manage their own search alerts" ON public.search_alerts 
+FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- FAVORITES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Users can manage their own favorites" ON public.favorites 
+FOR ALL USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- CATEGORIES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view active categories" ON public.categories 
+FOR SELECT USING (is_active = TRUE);
+
+CREATE POLICY "Admins can manage categories" ON public.categories 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- SUBCATEGORIES POLICIES
+-- ============================================================================
+
+CREATE POLICY "Public can view active subcategories" ON public.subcategories 
+FOR SELECT USING (is_active = TRUE);
+
+CREATE POLICY "Admins can manage subcategories" ON public.subcategories 
+FOR ALL USING (public.is_admin());
+
+-- ============================================================================
+-- APPLY UPDATED_AT TRIGGERS
+-- ============================================================================
+
 DO $$
 DECLARE
     tbl record;
@@ -986,46 +1219,8 @@ CREATE POLICY "Sellers can delete their ad images" ON storage.objects FOR DELETE
 -- Storage Policies for documents bucket:
 CREATE POLICY "Users can upload their own documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Users can view their own documents" ON storage.objects FOR SELECT USING (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USING (bucket_id = 'documents' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USING (bucket_id = 'documents' AND public.is_admin());
 */
-
--- ============================================================================
--- HELPER FUNCTIONS
--- ============================================================================
-
--- Function to generate unique handover codes for escrow
-CREATE OR REPLACE FUNCTION public.generate_handover_code()
-RETURNS TEXT LANGUAGE plpgsql AS $$
-DECLARE
-    code TEXT;
-BEGIN
-    LOOP
-        code := 'ESC-' || LPAD(FLOOR(RANDOM() * 1000000)::TEXT, 6, '0');
-        IF NOT EXISTS (SELECT 1 FROM public.escrow_orders WHERE handover_code = code) THEN
-            RETURN code;
-        END IF;
-    END LOOP;
-END; $$;
-
--- Function to check if user is admin
-CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
-RETURNS BOOLEAN LANGUAGE plpgsql AS $$
-BEGIN
-    RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = user_id AND role = 'admin');
-END; $$;
-
--- Function to get user's wallet (create if not exists)
-CREATE OR REPLACE FUNCTION public.get_or_create_wallet(user_id UUID)
-RETURNS UUID LANGUAGE plpgsql AS $$
-DECLARE
-    wallet_id UUID;
-BEGIN
-    SELECT id INTO wallet_id FROM public.wallets WHERE user_id = get_or_create_wallet.user_id;
-    IF wallet_id IS NULL THEN
-        INSERT INTO public.wallets (user_id) VALUES (get_or_create_wallet.user_id) RETURNING id INTO wallet_id;
-    END IF;
-    RETURN wallet_id;
-END; $$;
 
 -- ============================================================================
 -- COMPLETION MESSAGE
@@ -1035,13 +1230,15 @@ BEGIN
     RAISE NOTICE '============================================================================';
     RAISE NOTICE 'SEALIFY NIGERIA DATABASE SCHEMA DEPLOYED SUCCESSFULLY';
     RAISE NOTICE '============================================================================';
-    RAISE NOTICE 'Tables Created: 29 core tables + indexes + RLS policies';
+    RAISE NOTICE 'Tables Created: 30 core tables + indexes + RLS policies (FIXED)';
     RAISE NOTICE 'Categories Seeded: 10 (including Solar & Clean Energy)';
     RAISE NOTICE 'Subcategories Seeded: 2 (Solar Products & Solar Installation)';
     RAISE NOTICE 'Promotion Plans: 4 tiers (1, 3, 6, 12 months)';
     RAISE NOTICE 'Safe Spots: 7 verified locations in Ogbomoso';
     RAISE NOTICE 'System Configs: 6 platform toggles';
     RAISE NOTICE 'Storage Buckets: profile-media, ad-images, documents (create in Dashboard)';
+    RAISE NOTICE 'Security: Infinite recursion FIXED via security definer functions';
+    RAISE NOTICE 'Helper Functions: is_admin(), get_user_role(), generate_handover_code()';
     RAISE NOTICE '============================================================================';
 END $$;`;
 
