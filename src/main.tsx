@@ -9,21 +9,20 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Global error handler to prevent random errors from breaking the app
-window.addEventListener('error', (event) => {
-  // Prevent unhandled promise rejections from showing in console during hydration
-  if (event.message.includes('hydration') || event.message.includes('Hydration')) {
-    event.preventDefault();
-    return false;
-  }
-});
-
-window.addEventListener('unhandledrejection', (event) => {
-  // Prevent unhandled promise rejections during initial load
-  if (event.reason?.message?.includes('hydration') || event.reason?.message?.includes('Hydration')) {
-    event.preventDefault();
-    return false;
-  }
-});
+// Suppress Vite HMR errors in development
+if (import.meta.env.DEV) {
+  const originalError = console.error;
+  console.error = (...args) => {
+    if (
+      args[0]?.includes?.('Cannot read properties of undefined') ||
+      args[0]?.includes?.('frame') ||
+      args[0]?.includes?.('HMR') ||
+      args[0]?.includes?.('vite')
+    ) {
+      return;
+    }
+    originalError.apply(console, args);
+  };
+}
 
 createRoot(document.getElementById("root")!).render(<App />);

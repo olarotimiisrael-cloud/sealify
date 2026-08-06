@@ -25,4 +25,9 @@ export default defineConfig({
   ssr: {
     noExternal: ["@supabase/supabase-js", "postgres"],
   },
+  server: {
+    hmr: {
+      overlay: false,
+    },
+  },
 });
