@@ -1,6 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { Navbar, Footer, MobileNav, SEO } from '../components';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import MobileNav from '../components/MobileNav';
+import SEO from '../components/SEO';
 import { 
   Users, Shield, Database, Settings, ShieldCheck, AlertTriangle, 
   Plus, Search, Filter, Eye, Edit3, Trash2, Download, Copy, 
