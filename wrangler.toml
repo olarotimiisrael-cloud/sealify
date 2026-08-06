@@ -1,18 +1,11 @@
 name = "sealify-nigeria"
-main = "src/entry-server.tsx"
 compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
 [build]
 command = "npm run build"
 
-[[hyperdrive]]
-binding = "HYPERDRIVE"
-id = "64429d59f7d44f689138853d445923b4"
-
-[vars]
-NEXT_PUBLIC_SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
-SUPABASE_ANON_KEY = "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7"
-
-# For local development with wrangler dev, create a .dev.vars file with:
-# DATABASE_URL=postgresql://postgres:TscwltdSealify@db.eliwjdafimaugnwvadlr.supabase.co:5432/postgres
+[[redirects]]
+source = "/*"
+destination = "/index.html"
+status_code = 200
