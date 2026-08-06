@@ -189,7 +189,7 @@ const AdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <>
       <SEO title="Admin Dashboard — Sealify Nigeria" />
       <Navbar />
 
@@ -664,8 +664,8 @@ const AdminDashboard: React.FC = () => {
     <AiShoppingAssistantModal isOpen={isAiCopilotOpen} onClose={() => setIsAiCopilotOpen(false)} />
     <Footer />
     <MobileNav />
-  );
-};
+  </>
+);
 
 const StatCard: React.FC<{ label: string; value: number | string; icon: React.FC<{ className?: string }>; color: string }> = ({
   label, value, icon: Icon, color
