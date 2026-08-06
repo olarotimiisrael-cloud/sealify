@@ -664,8 +664,9 @@ const AdminDashboard: React.FC = () => {
     <AiShoppingAssistantModal isOpen={isAiCopilotOpen} onClose={() => setIsAiCopilotOpen(false)} />
     <Footer />
     <MobileNav />
-  </>
-);
+    </>
+  );
+};
 
 const StatCard: React.FC<{ label: string; value: number | string; icon: React.FC<{ className?: string }>; color: string }> = ({
   label, value, icon: Icon, color
