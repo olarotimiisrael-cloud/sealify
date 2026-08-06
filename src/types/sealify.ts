@@ -200,7 +200,7 @@ export interface AuditLog {
   id: string;
   action: string;
   details: string;
-  type: 'security' | 'user' | 'ad' | 'broadcast' | 'verification' | 'intrusion' | 'dispute' | 'finance';
+  type: 'security' | 'user' | 'listing' | 'broadcast' | 'verification' | 'intrusion' | 'dispute' | 'finance';
   createdAt: string;
 }
 
