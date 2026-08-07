@@ -25,11 +25,11 @@ export const DatabaseTest: React.FC = () => {
   const runTests = async () => {
     setRunning(true);
     const newTests = [...tests].map(t => ({...t, status: 'pending' as TestStatus}));
-    setTests(newTests);
+    setTests(newLogs);
 
     // Test 1: Client init
     try {
-      const { data, error } = await supabase.from('users').select('count').limit(1);
+      const { data, error } = await supabase.from('profiles').select('count').limit(1);
       if (error) throw error;
       newTests[0] = { ...newTests[0], status: 'success', message: 'Client connected' };
     } catch (e: any) {
@@ -39,7 +39,7 @@ export const DatabaseTest: React.FC = () => {
 
     // Test 2: Users table
     try {
-      const { data, error } = await supabase.from('users').select('id, email, full_name').limit(5);
+      const { data, error } = await supabase.from('profiles').select('id, email, full_name').limit(5);
       if (error) throw error;
       newTests[1] = { ...newTests[1], status: 'success', message: `Found ${data?.length || 0} users` };
     } catch (e: any) {
@@ -49,7 +49,7 @@ export const DatabaseTest: React.FC = () => {
 
     // Test 3: Listings table
     try {
-      const { data, error } = await supabase.from('listings').select('id, title').limit(5);
+      const { data, error } = await supabase.from('ads').select('id, title').limit(5);
       if (error) throw error;
       newTests[2] = { ...newTests[2], status: 'success', message: `Found ${data?.length || 0} listings` };
     } catch (e: any) {

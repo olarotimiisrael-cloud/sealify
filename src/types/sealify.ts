@@ -245,7 +245,7 @@ export interface FilterState {
   maxPrice: number | null;
   condition: Condition | 'All';
   location: string;
-  sortBy: 'newest' | 'price-asc' | 'price-desc';
+  sortBy: 'newest' | 'price-asc' | 'price-desc' | 'popular';
 }
 
 export interface SafeMeetupSpotConfig {

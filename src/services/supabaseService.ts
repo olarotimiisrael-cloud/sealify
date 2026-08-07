@@ -36,7 +36,7 @@ export const userService = {
   getProfile: async (id: string): Promise<DbUser | null> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('id', id)
         .maybeSingle();
@@ -52,7 +52,7 @@ export const userService = {
   getAll: async (): Promise<DbUser[]> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -67,7 +67,7 @@ export const userService = {
   create: async (profile: Partial<DbUser>): Promise<DbUser | null> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .insert([profile])
         .select()
         .single();
@@ -83,7 +83,7 @@ export const userService = {
   update: async (id: string, updates: Partial<DbUser>): Promise<DbUser | null> => {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -100,7 +100,7 @@ export const userService = {
   delete: async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .delete()
         .eq('id', id);
       
@@ -117,11 +117,11 @@ export const listingService = {
   getAll: async (): Promise<DbListing[]> => {
     try {
       const { data, error } = await supabase
-        .from('listings')
+        .from('ads')
         .select(`
           *,
-          users!listings_seller_id_fkey(*),
-          listing_images(image_url)
+          profiles!ads_seller_id_fkey(*),
+          ad_images(image_url)
         `)
         .order('created_at', { ascending: false });
       
@@ -136,7 +136,7 @@ export const listingService = {
   create: async (listing: Partial<DbListing>, images: string[]): Promise<DbListing | null> => {
     try {
       const { data: newListing, error } = await supabase
-        .from('listings')
+        .from('ads')
         .insert([listing])
         .select()
         .single();
@@ -150,7 +150,7 @@ export const listingService = {
           image_url: url,
           sort_order: index
         }));
-        const { error: imgError } = await supabase.from('listing_images').insert(imageInserts);
+        const { error: imgError } = await supabase.from('ad_images').insert(imageInserts);
         if (imgError) console.error('Image insert error:', imgError);
       }
       
@@ -164,7 +164,7 @@ export const listingService = {
   update: async (id: string, updates: Partial<DbListing>): Promise<DbListing | null> => {
     try {
       const { data, error } = await supabase
-        .from('listings')
+        .from('ads')
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id)
         .select()
@@ -181,7 +181,7 @@ export const listingService = {
   delete: async (id: string): Promise<boolean> => {
     try {
       const { error } = await supabase
-        .from('listings')
+        .from('ads')
         .delete()
         .eq('id', id);
       
