@@ -28,9 +28,9 @@ Add in **Settings → Environment variables**:
 
 | Variable | Value | Type |
 |----------|-------|------|
-| `VITE_SUPABASE_URL` | `https://xxxxx.supabase.co` | Secret |
+| `VITE_SUPABASE_URL` | `https://your-project.supabase.co` | Secret |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Secret |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `NODE_VERSION` | `20` | Plain text |
 
@@ -78,6 +78,10 @@ CREATE POLICY "Users can upload their own documents" ON storage.objects FOR INSE
 CREATE POLICY "Users can view their own documents" ON storage.objects FOR SELECT USING (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USING (bucket_id = 'documents' AND public.is_admin());
 ```
+
+### 3. Enable Realtime
+**Database → Replication:**
+- Enable for: `messages`, `notifications`, `conversations`, `ads`, `escrow_orders`
 
 ### 4. Database Migration
 Go to **SQL Editor → New Query** → Paste contents of `supabase/migrations/20240101000000_initial_schema.sql` → Run

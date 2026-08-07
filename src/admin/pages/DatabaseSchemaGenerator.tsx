@@ -8,7 +8,7 @@ const DatabaseSchemaGenerator: React.FC = () => {
   const [sqlContent, setSqlContent] = useState<string>('');
 
   useEffect(() => {
-    fetch('/admin/db-schema-generator.sql')
+    fetch('/admin/db-schema')
       .then(response => response.text())
       .then(data => setSqlContent(data))
       .catch(err => {

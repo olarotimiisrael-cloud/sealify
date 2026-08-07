@@ -11,21 +11,8 @@ Disallow: /settings
 Disallow: /my-ads
 Disallow: /messages
 Disallow: /wallet
+Disallow: /saved
 Disallow: /notifications
 
-# Allow important pages
-Allow: /
-Allow: /listing/
-Allow: /seller/
-Allow: /vendors
-Allow: /post-ad
-Allow: /search
-Allow: /community
-Allow: /market-insights
-Allow: /how-it-works
-Allow: /safety
-Allow: /faq
-Allow: /help-center
-Allow: /contact
-Allow: /escrow-verify
-Allow: /requests
+# Crawl-delay
+Crawl-delay: 10
