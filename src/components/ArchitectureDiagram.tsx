@@ -201,7 +201,7 @@ const ArchitectureDiagram: React.FC = () => {
                 <li>• WebSocket Connections</li>
                 <li>• Channels: messages, notifications, ads, conversations, wallets, escrow</li>
                 <li>• Presence & Broadcast</li>
-                <li>• < 100ms Latency</li>
+                <li>• Less than 100ms Latency</li>
                 <li>• Auto-reconnection</li>
               </ul>
             </div>
