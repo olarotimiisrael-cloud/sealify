@@ -6,13 +6,10 @@ Sitemap: https://sealify.ng/sitemap.xml
 
 # Disallow admin and private routes
 Disallow: /admin/
-Disallow: /api/
 Disallow: /settings
 Disallow: /my-ads
 Disallow: /messages
 Disallow: /wallet
 Disallow: /saved
-Disallow: /notifications
-
-# Crawl-delay
-Crawl-delay: 10
+Disallow: /post-ad
+Disallow: /api/
