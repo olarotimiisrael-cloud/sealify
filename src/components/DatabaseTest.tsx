@@ -25,7 +25,7 @@ export const DatabaseTest: React.FC = () => {
   const runTests = async () => {
     setRunning(true);
     const newTests = [...tests].map(t => ({...t, status: 'pending' as TestStatus}));
-    setTests(newLogs);
+    setTests(newTests);
 
     // Test 1: Client init
     try {
@@ -67,7 +67,7 @@ export const DatabaseTest: React.FC = () => {
     }
     setTests([...newTests]);
 
-    // Test 5: RLS
+    // Test 4: RLS
     try {
       const { data, error } = await supabase.from('system_configs').select('*');
       if (error) throw error;

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ShieldCheck, User, Mail, Phone, MapPin, Save, Camera, Building2, FileText, CreditCard, Layout, Award } from 'lucide-react';
-import { UserProfile, UserStatus, VerificationBadgeType } from '../types/sealify';
+import { UserProfile, UserStatus, VerificationBadgeType } from '@/types/sealify';
 import { toast } from 'sonner';
 
 interface AdminEditUserModalProps {
