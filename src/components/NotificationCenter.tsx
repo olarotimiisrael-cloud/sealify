@@ -1,5 +1,7 @@
 import React from 'react';
-import { X, Bell, TrendingDown, MessageSquare, Tag, Sparkles, Trash2 } from 'lucide-react';
+import { X, Bell, TrendingDown, MessageSquare, Tag, Sparkles, Trash2, 
+  CheckCircle2, ShoppingBag, Clock, ArrowRight, ShieldCheck, Zap
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 

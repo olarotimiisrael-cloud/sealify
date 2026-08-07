@@ -75,11 +75,11 @@ export class ErrorBoundary extends Component<Props, State> {
               </Button>
               <Button
                 variant="outline"
-                onClick={() => window.location.reload()}
+                onClick={() => window.location.href = '/'}
                 className="flex items-center gap-2 border-slate-700 text-slate-300 hover:text-white"
               >
-                <X className="w-4 h-4" />
-                <span>Reload Page</span>
+                <Home className="w-4 h-4" />
+                <span>Go Home</span>
               </Button>
             </div>
 

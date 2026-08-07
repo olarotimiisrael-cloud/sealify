@@ -72,8 +72,8 @@ export const LoadingScreen: React.FC = () => {
             <span>Verified Node</span>
          </div>
          <div className="flex items-center gap-2">
-            <Zap className="w-4 h-4 text-emerald-500/50" />
-            <span>Real-time</span>
+            <Globe className="w-4 h-4 text-emerald-500/50" />
+            <span>National Hub</span>
          </div>
          <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-emerald-400/50" />
