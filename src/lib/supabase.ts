@@ -99,7 +99,6 @@ export type Tables = {
       updated_at: string;
     };
   };
-  // ... add other tables as needed
 };
 
 export default supabase;
