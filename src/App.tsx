@@ -1,7 +1,8 @@
-import { Toaster } from "@/components/ui/sonner";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SealifyProvider } from "./context/SealifyContext";
 import SplashScreen from "./components/SplashScreen";
+import ToasterWrapper from "./components/ToasterWrapper";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Index from "./pages/Index";
 import ListingDetail from "./pages/ListingDetail";
 import PostAd from "./pages/PostAd";
@@ -26,13 +27,12 @@ import EscrowVerifier from "./pages/EscrowVerifier";
 import CommunityBoard from "./pages/CommunityBoard";
 import Wallet from "./pages/Wallet";
 import VendorsPage from "./pages/VendorsPage";
-import ErrorBoundary from "./components/ErrorBoundary";
 
 const App = () => (
   <ErrorBoundary>
     <SealifyProvider>
       <SplashScreen />
-      <Toaster position="bottom-right" richColors />
+      <ToasterWrapper />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
