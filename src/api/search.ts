@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getSql } from "../db/hyperdrive";
+import { createClient } from "@supabase/supabase-js";
 
 export const searchRoutes = new Hono();
 

@@ -134,7 +134,7 @@ adminRoutes.put("/users/:id", async (c) => {
     const body = await c.req.json();
     
     const allowedFields = [
-      'full_name', 'phone_number', 'avatar_url', 'cover_url',
+      'full_name', 'phone_number', 'avatar_url', 'store_banner_url',
       'bio', 'location', 'business_name', 'cac_number', 'business_hours',
       'bank_name', 'account_number', 'account_name',
       'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',

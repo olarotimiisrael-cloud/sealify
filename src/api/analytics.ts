@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 
-export const analyticsRoutes = new Hono();
+export const analyticsRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
 async function requireAdmin(c: any, next: any) {
   const env = c.env as any;

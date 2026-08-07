@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { usePwaInstall } from '../hooks/usePwaInstall';
-import { Download, X, CheckCircle2, Smartphone, Share, PlusSquare, X,
+import { Download, X, CheckCircle2, Smartphone, Share, PlusSquare, 
   Compass,
   MoreVertical,
   Copy,

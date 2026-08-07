@@ -14,16 +14,12 @@ import {
   LayoutGrid 
 } from 'lucide-react';
 
-const iconMap: Record<string, React.FC<{ className?: string }>> = {
-  Car,
-  Smartphone,
-  Home,
-  Shirt,
-  Wrench,
-  Armchair,
-  Briefcase,
-  Sparkles,
-  Zap,
+type CategoryConfig = {
+  id: string;
+  name: Category;
+  iconName: string;
+  color: string;
+  count?: number;
 };
 
 export const CategoryGrid: React.FC = () => {

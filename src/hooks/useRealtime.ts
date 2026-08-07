@@ -30,7 +30,7 @@ export const useRealtime = ({ table, filter, onInsert, onUpdate, onDelete }: Rea
               onInsert?.(payload.new);
               break;
             case 'UPDATE':
-              onUpdate?.(payload.new, payload.old);
+              onUpdate?.(payload.new);
               break;
             case 'DELETE':
               onDelete?.(payload.old);

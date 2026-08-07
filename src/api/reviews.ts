@@ -185,7 +185,7 @@ reviewsRoutes.get("/admin/all", async (c) => {
     const { data: { user } } = await supabase.auth.getUser(token);
     const sql = getSql(env);
     const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
-    if (!profile[0]?.role === 'admin') {
+    if (profile.length === 0 || profile[0].role !== 'admin') {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -236,7 +236,7 @@ reviewsRoutes.put("/admin/:id", async (c) => {
     const { data: { user } } = await supabase.auth.getUser(token);
     const sql = getSql(env);
     const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
-    if (!profile[0]?.role === 'admin') {
+    if (!profile[0] || profile[0].role !== 'admin') {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -274,7 +274,7 @@ reviewsRoutes.delete("/admin/:id", async (c) => {
     const { data: { user } } = await supabase.auth.getUser(token);
     const sql = getSql(env);
     const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
-    if (!profile[0]?.role === 'admin') {
+    if (!profile[0] || profile[0].role !== 'admin') {
       return c.json({ error: "Forbidden" }, 403);
     }
 

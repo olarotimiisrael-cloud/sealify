@@ -16,6 +16,14 @@ import {
   ShieldCheck 
 } from 'lucide-react';
 
+type CategoryConfig = {
+  id: string;
+  name: Category;
+  iconName: string;
+  color: string;
+  count?: number;
+};
+
 export const SOLAR_CATEGORY_CONFIG = {
   name: 'Solar & Clean Energy',
   iconName: 'Sun',

@@ -9,7 +9,11 @@ import {
   Shield, Zap, Star, Heart, Tag, Package, Truck,
   MapPin, Clock, Calendar, Bell, MessageSquare,
   ShoppingBag, CreditCard, Wallet, Lock, Unlock,
-  CheckCircle2, AlertCircle, Info, HelpCircle
+  CheckCircle2, AlertCircle, Info, HelpCircle,
+  Minus, FileText, Hash, CheckSquare, CircleDot, ToggleRight,
+  PanelLeft, ChevronRight, Table, User, Award, Loader2,
+  ArrowRightLeft, QrCode, Volume2, Image as ImageIcon,
+  BarChart, Calculator, UserCog, GitBranch, Store
 } from 'lucide-react';
 
 const UIComponentLibrary: React.FC = () => {
@@ -75,7 +79,7 @@ const UIComponentLibrary: React.FC = () => {
     { name: 'EscrowInitiatorModal', category: 'marketplace', variants: ['Amount', 'Location', 'Payment Method'], description: 'Secure fund locking', icon: Shield },
     { name: 'DealQrScannerModal', category: 'marketplace', variants: ['Display QR', 'Verify PIN', 'Complete'], description: 'QR handover verification', icon: QrCode },
     { name: 'AiVoiceOverviewModal', category: 'marketplace', variants: ['Presenter Select', 'Speed Control', 'Transcript'], description: 'AI audio briefing', icon: Volume2 },
-    { name: 'StorefrontFlycardModal', category: 'marketplace', variants: ['Canvas Gen', 'Download', 'Share'], description: 'Social promo cards', icon: Image },
+    { name: 'StorefrontFlycardModal', category: 'marketplace', variants: ['Canvas Gen', 'Download', 'Share'], description: 'Social promo cards', icon: ImageIcon },
     { name: 'PriceHistoryChart', category: 'marketplace', variants: ['Area Chart', 'Trend Indicator'], description: 'Market trends', icon: BarChart },
     { name: 'ValuationCalculatorModal', category: 'marketplace', variants: ['Category', 'Condition', 'Age', 'Apply Price'], description: 'AI price estimator', icon: Calculator },
 
@@ -137,7 +141,7 @@ const UIComponentLibrary: React.FC = () => {
         {categories.map(cat => (
           <button
             key={cat.id}
-            onClick={() => setFilterCategory(cat.id)}
+            onClick={() => setFilterCategory(cat.id as any)}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
               filterCategory === cat.id
                 ? 'bg-emerald-500 text-slate-950 shadow'

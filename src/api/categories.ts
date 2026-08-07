@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { getSql } from "../db/hyperdrive";
+import { createClient } from "@supabase/supabase-js";
 
 export const categoriesRoutes = new Hono();
 
@@ -79,7 +80,6 @@ categoriesRoutes.post("/", async (c) => {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
-    // Verify admin (simplified - in production use requireAdmin middleware)
     const token = authHeader.substring(7);
     const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
     const { data: { user } } = await supabase.auth.getUser(token);

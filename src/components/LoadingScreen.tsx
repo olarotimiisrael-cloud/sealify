@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Zap, MapPin, Sparkles } from 'lucide-react';
+import { ShieldCheck, Zap, MapPin, Sparkles, Globe } from 'lucide-react';
 
 export const LoadingScreen: React.FC = () => {
   return (

@@ -219,17 +219,23 @@ const MOCK_MARKET_STATS: CategoryStats[] = [
 ];
 
 const MOCK_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
-  { id: '1', name: 'Ogbomoso Divisional Police HQ', zone: 'Police HQ', category: 'Police Safe Zone', address: 'Police Headquarters, Ogbomoso', distance: 'Central Hub', hours: '24/7', cctvVerified: true },
-  { id: '2', name: 'LAUTECH Main Gate Security Post', zone: 'LAUTECH Area', category: 'Police Safe Zone', address: 'LAUTECH Main Gate, Ogbomoso', distance: 'Campus Entry', hours: '24/7', cctvVerified: true },
-  { id: '3', name: 'Under G Shopping Complex', zone: 'LAUTECH Area', category: 'Shopping Mall', address: 'Under G Market, Ogbomoso', distance: 'Student Hub', hours: '8:00 AM - 8:00 PM', cctvVerified: true },
-  { id: '4', name: 'Takie Square Mall', zone: 'Takie / Center', category: 'Shopping Mall', address: 'Takie Square, Ogbomoso', distance: 'City Center', hours: '9:00 AM - 7:00 PM', cctvVerified: true },
+  { id: '1', name: 'Ogbomoso Divisional Police HQ', zone: 'Police HQ', category: 'Police Safe Zone', address: 'Police Headquarters, Ogbomoso, Oyo State', distance: 'Central Hub', hours: '24/7', cctvVerified: true },
+  { id: '2', name: 'LAUTECH Main Gate Security Post', zone: 'LAUTECH Area', category: 'Police Safe Zone', address: 'LAUTECH Main Gate, Ogbomoso, Oyo State', distance: 'Campus Entry', hours: '24/7', cctvVerified: true },
+  { id: '3', name: 'Under G Shopping Complex', zone: 'LAUTECH Area', category: 'Shopping Mall', address: 'Under G Market, Ogbomoso, Oyo State', distance: 'Student Hub', hours: '8:00 AM - 8:00 PM', cctvVerified: true },
+  { id: '4', name: 'Takie Square Mall', zone: 'Takie / Center', category: 'Shopping Mall', address: 'Takie Square, Ogbomoso, Oyo State', distance: 'City Center', hours: '9:00 AM - 7:00 PM', cctvVerified: true },
+  { id: '5', name: 'Sabo Market Security Post', zone: 'Sabo Market Zone', category: 'Police Safe Zone', address: 'Sabo Market, Ogbomoso, Oyo State', distance: 'Market Center', hours: '7:00 AM - 6:00 PM', cctvVerified: true },
+  { id: '6', name: 'Ogbomoso Public Library', zone: 'Takie / Center', category: 'Public Library', address: 'Public Library, Ogbomoso, Oyo State', distance: 'Quiet Zone', hours: '8:00 AM - 6:00 PM', cctvVerified: true },
+  { id: '7', name: 'Adenike Area Café Hub', zone: 'LAUTECH Area', category: 'Café', address: 'Adenike Junction, Ogbomoso, Oyo State', distance: 'Student Area', hours: '7:00 AM - 10:00 PM', cctvVerified: true },
+  { id: '8', name: 'General Hospital Security Post', zone: 'General Area', category: 'Police Safe Zone', address: 'LAUTECH Teaching Hospital, Ogbomoso', distance: 'Hospital Zone', hours: '24/7', cctvVerified: true },
+  { id: '9', name: 'Oja Oba Market Security', zone: 'Sabo Market Zone', category: 'Police Safe Zone', address: 'Oja Oba Market, Ogbomoso', distance: 'Market Center', hours: '7:00 AM - 6:00 PM', cctvVerified: true },
+  { id: '10', name: 'Ilorin Garage Park Office', zone: 'Takie / Center', category: 'Café', address: 'Ilorin Garage, Takie, Ogbomoso', distance: 'Transport Hub', hours: '6:00 AM - 8:00 PM', cctvVerified: true },
 ];
 
 const MOCK_PROMOTION_PLANS = [
   { months: 1, label: '1 Month', rate: 15000, badge: 'STARTER', isActive: true },
-  { months: 3, label: '3 Months', rate: 13000, badge: 'POPULAR', isActive: true },
-  { months: 6, label: '6 Months', rate: 11000, badge: 'BEST VALUE', isActive: true },
-  { months: 12, label: '12 Months', rate: 9000, badge: 'ENTERPRISE', isActive: true },
+  { months: 3, label: '3 Months', rate: 39000, badge: 'POPULAR', isActive: true },
+  { months: 6, label: '6 Months', rate: 66000, badge: 'BEST VALUE', isActive: true },
+  { months: 12, label: '12 Months', rate: 108000, badge: 'ENTERPRISE', isActive: true },
 ];
 
 const MOCK_SYSTEM_CONFIG = {
@@ -541,7 +547,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState('admin@sealify.ng');
-  const [adminPassword, setAdminPassword] = useState('sealify2024');
+  const [adminPassword, setAdminPassword] = useState(''sealify2024');
   const [adminPin, setAdminPin] = useState('123456');
   const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
@@ -1003,7 +1009,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const updateCategory = (id: string, name: string) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+    setCategories(prev => prev.map(c => c.id === id ? { ...c, name: name as Category } : c));
   };
 
   // Initialize from localStorage
@@ -1014,6 +1020,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setUser(parsed);
       setIsAdmin(parsed.role === 'admin');
     }
+    const savedAdminEmail = localStorage.getItem('sealify_admin_email');
+    if (savedAdminEmail) setAdminEmail(savedAdminEmail);
+    const savedAdminPass = localStorage.getItem('sealify_admin_password');
+    if (savedAdminPass) setAdminPassword(savedAdminPass);
+    const savedAdminPin = localStorage.getItem('sealify_admin_pin');
+    if (savedAdminPin) setAdminPin(savedAdminPin);
     setLoading(false);
   }, []);
 

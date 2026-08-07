@@ -497,7 +497,7 @@ CREATE POLICY "Public Recent Deals All" ON public.recent_deals FOR ALL USING (tr
 const SqlSchemaViewer: React.FC = () => {
   const [copied, setCopied] = React.useState(false);
 
-  const handleCopy = async () => {
+  const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(SQL_SCRIPT);
       setCopied(true);

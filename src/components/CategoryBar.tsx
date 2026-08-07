@@ -17,17 +17,12 @@ import {
   Building
 } from 'lucide-react';
 
-const iconMap: Record<string, React.FC<{ className?: string }>> = {
-  Layers,
-  Car,
-  Smartphone,
-  Home,
-  Shirt,
-  Armchair,
-  Wrench,
-  Briefcase,
-  Sparkles,
-  Zap,
+type CategoryConfig = {
+  id: string;
+  name: Category;
+  iconName: string;
+  color: string;
+  count?: number;
 };
 
 export const CategoryBar: React.FC = () => {
