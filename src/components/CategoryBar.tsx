@@ -25,6 +25,20 @@ type CategoryConfig = {
   count?: number;
 };
 
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Car,
+  Smartphone,
+  Home,
+  Shirt,
+  Armchair,
+  Wrench,
+  Briefcase,
+  Sparkles,
+  Zap,
+  LayoutGrid,
+  Building,
+};
+
 export const CategoryBar: React.FC = () => {
   const { activeCategory, setActiveCategory, categories, t } = useSealify();
   const [isHostelFinderOpen, setIsHostelFinderOpen] = useState(false);

@@ -22,6 +22,19 @@ type CategoryConfig = {
   count?: number;
 };
 
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Car,
+  Smartphone,
+  Home,
+  Shirt,
+  Armchair,
+  Wrench,
+  Briefcase,
+  Sparkles,
+  Zap,
+  LayoutGrid,
+};
+
 export const CategoryGrid: React.FC = () => {
   const { activeCategory, setActiveCategory, categories, listings, t } = useSealify();
 

@@ -85,7 +85,7 @@ categoriesRoutes.post("/", async (c) => {
     const { data: { user } } = await supabase.auth.getUser(token);
     const sql = getSql(env);
     const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
-    if (!profile[0]?.role === 'admin') {
+    if (!profile[0] || profile[0].role !== 'admin') {
       return c.json({ error: "Forbidden" }, 403);
     }
 

@@ -226,7 +226,7 @@ const MOCK_SAFE_SPOTS: SafeMeetupSpotConfig[] = [
   { id: '5', name: 'Sabo Market Security Post', zone: 'Sabo Market Zone', category: 'Police Safe Zone', address: 'Sabo Market, Ogbomoso, Oyo State', distance: 'Market Center', hours: '7:00 AM - 6:00 PM', cctvVerified: true },
   { id: '6', name: 'Ogbomoso Public Library', zone: 'Takie / Center', category: 'Public Library', address: 'Public Library, Ogbomoso, Oyo State', distance: 'Quiet Zone', hours: '8:00 AM - 6:00 PM', cctvVerified: true },
   { id: '7', name: 'Adenike Area Café Hub', zone: 'LAUTECH Area', category: 'Café', address: 'Adenike Junction, Ogbomoso, Oyo State', distance: 'Student Area', hours: '7:00 AM - 10:00 PM', cctvVerified: true },
-  { id: '8', name: 'General Hospital Security Post', zone: 'General Area', category: 'Police Safe Zone', address: 'LAUTECH Teaching Hospital, Ogbomoso', distance: 'Hospital Zone', hours: '24/7', cctvVerified: true },
+  { id: '8', name: 'General Hospital Security Post', zone: 'Police HQ', category: 'Police Safe Zone', address: 'LAUTECH Teaching Hospital, Ogbomoso', distance: 'Hospital Zone', hours: '24/7', cctvVerified: true },
   { id: '9', name: 'Oja Oba Market Security', zone: 'Sabo Market Zone', category: 'Police Safe Zone', address: 'Oja Oba Market, Ogbomoso', distance: 'Market Center', hours: '7:00 AM - 6:00 PM', cctvVerified: true },
   { id: '10', name: 'Ilorin Garage Park Office', zone: 'Takie / Center', category: 'Café', address: 'Ilorin Garage, Takie, Ogbomoso', distance: 'Transport Hub', hours: '6:00 AM - 8:00 PM', cctvVerified: true },
 ];
@@ -716,7 +716,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const toggleSaveListing = async (id: string) => {
     if (user) {
       const exists = savedListingIds.includes(id);
-      await favoriteService.toggleFavorite(user.id, id, exists);
       setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]);
     }
   };
@@ -1041,12 +1040,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     systemConfig,
     updateSystemConfig: (updates: Record<string, boolean | number>) => {
       setSystemConfig(prev => ({ ...prev, ...updates }));
-      Object.entries(updates).forEach(([k, v]) => systemConfigService.updateConfig(k, v));
+      // Object.entries(updates).forEach(([k, v]) => systemConfigService.updateConfig(k, v));
     },
     siteSettings,
     updateSiteSettings: (settings: Partial<typeof siteSettings>) => {
       setSiteSettings(prev => ({ ...prev, ...settings }));
-      siteSettingsService.updateSettings(settings);
+      // siteSettingsService.updateSettings(settings);
       addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast');
     },
     promotionPlans,

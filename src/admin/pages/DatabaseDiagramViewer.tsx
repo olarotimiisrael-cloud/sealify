@@ -87,7 +87,7 @@ const DatabaseDiagramViewer: React.FC = () => {
                 {showMermaid ? 'Hide' : 'Show'} Mermaid ERD
               </Button>
               <Button onClick={generateSchema} disabled={isGenerating} className="flex items-center gap-2">
-                <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                <Loader2 className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
                 Regenerate Schema
               </Button>
             </div>
