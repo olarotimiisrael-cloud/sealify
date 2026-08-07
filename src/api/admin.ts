@@ -513,8 +513,9 @@ adminRoutes.put("/system-config", async (c) => {
     const body = await c.req.json();
     
     for (const [key, value] of Object.entries(body)) {
+      const typedValue = value as boolean | number | string;
       await sql`
-        INSERT INTO system_configs (key, value, description) VALUES (${key}, ${value}, '')
+        INSERT INTO system_configs (key, value, description) VALUES (${key}, ${typedValue}, '')
         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
       `;
     }
