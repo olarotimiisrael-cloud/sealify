@@ -9,6 +9,14 @@ import { listingsRoutes } from "./api/listings";
 import { messagesRoutes } from "./api/messages";
 import { notificationsRoutes } from "./api/notifications";
 import { adminRoutes } from "./api/admin";
+import { usersRoutes } from "./api/users";
+import { categoriesRoutes } from "./api/categories";
+import { buyerRequestsRoutes } from "./api/buyer-requests";
+import { reviewsRoutes } from "./api/reviews";
+import { searchRoutes } from "./api/search";
+import { walletRoutes } from "./api/wallet";
+import { analyticsRoutes } from "./api/analytics";
+import { pushRoutes } from "./api/push";
 import { healthRoutes } from "./api/health";
 
 type Env = {
@@ -39,6 +47,13 @@ app.route("/api/users", usersRoutes);
 app.route("/api/messages", messagesRoutes);
 app.route("/api/notifications", notificationsRoutes);
 app.route("/api/admin", adminRoutes);
+app.route("/api/categories", categoriesRoutes);
+app.route("/api/buyer-requests", buyerRequestsRoutes);
+app.route("/api/reviews", reviewsRoutes);
+app.route("/api/search", searchRoutes);
+app.route("/api/wallet", walletRoutes);
+app.route("/api/analytics", analyticsRoutes);
+app.route("/api/push", pushRoutes);
 
 // React Router SSR handler for all other routes
 const requestHandler = createRequestHandler(
