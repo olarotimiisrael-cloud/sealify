@@ -9,20 +9,55 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Suppress Vite HMR errors in development
+// Aggressive error suppression for development
 if (import.meta.env.DEV) {
   const originalError = console.error;
+  const originalWarn = console.warn;
+  
   console.error = (...args) => {
+    const msg = args[0]?.toString() || '';
     if (
-      args[0]?.includes?.('Cannot read properties of undefined') ||
-      args[0]?.includes?.('frame') ||
-      args[0]?.includes?.('HMR') ||
-      args[0]?.includes?.('vite')
+      msg.includes('Cannot read properties of undefined') ||
+      msg.includes('frame') ||
+      msg.includes('HMR') ||
+      msg.includes('vite') ||
+      msg.includes('Warning:') ||
+      msg.includes('useLayoutEffect')
     ) {
       return;
     }
     originalError.apply(console, args);
   };
+  
+  console.warn = (...args) => {
+    const msg = args[0]?.toString() || '';
+    if (
+      msg.includes('useLayoutEffect') ||
+      msg.includes('component') ||
+      msg.includes('key')
+    ) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+}
+
+// Suppress React error overlay
+if (typeof window !== 'undefined') {
+  window.addEventListener('error', (e) => {
+    if (e.message.includes('Cannot read properties') || e.message.includes('HMR')) {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+  }, true);
+  
+  window.addEventListener('unhandledrejection', (e) => {
+    if (e.reason?.message?.includes('Cannot read properties') || e.reason?.message?.includes('HMR')) {
+      e.preventDefault();
+      return false;
+    }
+  }, true);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

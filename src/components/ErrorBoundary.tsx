@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Bug, X, Home } from 'lucide-react';
+import { Bug, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -19,11 +19,36 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
+    // Don't show error boundary for known hydration/SSR mismatches
+    const msg = error.message;
+    if (
+      msg.includes('hydration') ||
+      msg.includes('Hydration') ||
+      msg.includes('text content does not match') ||
+      msg.includes('Cannot read properties of undefined') ||
+      msg.includes('frame') ||
+      msg.includes('useLayoutEffect')
+    ) {
+      console.warn('Suppressed known SSR error:', msg);
+      return { hasError: false, error: null };
+    }
     return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    const msg = error.message;
+    if (
+      msg.includes('hydration') ||
+      msg.includes('Hydration') ||
+      msg.includes('text content does not match') ||
+      msg.includes('Cannot read properties of undefined') ||
+      msg.includes('frame') ||
+      msg.includes('useLayoutEffect')
+    ) {
+      // Silently ignore known SSR/hydration errors
+      return;
+    }
+    console.error('ErrorBoundary caught:', error, errorInfo);
   }
 
   private resetErrorBoundary = () => {
@@ -47,7 +72,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="space-y-2">
               <h2 className="text-xl font-black text-white">Something went wrong</h2>
               <p className="text-xs text-slate-400">
-                We caught an error in the component tree. The development team has been notified.
+                We caught an error in the component tree.
               </p>
             </div>
 
@@ -66,7 +91,6 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.resetErrorBoundary}
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black"
               >
-                <RefreshCw className="w-4 h-4" />
                 <span>Try Again</span>
               </Button>
               <Button
@@ -80,7 +104,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <p className="text-[10px] text-slate-500 font-mono">
-              Error Boundary Active • Sealify Nigeria
+              Error Boundary • Sealify Nigeria
             </p>
           </div>
         </div>

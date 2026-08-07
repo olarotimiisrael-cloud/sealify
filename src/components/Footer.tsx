@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {/* Brand & Mission */}
             <div className="space-y-4">
-              <Logo size="md" />
+              <Logo size="md" className="justify-center" />
               <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
                 Nigeria's most trusted local marketplace. We connect verified buyers and sellers in Ogbomosoland, Oyo State, and across the federation.
               </p>
