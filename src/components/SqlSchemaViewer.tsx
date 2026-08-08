@@ -500,14 +500,14 @@ CREATE POLICY "Public Recent Deals All" ON public.recent_deals FOR ALL USING (tr
 const SqlSchemaViewer: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
   const [copied, setCopied] = React.useState(false);
 
-  if (!isOpen) return null;
-
   const handleCopy = () => {
     navigator.clipboard.writeText(SQL_SCRIPT);
     setCopied(true);
     toast.success('SQL script copied to clipboard!');
     setTimeout(() => setCopied(false), 2000);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
