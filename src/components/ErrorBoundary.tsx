@@ -91,6 +91,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 onClick={this.resetErrorBoundary}
                 className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black"
               >
+                <RefreshCw className="w-4 h-4" />
                 <span>Try Again</span>
               </Button>
               <Button

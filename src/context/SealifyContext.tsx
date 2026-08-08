@@ -893,7 +893,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const recordIntrusion = (attemptedEmail: string, metadata: string) => {
-    setIntrusionLogs(prev => [{ id: `intr_${Date.now()}`, attemptedEmail: attemptedEmail, deviceInfo: metadata, mediaCaptured: false, mediaStatus: 'N/A', status: 'flagged', ipAddress: '0.0.0.0', userAgent: metadata, timestamp: new Date().toISOString() }, ...prev]);
+    setIntrusionLogs(prev => [{ id: `intr_${Date.now()}`, attemptedEmail, deviceInfo: metadata, mediaCaptured: false, mediaStatus: 'N/A', status: 'flagged', ipAddress: '0.0.0.0', userAgent: metadata, timestamp: new Date().toISOString() }, ...prev]);
   };
 
   const saveSearchAlert = async (alert: Omit<SearchAlert, 'id' | 'userId' | 'createdAt' | 'matchCount' | 'isActive'>) => {
@@ -1040,12 +1040,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     systemConfig,
     updateSystemConfig: (updates: Record<string, boolean | number>) => {
       setSystemConfig(prev => ({ ...prev, ...updates }));
-      // Object.entries(updates).forEach(([k, v]) => systemConfigService.updateConfig(k, v));
     },
     siteSettings,
     updateSiteSettings: (settings: Partial<typeof siteSettings>) => {
       setSiteSettings(prev => ({ ...prev, ...settings }));
-      // siteSettingsService.updateSettings(settings);
       addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast');
     },
     promotionPlans,
