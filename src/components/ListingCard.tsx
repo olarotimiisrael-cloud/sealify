@@ -164,13 +164,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
               <span className="text-sm sm:text-base md:text-lg font-black text-emerald-400 tracking-tight truncate">
                 {formattedPrice}
               </span>
-              <span className="text-[8px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded uppercase shrink-0">
+              <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded uppercase shrink-0">
                 {listing.category}
               </span>
             </div>
 
             <Link to={`/listing/${listing.id}`}>
-              <h3 className="text-xs font-bold text-slate-100 line-clamp-1 hover:text-emerald-400 transition-colors leading-snug">
+              <h3 className="text-xs font-bold text-slate-100 line-clamp-1 hover:text-emerald-400 transition-colors">
                 {listing.title}
               </h3>
             </Link>
