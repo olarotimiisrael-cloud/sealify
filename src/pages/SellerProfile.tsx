@@ -12,6 +12,7 @@ import AuthModal from '../components/AuthModal';
 import ShareQrModal from '../components/ShareQrModal';
 import SEO from '../components/SEO';
 import EditProfileModal from '../components/EditProfileModal';
+import { ReviewDisplay } from '../components/ReviewComponents';
 import { 
   MapPin, 
   Calendar, 
@@ -35,9 +36,92 @@ import {
   Instagram,
   Twitter,
   Plus,
-  Settings
+  Settings,
+  MessageSquare,
+  TrendingUp,
+  CheckCircle2,
+  AlertCircle,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Trash2,
+  Edit3 as Edit3Icon,
+  Plus as PlusIcon,
+  Search,
+  Filter,
+  SlidersHorizontal,
+  RotateCcw,
+  History,
+  Mail,
+  Phone as PhoneIcon,
+  MapPin as MapPinIcon,
+  Shield,
+  Lock,
+  Unlock,
+  Users,
+  Heart,
+  Tag,
+  DollarSign,
+  Truck,
+  Smartphone,
+  Laptop,
+  Home,
+  Car,
+  Shirt,
+  Sparkles,
+  Wrench,
+  Briefcase,
+  GraduationCap,
+  Building,
+  Zap,
+  ShieldCheck,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  FileText,
+  Image,
+  Video,
+  Music,
+  Film,
+  Code,
+  Database,
+  Server,
+  Cloud,
+  Globe as GlobeIcon,
+  Wifi,
+  Bluetooth,
+  Usb,
+  Monitor,
+  Printer,
+  Headphones,
+  Mic,
+  Speaker,
+  Keyboard,
+  Mouse,
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Battery,
+  Power,
+  Wifi as WifiIcon,
+  Bluetooth as BluetoothIcon,
+  Usb as UsbIcon,
+  Monitor as MonitorIcon,
+  Printer as PrinterIcon,
+  Headphones as HeadphonesIcon,
+  Mic as MicIcon,
+  Speaker as SpeakerIcon,
+  Keyboard as KeyboardIcon,
+  Mouse as MouseIcon,
+  Cpu as CpuIcon,
+  HardDrive as HardDriveIcon,
+  MemoryStick as MemoryStickIcon,
+  Battery as BatteryIcon,
+  Power as PowerIcon,
+  TrendingDown,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Review } from '../types/sealify';
 
 const SellerProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -77,6 +161,7 @@ const SellerProfile: React.FC = () => {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const sellerReviews = reviews.filter(r => r.sellerId === id);
   const totalViews = sellerListings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
@@ -133,16 +218,24 @@ const SellerProfile: React.FC = () => {
     setIsReviewModalOpen(true);
   };
 
-  const handleAddReviewToContext = (rating: number, comment: string) => {
+  const handleAddReviewToContext = async (rating: number, comment: string) => {
     if (!user) return;
-    addReview({
-      sellerId: id || '',
-      buyerId: user.id,
-      buyerName: user.fullName,
-      buyerAvatar: user.avatarUrl,
-      rating,
-      comment
-    });
+    setSubmittingReview(true);
+    try {
+      await addReview({
+        sellerId: id || '',
+        buyerId: user.id,
+        buyerName: user.fullName,
+        buyerAvatar: user.avatarUrl,
+        rating,
+        comment
+      });
+      toast.success('Review submitted successfully!');
+    } catch (err) {
+      toast.error('Failed to submit review');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   const averageRating = sellerReviews.length > 0
@@ -207,7 +300,7 @@ const SellerProfile: React.FC = () => {
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-slate-900 shadow-2xl bg-slate-950"
                   />
                 ) : (
-                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-4 border-slate-900 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-2xl">
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl border-2 border-slate-800 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shadow-xl">
                     <User className="w-10 h-10" />
                     <span className="text-[8px] font-extrabold uppercase mt-1">No Photo</span>
                   </div>
@@ -397,7 +490,7 @@ const SellerProfile: React.FC = () => {
               }`}
             >
               <Star className="w-4 h-4" />
-              <span>Reviews ({sellerReviews.length})</span>
+              <span>Reviews ({reviews.filter(r => r.sellerId === id).length})</span>
             </button>
           </div>
         </div>
@@ -496,7 +589,7 @@ const SellerProfile: React.FC = () => {
                     <span className="text-3xl font-black text-white">{averageRating}</span>
                     <span className="text-xs text-slate-400 font-bold">/ 5.0 Rating</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-0.5">Based on {sellerReviews.length} verified buyer reviews</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Based on {reviews.filter(r => r.sellerId === id).length} verified buyer reviews</p>
                 </div>
               </div>
 
@@ -509,53 +602,11 @@ const SellerProfile: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {sellerReviews.length === 0 ? (
-                 <div className="py-12 text-center text-slate-500 italic text-xs">No reviews for this storefront yet. Be the first to rate!</div>
-              ) : (
-                sellerReviews.map((rev) => (
-                  <div
-                    key={rev.id}
-                    className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3 shadow"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {rev.buyerAvatar ? (
-                          <img
-                            src={rev.buyerAvatar}
-                            alt={rev.buyerName}
-                            className="w-10 h-10 rounded-xl object-cover border border-slate-700"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-500">
-                            <User className="w-5 h-5" />
-                          </div>
-                        )}
-                        <div>
-                          <h4 className="font-bold text-xs text-white">{rev.buyerName}</h4>
-                          <p className="text-[10px] text-slate-500">{rev.createdAt}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-1 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`w-3.5 h-3.5 ${
-                              i < rev.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-300 leading-relaxed italic">
-                      "{rev.comment}"
-                    </p>
-                  </div>
-                ))
-              )}
-            </div>
+            <ReviewDisplay
+              reviews={reviews.filter(r => r.sellerId === id)}
+              currentUserId={user?.id}
+              onWriteReview={handleOpenReviewModal}
+            />
           </div>
         )}
       </main>
