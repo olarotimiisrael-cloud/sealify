@@ -6,12 +6,12 @@ import {
   Smartphone, 
   Home, 
   Shirt, 
-  Wrench, 
   Armchair, 
+  Wrench, 
   Briefcase, 
   Sparkles,
   Zap,
-  LayoutGrid 
+  LayoutGrid
 } from 'lucide-react';
 
 type CategoryConfig = {
