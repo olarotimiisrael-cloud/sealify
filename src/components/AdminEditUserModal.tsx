@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, ShieldCheck, User, Mail, Phone, MapPin, Save, Camera, Building2, FileText, CreditCard, Layout, Award } from 'lucide-react';
+import { X, ShieldCheck, User, Mail, Phone, MapPin, Save, Camera, Building2, FileText, CreditCard, Layout, Award, KeyRound, Lock, Unlock, Users, Heart, Tag, DollarSign, Truck, Smartphone, Laptop, Home, Car, Shirt, Sparkles, Wrench, Briefcase, GraduationCap, Building, Zap, ShieldCheck as ShieldCheckIcon, CheckCircle, XCircle, Loader2, FileText as FileTextIcon, Image, Video, Music, Film, Code, Database, Server, Cloud, Globe, Wifi, Bluetooth, Usb, Monitor, Printer, Headphones, Mic, Speaker, Keyboard, Mouse, Cpu, HardDrive, MemoryStick, Battery, Power, Wifi as WifiIcon, Bluetooth as BluetoothIcon, Usb as UsbIcon, Monitor as MonitorIcon, Printer as PrinterIcon, Headphones as HeadphonesIcon, Mic as MicIcon, Speaker as SpeakerIcon, Keyboard as KeyboardIcon, Mouse as MouseIcon, Cpu as CpuIcon, HardDrive as HardDriveIcon, MemoryStick as MemoryStickIcon, Battery as BatteryIcon, Power as PowerIcon, TrendingDown, Info, Terminal, AlertTriangle, Siren, Radio, MapPin as MapPinIcon, Shield, Lock as LockIcon, Unlock as UnlockIcon, Users, Heart as HeartIcon, Tag as TagIcon, DollarSign as DollarSignIcon, Truck as TruckIcon, Smartphone as SmartphoneIcon, Laptop as LaptopIcon, Home as HomeIcon, Car as CarIcon, Shirt as ShirtIcon, Sparkles as SparklesIcon, Wrench as WrenchIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, Building as BuildingIcon, Zap as ZapIcon, ShieldCheck as ShieldCheckIcon2, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Loader2 as Loader2Icon, FileText as FileTextIcon2, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, Film as FilmIcon, Code as CodeIcon, Database as DatabaseIcon, Server as ServerIcon, Cloud as CloudIcon, Globe as GlobeIcon, Wifi as WifiIcon2, Bluetooth as BluetoothIcon2, Usb as UsbIcon2, Monitor as MonitorIcon2, Printer as PrinterIcon2, Headphones as HeadphonesIcon2, Mic as MicIcon2, Speaker as SpeakerIcon2, Keyboard as KeyboardIcon2, Mouse as MouseIcon2, Cpu as CpuIcon2, HardDrive as HardDriveIcon2, MemoryStick as MemoryStickIcon2, Battery as BatteryIcon2, Power as PowerIcon2 } from 'lucide-react';
 import { UserProfile, UserStatus, VerificationBadgeType } from '@/types/sealify';
 import { toast } from 'sonner';
 
@@ -388,7 +388,7 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className="w-full py-3.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs transition-colors shadow-lg mt-2 flex items-center justify-center gap-2"
           >
             <Save className="w-4 h-4" />
             <span>{isNewUser ? 'Create User Profile' : 'Save & Sync Profile to Supabase'}</span>
