@@ -358,7 +358,6 @@ const Settings: React.FC = () => {
   const sectionConfig = [
     { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
     { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
-    { id: 'wallet', label: 'Wallet', icon: WalletIcon, desc: 'Balance, transactions, payouts' },
     { id: 'security', label: 'Security', icon: Shield, desc: 'Password, biometric, 2FA, sessions' },
     { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
     { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
