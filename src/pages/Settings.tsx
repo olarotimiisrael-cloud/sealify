@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
-import MobileNav from '../components/MobileNav';
+import MobileNav from '../components/MobileNav'
 import Footer from '../components/Footer';
 import SEO from '../components/SEO';
 import PwaInstallButton from '../components/PwaInstallButton';
@@ -207,70 +207,23 @@ const Settings: React.FC = () => {
     localStorage.getItem('sealify_biometric') === 'true'
   );
 
-  const myAdsCount = listings.filter(l => l.sellerId === user?.id).length;
-  const activeAdsCount = listings.filter(l => l.sellerId === user?.id && l.status === 'active').length;
-  const soldAdsCount = listings.filter(l => l.sellerId === user?.id && l.status === 'sold').length;
-  const totalViews = listings.filter(l => l.sellerId === user?.id).reduce((acc, l) => acc + (l.viewsCount || 0), 0);
-  const totalInventoryValue = listings.filter(l => l.sellerId === user?.id && l.status === 'active').reduce((acc, l) => acc + l.price, 0);
-  const storefrontUrl = `${window.location.origin}/seller/${user?.id}`;
-
-  useEffect(() => {
-    if (user) {
-      setFullName(user.fullName || '');
-      setPhoneNumber(user.phoneNumber || '');
-      setBusinessName(user.businessName || '');
-      setCacNumber(user.cacNumber || '');
-      setBusinessHours(user.businessHours || 'Mon - Sat: 8:00 AM - 7:00 PM');
-      setLocation(user.location || 'Under G, Ogbomoso');
-      setBio(user.bio || '');
-      setAvatarUrl(user.avatarUrl || '');
-      setStoreBannerUrl(user.storeBannerUrl || '');
-
-      setBankName(user.bankName || 'OPay');
-      setAccountNumber(user.accountNumber || '');
-      setAccountName(user.accountName || '');
-
-      setWebsiteUrl(user.websiteUrl || '');
-      setInstagramHandle(user.instagramHandle || '');
-      setTwitterHandle(user.twitterHandle || '');
-
-      setEmailNotifications(user.emailNotifications ?? true);
-      setWhatsappNotifications(user.whatsappNotifications ?? true);
-      setHidePhonePublicly(user.hidePhonePublicly ?? false);
-      setHideLocationPublicly(user.hideLocationPublicly ?? false);
-    }
-  }, [user]);
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-        <SEO title="System Settings — Sealify" />
-        <Navbar />
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-4">
-          <div className="w-16 h-16 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center text-emerald-400">
-            <User className="w-8 h-8" />
-          </div>
-          <h2 className="text-xl font-bold text-white">Login Required</h2>
-          <p className="text-xs text-slate-400 max-w-xs">Please log in to manage your profile settings, store banner, and device preferences.</p>
-          <Link to="/" className="px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs">
-            Return to Home
-          </Link>
-        </div>
-        <MobileNav />
-      </div>
-    );
-  }
+  const myAds = listings.filter((l) => l.sellerId === user?.id);
+  const myVerificationReq = user?.verificationType;
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
 
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        const newAvatar = event.target.result as string;
-        setAvatarUrl(newAvatar);
-        updateUser(user.id, { avatarUrl: newAvatar });
-        toast.success('🎉 Profile picture updated and saved!');
+        const newAvatarUrl = event.target.result as string;
+        updateUser(user.id, { avatarUrl: newAvatarUrl });
+        toast.success('🎉 Profile picture updated!');
       }
     };
     reader.readAsDataURL(file);
@@ -278,14 +231,13 @@ const Settings: React.FC = () => {
 
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        const newBanner = event.target.result as string;
-        setStoreBannerUrl(newBanner);
-        updateUser(user.id, { storeBannerUrl: newBanner });
-        toast.success('🎨 Store cover photo updated and saved!');
+        const newBannerUrl = event.target.result as string;
+        updateUser(user.id, { storeBannerUrl: newBannerUrl });
+        toast.success('🎉 Store cover photo updated!');
       }
     };
     reader.readAsDataURL(file);
@@ -294,7 +246,7 @@ const Settings: React.FC = () => {
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) {
-      toast.error('Full Name cannot be empty');
+      toast.error('Full name is required');
       return;
     }
 
@@ -350,21 +302,10 @@ const Settings: React.FC = () => {
     }).format(Math.abs(amount));
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
-
-  const sectionConfig = [
-    { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
-    { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
-    { id: 'security', label: 'Security', icon: Shield, desc: 'Password, biometric, 2FA, sessions' },
-    { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
-    { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
-  ];
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans">
       <SEO title="Profile & Store Settings — Sealify Nigeria" description="Edit your profile details, cover photo, business information, bank payout details, and app security settings on Sealify." />
       <Navbar />
 
@@ -426,7 +367,14 @@ const Settings: React.FC = () => {
               </div>
 
               <nav className="space-y-1">
-                {sectionConfig.map((section) => (
+                {[
+                  { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
+                  { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
+                  { id: 'wallet', label: 'Wallet', icon: WalletIcon, desc: 'Balance, payouts, transaction history' },
+                  { id: 'security', label: 'Security', icon: Shield, desc: 'Password, biometric, 2FA, sessions' },
+                  { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
+                  { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
+                ].map((section) => (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id as any)}
@@ -446,13 +394,13 @@ const Settings: React.FC = () => {
               </nav>
 
               {isAdmin && (
-                <button
-                  onClick={() => navigate('/admin')}
+                <Link
+                  to="/admin"
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-colors"
                 >
                   <Shield className="w-5 h-5" />
                   <span>Admin Terminal</span>
-                </button>
+                </Link>
               )}
 
               <button
@@ -517,15 +465,15 @@ const Settings: React.FC = () => {
                       </div>
                       <p className="text-xs text-slate-400 font-mono">{user.email}</p>
                       <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start flex-wrap">
-                        <span>Active Ads: <strong className="text-emerald-400 font-black">{activeAdsCount}</strong></span>
-                        <span>Sold: <strong className="text-teal-400 font-black">{soldAdsCount}</strong></span>
-                        <span>Views: <strong className="text-amber-400 font-black">{totalViews}</strong></span>
-                        <span>Value: <strong className="text-purple-400 font-black">{formatNGN(totalInventoryValue)}</strong></span>
+                        <span>Active Ads: <strong className="text-emerald-400 font-black">{myAds.filter((ad) => ad.status === 'active').length}</strong></span>
+                        <span>Sold: <strong className="text-teal-400 font-black">{myAds.filter((ad) => ad.status === 'sold').length}</strong></span>
+                        <span>Valuation: <strong className="text-amber-400 font-black">{formatNGN(myAds.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0))}</strong></span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
+                    {/* Wallet Quick Access */}
                     <Link 
                       to="/wallet"
                       className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-all group"
@@ -539,6 +487,14 @@ const Settings: React.FC = () => {
                     </Link>
 
                     <button
+                      onClick={() => setIsPasswordModalOpen(true)}
+                      className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"
+                    >
+                      <KeyRound className="w-4 h-4 text-emerald-400" />
+                      <span>Reset Password</span>
+                    </button>
+
+                    <button
                       onClick={handleLogout}
                       className="flex items-center gap-1.5 px-4 py-3 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-white font-bold rounded-2xl text-xs border border-rose-500/20 transition-all"
                     >
@@ -550,15 +506,16 @@ const Settings: React.FC = () => {
                       to="/post-ad"
                       className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-lg transition-colors"
                     >
-                      <Plus className="w-4 h-4" />
+                      <PlusCircle className="w-4 h-4" />
                       <span>Post Ad</span>
                     </Link>
                   </div>
                 </div>
 
                 {/* Profile Edit Form */}
-                <form onSubmit={handleSaveProfile} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl">
-                  
+                <form onSubmit={handleSaveProfile} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
                   {/* Personal Info */}
                   <div className="space-y-6">
                     <h3 className="text-lg font-black text-white flex items-center gap-2 pb-3 border-b border-slate-800">
@@ -929,13 +886,13 @@ const Settings: React.FC = () => {
                       <div className="flex gap-2">
                         <input
                           readOnly
-                          value={storefrontUrl}
+                          value={`${window.location.origin}/seller/${user.id}`}
                           className="flex-1 bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-xs font-mono text-emerald-400 focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={() => {
-                            navigator.clipboard.writeText(storefrontUrl);
+                            navigator.clipboard.writeText(`${window.location.origin}/seller/${user.id}`);
                             toast.success('Storefront URL copied to clipboard!');
                           }}
                           className="px-5 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-2xl font-black text-xs shadow-lg transition-transform active:scale-95 shrink-0"
@@ -1125,17 +1082,7 @@ const Settings: React.FC = () => {
                           <p className="text-[10px] text-slate-400">Real-time price drop and buyer inquiry alerts</p>
                         </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if ('Notification' in window) {
-                            Notification.requestPermission().then(p => {
-                              if (p === 'granted') toast.success('Notifications active');
-                            });
-                          }
-                        }}
-                        className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-colors border border-slate-700"
-                      >
+                      <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 font-extrabold rounded-xl text-xs transition-colors border border-slate-700">
                         ENABLE
                       </button>
                     </div>
