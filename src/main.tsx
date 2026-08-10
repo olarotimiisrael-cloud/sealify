@@ -1,19 +1,12 @@
-import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
-import "./globals.css";
-
-// Register PWA Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
+{
     navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW registration failed:', err));
   });
 }
 
-// Aggressive error suppression for development
 if (import.meta.env.DEV) {
   const originalError = console.error;
   const originalWarn = console.warn;
-  
+
   console.error = (...args) => {
     const msg = args[0]?.toString() || '';
     if (
@@ -28,7 +21,7 @@ if (import.meta.env.DEV) {
     }
     originalError.apply(console, args);
   };
-  
+
   console.warn = (...args) => {
     const msg = args[0]?.toString() || '';
     if (
@@ -42,7 +35,6 @@ if (import.meta.env.DEV) {
   };
 }
 
-// Suppress React error overlay
 if (typeof window !== 'undefined') {
   window.addEventListener('error', (e) => {
     if (e.message.includes('Cannot read properties') || e.message.includes('HMR')) {
@@ -51,7 +43,7 @@ if (typeof window !== 'undefined') {
       return false;
     }
   }, true);
-  
+
   window.addEventListener('unhandledrejection', (e) => {
     if (e.reason?.message?.includes('Cannot read properties') || e.reason?.message?.includes('HMR')) {
       e.preventDefault();
@@ -60,4 +52,36 @@ if (typeof window !== 'undefined') {
   }, true);
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </AuthProvider>
+    <Toaster
+      position="bottom-right"
+      richColors
+      toastOptions={{
+        duration: 4000,
+        style: {
+          background: '#0f172a',
+          color: '#f8fafc',
+          border: '1px solid #1e293b',
+        },
+        success: {
+          iconTheme: {
+            primary: '#10b981',
+            secondary: '#0f172a',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary: '#ef4444',
+            secondary: '#0f172a',
+          },
+        },
+      }}
+    />
+  </QueryClientProvider>
+);
