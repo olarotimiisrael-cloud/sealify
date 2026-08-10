@@ -1,63 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSealify } from '../context/SealifyContext';
-import Navbar from '../components/Navbar';
-import SEO from '../components/SEO';
-import AuthModal from '../components/AuthModal';
-import ReportModal from '../components/ReportModal';
-import OfferModal from '../components/OfferModal';
-import ShareQrModal from '../components/ShareQrModal';
-import SafeMeetupModal from '../components/SafeMeetupModal';
-import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
-import InspectionChecklistModal from '../components/InspectionChecklistModal';
-import LightboxModal from '../components/LightboxModal';
-import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
-import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
-import PriceDropAlertModal from '../components/PriceDropAlertModal';
-import SwapProposalModal from '../components/SwapProposalModal';
-import DealQrScannerModal from '../components/DealQrScannerModal';
-import PriceHistoryChart from '../components/PriceHistoryChart';
-import PriceGuard from '../components/PriceGuard';
-import ListingCard from '../components/ListingCard';
-import MobileNav from '../components/MobileNav';
-import VerifiedBadge from '../components/VerifiedBadge';
-import TrustScore from '../components/TrustScore';
-import { 
-  MapPin, 
-  Phone, 
-  MessageSquare, 
-  MessageCircle,
-  Heart, 
-  Calendar,
-  Eye,
-  ShieldAlert,
-  ExternalLink,
-  Tag,
-  Sparkles,
-  QrCode,
-  Shield,
-  Maximize2,
-  Video,
-  Share2,
-  Truck,
-  CheckSquare,
-  Volume2,
-  TrendingDown,
-  Bell,
-  ArrowRightLeft,
-  Sliders,
-  CheckCircle2,
-  AlertCircle,
-  ArrowRight
-} from 'lucide-react';
-import { toast } from 'sonner';
-
-const ListingDetail: React.FC = () => {
+{
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { listings, toggleSaveListing, isSaved, isAuthenticated, sendMessage, addRecentlyViewed, user } = useSealify();
+  const { 
+    user, 
+    isAuthenticated, 
+    sendMessage, 
+    addRecentlyViewed,
+    toggleSaveListing, 
+    isSaved,
+    sealDeal,
+    t
+  } = useSealify();
   
-  const listing = listings.find((l) => l.id === id);
+  // Use real API for listing data
+  const { data: listingData, isLoading, error, refetch } = useListing(id || '');
+  const listing = listingData?.listing;
+  
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showPhone, setShowPhone] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -76,14 +34,30 @@ const ListingDetail: React.FC = () => {
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
+  // Real API mutations
+  const updateListingMutation = useUpdateListing();
+  const deleteListingMutation = useDeleteListing();
+
   useEffect(() => {
     if (listing?.id) {
       addRecentlyViewed(listing.id);
     }
   }, [listing?.id, addRecentlyViewed]);
 
-  // Early return with proper fallback if listing not found
-  if (!listing) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
+        <SEO title="Loading..." />
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  if (error || !listing) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
         <SEO title="Listing Not Found" />
@@ -106,9 +80,7 @@ const ListingDetail: React.FC = () => {
     );
   }
 
-  const relatedListings = listings
-    .filter((l) => l.category === listing.category && l.id !== listing.id)
-    .slice(0, 4);
+  const relatedListings = []; // Would fetch from API in real implementation
 
   const saved = isSaved(listing.id);
 
@@ -187,8 +159,30 @@ const ListingDetail: React.FC = () => {
     navigate('/messages');
   };
 
-  const handleDealSealedInChat = (receiptText: string) => {
-    sendMessage(listing.id, listing.sellerId, receiptText);
+  const handleDealSealedInChat = (receiptMsg: string) => {
+    sendMessage(listing.id, listing.sellerId, receiptMsg);
+  };
+
+  const handleDeleteListing = async () => {
+    if (!confirm('Are you sure you want to delete this listing?')) return;
+    try {
+      await deleteListingMutation.mutateAsync(listing.id);
+      toast.success('Listing deleted');
+      navigate('/my-ads');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete listing');
+    }
+  };
+
+  const handleMarkAsSold = async () => {
+    try {
+      await updateListingMutation.mutateAsync({ id: listing.id, data: { status: 'sold' } });
+      toast.success('Listing marked as sold!');
+      sealDeal(listing.title, listing.sellerName, listing.price);
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to mark as sold');
+    }
   };
 
   const hasSpecs = listing.specifications && Object.keys(listing.specifications).length > 0;
@@ -207,8 +201,6 @@ const ListingDetail: React.FC = () => {
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
         <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            
-            {/* Handover QR Authenticator Trigger */}
             <button
               onClick={() => setIsDealScannerOpen(true)}
               className="p-2 bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1.5 text-xs font-black shadow-lg rounded-xl hover:scale-105 transition-all"
@@ -218,7 +210,6 @@ const ListingDetail: React.FC = () => {
               <span>Verify Handover PIN</span>
             </button>
 
-            {/* AI Voice Tour Trigger */}
             <button
               onClick={() => setIsVoiceTourOpen(true)}
               className="p-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/40 rounded-xl text-emerald-400 hover:text-white flex items-center gap-1.5 text-xs font-black shadow-lg hover:scale-105 transition-all"
@@ -283,11 +274,11 @@ const ListingDetail: React.FC = () => {
               onClick={() => toggleSaveListing(listing.id)}
               className={`p-2 border rounded-xl transition-colors ${
                 saved
-                  ? 'bg-red-500/20 border-red-500 text-red-400'
+                  ? 'bg-rose-500/20 border-rose-500 text-rose-400'
                   : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
               }`}
             >
-              <Heart className={`w-4 h-4 ${saved ? 'fill-red-500' : ''}`} />
+              <Heart className={`w-4 h-4 ${saved ? 'fill-white' : ''}`} />
             </button>
           </div>
         </div>
@@ -351,12 +342,11 @@ const ListingDetail: React.FC = () => {
                 </div>
 
                 <div className="text-right shrink-0">
-                  <p className="text-3xl font-black text-emerald-400">{formattedPrice}</p>
+                  <p className="text-3xl font-black text-emerald-400">{formatNGN(listing.price)}</p>
                   <p className="text-xs text-slate-400 mt-1 font-semibold">{listing.condition}</p>
                 </div>
               </div>
 
-              {/* Technical Specs Grid if present */}
               {hasSpecs && (
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
                   <h3 className="text-xs font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -447,7 +437,7 @@ const ListingDetail: React.FC = () => {
                   </button>
 
                   <a
-                    href={whatsappUrl}
+                    href={`https://wa.me/${listing.sellerPhone?.replace(/[^0-9]/g, '') || ''}?text=${encodeURIComponent(`Hello ${listing.sellerName}, I saw your ad on Sealify: "${listing.title}" (${formatNGN(listing.price)})`)}`}
                     target="_blank"
                     rel="noreferrer"
                     className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md"
@@ -476,32 +466,55 @@ const ListingDetail: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 space-y-3">
-              <h4 className="text-[10px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                <Shield className="w-4 h-4" /> Safety Checklist
-              </h4>
-              <ul className="text-xs text-slate-400 space-y-2 list-disc list-inside">
-                <li>Meet in a public, well-lit area.</li>
-                <li>Inspect item thoroughly before paying.</li>
-                <li>Avoid wire transfers or advance deposits.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+            {isOwner && (
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4">
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-emerald-400" />
+                  <span>Owner Actions</span>
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => updateListingMutation.mutate({ id: listing.id, data: { status: listing.status === 'active' ? 'sold' : 'active' } })}
+                    className="py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{listing.status === 'active' ? 'Mark as Sold' : 'Relist'}</span>
+                  </button>
 
-        {relatedListings.length > 0 && (
-          <div className="space-y-4 pt-6 border-t border-slate-800">
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-emerald-400" />
-              Similar Ads in {listing.category}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-              {relatedListings.map((rel) => (
-                <ListingCard key={rel.id} listing={rel} />
-              ))}
-            </div>
+                  <button
+                    onClick={handleDeleteListing}
+                    className="py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Listing</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsFlyerOpen(true)}
+                    className="py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    <span>Generate Promo Card</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+
+          {relatedListings.length > 0 && (
+            <div className="space-y-4 pt-6 border-t border-slate-800">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-emerald-400" />
+                Similar Ads in {listing.category}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+                {relatedListings.map((rel) => (
+                  <ListingCard key={rel.id} listing={rel} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </main>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />

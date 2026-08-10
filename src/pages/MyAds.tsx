@@ -1,55 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { useSealify } from '../context/SealifyContext';
-import Navbar from '../components/Navbar';
-import MobileNav from '../components/MobileNav';
-import SEO from '../components/SEO';
-import EditListingModal from '../components/EditListingModal';
-import PromoteModal from '../components/PromoteModal';
-import VerificationModal from '../components/VerificationModal';
-import SalesReportModal from '../components/SalesReportModal';
-import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
-import AdAnalyticsModal from '../components/AdAnalyticsModal';
-import VerifiedBadge from '../components/VerifiedBadge';
-import { Listing } from '../types/sealify';
-import { 
-  Trash2, 
-  PlusCircle, 
-  Edit3, 
-  Award, 
-  Crown,
-  RefreshCw,
-  Eye,
-  Package,
-  FileSpreadsheet,
-  Share2,
-  Camera,
-  LogOut,
-  User,
-  Wallet as WalletIcon,
-  ChevronRight,
-  TrendingUp,
-  Clock,
-  ShieldCheck,
-  CheckCircle2,
-  XCircle,
-  Database,
-  Search,
-  SlidersHorizontal
-} from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
-
-type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
-
-const MyAds: React.FC = () => {
+{
   const { 
     user, 
     logout, 
-    listings, 
-    deleteListing, 
-    updateListing, 
-    promoteListing, 
     updateUser, 
+    promoteListing, 
     wallet,
     verificationRequests,
     isSyncing,
@@ -60,6 +14,12 @@ const MyAds: React.FC = () => {
   const navigate = useNavigate();
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  // Real API hooks
+  const { data: myListingsData, refetch: refetchMyListings } = useMyListings();
+  const updateListingMutation = useUpdateListing();
+  const deleteListingMutation = useDeleteListing();
+  const createListingMutation = useCreateListing();
+
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
   const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
@@ -69,8 +29,7 @@ const MyAds: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const myAds = listings.filter((l) => l.sellerId === user?.id);
-  const myVerificationReq = verificationRequests.find(r => r.userId === user?.id);
+  const myListings = myListingsData?.listings || [];
   
   const handleLogout = () => {
     logout();
@@ -91,7 +50,7 @@ const MyAds: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const filteredAds = myAds.filter((ad) => {
+  const filteredAds = myListings.filter((ad) => {
     if (statusFilter === 'active' && ad.status !== 'active') return false;
     if (statusFilter === 'sold' && ad.status !== 'sold') return false;
     if (statusFilter === 'featured' && !ad.featured) return false;
@@ -103,14 +62,27 @@ const MyAds: React.FC = () => {
     return true;
   });
 
-  const totalImpressions = myAds.reduce((acc, ad) => acc + (ad.viewsCount || 0), 0);
-  const activeCount = myAds.filter((ad) => ad.status === 'active').length;
-  const soldCount = myAds.filter((ad) => ad.status === 'sold').length;
-  const totalInventoryValuation = myAds.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0);
+  const totalImpressions = myListings.reduce((acc, ad) => acc + (ad.viewsCount || 0), 0);
+  const activeCount = myListings.filter((ad) => ad.status === 'active').length;
+  const soldCount = myListings.filter((ad) => ad.status === 'sold').length;
+  const totalInventoryValuation = myListings.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0);
 
-  const handleBumpAd = (ad: Listing) => {
-    updateListing(ad.id, { createdAt: 'Just now' });
-    toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+  const handleBumpAd = async (ad: Listing) => {
+    try {
+      await api.put(`/listings/${ad.id}`, { createdAt: new Date().toISOString() });
+      toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to bump ad');
+    }
+  };
+
+  const handleBumpAdApi = async (ad: Listing) => {
+    try {
+      await api.put(`/listings/${ad.id}`, { createdAt: 'Just now' });
+      toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to bump ad');
+    }
   };
 
   const formatNGN = (amount: number) => {
@@ -195,15 +167,14 @@ const MyAds: React.FC = () => {
               </div>
               <p className="text-xs text-slate-400 font-mono">{user.email}</p>
               <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-400 justify-center sm:justify-start flex-wrap">
-                <span>Active Ads: <strong className="text-emerald-400 font-black">{activeCount}</strong></span>
-                <span>Sold: <strong className="text-teal-400 font-black">{soldCount}</strong></span>
-                <span>Valuation: <strong className="text-amber-400 font-black">{formatNGN(totalInventoryValuation)}</strong></span>
+                <span>Active Ads: <strong className="text-emerald-400 font-black">{myListings.filter((ad) => ad.status === 'active').length}</strong></span>
+                <span>Sold: <strong className="text-teal-400 font-black">{myListings.filter((ad) => ad.status === 'sold').length}</strong></span>
+                <span>Valuation: <strong className="text-amber-400 font-black">{formatNGN(myListings.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0))}</strong></span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
-            {/* Wallet Quick Access */}
             <Link 
               to="/wallet"
               className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-all group"
@@ -344,36 +315,22 @@ const MyAds: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-                  <button onClick={() => setAnalyticsListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-blue-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span>Stats</span>
+                  <button onClick={() => handleBumpAdApi(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Bump</span>
                   </button>
 
-                  <button onClick={() => setFlycardListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors" title="Generate Social Promo Card">
-                    <Share2 className="w-3.5 h-3.5" />
-                    <span>Promo Card</span>
+                  <button onClick={() => setEditingListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors">
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
                   </button>
 
-                  {ad.status === 'active' && (
-                    <>
-                      <button onClick={() => handleBumpAd(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-emerald-400 font-bold rounded-xl text-xs border border-slate-700 transition-colors">
-                        <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Bump</span>
-                      </button>
+                  <button onClick={() => setPromotingListing(ad)} className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs shadow-lg">
+                    <Crown className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Promote</span>
+                  </button>
 
-                      <button onClick={() => setEditingListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors">
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Edit</span>
-                      </button>
-
-                      <button onClick={() => setPromotingListing(ad)} className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black rounded-xl text-xs shadow-lg">
-                        <Crown className="w-3.5 h-3.5 text-amber-300" />
-                        <span>Promote</span>
-                      </button>
-                    </>
-                  )}
-
-                  <button onClick={() => deleteListing(ad.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors">
+                  <button onClick={() => deleteListingMutation.mutate(ad.id)} className="p-2 bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-xl transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -383,10 +340,10 @@ const MyAds: React.FC = () => {
         )}
       </main>
 
-      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={updateListing} />
+      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={async (id, updates) => { await api.put(`/listings/${id}`, updates); refetchMyListings(); }} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
-      <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myAds} />
+      <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myListings} />
       <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
       
       {flycardListing && (

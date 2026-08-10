@@ -1,33 +1,14 @@
-import React, { useState, useRef } from 'react';
-import { useSealify } from '../context/SealifyContext';
-import Navbar from '../components/Navbar';
-import AuthModal from '../components/AuthModal';
-import MobileNav from '../components/MobileNav';
-import SafeMeetupModal from '../components/SafeMeetupModal';
-import OfferModal from '../components/OfferModal';
-import SwapProposalModal from '../components/SwapProposalModal';
-import InspectionChecklistModal from '../components/InspectionChecklistModal';
-import TransactionReceiptModal from '../components/TransactionReceiptModal';
-import EscrowInitiatorModal from '../components/EscrowInitiatorModal';
-import SEO from '../components/SEO';
-import { MessageSquare, Send, Sparkles, MapPin, Tag, ShieldCheck, Image as ImageIcon, Mic, Paperclip, CheckSquare, CheckCircle2, Check, Lock, X, ArrowRightLeft } from 'lucide-react';
-import { toast } from 'sonner';
-
-const QUICK_REPLIES = [
-  'Is the price negotiable?',
-  'Can I inspect it today?',
-  'What is your best price?',
-  'Are you open to item swaps?',
-  'Is delivery available?',
-];
-
-const Messages: React.FC = () => {
-  const { conversations, sendMessage, isAuthenticated, user, listings, sealDeal } = useSealify();
+{
+  const { conversations, sendMessage, isAuthenticated, user, listings } = useSealify();
   const [activeConvId, setActiveConvId] = useState<string>(conversations[0]?.id || '');
   const [text, setText] = useState('');
   const [isAuthOpen, setIsAuthOpen] = useState(!isAuthenticated);
 
-  // Modals inside chat
+  // Real API hooks
+  const { data: conversationsData, refetch: refetchConversations } = useConversations();
+  const { data: messagesData, refetch: refetchMessages } = useMessages(activeConvId);
+  const sendMessageMutation = useSendMessage();
+
   const [isMeetupOpen, setIsMeetupOpen] = useState(false);
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isSwapOpen, setIsSwapOpen] = useState(false);
@@ -38,27 +19,45 @@ const Messages: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const activeConv = conversations.find((c) => c.id === activeConvId) || conversations[0];
-  const activeListing = listings.find((l) => l.id === activeConv?.listingId);
+  const activeConv = conversationsData?.conversations?.find((c) => c.id === activeConvId) || conversationsData?.conversations?.[0];
+  const activeListing = activeConv ? listings.find((l) => l.id === activeConv.listingId) : undefined;
 
   const isSeller = activeListing?.sellerId === user?.id;
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, text);
-    setText('');
+    try {
+      await sendMessageMutation.mutateAsync({
+        conversationId: activeConv.id,
+        receiverId: activeConv.otherUser.id,
+        content: text,
+      });
+      setText('');
+      refetchMessages();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send message');
+    }
   };
 
   const handleQuickReply = (reply: string) => {
     if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, reply);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.id,
+      receiverId: activeConv.otherUser.id,
+      content: reply,
+    });
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && activeConv) {
-      sendMessage(activeConv.listingId, activeConv.otherUser.id, `📷 Attached inspection photo for product verification.`);
+      // TODO: Upload to Supabase Storage
+      sendMessageMutation.mutate({
+        conversationId: activeConv.listingId,
+        receiverId: activeConv.otherUser.id,
+        content: `📷 Attached inspection photo for product verification.`,
+      });
       toast.success('Inspection photo sent to seller!');
     }
   };
@@ -70,7 +69,11 @@ const Messages: React.FC = () => {
       toast.info('Recording voice note... Click microphone again to send.');
     } else {
       setIsRecordingVoice(false);
-      sendMessage(activeConv.listingId, activeConv.otherUser.id, `🎙️ Voice Note (0:14 secs) — Click to play audio message.`);
+      sendMessageMutation.mutate({
+        conversationId: activeConv.listingId,
+        receiverId: activeConv.otherUser.id,
+        content: `🎙️ Voice Note (0:14 secs) — Click to play audio message.`,
+      });
       toast.success('Voice note audio message sent!');
     }
   };
@@ -78,33 +81,56 @@ const Messages: React.FC = () => {
   const handleSelectMeetupSpot = (spotName: string, spotAddress: string) => {
     if (!activeConv) return;
     const meetupProposal = `📍 PROPOSED SAFE MEETUP LOCATION:\n${spotName}\n${spotAddress}`;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, meetupProposal);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.id,
+      receiverId: activeConv.otherUser.id,
+      content: meetupProposal,
+    });
   };
 
   const handleSendOffer = (offerPrice: number, offerMsg: string) => {
     if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, offerMsg);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.id,
+      receiverId: activeConv.otherUser.id,
+      content: offerMsg,
+    });
   };
 
   const handleSendSwap = (swapMsg: string) => {
     if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, swapMsg);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.id,
+      receiverId: activeConv.otherUser.id,
+      content: swapMsg,
+    });
   };
 
   const handleSendInspectionReport = (reportMsg: string) => {
     if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, reportMsg);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.listingId,
+      receiverId: activeConv.otherUser.id,
+      content: reportMsg,
+    });
   };
 
   const handleSealTheDeal = (receiptMsg: string) => {
-    if (!activeConv || !activeListing) return;
-    sealDeal(activeListing.id, activeConv.otherUser.name, activeListing.price);
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, receiptMsg);
+    if (!activeConv) return;
+    sendMessageMutation.mutate({
+      conversationId: activeConv.listingId,
+      receiverId: activeConv.otherUser.id,
+      content: receiptMsg,
+    });
   };
 
   const handleAcceptOfferInline = (offerText: string) => {
     if (!activeConv) return;
-    sendMessage(activeConv.listingId, activeConv.otherUser.id, `✅ OFFER ACCEPTED! I accept your proposal. Let's arrange a safe meetup inspection.`);
+    sendMessageMutation.mutate({
+      conversationId: activeConv.id,
+      receiverId: activeConv.otherUser.id,
+      content: `✅ OFFER ACCEPTED! I accept your proposal. Let's arrange a safe meetup inspection.`,
+    });
     toast.success('Offer accepted! Confirmation sent.');
   };
 
@@ -133,6 +159,10 @@ const Messages: React.FC = () => {
     );
   }
 
+  const conversationsList = conversationsData?.conversations || conversations;
+  const activeConvData = activeConv || conversationsList[0];
+  const activeConvMessages = messagesData?.messages || activeConvData?.messages || [];
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">
       <SEO 
@@ -148,12 +178,12 @@ const Messages: React.FC = () => {
             <div className="p-4 border-b border-slate-800 font-bold text-base text-white flex items-center justify-between">
               <span>Inbox Threads</span>
               <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-extrabold">
-                {conversations.length} chats
+                {conversationsList.length} chats
               </span>
             </div>
 
             <div className="flex-1 overflow-y-auto divide-y divide-slate-800/50">
-              {conversations.map((c) => (
+              {conversationsList.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => setActiveConvId(c.id)}
@@ -176,20 +206,20 @@ const Messages: React.FC = () => {
           </div>
 
           {/* Active Chat Window */}
-          {activeConv ? (
+          {activeConvData ? (
             <div className="flex-1 flex flex-col bg-slate-950">
               {/* Chat Header */}
               <div className="p-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-3">
-                  <img src={activeConv.otherUser.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
+                  <img src={activeConvData.otherUser.avatar} className="w-10 h-10 rounded-xl object-cover border border-slate-700" />
                   <div>
-                    <h3 className="font-bold text-sm text-white leading-tight">{activeConv.otherUser.name}</h3>
-                    <p className="text-xs text-emerald-400 font-semibold">{activeConv.listingTitle} (₦{activeConv.listingPrice.toLocaleString()})</p>
+                    <h3 className="font-bold text-sm text-white leading-tight">{activeConvData.otherUser.name}</h3>
+                    <p className="text-xs text-emerald-400 font-semibold">{activeConvData.listingTitle} (₦{activeConvData.listingPrice.toLocaleString()})</p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {isSeller && activeListing?.status === 'active' && (
+                  {activeListing?.sellerId === user?.id && activeListing?.status === 'active' && (
                     <button
                       onClick={() => setIsReceiptOpen(true)}
                       className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
@@ -243,7 +273,7 @@ const Messages: React.FC = () => {
 
               {/* Messages History */}
               <div className="flex-1 p-4 overflow-y-auto space-y-3">
-                {activeConv.messages.map((m) => {
+                {activeConvMessages.map((m) => {
                   const isMe = m.senderId === user?.id;
                   const isLocationMsg = m.content.includes('PROPOSED SAFE MEETUP LOCATION');
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
@@ -363,12 +393,12 @@ const Messages: React.FC = () => {
                 </button>
               </form>
             </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-6 text-slate-500 text-xs">
-              Select a conversation from the sidebar to start chatting
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex-1 flex items-center justify-center p-6 text-slate-500 text-xs">
+            Select a conversation from the sidebar to start chatting
+          </div>
+        )}
       </main>
 
       <SafeMeetupModal
@@ -410,7 +440,11 @@ const Messages: React.FC = () => {
         price={activeConv?.listingPrice || 0}
         sellerName={activeConv?.otherUser.name || 'Merchant'}
         onSendEscrowToChat={(msg) => {
-          if (activeConv) sendMessage(activeConv.listingId, activeConv.otherUser.id, msg);
+          if (activeConv) sendMessageMutation.mutate({
+            conversationId: activeConv.id,
+            receiverId: activeConv.otherUser.id,
+            content: msg,
+          });
         }}
       />
 
