@@ -1,54 +1,99 @@
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, sanitizeInput, auditLog } from "../middleware/security";
+import { z } from "zod";
 
-export const authRoutes = new Hono();
+export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
-// Initialize Supabase client for auth operations
-function getSupabaseClient(env: any) {
-  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
-}
+// Validation schemas
+const registerSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(128),
+  fullName: z.string().min(2, "Name too short").max(100).regex(/^[a-zA-Z\s'-]+$/, "Invalid name format"),
+  phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+});
 
-// Register new user
-authRoutes.post("/register", async (c) => {
+const loginSchema = z.object({
+  email: z.string().email("Invalid email format"),
+  password: z.string().min(1, "Password required"),
+});
+
+const updateProfileSchema = z.object({
+  fullName: z.string().min(2).max(100).optional(),
+  phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/).optional().nullable(),
+  bio: z.string().max(500).optional().nullable(),
+  location: z.string().max(100).optional().nullable(),
+  businessName: z.string().max(100).optional().nullable(),
+  businessCategory: z.string().max(50).optional().nullable(),
+  businessAddress: z.string().max(200).optional().nullable(),
+  bankName: z.string().max(100).optional().nullable(),
+  accountNumber: z.string().max(20).optional().nullable(),
+  accountName: z.string().max(100).optional().nullable(),
+  websiteUrl: z.string().url().optional().nullable(),
+  instagramHandle: z.string().max(50).optional().nullable(),
+  twitterHandle: z.string().max(50).optional().nullable(),
+  whatsappNumber: z.string().max(20).optional().nullable(),
+  emailNotifications: z.boolean().optional(),
+  whatsappNotifications: z.boolean().optional(),
+  hidePhonePublicly: z.boolean().optional(),
+  hideLocationPublicly: z.boolean().optional(),
+});
+
+// Rate limiting for auth endpoints
+const authRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }); // 10 req/15min
+
+// Register
+authRoutes.post("/register", authRateLimit, async (c) => {
   try {
     const env = c.env as any;
     const body = await c.req.json();
-    const { email, password, fullName, phoneNumber } = body;
 
-    if (!email || !password || !fullName) {
-      return c.json({ error: "Email, password, and full name are required" }, 400);
+    // Validate input
+    const validated = registerSchema.parse(body);
+    const { email, password, fullName, phoneNumber } = validated;
+
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const sql = getSql(env);
+
+    // Check if user already exists
+    const { data: existing } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (existing) {
+      throw new HTTPException(409, { message: "Email already registered" });
     }
 
-    const supabase = getSupabaseClient(env);
-    
     // Create auth user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          full_name: fullName,
+          full_name: sanitizeInput(fullName),
           phone: phoneNumber,
         }
       }
     });
 
     if (authError) {
-      return c.json({ error: authError.message }, 400);
+      throw new HTTPException(400, { message: authError.message });
     }
 
     if (!authData.user) {
-      return c.json({ error: "Failed to create user" }, 500);
+      throw new HTTPException(500, { message: "Failed to create user" });
     }
 
-    // Create profile in database
-    const sql = getSql(env);
     const userId = authData.user.id;
-    
+
+    // Create profile in database
     await sql`
       INSERT INTO profiles (id, email, full_name, phone_number, role, status, location, verified, verification_type, created_at, updated_at)
-      VALUES (${userId}, ${email}, ${fullName}, ${phoneNumber || null}, 'buyer', 'active', 'Ogbomoso, Oyo State', false, 'none', NOW(), NOW())
+      VALUES (${userId}, ${email}, ${sanitizeInput(fullName)}, ${phoneNumber || null}, 'buyer', 'active', 'Ogbomoso, Oyo State', false, 'none', NOW(), NOW())
       ON CONFLICT (id) DO UPDATE SET
         full_name = EXCLUDED.full_name,
         phone_number = EXCLUDED.phone_number,
@@ -69,50 +114,56 @@ authRoutes.post("/register", async (c) => {
       ON CONFLICT (user_id) DO NOTHING
     `;
 
+    await auditLog(getSql(c.env), userId, "User Registered", `New user registered: ${email}`, "user");
+
     return c.json({
       user: {
         id: userId,
         email,
-        fullName,
+        fullName: sanitizeInput(fullName),
         phoneNumber,
         role: "buyer",
-        verified: false
+        verified: false,
       },
       session: authData.session
     }, 201);
   } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    if (error instanceof z.ZodError) {
+      throw new HTTPException(400, { message: "Validation failed", cause: error.errors });
+    }
     console.error("Registration error:", error);
-    return c.json({ error: "Registration failed" }, 500);
+    throw new HTTPException(500, { message: "Registration failed" });
   }
 });
 
 // Login
-authRoutes.post("/login", async (c) => {
+authRoutes.post("/login", authRateLimit, async (c) => {
   try {
     const env = c.env as any;
     const body = await c.req.json();
-    const { email, password } = body;
+    const validated = loginSchema.parse(body);
+    const { email, password } = validated;
 
-    if (!email || !password) {
-      return c.json({ error: "Email and password are required" }, 400);
-    }
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const sql = getSql(c.env);
 
-    const supabase = getSupabaseClient(env);
-    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
-      return c.json({ error: error.message }, 401);
+      await auditLog(sql, "unknown", "Login Failed", `Failed login attempt for ${email}`, "security");
+      throw new HTTPException(401, { message: error.message });
     }
 
     // Get user profile from database
-    const sql = getSql(env);
     const profile = await sql`
       SELECT * FROM profiles WHERE id = ${data.user.id}
     `;
+
+    await auditLog(sql, data.user.id, "User Login", `Successful login for ${email}`, "user");
 
     return c.json({
       user: profile[0] || {
@@ -124,8 +175,12 @@ authRoutes.post("/login", async (c) => {
       session: data.session
     });
   } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    if (error instanceof z.ZodError) {
+      throw new HTTPException(400, { message: "Validation failed", cause: error.errors });
+    }
     console.error("Login error:", error);
-    return c.json({ error: "Login failed" }, 500);
+    throw new HTTPException(500, { message: "Login failed" });
   }
 });
 
@@ -134,29 +189,30 @@ authRoutes.get("/me", async (c) => {
   try {
     const env = c.env as any;
     const authHeader = c.req.header("Authorization");
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return c.json({ error: "Unauthorized" }, 401);
+      throw new HTTPException(401, { message: "Unauthorized" });
     }
 
     const token = authHeader.substring(7);
-    const supabase = getSupabaseClient(env);
-    
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
-      return c.json({ error: "Invalid token" }, 401);
+      throw new HTTPException(401, { message: "Invalid token" });
     }
 
-    const sql = getSql(env);
+    const sql = getSql(c.env);
     const profile = await sql`
       SELECT * FROM profiles WHERE id = ${user.id}
     `;
 
     return c.json({ user: profile[0] || null });
   } catch (error) {
+    if (error instanceof HTTPException) throw error;
     console.error("Get user error:", error);
-    return c.json({ error: "Failed to get user" }, 500);
+    throw new HTTPException(500, { message: "Failed to get user" });
   }
 });
 
@@ -165,25 +221,26 @@ authRoutes.put("/profile", async (c) => {
   try {
     const env = c.env as any;
     const authHeader = c.req.header("Authorization");
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return c.json({ error: "Unauthorized" }, 401);
+      throw new HTTPException(401, { message: "Unauthorized" });
     }
 
     const token = authHeader.substring(7);
-    const supabase = getSupabaseClient(env);
-    
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
     const { data: { user }, error } = await supabase.auth.getUser(token);
-    
+
     if (error || !user) {
-      return c.json({ error: "Invalid token" }, 401);
+      throw new HTTPException(401, { message: "Invalid token" });
     }
 
     const body = await c.req.json();
-    const sql = getSql(env);
-    
+    const validated = updateProfileSchema.parse(body);
+    const sql = getSql(c.env);
+
     const allowedFields = [
-      'full_name', 'phone_number', 'avatar_url', 'cover_url',
+      'full_name', 'phone_number', 'avatar_url', 'store_banner_url',
       'bio', 'location', 'business_name', 'cac_number', 'business_hours',
       'bank_name', 'account_number', 'account_name',
       'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',
@@ -192,22 +249,33 @@ authRoutes.put("/profile", async (c) => {
 
     const updates: any = { updated_at: new Date() };
     for (const field of allowedFields) {
-      if (body[field] !== undefined) {
-        updates[field] = body[field];
+      if (validated[field as keyof typeof validated] !== undefined) {
+        updates[field] = validated[field as keyof typeof validated];
+      }
+    }
+
+    // Sanitize string fields
+    for (const key of Object.keys(updates)) {
+      if (typeof updates[key] === 'string') {
+        updates[key] = sanitizeInput(updates[key]);
       }
     }
 
     await sql`
-      UPDATE profiles SET 
-        ${sql(updates)}
-      WHERE id = ${user.id}
+      UPDATE profiles SET ${sql(updates)} WHERE id = ${user.id}
     `;
+
+    await auditLog(getSql(c.env), user.id, "Profile Updated", "User updated their profile", "user");
 
     const updated = await sql`SELECT * FROM profiles WHERE id = ${user.id}`;
     return c.json({ user: updated[0] });
   } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    if (error instanceof z.ZodError) {
+      throw new HTTPException(400, { message: "Validation failed", cause: error.errors });
+    }
     console.error("Update profile error:", error);
-    return c.json({ error: "Failed to update profile" }, 500);
+    throw new HTTPException(500, { message: "Failed to update profile" });
   }
 });
 
@@ -216,19 +284,139 @@ authRoutes.post("/logout", async (c) => {
   try {
     const env = c.env as any;
     const authHeader = c.req.header("Authorization");
-    
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return c.json({ error: "Unauthorized" }, 401);
+      throw new HTTPException(401, { message: "Unauthorized" });
     }
 
     const token = authHeader.substring(7);
-    const supabase = getSupabaseClient(env);
-    
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
     await supabase.auth.signOut();
-    
+
     return c.json({ success: true });
   } catch (error) {
     console.error("Logout error:", error);
-    return c.json({ error: "Logout failed" }, 500);
+    throw new HTTPException(500, { message: "Logout failed" });
   }
 });
+
+// Request password reset (with NIN verification)
+authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { email, nin, idDocumentUrl, newPassword, reason } = body;
+
+    if (!email || !nin || !idDocumentUrl || !newPassword || !reason) {
+      throw new HTTPException(400, { message: "All fields required" });
+    }
+
+    if (newPassword.length < 8) {
+      throw new HTTPException(400, { message: "Password must be at least 8 characters" });
+    }
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    // Find user by email
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .eq("email", email)
+      .single();
+
+    if (!profile) {
+      // Don't reveal if email exists
+      return c.json({ success: true, message: "If the email exists, a reset request has been queued" });
+    }
+
+    // Create password reset request
+    await sql`
+      INSERT INTO password_requests (user_id, user_email, user_name, nin, id_document_url, new_password_hash, reason, status, created_at, updated_at)
+      VALUES (${profile.id}, ${email}, ${profile.full_name}, ${nin}, ${idDocumentUrl}, ${newPassword}, ${reason}, 'pending', NOW(), NOW())
+    `;
+
+    await auditLog(getSql(c.env), profile.id, "Password Reset Requested", `Password reset requested for ${email}`, "security");
+
+    return c.json({ success: true, message: "Password reset request submitted for admin review" });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Password reset request error:", error);
+    throw new HTTPException(500, { message: "Failed to process request" });
+  }
+});
+
+// Send phone OTP
+authRoutes.post("/phone/otp", authRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { phone } = body;
+
+    if (!phone) {
+      throw new HTTPException(400, { message: "Phone number required" });
+    }
+
+    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    // In production, integrate with Termii/Arkesel/Twilio
+    // For now, generate a mock OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Store OTP in database with expiry (5 minutes)
+    const sql = getSql(c.env);
+    await sql`
+      INSERT INTO phone_otps (phone, otp, expires_at, created_at)
+      VALUES (${phone}, ${otp}, NOW() + INTERVAL '5 minutes', NOW())
+      ON CONFLICT (phone) DO UPDATE SET
+        otp = EXCLUDED.otp,
+        expires_at = EXCLUDED.expires_at,
+        created_at = NOW()
+    `;
+
+    // TODO: Send via SMS provider (Termii/Arkesel)
+    console.log(`OTP for ${phone}: ${otp}`);
+
+    return c.json({ success: true, message: "OTP sent" });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Send OTP error:", error);
+    throw new HTTPException(500, { message: "Failed to send OTP" });
+  }
+});
+
+// Verify phone OTP
+authRoutes.post("/phone/verify", authRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { phone, otp } = body;
+
+    if (!phone || !otp) {
+      throw new HTTPException(400, { message: "Phone and OTP required" });
+    }
+
+    const sql = getSql(c.env);
+
+    const result = await sql`
+      SELECT * FROM phone_otps
+      WHERE phone = ${phone} AND otp = ${otp} AND expires_at > NOW()
+    `;
+
+    if (result.length === 0) {
+      throw new HTTPException(400, { message: "Invalid or expired OTP" });
+    }
+
+    // Delete used OTP
+    await sql`DELETE FROM phone_otps WHERE phone = ${phone}`;
+
+    return c.json({ success: true, message: "Phone verified" });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Verify OTP error:", error);
+    throw new HTTPException(500, { message: "Verification failed" });
+  }
+});
+
+export default authRoutes;
