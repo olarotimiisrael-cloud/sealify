@@ -8,9 +8,7 @@ const AI_Copilot: React.FC = () => {
   const [response, setResponse] = useState('');
 
   useEffect(() => {
-    // This is where we'll implement NLP and data lookup
     const handleQuery = async () => {
-      // Example: Search for listings matching the query
       const results = listings.filter(item =>
         item.title.toLowerCase().includes(query.toLowerCase()) ||
         item.description.toLowerCase().includes(query.toLowerCase()) ||

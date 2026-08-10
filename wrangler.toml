@@ -1,43 +1,10 @@
 name = "sealify-nigeria"
-main = "src/entry-server.tsx"
 compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
 
-[build]
-command = "npm run build"
-cwd = "."
+[env.production]
+NODE_VERSION = "20"
 
-[dev]
-port = 5173
-ip = "0.0.0.0"
-
-# Environment variables (set in Cloudflare Dashboard)
-# VITE_SUPABASE_URL
-# VITE_SUPABASE_ANON_KEY
-# NEXT_PUBLIC_SUPABASE_URL
-# SUPABASE_ANON_KEY
-# SUPABASE_SERVICE_ROLE_KEY
-# VAPID_PUBLIC_KEY
-# VAPID_PRIVATE_KEY
-
-# KV Namespace for session/rate limiting (create in Cloudflare Dashboard first)
-# kv_namespaces = [
-#   { binding = "SESSION_KV", id = "your-kv-namespace-id", preview_id = "your-preview-kv-id" }
-# ]
-
-# D1 Database (if using Cloudflare D1 instead of Supabase)
-# d1_databases = [
-#   { binding = "DB", database_name = "sealify", database_id = "your-d1-id" }
-# ]
-
-# Hyperdrive for Supabase connection pooling (optional)
-# hyperdrive = [
-#   { binding = "HYPERDRIVE", id = "your-hyperdrive-id" }
-# ]
-
-[assets]
-directory = "dist"
-binding = "ASSETS"
-not_found_handling = "single-page-application"
-
-# Security headers are handled via public/_headers file
+# Remove placeholder SESSION_KV binding - not used in application
+# If KV is needed later, create namespace via: wrangler kv:namespace create "SESSION_KV"
+# Then add binding with actual namespace ID

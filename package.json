@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "deploy": "wrangler pages deploy dist",
-    "cf-typegen": "wrangler types --env-interface CloudflareEnv"
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

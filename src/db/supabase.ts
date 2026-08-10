@@ -1,17 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Server-side Supabase client with service role key
-// NEVER import this in client-side code (src/)
-// Only use in Cloudflare Workers (server/) and API routes
-
+// This file is for server-side use only (Cloudflare Workers, API routes)
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('⚠️ Server-side Supabase credentials missing!');
+  console.error('Supabase server credentials missing!');
 }
 
-export const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!, {
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
     persistSession: false

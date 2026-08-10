@@ -16,7 +16,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
   if (!isOpen || !listing) return null;
 
   const totalViews = listing.viewsCount || 142;
-  const viralViews = Math.round(totalViews * 0.35); // Simulated social/flyer views
+  const viralViews = Math.round(totalViews * 0.35);
   const directViews = totalViews - viralViews;
   
   const savedCount = Math.round(totalViews * 0.18);
@@ -76,8 +76,7 @@ export const AdAnalyticsModal: React.FC<AdAnalyticsModalProps> = ({
             </div>
           </div>
 
-          {/* Traffic Source Breakdown */}
-          <div className="bg-slate-950 border border-slate-800 p-5 rounded-[2rem] space-y-4">
+          <div className="bg-slate-950 border border-slate-800 p-5 rounded-[2rem] space-y-4 shadow-inner">
              <div className="flex justify-between items-center">
                 <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
                    <Globe className="w-4 h-4 text-blue-400" />
