@@ -560,4 +560,4 @@
   );
 };
 
-export default ListingDetail;
+} export default ListingDetail;

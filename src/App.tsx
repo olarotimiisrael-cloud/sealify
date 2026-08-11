@@ -33,7 +33,6 @@ const App = () => (
     <SealifyProvider>
       <SplashScreen />
       <ToasterWrapper />
-      <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
@@ -60,7 +59,6 @@ const App = () => (
           <Route path="/wallet" element={<Wallet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
     </SealifyProvider>
   </ErrorBoundary>
 );

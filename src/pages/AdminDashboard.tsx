@@ -354,7 +354,7 @@ const AdminDashboard: React.FC = () => {
               animationDelay: `${Math.random() * 10}s`,
               animationDuration: `${15 + Math.random() * 10}s`
             }} />
-        ))}
+        )))}
       </div>
 
       <SEO title="Admin Terminal — Sealify Nigeria" />
