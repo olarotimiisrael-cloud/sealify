@@ -19,7 +19,6 @@ export class ErrorBoundary extends Component<Props, State> {
   };
 
   public static getDerivedStateFromError(error: Error): State {
-    // Don't show error boundary for known hydration/SSR mismatches
     const msg = error.message;
     if (
       msg.includes('hydration') ||
@@ -45,7 +44,6 @@ export class ErrorBoundary extends Component<Props, State> {
       msg.includes('frame') ||
       msg.includes('useLayoutEffect')
     ) {
-      // Silently ignore known SSR/hydration errors
       return;
     }
     console.error('ErrorBoundary caught:', error, errorInfo);

@@ -66,7 +66,6 @@ const FilterDrawer: React.FC<FilterDrawerProps> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Quick Budget Presets */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
             <Tag className="w-3.5 h-3.5 text-emerald-400" />

@@ -1,4 +1,14 @@
-(null);
+import { useCallback, useRef } from 'react';
+
+interface CompressionOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  format?: 'jpeg' | 'png' | 'webp';
+}
+
+export function useImageOptimization() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 
   const compressImage = useCallback((
@@ -15,7 +25,6 @@
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        // Calculate new dimensions
         let { width, height } = img;
         
         if (width > maxWidth || height > maxHeight) {
@@ -24,7 +33,6 @@
           height *= ratio;
         }
 
-        // Create canvas
         if (!canvasRef.current) {
           canvasRef.current = document.createElement('canvas');
         }
@@ -37,7 +45,6 @@
         }
         const ctx = ctxRef.current!;
 
-        // Draw and compress
         ctx.drawImage(img, 0, 0, width, height);
         
         const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
