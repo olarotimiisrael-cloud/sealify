@@ -1,7 +1,6 @@
-<dyad-write path="src/components/ImageUploader.tsx" description="Reusable image upload component with drag-drop, preview, and progress")
 import React, { useState, useRef, useCallback } from 'react';
-import { useAdImageUpload } from '@/hooks/useStorage';
-import { Upload, X, CheckCircle2, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { useAdImageUpload } from '@/lib/storage';
+import { Upload, X, CheckCircle2, Image as ImageIcon, Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ImageUploaderProps {
@@ -135,7 +134,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
               Uploading...
             </div>
           )}
-        </label>
+        </div>
 
         {/* Upload Zone */}
         <div

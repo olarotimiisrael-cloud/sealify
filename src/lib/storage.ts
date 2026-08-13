@@ -1,4 +1,32 @@
-void;
+import { useCallback, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export const STORAGE_BUCKETS = {
+  AVATARS: 'profile-media',
+  AD_IMAGES: 'ad-images',
+  AD_VIDEOS: 'ad-videos',
+  DOCUMENTS: 'documents',
+} as const;
+
+export type BucketName = typeof STORAGE_BUCKETS[keyof typeof STORAGE_BUCKETS];
+
+const MAX_SIZES = {
+  avatar: 5 * 1024 * 1024,
+  adImage: 10 * 1024 * 1024,
+  adVideo: 50 * 1024 * 1024,
+  document: 10 * 1024 * 1024,
+};
+
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/quicktime'];
+const ALLOWED_DOCUMENT_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+
+interface UploadOptions {
+  bucket: BucketName;
+  file: File;
+  fileName?: string;
+  folder?: string;
+  onProgress?: (progress: number) => void;
 }
 
 interface UploadResult {

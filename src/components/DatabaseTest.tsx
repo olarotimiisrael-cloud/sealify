@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';

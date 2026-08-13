@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { useListings } from '../lib/api-client';
+import { useSearchParams, Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
@@ -42,7 +43,6 @@ import {
 
 export default function Index() {
   const [searchParams] = useSearchParams();
-  const { data: listingsData } = useListings();
   const {
     filters,
     setFilters,
@@ -56,6 +56,7 @@ export default function Index() {
     allUsers,
     t,
   } = useSealify();
+  const { data: listingsData } = useListings(filters);
 
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -328,7 +329,7 @@ export default function Index() {
 
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
               {recentlyViewed.map((item) => (
-                <a
+                <Link
                   key={item.id}
                   href={`/listing/${item.id}`}
                   className="min-w-[180px] sm:min-w-[200px] bg-slate-950 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
@@ -338,7 +339,7 @@ export default function Index() {
                     <p className="text-xs font-bold text-white truncate group-hover:text-emerald-400 transition-colors">{item.title}</p>
                     <p className="text-xs font-black text-emerald-400">{formatNGN(item.price)}</p>
                   </div>
-                </a>
+                </Link>
               ))}
             </div>
           </section>

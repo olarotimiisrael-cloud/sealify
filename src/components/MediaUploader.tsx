@@ -1,4 +1,13 @@
-void;
+import React from 'react';
+import { Image, Video, FileText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ImageUploader from './ImageUploader';
+import VideoUploader from './VideoUploader';
+import DocumentUploader from './DocumentUploader';
+
+interface MediaUploaderProps {
+  images?: string[];
+  onImagesChange?: (images: string[]) => void;
   video?: string;
   onVideoChange?: (video: string | null) => void;
   documents?: string[];

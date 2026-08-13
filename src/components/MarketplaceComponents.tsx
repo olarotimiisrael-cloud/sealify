@@ -35,11 +35,11 @@ export const MarketplaceComponents = {
         <button className="p-1.5 rounded-full bg-slate-950/80 text-amber-400 hover:text-white backdrop-blur-md transition-transform active:scale-90">
           <ArrowRightLeft className="w-3.5 h-3.5" />
         </button>
-        <button className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${true ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-950/80 text-slate-300 hover:text-white'}`}>
+        <button className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${listing.verified ? 'bg-emerald-500 text-slate-950 font-bold' : 'bg-slate-950/80 text-slate-300 hover:text-white'}`}>
           <ShieldCheck className="w-3.5 h-3.5" />
         </button>
-        <button className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${true ? 'bg-rose-500 text-white' : 'bg-slate-950/80 text-slate-300 hover:text-white'}`}>
-          <Heart className={`w-3.5 h-3.5 ${true ? 'fill-white' : ''}`} />
+        <button className={`p-1.5 rounded-full backdrop-blur-md transition-transform active:scale-90 ${listing.saved ? 'bg-rose-500 text-white' : 'bg-slate-950/80 text-slate-300 hover:text-white'}`}>
+          <Heart className={`w-3.5 h-3.5 ${listing.saved ? 'fill-white' : ''}`} />
         </button>
       </div>
 

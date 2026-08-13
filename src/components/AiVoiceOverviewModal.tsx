@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { 
   X, Volume2, VolumeX, Play, Pause, ShieldCheck, 
   Sparkles, MapPin, Tag, User, Gauge, Subtitles 
@@ -49,8 +49,6 @@ export const AiVoiceOverviewModal: React.FC<AiVoiceOverviewModalProps> = ({
   const [currentPresenter, setCurrentPresenter] = useState<Presenter>(PRESENTERS[0]);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  if (!isOpen || !listing) return null;
-
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
       style: 'currency',
@@ -60,11 +58,14 @@ export const AiVoiceOverviewModal: React.FC<AiVoiceOverviewModalProps> = ({
     }).format(amount);
   };
 
-  const formattedPrice = formatNGN(listing.price);
+  const formattedPrice = listing ? formatNGN(listing.price) : '';
 
-  const narrationScript = `Here is your official audio briefing for ${listing.title}. This item is listed in the ${listing.category} category for ${formattedPrice}, located in ${listing.location}. Condition is rated as ${listing.condition}. ${listing.sellerVerified ? `The seller, ${listing.sellerName}, holds an official verified badge on Sealify.` : `Seller is ${listing.sellerName}.`} Remember to inspect this item physically at a verified safe meetup spot before making any payment!`;
+  const narrationScript = listing
+    ? `Here is your official audio briefing for ${listing.title}. This item is listed in the ${listing.category} category for ${formattedPrice}, located in ${listing.location}. Condition is rated as ${listing.condition}. ${listing.sellerVerified ? `The seller, ${listing.sellerName}, holds an official verified badge on Sealify.` : `Seller is ${listing.sellerName}.`} Remember to inspect this item physically at a verified safe meetup spot before making any payment!`
+    : '';
 
-  const speakNarration = () => {
+  const speakNarration = useCallback(() => {
+    if (!listing) return;
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel(); // Reset speech queue
@@ -97,7 +98,7 @@ export const AiVoiceOverviewModal: React.FC<AiVoiceOverviewModalProps> = ({
     };
 
     window.speechSynthesis.speak(utterance);
-  };
+  }, [currentPresenter, isMuted, listing, rate, narrationScript]);
 
   useEffect(() => {
     if (isOpen && isPlaying) {
@@ -114,7 +115,9 @@ export const AiVoiceOverviewModal: React.FC<AiVoiceOverviewModalProps> = ({
         window.speechSynthesis.cancel();
       }
     };
-  }, [isOpen, isPlaying, currentPresenter, rate, isMuted]);
+  }, [isOpen, isPlaying, speakNarration]);
+
+  if (!isOpen || !listing) return null;
 
   const handleTogglePlay = () => {
     if (isPlaying) {

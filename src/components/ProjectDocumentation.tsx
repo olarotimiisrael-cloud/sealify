@@ -490,7 +490,7 @@ export const ProjectDocumentation: React.FC = () => {
 
       // Table of Contents
       addHeading('TABLE OF CONTENTS', 1);
-      let tocY = y;
+      const tocY = y;
       PROJECT_DATA.chapters.forEach(ch => {
         addText(`${ch.number}. ${ch.title}`, { fontSize: 11, fontStyle: 'bold', color: [15, 23, 42] });
         ch.sections.forEach(sec => {

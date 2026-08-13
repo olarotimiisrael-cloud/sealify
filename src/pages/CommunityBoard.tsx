@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
@@ -27,13 +27,14 @@ import {
   AlertCircle,
   Heart,
   Copy,
-  Check
+  Check,
+  Activity,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CommunityBoard: React.FC = () => {
-  const { announcements, allUsers, listings, broadcastMassNotification, dispatchPromotionalEmailDigest } = useSealify();
-  const navigate = useNavigate();
+  const { announcements, allUsers, broadcastMassNotification } = useSealify();
 
   const [activeFilter, setActiveFilter] = useState<'all' | 'security' | 'features' | 'news'>('all');
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -242,7 +243,7 @@ export const CommunityBoard: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            )))}
+            ))}
         </div>
 
         {/* Community Resources */}

@@ -129,7 +129,7 @@ messagesRoutes.post("/conversations", async (c) => {
 
     const sql = getSql(env);
 
-    let conversation = await sql`
+    const conversation = await sql`
       SELECT * FROM conversations 
       WHERE ad_id = ${ad_id} 
       AND ((participant_1 = ${user.id} AND participant_2 = ${receiver_id})

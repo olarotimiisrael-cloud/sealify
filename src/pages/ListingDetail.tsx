@@ -615,3 +615,4 @@ export default function ListingDetail() {
   );
 };
 
+export default ListingDetail;

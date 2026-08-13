@@ -1,7 +1,14 @@
-void;
+import React, { useCallback, useRef, useState } from 'react';
+import { AlertCircle, CheckCircle2, Video, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAdVideoUpload } from '@/lib/storage';
+
+interface VideoUploaderProps {
+  onVideoChange: (video: string | null) => void;
   initialVideo?: string;
   maxSizeMB?: number;
   accept?: string;
+  label?: string;
 }
 
 export const VideoUploader: React.FC<VideoUploaderProps> = ({

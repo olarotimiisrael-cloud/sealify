@@ -1,12 +1,12 @@
-import React, { useState, useRef } from "react";
-import { useAdImageUpload } from "@/hooks/useStorage";
-import { Upload, X, CheckCircle2, Image as ImageIcon, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import React, { useCallback, useRef, useState } from 'react';
+import { Camera, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useAvatarUpload } from '@/lib/storage';
 
 interface AvatarUploaderProps {
   currentAvatar?: string;
-  onAvatarChange: (url: string) => void;
-  size?: "sm" | "md" | "lg" | "xl";
+  onAvatarChange: (avatar: string) => void;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   editable?: boolean;
 }
 

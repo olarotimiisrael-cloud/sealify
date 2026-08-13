@@ -406,3 +406,4 @@ export default function MyAds() {
     </div>
   );
 };
+export default MyAds;

@@ -1,4 +1,10 @@
-void;
+import React, { useCallback, useRef, useState } from 'react';
+import { AlertCircle, FileText, Loader2, Upload, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { useDocumentUpload } from '@/lib/storage';
+
+interface DocumentUploaderProps {
+  onDocumentsChange: (documents: string[]) => void;
   initialDocuments?: string[];
   maxDocuments?: number;
   accept?: string;
@@ -103,7 +109,7 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
               Uploading...
             </div>
           )}
-        </label>
+        </div>
 
         <div
           className={`relative border-2 border-dashed rounded-2xl transition-all ${

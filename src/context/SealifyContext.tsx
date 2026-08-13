@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, Wallet, Transaction, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
