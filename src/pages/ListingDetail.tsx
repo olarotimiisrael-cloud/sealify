@@ -1,4 +1,59 @@
-{
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import { useListing, useUpdateListing, useDeleteListing } from '../lib/api-client';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import ListingCard from '../components/ListingCard';
+import PriceHistoryChart from '../components/PriceHistoryChart';
+import PriceGuard from '../components/PriceGuard';
+import VerifiedBadge from '../components/VerifiedBadge';
+import TrustScore from '../components/TrustScore';
+import AuthModal from '../components/AuthModal';
+import ReportModal from '../components/ReportModal';
+import OfferModal from '../components/OfferModal';
+import SwapProposalModal from '../components/SwapProposalModal';
+import ShareQrModal from '../components/ShareQrModal';
+import SafeMeetupModal from '../components/SafeMeetupModal';
+import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
+import InspectionChecklistModal from '../components/InspectionChecklistModal';
+import LightboxModal from '../components/LightboxModal';
+import DealQrScannerModal from '../components/DealQrScannerModal';
+import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
+import PriceDropAlertModal from '../components/PriceDropAlertModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  Volume2,
+  ArrowRightLeft,
+  Bell,
+  Share2,
+  Truck,
+  CheckSquare,
+  Shield,
+  Heart,
+  Maximize2,
+  Video,
+  MapPin,
+  Calendar,
+  Eye,
+  Sliders,
+  Tag,
+  ShieldAlert,
+  ExternalLink,
+  Phone,
+  MessageCircle,
+  MessageSquare,
+  Settings,
+  Trash2,
+  Sparkles,
+} from 'lucide-react';
+
+export default function ListingDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { 
@@ -560,4 +615,3 @@
   );
 };
 
-} export default ListingDetail;

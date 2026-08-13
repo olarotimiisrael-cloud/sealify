@@ -1,4 +1,63 @@
-('grid');
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import { useListings } from '../lib/api-client';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import Footer from '../components/Footer';
+import CategoryGrid from '../components/CategoryGrid';
+import CategoryBar from '../components/CategoryBar';
+import NeighborhoodFilter from '../components/NeighborhoodFilter';
+import ListingCard from '../components/ListingCard';
+import PromotedSpotlightBanner from '../components/PromotedSpotlightBanner';
+import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
+import MapView from '../components/MapView';
+import FilterDrawer from '../components/FilterDrawer';
+import CompareModal from '../components/CompareModal';
+import SavedAlertsModal from '../components/SavedAlertsModal';
+import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
+import SEO from '../components/SEO';
+import {
+  Grid,
+  MapPin,
+  SlidersHorizontal,
+  Sparkles,
+  Bell,
+  Scale,
+  Zap,
+  CheckCircle2,
+  Package,
+  RotateCcw,
+  BrainCircuit,
+  Activity,
+  Users,
+  Eye,
+  ShoppingBag,
+  Search,
+  ArrowRight,
+  X,
+  Clock,
+  Bot,
+} from 'lucide-react';
+
+export default function Index() {
+  const [searchParams] = useSearchParams();
+  const { data: listingsData } = useListings();
+  const {
+    filters,
+    setFilters,
+    activeCategory,
+    announcements,
+    compareListingIds,
+    recentDeals,
+    resetFilters,
+    recentlyViewedIds,
+    userInterests,
+    allUsers,
+    t,
+  } = useSealify();
+
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
@@ -271,7 +330,7 @@
               {recentlyViewed.map((item) => (
                 <a
                   key={item.id}
-                  to={`/listing/${item.id}`}
+                  href={`/listing/${item.id}`}
                   className="min-w-[180px] sm:min-w-[200px] bg-slate-950 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
                 >
                   <img src={item.images?.[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" />

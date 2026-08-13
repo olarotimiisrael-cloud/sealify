@@ -19,7 +19,7 @@ import {
   Award as AwardIcon, BadgeCheck, TrendingDown, Eye as EyeIcon,
   MoreHorizontal, ArrowUpRight, ArrowDownLeft, RefreshCw as RefreshIcon,
   Filter as FilterIcon, Columns, Maximize2, Minimize2, Heart,
-  MessageSquare, Package, Truck, MapPin, Calendar, Clock,
+  MessageSquare, Package, Truck, Calendar, Clock,
   Zap as ZapIcon2, Target, Flag, Hash, Link2, Unlink2,
   Upload, Download as DownloadIcon, Cloud, Cpu, HardDrive,
   MemoryStick, Battery, Wifi, Bluetooth, Usb, Monitor as MonitorIcon,
@@ -354,7 +354,7 @@ const AdminDashboard: React.FC = () => {
               animationDelay: `${Math.random() * 10}s`,
               animationDuration: `${15 + Math.random() * 10}s`
             }} />
-        )))}
+        ))}
       </div>
 
       <SEO title="Admin Terminal — Sealify Nigeria" />
@@ -678,7 +678,7 @@ const AdminDashboard: React.FC = () => {
                       <span className="text-slate-500 font-mono text-xs">{log.createdAt}</span>
                     </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           </div>

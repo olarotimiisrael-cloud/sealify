@@ -8,7 +8,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('⚠️ Server-side Supabase credentials missing!');
+  console.error('Supabase credentials missing!');
 }
 
 export const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!, {
@@ -21,4 +21,6 @@ export const supabaseAdmin = createClient(supabaseUrl!, supabaseServiceKey!, {
   },
 });
 
+// Export default as supabase to match service expectations
 export default supabaseAdmin;
+export const supabase = supabaseAdmin;

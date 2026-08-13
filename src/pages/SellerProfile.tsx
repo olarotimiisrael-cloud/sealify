@@ -77,7 +77,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  FileText,
   Image,
   Video,
   Music,

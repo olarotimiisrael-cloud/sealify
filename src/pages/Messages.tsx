@@ -1,4 +1,41 @@
-{
+import React, { useState, useRef } from 'react';
+import { useSealify } from '../context/SealifyContext';
+import { useConversations, useMessages, useSendMessage } from '../lib/api-client';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import AuthModal from '../components/AuthModal';
+import SafeMeetupModal from '../components/SafeMeetupModal';
+import OfferModal from '../components/OfferModal';
+import SwapProposalModal from '../components/SwapProposalModal';
+import InspectionChecklistModal from '../components/InspectionChecklistModal';
+import EscrowInitiatorModal from '../components/EscrowInitiatorModal';
+import TransactionReceiptModal from '../components/TransactionReceiptModal';
+import {
+  MessageSquare,
+  CheckCircle2,
+  Lock,
+  ArrowRightLeft,
+  CheckSquare,
+  MapPin,
+  Tag,
+  Check,
+  Sparkles,
+  Paperclip,
+  Mic,
+  Send,
+} from 'lucide-react';
+
+const QUICK_REPLIES = [
+  'Is this still available?',
+  'Can we negotiate the price?',
+  'Where can we meet to inspect?',
+  'Do you accept delivery?',
+  'Is it in good condition?',
+];
+
+export default function Messages() {
   const { conversations, sendMessage, isAuthenticated, user, listings } = useSealify();
   const [activeConvId, setActiveConvId] = useState<string>(conversations[0]?.id || '');
   const [text, setText] = useState('');
@@ -393,12 +430,12 @@
                 </button>
               </form>
             </div>
-          </div>
         ) : (
           <div className="flex-1 flex items-center justify-center p-6 text-slate-500 text-xs">
             Select a conversation from the sidebar to start chatting
           </div>
         )}
+      </div>
       </main>
 
       <SafeMeetupModal
@@ -461,5 +498,3 @@
     </div>
   );
 };
-
-export default Messages;

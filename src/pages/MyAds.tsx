@@ -1,4 +1,41 @@
-{
+import React, { useState, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import { api, useMyListings, useUpdateListing, useDeleteListing, useCreateListing } from '../lib/api-client';
+import { Listing, StatusFilter } from '../types/sealify';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import VerifiedBadge from '../components/VerifiedBadge';
+import EditListingModal from '../components/EditListingModal';
+import PromoteModal from '../components/PromoteModal';
+import VerificationModal from '../components/VerificationModal';
+import SalesReportModal from '../components/SalesReportModal';
+import AdAnalyticsModal from '../components/AdAnalyticsModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import {
+  User,
+  Camera,
+  Award,
+  ChevronRight,
+  FileSpreadsheet,
+  LogOut,
+  PlusCircle,
+  Search,
+  Eye,
+  Crown,
+  RefreshCw,
+  Edit3,
+  Trash2,
+  Package,
+  Clock,
+  XCircle,
+  ShieldCheck,
+  Wallet as WalletIcon,
+} from 'lucide-react';
+
+export default function MyAds() {
   const { 
     user, 
     logout, 
@@ -19,6 +56,10 @@
   const updateListingMutation = useUpdateListing();
   const deleteListingMutation = useDeleteListing();
   const createListingMutation = useCreateListing();
+
+  const myVerificationReq = user
+    ? verificationRequests.find(r => r.userId === user.id)
+    : undefined;
 
   const [editingListing, setEditingListing] = useState<Listing | null>(null);
   const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
@@ -365,5 +406,3 @@
     </div>
   );
 };
-
-export default MyAds;
