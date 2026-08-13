@@ -96,7 +96,7 @@ export const AvatarUploader: React.FC<AvatarUploaderProps> = ({
             src={preview}
             alt="Avatar preview"
             className={`${displaySize} rounded-2xl object-cover border-2 border-emerald-500 shadow-lg`}
-          )
+          />
         ) : (
           <div
             className={`${displaySize} rounded-2xl bg-slate-800 border-2 border-slate-700 flex items-center justify-center text-slate-500`}

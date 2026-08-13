@@ -193,7 +193,7 @@ export const CommunityBoard: React.FC = () => {
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
-            ))}
+            )))}
           </div>
 
           <button
