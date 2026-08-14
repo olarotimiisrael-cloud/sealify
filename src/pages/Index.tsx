@@ -85,7 +85,10 @@ export default function Index() {
     setFilters(prev => ({ ...prev, query: heroSearch.trim() }));
   };
 
-  const activeAnnouncements = announcements.filter((a) => a.active);
+  const activeAnnouncements = useMemo(
+    () => [...new Map(announcements.filter((a) => a.active).map((a) => [a.id, a])).values()],
+    [announcements],
+  );
 
   const listings = listingsData?.listings || [];
   const totalCount = listingsData?.total || 0;

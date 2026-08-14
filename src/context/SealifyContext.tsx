@@ -47,6 +47,23 @@ const mapAnnouncementRow = (row: any): SystemAnnouncement => ({
   createdAt: row.created_at || new Date().toISOString(),
 });
 
+const dedupeAnnouncements = (rows: Array<any> = []): SystemAnnouncement[] => {
+  const deduped = new Map<string, SystemAnnouncement>();
+
+  rows.forEach((row) => {
+    const mapped = mapAnnouncementRow(row);
+    const existing = deduped.get(mapped.id);
+
+    if (!existing || new Date(mapped.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
+      deduped.set(mapped.id, mapped);
+    }
+  });
+
+  return Array.from(deduped.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  );
+};
+
 const mapSafeSpotRow = (row: any): SafeMeetupSpotConfig => ({
   id: row.id,
   name: row.name,
@@ -1179,7 +1196,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       target_roles: announcement.targetRoles || ['buyer', 'seller'],
       created_by: user.id,
     });
-    if (created) setAnnouncements(prev => [mapAnnouncementRow(created), ...prev]);
+    if (created) setAnnouncements(prev => dedupeAnnouncements([mapAnnouncementRow(created), ...prev]));
   };
 
   const toggleAnnouncement = async (id: string) => {
@@ -1187,7 +1204,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!announcement) return;
     const { data, error: updateError } = await supabase.from('announcements').update({ active: !announcement.active }).eq('id', id).select().single();
     if (updateError) throw updateError;
-    setAnnouncements(prev => prev.map(item => item.id === id ? mapAnnouncementRow(data) : item));
+    setAnnouncements(prev => dedupeAnnouncements(prev.map(item => item.id === id ? mapAnnouncementRow(data) : item)));
   };
 
   const deleteAnnouncement = async (id: string) => {
@@ -1511,7 +1528,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const mappedCategories = (categoryRows || []).map(mapCategoryRow);
     setCategories(mappedCategories.length ? mappedCategories : MOCK_CATEGORIES);
     setSubcategories(subcategoryRows || []);
-    setAnnouncements((announcementRows || []).map(mapAnnouncementRow));
+    setAnnouncements(dedupeAnnouncements(announcementRows || []));
     setSafeSpots((safeSpotRows || []).map(mapSafeSpotRow));
     setPromotionPlans((promotionPlanRows || []).map(mapPromotionPlanRow));
     setSystemConfig((configRows || []).reduce((config: Record<string, boolean | number>, row: any) => {
