@@ -16,6 +16,7 @@ import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
 import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
 import SEO from '../components/SEO';
+import { useListings } from '../lib/api-client';
 import {
   Grid,
   MapPin,
@@ -329,7 +330,7 @@ export default function Index() {
               {recentlyViewed.map((item) => (
                 <Link
                   key={item.id}
-                  href={`/listing/${item.id}`}
+                  to={`/listing/${item.id}`}
                   className="min-w-[180px] sm:min-w-[200px] bg-slate-950 border border-slate-800 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
                 >
                   <img src={item.images?.[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-800 shrink-0" />
