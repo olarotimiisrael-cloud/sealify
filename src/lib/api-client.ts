@@ -2,8 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapListingToListing } from "@/services/supabaseService";
+import { appEnv } from "@/lib/env";
 
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+const API_BASE = appEnv.apiBase;
 
 interface RequestOptions extends RequestInit {
   params?: Record<string, string>;

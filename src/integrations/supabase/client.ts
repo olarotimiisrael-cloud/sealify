@@ -1,34 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseConfig } from '@/lib/env';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const { hasConfig, missing, isProduction } = getSupabaseConfig();
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
 
-// Validate required environment variables
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  const isProduction = import.meta.env.PROD || import.meta.env.MODE === 'production';
-  
-  if (isProduction) {
-    // In production, fail fast with clear error - never initialize with placeholders
-    const errorMsg = `❌ CRITICAL: Supabase credentials missing!
-    
+if (!hasConfig) {
+  const errorMsg = `❌ CRITICAL: Supabase credentials missing!
+
 Required environment variables:
-- VITE_SUPABASE_URL: ${SUPABASE_URL ? '✓ Set' : '✗ MISSING'}
-- VITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY ? '✓ Set' : '✗ MISSING'}
+${missing.map((key) => `- ${key}: ✗ MISSING`).join('\n')}
 
-Configure these in Cloudflare Pages: Settings → Environment Variables
-
+Configure these in Cloudflare Pages or GitHub Actions before deploying.
 Application cannot start without valid Supabase credentials.`;
-    
+
+  if (isProduction) {
     console.error(errorMsg);
     throw new Error(errorMsg);
   }
-  
-  // Development: warn but allow fallback for local development
+
   console.warn('⚠️ WARNING: Supabase credentials not set. Using development fallback.');
 }
 
-// Create client with validated credentials
-export const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+export const supabase = createClient(SUPABASE_URL || 'https://placeholder.supabase.co', SUPABASE_ANON_KEY || 'placeholder-key', {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

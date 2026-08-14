@@ -1,38 +1,47 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
 import { SealifyProvider } from "./context/SealifyContext";
 import SplashScreen from "./components/SplashScreen";
 import ToasterWrapper from "./components/ToasterWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
-import Index from "./pages/Index";
-import ListingDetail from "./pages/ListingDetail";
-import PostAd from "./pages/PostAd";
-import Messages from "./pages/Messages";
-import SavedAds from "./pages/SavedAds";
-import MyAds from "./pages/MyAds";
-import SellerProfile from "./pages/SellerProfile";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-import FAQ from "./pages/FAQ";
-import HelpCenter from "./pages/HelpCenter";
-import Contact from "./pages/Contact";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminLogin from "./pages/AdminLogin";
-import Notifications from "./pages/Notifications";
-import SafetyCenter from "./pages/SafetyCenter";
-import DisputeResolution from "./pages/DisputeResolution";
-import MarketInsights from "./pages/MarketInsights";
-import BuyerRequests from "./pages/BuyerRequests";
-import HowItWorks from "./pages/HowItWorks";
-import EscrowVerifier from "./pages/EscrowVerifier";
-import CommunityBoard from "./pages/CommunityBoard";
-import Wallet from "./pages/Wallet";
-import VendorsPage from "./pages/VendorsPage";
+
+const Index = lazy(() => import("./pages/Index"));
+const ListingDetail = lazy(() => import("./pages/ListingDetail"));
+const PostAd = lazy(() => import("./pages/PostAd"));
+const Messages = lazy(() => import("./pages/Messages"));
+const SavedAds = lazy(() => import("./pages/SavedAds"));
+const MyAds = lazy(() => import("./pages/MyAds"));
+const SellerProfile = lazy(() => import("./pages/SellerProfile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const FAQ = lazy(() => import("./pages/FAQ"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Contact = lazy(() => import("./pages/Contact"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminLogin = lazy(() => import("./pages/AdminLogin"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const SafetyCenter = lazy(() => import("./pages/SafetyCenter"));
+const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
+const MarketInsights = lazy(() => import("./pages/MarketInsights"));
+const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const EscrowVerifier = lazy(() => import("./pages/EscrowVerifier"));
+const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
+const Wallet = lazy(() => import("./pages/Wallet"));
+const VendorsPage = lazy(() => import("./pages/VendorsPage"));
+
+const routeFallback = (
+  <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300 text-sm font-medium">
+    Loading…
+  </div>
+);
 
 const App = () => (
   <ErrorBoundary>
     <SealifyProvider>
       <SplashScreen />
       <ToasterWrapper />
+      <Suspense fallback={routeFallback}>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
@@ -59,6 +68,7 @@ const App = () => (
           <Route path="/wallet" element={<Wallet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+      </Suspense>
     </SealifyProvider>
   </ErrorBoundary>
 );
