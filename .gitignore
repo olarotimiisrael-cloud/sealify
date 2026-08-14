@@ -30,6 +30,7 @@ dist-ssr
 /playwright/.cache/
 .last-run.json
 .dyad/
+.wrangler-config/
 
 # Environment files - MUST be ignored
 .env

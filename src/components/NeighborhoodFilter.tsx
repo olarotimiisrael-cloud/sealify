@@ -89,3 +89,5 @@ export const NeighborhoodFilter: React.FC = () => {
     </section>
   );
 };
+
+export default NeighborhoodFilter;

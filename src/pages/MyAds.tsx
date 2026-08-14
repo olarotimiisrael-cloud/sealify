@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { api, useMyListings, useUpdateListing, useDeleteListing, useCreateListing } from '../lib/api-client';
+import { useMyListings, useDeleteListing } from '../lib/api-client';
 import { Listing, StatusFilter } from '../types/sealify';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
@@ -41,6 +41,7 @@ export default function MyAds() {
     logout, 
     updateUser, 
     promoteListing, 
+    updateListing,
     wallet,
     verificationRequests,
     isSyncing,
@@ -53,9 +54,7 @@ export default function MyAds() {
 
   // Real API hooks
   const { data: myListingsData, refetch: refetchMyListings } = useMyListings();
-  const updateListingMutation = useUpdateListing();
   const deleteListingMutation = useDeleteListing();
-  const createListingMutation = useCreateListing();
 
   const myVerificationReq = user
     ? verificationRequests.find(r => r.userId === user.id)
@@ -110,7 +109,7 @@ export default function MyAds() {
 
   const handleBumpAd = async (ad: Listing) => {
     try {
-      await api.put(`/listings/${ad.id}`, { createdAt: new Date().toISOString() });
+      await updateListing(ad.id, { createdAt: new Date().toISOString() });
       toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to bump ad');
@@ -119,7 +118,7 @@ export default function MyAds() {
 
   const handleBumpAdApi = async (ad: Listing) => {
     try {
-      await api.put(`/listings/${ad.id}`, { createdAt: 'Just now' });
+      await updateListing(ad.id, { createdAt: new Date().toISOString() });
       toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
     } catch (error: any) {
       toast.error(error.message || 'Failed to bump ad');
@@ -381,7 +380,7 @@ export default function MyAds() {
         )}
       </main>
 
-      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={async (id, updates) => { await api.put(`/listings/${id}`, updates); refetchMyListings(); }} />
+      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={async (id, updates) => { await updateListing(id, updates); refetchMyListings(); }} />
       <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
       <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
       <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myListings} />
@@ -406,4 +405,3 @@ export default function MyAds() {
     </div>
   );
 };
-export default MyAds;

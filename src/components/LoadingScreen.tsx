@@ -81,7 +81,7 @@ export const LoadingScreen: React.FC = () => {
          </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-[2200ms] ease-out w-full origin-left animate-in slide-in-from-left-full"></div>
+      <div className="absolute bottom-0 left-0 h-1 bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] transition-all duration-[time:2200ms] ease-out w-full origin-left animate-in slide-in-from-left-full"></div>
     </div>
   );
 };

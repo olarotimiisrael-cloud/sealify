@@ -1,5 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { mapListingToListing } from "@/services/supabaseService";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
@@ -261,6 +263,65 @@ export const queryKeys = {
   suggestions: (query: string) => ["suggestions", query] as const,
 };
 
+const listingSelect = "*, profiles!ads_seller_id_fkey(*), ad_images(image_url, sort_order)";
+
+const mapListingUpdates = (updates: Record<string, any>) => {
+  const fieldMap: Record<string, string> = {
+    sellerId: "seller_id", categoryId: "category_id", subcategoryId: "subcategory_id", originalPrice: "original_price",
+    videoUrl: "video_url", viewsCount: "views_count", promotionPlanName: "promotion_plan_name",
+    promotionDurationMonths: "promotion_duration_months", promotionStartDate: "promotion_start_date",
+    promotionEndDate: "promotion_end_date", paymentStatus: "payment_status", paymentProofUrl: "payment_proof_url",
+    amountPaid: "amount_paid", createdAt: "created_at", updatedAt: "updated_at",
+  };
+  return Object.entries(updates).reduce((mapped: Record<string, any>, [key, value]) => {
+    mapped[fieldMap[key] || key] = value;
+    return mapped;
+  }, {});
+};
+
+const getCurrentUserId = async () => {
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error("Authentication required");
+  return data.user.id;
+};
+
+const loadListings = async (sellerOnly = false) => {
+  const userId = sellerOnly ? await getCurrentUserId() : null;
+  let query = supabase.from("ads").select(listingSelect, { count: "exact" }).order("created_at", { ascending: false });
+  if (sellerOnly && userId) query = query.eq("seller_id", userId);
+  const { data, error, count } = await query;
+  if (error) throw error;
+  return { listings: (data || []).map(mapListingToListing), total: count || data?.length || 0 };
+};
+
+const loadConversationSummaries = async (userId: string) => {
+  const { data: rows, error } = await supabase
+    .from("conversations")
+    .select("*")
+    .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
+    .order("last_message_time", { ascending: false });
+  if (error) throw error;
+
+  return Promise.all((rows || []).map(async (row: any) => {
+    const otherUserId = row.participant_1 === userId ? row.participant_2 : row.participant_1;
+    const [adResult, profileResult] = await Promise.all([
+      supabase.from("ads").select("id, title, price, images").eq("id", row.ad_id).maybeSingle(),
+      supabase.from("profiles").select("id, full_name, avatar_url").eq("id", otherUserId).maybeSingle(),
+    ]);
+    return {
+      id: row.id,
+      listingId: row.ad_id,
+      listingTitle: adResult.data?.title || "Marketplace ad",
+      listingImage: adResult.data?.images?.[0] || "",
+      listingPrice: Number(adResult.data?.price || 0),
+      otherUser: { id: otherUserId, name: profileResult.data?.full_name || "Sealify user", avatar: profileResult.data?.avatar_url || "" },
+      lastMessage: row.last_message || "",
+      lastMessageTime: row.last_message_time || row.created_at,
+    };
+  }));
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
 
@@ -307,7 +368,7 @@ export function useAuth() {
 export function useListings(filters?: Record<string, any>) {
   return useQuery({
     queryKey: queryKeys.listings(filters),
-    queryFn: () => api.get<{ listings: any[]; total: number }>("/listings", filters),
+    queryFn: () => loadListings(),
     staleTime: 1000 * 30,
   });
 }
@@ -315,7 +376,11 @@ export function useListings(filters?: Record<string, any>) {
 export function useListing(id: string) {
   return useQuery({
     queryKey: queryKeys.listing(id),
-    queryFn: () => api.get<{ listing: any }>(`/listings/${id}`),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("ads").select(listingSelect).eq("id", id).maybeSingle();
+      if (error) throw error;
+      return { listing: data ? mapListingToListing(data) : null };
+    },
     enabled: !!id,
     staleTime: 1000 * 60,
   });
@@ -324,7 +389,26 @@ export function useListing(id: string) {
 export function useCreateListing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => api.post("/listings", data),
+    mutationFn: async (data: any) => {
+      const userId = await getCurrentUserId();
+      const { data: created, error } = await supabase.from("ads").insert({
+        seller_id: userId,
+        category_id: data.categoryId || data.category_id || data.category || null,
+        subcategory_id: data.subcategoryId || data.subcategory_id || null,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        original_price: data.originalPrice ?? data.original_price ?? null,
+        condition: data.condition,
+        location: data.location,
+        status: "active",
+        images: data.images || [],
+        video_url: data.videoUrl || data.video_url || null,
+        specifications: data.specifications || {},
+      }).select(listingSelect).single();
+      if (error) throw error;
+      return { listing: mapListingToListing(created) };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.listings() });
       queryClient.invalidateQueries({ queryKey: queryKeys.myListings() });
@@ -335,7 +419,11 @@ export function useCreateListing() {
 export function useUpdateListing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => api.put(`/listings/${id}`, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const { data: updated, error } = await supabase.from("ads").update(mapListingUpdates(data)).eq("id", id).select(listingSelect).single();
+      if (error) throw error;
+      return { listing: mapListingToListing(updated) };
+    },
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.listing(id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.listings() });
@@ -347,7 +435,11 @@ export function useUpdateListing() {
 export function useDeleteListing() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.delete(`/listings/${id}`),
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("ads").delete().eq("id", id);
+      if (error) throw error;
+      return undefined;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.listings() });
       queryClient.invalidateQueries({ queryKey: queryKeys.myListings() });
@@ -358,7 +450,7 @@ export function useDeleteListing() {
 export function useMyListings() {
   return useQuery({
     queryKey: queryKeys.myListings(),
-    queryFn: () => api.get<{ listings: any[] }>("/listings", { seller: "me" }),
+    queryFn: () => loadListings(true),
     staleTime: 1000 * 60,
   });
 }
@@ -366,7 +458,7 @@ export function useMyListings() {
 export function useConversations() {
   return useQuery({
     queryKey: queryKeys.conversations(),
-    queryFn: () => api.get<{ conversations: any[] }>("/conversations"),
+    queryFn: async () => ({ conversations: await loadConversationSummaries(await getCurrentUserId()) }),
     staleTime: 1000 * 30,
   });
 }
@@ -374,7 +466,21 @@ export function useConversations() {
 export function useMessages(conversationId: string) {
   return useQuery({
     queryKey: queryKeys.messages(conversationId),
-    queryFn: () => api.get<{ messages: any[] }>(`/conversations/${conversationId}/messages`),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true });
+      if (error) throw error;
+      return {
+        messages: (data || []).map((message: any) => ({
+          id: message.id,
+          senderId: message.sender_id,
+          receiverId: message.receiver_id,
+          listingId: message.ad_id,
+          content: message.content,
+          createdAt: message.created_at,
+          isRead: Boolean(message.read),
+        })),
+      };
+    },
     enabled: !!conversationId,
     staleTime: 1000 * 10,
   });
@@ -383,8 +489,27 @@ export function useMessages(conversationId: string) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ conversationId, receiverId, content }: { conversationId: string; receiverId: string; content: string }) =>
-      api.post("/conversations", { conversationId, receiverId, content }),
+    mutationFn: async ({ conversationId, receiverId, content }: { conversationId: string; receiverId: string; content: string }) => {
+      const senderId = await getCurrentUserId();
+      const { data: conversation, error: conversationError } = await supabase.from("conversations").select("*").eq("id", conversationId).single();
+      if (conversationError) throw conversationError;
+      const { data: message, error: messageError } = await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: senderId,
+        receiver_id: receiverId,
+        ad_id: conversation.ad_id,
+        content: content.trim(),
+        status: "sent",
+        read: false,
+      }).select().single();
+      if (messageError) throw messageError;
+      const unreadUpdate = conversation.participant_1 === receiverId
+        ? { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_1: Number(conversation.unread_count_1 || 0) + 1 }
+        : { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_2: Number(conversation.unread_count_2 || 0) + 1 };
+      const { error: updateError } = await supabase.from("conversations").update(unreadUpdate).eq("id", conversationId);
+      if (updateError) throw updateError;
+      return { message };
+    },
     onSuccess: (_, { conversationId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.messages(conversationId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.conversations() });
@@ -395,7 +520,13 @@ export function useSendMessage() {
 export function useNotifications(params?: any) {
   return useQuery({
     queryKey: queryKeys.notifications(params),
-    queryFn: () => api.get<{ notifications: any[]; unreadCount: number }>("/notifications", params),
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      const { data, error } = await supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
+      if (error) throw error;
+      const notifications = data || [];
+      return { notifications, unreadCount: notifications.filter((notification: any) => !notification.read).length };
+    },
     staleTime: 1000 * 30,
   });
 }
@@ -403,7 +534,11 @@ export function useNotifications(params?: any) {
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => api.put(`/notifications/${id}/read`),
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
+      if (error) throw error;
+      return undefined;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
       queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount() });
@@ -414,7 +549,12 @@ export function useMarkNotificationRead() {
 export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.put("/notifications/read-all"),
+    mutationFn: async () => {
+      const userId = await getCurrentUserId();
+      const { error } = await supabase.from("notifications").update({ read: true }).eq("user_id", userId);
+      if (error) throw error;
+      return undefined;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
       queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount() });
@@ -425,7 +565,12 @@ export function useMarkAllNotificationsRead() {
 export function useWallet() {
   return useQuery({
     queryKey: queryKeys.wallet(),
-    queryFn: () => api.get<{ wallet: any }>("/wallet"),
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      const { data, error } = await supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle();
+      if (error) throw error;
+      return { wallet: data };
+    },
     staleTime: 1000 * 60,
   });
 }
@@ -433,7 +578,12 @@ export function useWallet() {
 export function useTransactions(params?: any) {
   return useQuery({
     queryKey: queryKeys.transactions(params),
-    queryFn: () => api.get<{ transactions: any[] }>("/wallet/transactions", params),
+    queryFn: async () => {
+      const userId = await getCurrentUserId();
+      const { data, error } = await supabase.from("transactions").select("*").eq("related_user_id", userId).order("created_at", { ascending: false });
+      if (error) throw error;
+      return { transactions: data || [] };
+    },
     staleTime: 1000 * 60,
   });
 }
@@ -441,7 +591,27 @@ export function useTransactions(params?: any) {
 export function useRequestPayout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (amount: number) => api.post("/wallet/payout", { amount }),
+    mutationFn: async (amount: number) => {
+      const userId = await getCurrentUserId();
+      const { data: wallet, error: walletError } = await supabase.from("wallets").select("*").eq("user_id", userId).single();
+      if (walletError) throw walletError;
+      if (amount <= 0 || Number(wallet.balance) < amount) throw new Error("Insufficient balance");
+      const { data: transaction, error: transactionError } = await supabase.from("transactions").insert({
+        wallet_id: wallet.id,
+        type: "payout",
+        amount: -amount,
+        status: "pending",
+        description: "Withdrawal to bank",
+        related_user_id: userId,
+      }).select().single();
+      if (transactionError) throw transactionError;
+      const { data: updatedWallet, error: updateError } = await supabase.from("wallets").update({
+        balance: Number(wallet.balance) - amount,
+        pending_balance: Number(wallet.pending_balance) + amount,
+      }).eq("id", wallet.id).eq("user_id", userId).select().single();
+      if (updateError) throw updateError;
+      return { wallet: updatedWallet, transaction };
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });
       queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });

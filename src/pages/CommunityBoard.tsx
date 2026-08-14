@@ -193,7 +193,7 @@ export const CommunityBoard: React.FC = () => {
               >
                 {filter.charAt(0).toUpperCase() + filter.slice(1)}
               </button>
-            )))}
+            ))}
           </div>
 
           <button
@@ -243,7 +243,7 @@ export const CommunityBoard: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
-            ))}
+            ))) }
         </div>
 
         {/* Community Resources */}

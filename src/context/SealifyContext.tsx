@@ -2,9 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, Wallet, Transaction, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { mapListingToListing, mapProfileToUser } from '@/services/supabaseService';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
+import * as userService from '@/services/supabaseService';
 import * as categoryService from '@/services/supabaseService';
 import * as subcategoryService from '@/services/supabaseService';
 import * as messageService from '@/services/supabaseService';
@@ -25,6 +27,112 @@ import * as promotionPlanService from '@/services/supabaseService';
 import * as searchAlertService from '@/services/supabaseService';
 import * as intrusionService from '@/services/supabaseService';
 import * as recentDealsService from '@/services/supabaseService';
+import * as storageService from '@/services/supabaseService';
+
+const mapCategoryRow = (row: any): CategoryConfig => ({
+  id: row.id,
+  name: row.name as Category,
+  iconName: row.icon_name || 'Tag',
+  color: row.color || 'bg-slate-500',
+  count: 0,
+});
+
+const mapAnnouncementRow = (row: any): SystemAnnouncement => ({
+  id: row.id,
+  title: row.title,
+  message: row.message,
+  type: row.type || 'info',
+  active: row.active !== false,
+  targetRoles: row.target_roles || ['buyer', 'seller'],
+  createdAt: row.created_at || new Date().toISOString(),
+});
+
+const mapSafeSpotRow = (row: any): SafeMeetupSpotConfig => ({
+  id: row.id,
+  name: row.name,
+  zone: row.zone,
+  category: row.category,
+  address: row.address,
+  distance: row.distance,
+  hours: row.hours,
+  cctvVerified: Boolean(row.cctv_verified),
+});
+
+const mapPromotionPlanRow = (row: any) => ({
+  months: Number(row.months),
+  label: row.label,
+  rate: Number(row.rate),
+  badge: row.badge || undefined,
+  isActive: row.is_active !== false,
+});
+
+const mapNotificationRow = (row: any): AppNotification => ({
+  id: row.id,
+  type: row.type || 'system',
+  title: row.title || 'Sealify notification',
+  description: row.description || '',
+  time: row.created_at || new Date().toISOString(),
+  read: Boolean(row.read),
+  linkUrl: row.link_url || undefined,
+  createdAt: row.created_at || new Date().toISOString(),
+});
+
+const mapSearchAlertRow = (row: any): SearchAlert => ({
+  id: row.id,
+  userId: row.user_id,
+  query: row.query || '',
+  category: row.category_id || 'All',
+  maxPrice: row.max_price == null ? null : Number(row.max_price),
+  location: row.location || '',
+  createdAt: row.created_at || new Date().toISOString(),
+  matchCount: Number(row.match_count || 0),
+});
+
+const mapReviewRow = (row: any): Review => ({
+  id: row.id,
+  sellerId: row.seller_id,
+  buyerId: row.buyer_id,
+  buyerName: row.buyer_name || 'Sealify buyer',
+  buyerAvatar: row.buyer_avatar || '',
+  rating: Number(row.rating || 0),
+  comment: row.comment || '',
+  createdAt: row.created_at || new Date().toISOString(),
+});
+
+const mapBuyerRequestRow = (row: any): BuyerRequest => ({
+  id: row.id,
+  userId: row.user_id,
+  userName: row.user_name || '',
+  userAvatar: row.user_avatar || '',
+  title: row.title,
+  category: row.category_id as Category,
+  maxBudget: Number(row.max_budget || 0),
+  location: row.location || '',
+  description: row.description || '',
+  createdAt: row.created_at || new Date().toISOString(),
+  responsesCount: Number(row.responses_count || 0),
+});
+
+const mapWalletRow = (row: any): Wallet => ({
+  id: row.id,
+  userId: row.user_id,
+  balance: Number(row.balance || 0),
+  pendingBalance: Number(row.pending_balance || 0),
+  totalWithdrawn: Number(row.total_withdrawn || 0),
+  currency: row.currency || 'NGN',
+  updatedAt: row.updated_at || new Date().toISOString(),
+});
+
+const mapTransactionRow = (row: any): Transaction => ({
+  id: row.id,
+  walletId: row.wallet_id,
+  type: row.type,
+  amount: Number(row.amount || 0),
+  status: row.status,
+  description: row.description || '',
+  reference: row.reference || undefined,
+  createdAt: row.created_at || new Date().toISOString(),
+});
 
 interface SealifyContextType {
   // Auth
@@ -35,7 +143,7 @@ interface SealifyContextType {
   adminEmail: string;
   adminPassword: string;
   adminPin: string;
-  updateAdminCredentials: (email: string, password: string, pin: string) => void;
+  updateAdminCredentials: (email: string, password: string, pin: string) => Promise<void>;
   
   // System config
   systemConfig: Record<string, boolean | number>;
@@ -546,9 +654,9 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('admin@sealify.ng');
-  const [adminPassword, setAdminPassword] = useState('sealify2024');
-  const [adminPin, setAdminPin] = useState('123456');
+  const [adminEmail, setAdminEmail] = useState('');
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminPin, setAdminPin] = useState('');
   const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
   const [promotionPlans, setPromotionPlans] = useState(MOCK_PROMOTION_PLANS);
@@ -606,90 +714,117 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
-  const [wallet, setWallet] = useState<Wallet | null>({
-    id: 'wallet_1',
-    userId: 'user_1',
-    balance: 2850000,
-    pendingBalance: 450000,
-    totalWithdrawn: 1200000,
-    currency: 'NGN',
-    updatedAt: new Date().toISOString()
-  });
+  const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [error, setError] = useState<string | null>(null);
 
-  const updateAdminCredentials = (email: string, password: string, pin: string) => {
-    setAdminEmail(email);
-    setAdminPassword(password);
-    setAdminPin(pin);
-    localStorage.setItem('sealify_admin_email', email);
-    localStorage.setItem('sealify_admin_password', password);
-    localStorage.setItem('sealify_admin_pin', pin);
+  const updateAdminCredentials = async (email: string, password: string, pin: string) => {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Authentication required');
+
+    const updates: { email?: string; password?: string } = {};
+    const nextEmail = email.trim();
+    const nextPassword = password.trim();
+
+    if (nextEmail && nextEmail !== authUser.email) updates.email = nextEmail;
+    if (nextPassword) updates.password = nextPassword;
+
+    if (Object.keys(updates).length > 0) {
+      const { error: authError } = await supabase.auth.updateUser(updates);
+      if (authError) throw authError;
+    }
+
+    setAdminEmail(nextEmail || authUser.email || '');
+    setAdminPassword('');
+    setAdminPin('');
+    localStorage.setItem('sealify_admin_email', nextEmail || authUser.email || '');
+    void pin;
   };
 
   const t = (key: string) => TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || key;
 
+  const loadProfileForAuthUser = async (authUser: any): Promise<UserProfile | null> => {
+    if (!authUser?.id) return null;
+
+    const { data, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', authUser.id)
+      .maybeSingle();
+
+    if (profileError) throw profileError;
+    return data ? mapProfileToUser({ ...data, email: data.email || authUser.email }) : null;
+  };
+
+  const applyAuthenticatedUser = (profile: UserProfile | null) => {
+    setUser(profile);
+    setIsAdmin(profile?.role === 'admin');
+    if (profile) setAdminEmail(profile.email);
+  };
+
   const login = async (email: string, password: string) => {
-    const mockUser: UserProfile = {
-      id: 'user_1',
-      email,
-      fullName: 'Adebayo Ogunlesi',
-      phoneNumber: '+234 813 000 0000',
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop',
-      role: 'seller',
-      verified: true,
-      verificationType: 'individual',
-      businessName: 'Ogunlesi Tech Store',
-      memberSince: 'Mar 2023',
-      location: 'Under G, Ogbomoso',
-    };
-    setUser(mockUser);
-    setIsAdmin(false);
-    localStorage.setItem('sealify_user', JSON.stringify(mockUser));
-    return true;
+    try {
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError || !data.user) return false;
+
+      const profile = await loadProfileForAuthUser(data.user);
+      if (!profile) {
+        await supabase.auth.signOut();
+        toast.error('Your account profile is not ready yet. Please try again shortly.');
+        return false;
+      }
+
+      applyAuthenticatedUser(profile);
+      return true;
+    } catch (authError: any) {
+      setError(authError?.message || 'Unable to sign in');
+      return false;
+    }
   };
 
   const adminLogin = async (email: string, password: string, pin: string) => {
-    if (email === adminEmail && password === adminPassword && pin === adminPin) {
-      const adminUser: UserProfile = {
-        id: 'admin_1',
-        email: adminEmail,
-        fullName: 'Sealify Admin',
-        phoneNumber: '+234 813 120 8468',
-        avatarUrl: '/logo.png',
-        role: 'admin',
-        verified: true,
-        verificationType: 'premium',
-        businessName: 'Sealify National Hub',
-        memberSince: 'Jan 2023',
-        location: 'Ogbomoso, Oyo State',
-      };
-      setUser(adminUser);
-      setIsAdmin(true);
-      localStorage.setItem('sealify_user', JSON.stringify(adminUser));
+    try {
+      const configuredPin = String(import.meta.env.VITE_ADMIN_PIN || '').trim();
+      if (configuredPin && pin !== configuredPin) return false;
+
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError || !data.user) return false;
+
+      const profile = await loadProfileForAuthUser(data.user);
+      if (!profile || profile.role !== 'admin') {
+        await supabase.auth.signOut();
+        return false;
+      }
+
+      applyAuthenticatedUser(profile);
       return true;
+    } catch (authError: any) {
+      setError(authError?.message || 'Unable to authenticate administrator');
+      return false;
     }
-    return false;
   };
 
   const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string }) => {
-    const newUser: UserProfile = {
-      id: `user_${Date.now()}`,
+    const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
-      fullName: data.fullName,
-      phoneNumber: data.phoneNumber,
-      avatarUrl: '',
-      role: 'buyer',
-      verified: false,
-      verificationType: 'none',
-      memberSince: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-      location: 'Ogbomoso, Oyo State',
-    };
-    setUser(newUser);
-    localStorage.setItem('sealify_user', JSON.stringify(newUser));
+      password: data.password,
+      options: { data: { full_name: data.fullName, phone: data.phoneNumber } },
+    });
+
+    if (authError) throw authError;
+    if (!authData.user) throw new Error('Supabase did not create the account');
+
+    if (!authData.session) {
+      toast.success('Account created. Check your email to confirm your account before signing in.');
+      return;
+    }
+
+    const profile = await loadProfileForAuthUser(authData.user);
+    if (!profile) throw new Error('Account created, but the profile is still provisioning. Please sign in again.');
+    applyAuthenticatedUser(profile);
   };
 
   const sendPhoneOtp = async (phone: string) => {
@@ -701,9 +836,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const logout = () => {
+    void supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
-    localStorage.removeItem('sealify_user');
+    setSavedListingIds([]);
+    setNotifications([]);
+    setConversations([]);
+    setWallet(null);
+    setTransactions([]);
   };
 
   const addRecentlyViewed = (id: string) => {
@@ -714,10 +854,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const toggleSaveListing = async (id: string) => {
-    if (user) {
-      const exists = savedListingIds.includes(id);
-      setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]);
-    }
+    if (!user) return;
+    const exists = savedListingIds.includes(id);
+    const success = await favoriteService.favoriteService.toggleFavorite(user.id, id, exists);
+    if (!success) return;
+    setSavedListingIds(p => exists ? p.filter(i => i !== id) : [...p, id]);
   };
 
   const isSaved = (id: string) => savedListingIds.includes(id);
@@ -734,36 +875,88 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const createListing = async (data: Omit<Listing, 'id' | 'sellerId' | 'createdAt' | 'viewsCount' | 'status'>, files?: File[]) => {
     if (!user) return false;
-    const newListing: Listing = {
-      ...data,
-      id: `lst_${Date.now()}`,
-      sellerId: user.id,
-      sellerName: user.fullName,
-      sellerPhone: user.phoneNumber || '',
-      sellerAvatar: user.avatarUrl || '',
-      sellerVerified: user.verified || false,
-      sellerVerificationType: user.verificationType,
-      status: 'active',
-      viewsCount: 1,
-      createdAt: new Date().toLocaleString(),
-      images: data.images || [],
-      specifications: data.specifications || {}
-    };
-    setListings(prev => [newListing, ...prev]);
-    toast.success('Your ad was posted successfully!');
-    return true;
+    try {
+      let imageUrls = data.images || [];
+      if (files?.length) {
+        const uploadedImages = await Promise.all(files.map((file, index) => storageService.storageService.uploadFile(
+          'ad-images',
+          `${user.id}/${Date.now()}-${index}-${file.name}`,
+          file,
+        )));
+        imageUrls = [...imageUrls, ...uploadedImages.filter(Boolean)];
+      }
+
+      const categoryId = categories.find(category => category.name === data.category)?.id || data.category;
+      const { data: createdAd, error: createError } = await supabase
+        .from('ads')
+        .insert({
+          seller_id: user.id,
+          category_id: categoryId,
+          title: data.title,
+          description: data.description,
+          price: data.price,
+          original_price: data.originalPrice ?? null,
+          condition: data.condition,
+          location: data.location,
+          status: 'active',
+          images: imageUrls,
+          video_url: data.videoUrl || null,
+          specifications: data.specifications || {},
+        })
+        .select('*')
+        .single();
+
+      if (createError) throw createError;
+      const newListing = mapListingToListing({ ...createdAd, profiles: user });
+      setListings(prev => [newListing, ...prev]);
+      toast.success('Your ad was posted successfully!');
+      return true;
+    } catch (createError: any) {
+      toast.error(createError?.message || 'Unable to post your ad');
+      return false;
+    }
   };
 
   const updateListing = async (id: string, updates: Partial<Listing>) => {
-    setListings(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
+    if (!user) return;
+    const databaseUpdates: Record<string, any> = {};
+    if (updates.title !== undefined) databaseUpdates.title = updates.title;
+    if (updates.description !== undefined) databaseUpdates.description = updates.description;
+    if (updates.price !== undefined) databaseUpdates.price = updates.price;
+    if (updates.originalPrice !== undefined) databaseUpdates.original_price = updates.originalPrice;
+    if (updates.condition !== undefined) databaseUpdates.condition = updates.condition;
+    if (updates.location !== undefined) databaseUpdates.location = updates.location;
+    if (updates.status !== undefined) databaseUpdates.status = updates.status;
+    if (updates.images !== undefined) databaseUpdates.images = updates.images;
+    if (updates.videoUrl !== undefined) databaseUpdates.video_url = updates.videoUrl;
+    if (updates.specifications !== undefined) databaseUpdates.specifications = updates.specifications;
+    if (updates.featured !== undefined) databaseUpdates.featured = updates.featured;
+    if (updates.promotionPlanName !== undefined) databaseUpdates.promotion_plan_name = updates.promotionPlanName;
+    if (updates.promotionDurationMonths !== undefined) databaseUpdates.promotion_duration_months = updates.promotionDurationMonths;
+    if (updates.paymentStatus !== undefined) databaseUpdates.payment_status = updates.paymentStatus;
+    if (updates.paymentProofUrl !== undefined) databaseUpdates.payment_proof_url = updates.paymentProofUrl;
+    if (updates.amountPaid !== undefined) databaseUpdates.amount_paid = updates.amountPaid;
+
+    const { data: updatedAd, error: updateError } = await supabase
+      .from('ads')
+      .update(databaseUpdates)
+      .eq('id', id)
+      .select('*')
+      .single();
+    if (updateError) throw updateError;
+    const listing = listings.find(item => item.id === id);
+    setListings(prev => prev.map(item => item.id === id ? mapListingToListing({ ...updatedAd, profiles: listing ? { full_name: listing.sellerName, phone_number: listing.sellerPhone, avatar_url: listing.sellerAvatar, verified: listing.sellerVerified, verification_type: listing.sellerVerificationType } : user }) : item));
   };
 
-  const deleteListing = (id: string) => {
+  const deleteListing = async (id: string) => {
+    if (!user) return;
+    const { error: deleteError } = await supabase.from('ads').delete().eq('id', id);
+    if (deleteError) throw deleteError;
     setListings(prev => prev.filter(item => item.id !== id));
   };
 
-  const markAsSold = (id: string) => {
-    setListings(prev => prev.map(item => item.id === id ? { ...item, status: 'sold' } : item));
+  const markAsSold = async (id: string) => {
+    await updateListing(id, { status: 'sold' });
   };
 
   const toggleFeaturedListing = async (id: string) => {
@@ -777,51 +970,135 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await updateListing(id, { featured: true, promotionPlanName: planName, promotionDurationMonths: durationMonths });
   };
 
-  const sendMessage = (listingId: string, receiverId: string, content: string) => {
-    if (!user) return;
-    const listing = listings.find(l => l.id === listingId);
-    const newConv: Conversation = {
-      id: `conv_${Date.now()}`,
-      listingId,
-      listingTitle: listing?.title || 'Unknown Item',
-      listingImage: listing?.images[0] || '',
-      listingPrice: listing?.price || 0,
-      otherUser: { id: receiverId, name: 'Seller', avatar: '' },
-      lastMessage: content,
-      lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      messages: [{
-        id: `msg_${Date.now()}`,
-        senderId: user.id,
-        receiverId,
-        listingId,
-        content,
-        createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        isRead: false
-      }]
-    };
-    setConversations(prev => [newConv, ...prev]);
+  const refreshConversations = async (userId: string) => {
+    const { data: conversationRows, error: conversationError } = await supabase
+      .from('conversations')
+      .select('*')
+      .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
+      .order('last_message_time', { ascending: false });
+
+    if (conversationError) throw conversationError;
+
+    const mappedConversations = await Promise.all((conversationRows || []).map(async (row: any): Promise<Conversation> => {
+      const otherUserId = row.participant_1 === userId ? row.participant_2 : row.participant_1;
+      const [adResult, profileResult, messagesResult] = await Promise.all([
+        supabase.from('ads').select('id, title, price, images').eq('id', row.ad_id).maybeSingle(),
+        supabase.from('profiles').select('id, full_name, avatar_url').eq('id', otherUserId).maybeSingle(),
+        supabase.from('messages').select('*').eq('conversation_id', row.id).order('created_at', { ascending: true }),
+      ]);
+
+      return {
+        id: row.id,
+        listingId: row.ad_id,
+        listingTitle: adResult.data?.title || 'Marketplace ad',
+        listingImage: adResult.data?.images?.[0] || '',
+        listingPrice: Number(adResult.data?.price || 0),
+        otherUser: {
+          id: otherUserId,
+          name: profileResult.data?.full_name || 'Sealify user',
+          avatar: profileResult.data?.avatar_url || '',
+        },
+        lastMessage: row.last_message || '',
+        lastMessageTime: row.last_message_time || row.created_at,
+        messages: (messagesResult.data || []).map((message: any) => ({
+          id: message.id,
+          senderId: message.sender_id,
+          receiverId: message.receiver_id,
+          listingId: message.ad_id,
+          content: message.content,
+          createdAt: message.created_at,
+          isRead: Boolean(message.read),
+        })),
+      };
+    }));
+
+    setConversations(mappedConversations);
+  };
+
+  const sendMessage = async (listingId: string, receiverId: string, content: string) => {
+    if (!user || !content.trim()) return;
+
+    let conversation: any = null;
+    const firstConversation = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('ad_id', listingId)
+      .eq('participant_1', user.id)
+      .eq('participant_2', receiverId)
+      .maybeSingle();
+    conversation = firstConversation.data;
+
+    if (!conversation) {
+      const secondConversation = await supabase
+        .from('conversations')
+        .select('*')
+        .eq('ad_id', listingId)
+        .eq('participant_1', receiverId)
+        .eq('participant_2', user.id)
+        .maybeSingle();
+      conversation = secondConversation.data;
+    }
+
+    if (!conversation) {
+      const { data: createdConversation, error: conversationError } = await supabase
+        .from('conversations')
+        .insert({ ad_id: listingId, participant_1: user.id, participant_2: receiverId })
+        .select('*')
+        .single();
+      if (conversationError) throw conversationError;
+      conversation = createdConversation;
+    }
+
+    const { error: messageError } = await supabase.from('messages').insert({
+      conversation_id: conversation.id,
+      sender_id: user.id,
+      receiver_id: receiverId,
+      ad_id: listingId,
+      content: content.trim(),
+      status: 'sent',
+      read: false,
+    });
+    if (messageError) throw messageError;
+
+    const unreadUpdate = conversation.participant_1 === receiverId
+      ? { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_1: Number(conversation.unread_count_1 || 0) + 1 }
+      : { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_2: Number(conversation.unread_count_2 || 0) + 1 };
+    const { error: conversationUpdateError } = await supabase.from('conversations').update(unreadUpdate).eq('id', conversation.id);
+    if (conversationUpdateError) throw conversationUpdateError;
+
+    await refreshConversations(user.id);
   };
 
   const addNotification = (notification: Omit<AppNotification, 'id' | 'createdAt' | 'read'>) => {
-    const newNotif: AppNotification = {
-      ...notification,
-      id: `notif_${Date.now()}`,
+    if (!user) return;
+    void notificationService.notificationService.create({
+      user_id: user.id,
+      type: notification.type,
+      title: notification.title,
+      description: notification.description,
+      link_url: notification.linkUrl || null,
       read: false,
-      createdAt: new Date().toISOString()
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+    }).then((row: any) => {
+      if (row) setNotifications(prev => [mapNotificationRow(row), ...prev]);
+    });
   };
 
   const markNotificationRead = async (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    if (!user) return;
+    const success = await notificationService.notificationService.markNotificationRead(id);
+    if (success) setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   };
 
   const markAllNotificationsRead = async () => {
+    if (!user) return;
+    const { error: updateError } = await supabase.from('notifications').update({ read: true }).eq('user_id', user.id);
+    if (updateError) throw updateError;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
   const clearNotification = async (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    const success = await notificationService.notificationService.clearNotification(id);
+    if (success) setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const broadcastMassNotification = (data: { target: string; title: string; message: string }) => {
@@ -833,118 +1110,246 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const submitPasswordRequest = async (request: any) => {
-    setPasswordRequests(prev => [{ ...request, id: `pwd_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    const passwordBytes = new TextEncoder().encode(request.newPassword || '');
+    const passwordDigest = await crypto.subtle.digest('SHA-256', passwordBytes);
+    const newPasswordHash = Array.from(new Uint8Array(passwordDigest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+    const created = await passwordRequestService.passwordRequestService.create({
+      user_id: user.id,
+      user_email: user.email,
+      user_name: user.fullName,
+      nin: request.nin,
+      id_document_url: request.id_document_url || request.idDocumentUrl,
+      new_password_hash: newPasswordHash,
+      reason: request.reason,
+    });
+    if (created) setPasswordRequests(prev => [created, ...prev]);
   };
 
   const processPasswordRequest = async (id: string, status: string) => {
-    setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const success = await passwordRequestService.passwordRequestService.updateStatus(id, status);
+    if (success) setPasswordRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitVerificationRequest = async (request: any) => {
-    setVerificationRequests(prev => [{ ...request, id: `ver_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    const created = await verificationService.verificationService.create({
+      user_id: user.id,
+      user_name: user.fullName,
+      user_email: user.email,
+      type: request.type || 'individual',
+      doc_type: request.docType,
+      doc_number: request.docNumber,
+      doc_url: request.docUrl,
+    });
+    if (created) setVerificationRequests(prev => [created, ...prev]);
   };
 
   const processVerificationRequest = async (id: string, status: string) => {
-    setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const success = await verificationService.verificationService.updateStatus(id, status);
+    if (success) setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitPromotionPaymentRequest = async (request: any) => {
-    setPromotionPaymentRequests(prev => [{ ...request, id: `promo_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    const created = await promotionService.promotionService.create({
+      user_id: user.id,
+      ad_id: request.listingId,
+      amount: request.amount,
+      payment_method: request.paymentMethod,
+      payment_proof_url: request.paymentProofUrl || null,
+      plan_name: request.planName || 'Featured ad',
+      duration_months: request.durationMonths || 1,
+    });
+    if (created) setPromotionPaymentRequests(prev => [created, ...prev]);
   };
 
   const processPromotionPaymentRequest = async (id: string, status: string) => {
-    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const success = await promotionService.promotionService.updateStatus(id, status);
+    if (success) setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const addAnnouncement = async (announcement: Omit<SystemAnnouncement, 'id' | 'createdAt' | 'updatedAt'>) => {
-    setAnnouncements(prev => [{ ...announcement, id: `ann_${Date.now()}`, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...prev]);
+    if (!user || !isAdmin) return;
+    const created = await announcementService.announcementService.create({
+      title: announcement.title,
+      message: announcement.message,
+      type: announcement.type,
+      active: announcement.active,
+      target_roles: announcement.targetRoles || ['buyer', 'seller'],
+      created_by: user.id,
+    });
+    if (created) setAnnouncements(prev => [mapAnnouncementRow(created), ...prev]);
   };
 
   const toggleAnnouncement = async (id: string) => {
-    setAnnouncements(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
+    const announcement = announcements.find(item => item.id === id);
+    if (!announcement) return;
+    const { data, error: updateError } = await supabase.from('announcements').update({ active: !announcement.active }).eq('id', id).select().single();
+    if (updateError) throw updateError;
+    setAnnouncements(prev => prev.map(item => item.id === id ? mapAnnouncementRow(data) : item));
   };
 
   const deleteAnnouncement = async (id: string) => {
-    setAnnouncements(prev => prev.filter(a => a.id !== id));
+    const success = await announcementService.announcementService.delete(id);
+    if (success) setAnnouncements(prev => prev.filter(a => a.id !== id));
   };
 
   const submitReport = async (report: any) => {
-    setReports(prev => [{ ...report, id: `rep_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    const created = await reportService.reportService.create({
+      ad_id: report.listingId,
+      ad_title: report.listingTitle,
+      reporter_id: user.id,
+      reporter_name: user.fullName,
+      reason: report.reason,
+      details: report.details || null,
+    });
+    if (created) setReports(prev => [created, ...prev]);
   };
 
   const processReport = async (id: string, status: string) => {
-    setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const success = await reportService.reportService.updateStatus(id, status);
+    if (success) setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitDisputeCase = async (dispute: any) => {
-    setDisputeCases(prev => [{ ...dispute, id: `disp_${Date.now()}`, status: 'pending', createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    const created = await disputeService.disputeService.create({
+      user_id: user.id,
+      user_email: user.email,
+      receipt_ref: dispute.receiptRef || null,
+      item_title: dispute.itemTitle,
+      counterparty: dispute.counterparty,
+      category: dispute.category,
+      reason: dispute.reason,
+      details: dispute.details,
+      evidence_url: dispute.evidenceUrl || null,
+    });
+    if (created) setDisputeCases(prev => [created, ...prev]);
   };
 
   const processDisputeCase = async (id: string, status: string) => {
-    setDisputeCases(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+    const success = await disputeService.disputeService.updateStatus(id, status);
+    if (success) setDisputeCases(prev => prev.map(d => d.id === id ? { ...d, status } : d));
   };
 
   const addAuditLog = (action: string, details: string, type: string) => {
-    setAuditLogs(prev => [{ id: `audit_${Date.now()}`, action, details, type, createdAt: new Date().toISOString() }, ...prev]);
+    if (!user) return;
+    void auditService.auditService.create({ action, details, type, user_id: user.id }).then((created: any) => {
+      if (created) setAuditLogs(prev => [created, ...prev]);
+    });
   };
 
   const sealDeal = (listingTitle: string, buyerName: string, price: number) => {
-    setRecentDeals(prev => [{ id: `deal_${Date.now()}`, itemTitle: listingTitle, price, location: user?.location || 'Ogbomoso', time: 'Just now' }, ...prev]);
+    void buyerName;
+    void recentDealsService.recentDealsService.create({ item_title: listingTitle, price, location: user?.location || 'Ogbomoso', time: 'Just now' }).then((created: any) => {
+      if (created) setRecentDeals(prev => [created, ...prev]);
+    });
   };
 
   const recordIntrusion = (attemptedEmail: string, metadata: string) => {
-    setIntrusionLogs(prev => [{ id: `intr_${Date.now()}`, attemptedEmail, deviceInfo: metadata, mediaCaptured: false, mediaStatus: 'N/A', status: 'flagged', ipAddress: '0.0.0.0', userAgent: metadata, timestamp: new Date().toISOString() }, ...prev]);
+    void intrusionService.intrusionService.create({ attempted_email: attemptedEmail, device_info: { metadata }, media_captured: false, media_status: 'N/A', status: 'flagged', user_agent: metadata }).then((created: any) => {
+      if (created) setIntrusionLogs(prev => [created, ...prev]);
+    });
   };
 
   const saveSearchAlert = async (alert: Omit<SearchAlert, 'id' | 'userId' | 'createdAt' | 'matchCount' | 'isActive'>) => {
-    if (user) {
-      setSearchAlerts(prev => [{ ...alert, id: `alert_${Date.now()}`, userId: user.id, createdAt: new Date().toISOString(), matchCount: 0, isActive: true }, ...prev]);
-    }
+    if (!user) return;
+    const categoryId = alert.category === 'All'
+      ? null
+      : categories.find(category => category.name === alert.category)?.id || alert.category;
+    const created = await searchAlertService.searchAlertService.create({
+      user_id: user.id,
+      query: alert.query,
+      category_id: categoryId,
+      max_price: alert.maxPrice,
+      location: alert.location,
+    });
+    if (created) setSearchAlerts(prev => [mapSearchAlertRow(created), ...prev]);
   };
 
   const deleteSearchAlert = async (id: string) => {
-    setSearchAlerts(prev => prev.filter(a => a.id !== id));
+    const success = await searchAlertService.searchAlertService.delete(id);
+    if (success) setSearchAlerts(prev => prev.filter(alert => alert.id !== id));
   };
 
   const addReview = async (review: Omit<Review, 'id' | 'createdAt'>) => {
-    setReviews(prev => [{ ...review, id: `rev_${Date.now()}`, createdAt: new Date().toISOString() }, ...prev]);
+    const created = await reviewService.reviewService.create({
+      seller_id: review.sellerId,
+      buyer_id: review.buyerId,
+      buyer_name: review.buyerName,
+      buyer_avatar: review.buyerAvatar || null,
+      rating: review.rating,
+      comment: review.comment,
+    });
+    if (created) setReviews(prev => [mapReviewRow(created), ...prev]);
   };
 
   const deleteReview = async (id: string) => {
-    setReviews(prev => prev.filter(r => r.id !== id));
+    const success = await reviewService.reviewService.delete(id);
+    if (success) setReviews(prev => prev.filter(review => review.id !== id));
   };
 
   const createBuyerRequest = async (request: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => {
-    setBuyerRequests(prev => [{ ...request, id: `req_${Date.now()}`, createdAt: new Date().toISOString(), responsesCount: 0 }, ...prev]);
+    const categoryId = categories.find(category => category.name === request.category)?.id || request.category;
+    const created = await buyerRequestService.buyerRequestService.create({
+      user_id: request.userId,
+      user_name: request.userName,
+      user_avatar: request.userAvatar || null,
+      title: request.title,
+      category_id: categoryId,
+      max_budget: request.maxBudget,
+      location: request.location,
+      description: request.description,
+    });
+    if (created) setBuyerRequests(prev => [mapBuyerRequestRow(created), ...prev]);
   };
 
   const deleteBuyerRequest = async (id: string) => {
-    setBuyerRequests(prev => prev.filter(r => r.id !== id));
+    const success = await buyerRequestService.buyerRequestService.delete(id);
+    if (success) setBuyerRequests(prev => prev.filter(request => request.id !== id));
   };
 
   const requestPayout = async (amount: number) => {
-    if (!wallet || wallet.balance < amount) {
+    if (!user || !wallet || amount <= 0 || wallet.balance < amount) {
       toast.error('Insufficient balance');
       return;
     }
-    setWallet(prev => prev ? { ...prev, balance: prev.balance - amount, pendingBalance: prev.pendingBalance + amount } : null);
-    setTransactions(prev => [{ id: `txn_${Date.now()}`, walletId: wallet?.id || '', type: 'payout', amount: -amount, status: 'pending', description: 'Withdrawal to bank', createdAt: new Date().toISOString() }, ...prev]);
+    const { data: transaction, error: transactionError } = await supabase.from('transactions').insert({
+      wallet_id: wallet.id,
+      type: 'payout',
+      amount: -amount,
+      status: 'pending',
+      description: 'Withdrawal to bank',
+      related_user_id: user.id,
+    }).select().single();
+    if (transactionError) throw transactionError;
+
+    const { data: updatedWallet, error: walletError } = await supabase.from('wallets').update({
+      balance: wallet.balance - amount,
+      pending_balance: wallet.pendingBalance + amount,
+    }).eq('id', wallet.id).eq('user_id', user.id).select().single();
+    if (walletError) throw walletError;
+
+    setWallet(mapWalletRow(updatedWallet));
+    setTransactions(prev => [mapTransactionRow(transaction), ...prev]);
     toast.success(`Payout of ₦${amount.toLocaleString()} requested`);
   };
 
   const syncDatabase = async () => {
     setIsSyncing(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setIsSyncing(false);
-    setLastSyncTime(new Date().toLocaleTimeString());
-    toast.success('Database synchronized');
+    try {
+      await loadDatabaseState(user ? { id: user.id, role: user.role } : null);
+      setLastSyncTime(new Date().toLocaleTimeString());
+      toast.success('Database synchronized');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   const fetchData = async () => {
-    setIsSyncing(true);
-    await new Promise(r => setTimeout(r, 500));
-    setIsSyncing(false);
-    setLastSyncTime(new Date().toLocaleTimeString());
+    await syncDatabase();
   };
 
   const addUser = (newUser: UserProfile) => {
@@ -952,30 +1357,48 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteUser = (id: string) => {
-    setAllUsers(prev => prev.filter(u => u.id !== id));
+    void userService.userService.delete(id).then(success => {
+      if (success) setAllUsers(prev => prev.filter(existingUser => existingUser.id !== id));
+    });
   };
 
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
-    setAllUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
-    if (user?.id === id) {
-      setUser(prev => prev ? { ...prev, ...updates } : null);
-    }
+    const fieldMap: Record<string, string> = {
+      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'cover_url',
+      bio: 'bio', role: 'role', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
+      businessCategory: 'business_category', businessAddress: 'business_address', cacNumber: 'cac_number', businessHours: 'business_hours',
+      bankName: 'bank_name', accountNumber: 'account_number', accountName: 'account_name', websiteUrl: 'website_url',
+      instagramHandle: 'instagram_handle', twitterHandle: 'twitter_handle', whatsappNumber: 'whatsapp_number',
+      emailNotifications: 'email_notifications', whatsappNotifications: 'whatsapp_notifications', hidePhonePublicly: 'hide_phone_publicly',
+      hideLocationPublicly: 'hide_location_publicly', location: 'location', status: 'status', restrictionReason: 'restriction_reason',
+      appealStatus: 'appeal_status', totalValueTraded: 'total_value_traded', completedDeals: 'completed_deals',
+    };
+    const databaseUpdates = Object.entries(updates).reduce((mapped: Record<string, any>, [key, value]) => {
+      if (fieldMap[key]) mapped[fieldMap[key]] = value;
+      return mapped;
+    }, {});
+    const updated = await userService.userService.update(id, databaseUpdates as any);
+    if (!updated) return;
+    setAllUsers(prev => prev.map(existingUser => existingUser.id === id ? updated : existingUser));
+    if (user?.id === id) applyAuthenticatedUser(updated);
   };
 
   const bulkUpdateUsers = (ids: string[], updates: Partial<UserProfile>) => {
-    setAllUsers(prev => prev.map(u => ids.includes(u.id) ? { ...u, ...updates } : u));
+    void Promise.all(ids.map(id => updateUser(id, updates)));
   };
 
   const bulkDeleteUsers = (ids: string[]) => {
-    setAllUsers(prev => prev.filter(u => !ids.includes(u.id)));
+    void Promise.all(ids.map(id => userService.userService.delete(id))).then(() => {
+      setAllUsers(prev => prev.filter(existingUser => !ids.includes(existingUser.id)));
+    });
   };
 
   const bulkUpdateListings = (ids: string[], updates: Partial<Listing>) => {
-    setListings(prev => prev.map(l => ids.includes(l.id) ? { ...l, ...updates } : l));
+    void Promise.all(ids.map(id => updateListing(id, updates)));
   };
 
   const bulkDeleteListings = (ids: string[]) => {
-    setListings(prev => prev.filter(l => !ids.includes(l.id)));
+    void Promise.all(ids.map(id => deleteListing(id)));
   };
 
   const exportDatabaseBackup = () => {
@@ -988,44 +1411,216 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const addSafeSpot = async (spot: SafeMeetupSpotConfig) => {
-    setSafeSpots(prev => [...prev, { ...spot, id: `spot_${Date.now()}` }]);
+    const created = await safeSpotService.safeSpotService.create({
+      name: spot.name,
+      zone: spot.zone,
+      category: spot.category,
+      address: spot.address,
+      distance: spot.distance,
+      hours: spot.hours,
+      cctv_verified: spot.cctvVerified,
+    } as any);
+    if (created) setSafeSpots(prev => [...prev, mapSafeSpotRow(created)]);
   };
 
   const deleteSafeSpot = async (id: string) => {
-    setSafeSpots(prev => prev.filter(s => s.id !== id));
+    const success = await safeSpotService.safeSpotService.delete(id);
+    if (success) setSafeSpots(prev => prev.filter(spot => spot.id !== id));
   };
 
   const updatePromotionPlanRate = (months: number, rate: number) => {
-    setPromotionPlans(prev => prev.map(p => p.months === months ? { ...p, rate } : p));
+    void supabase.from('promotion_plans').update({ rate }).eq('months', months).then(({ data, error }) => {
+      if (error) throw error;
+      if (data) setPromotionPlans(prev => prev.map(plan => plan.months === months ? { ...plan, rate } : plan));
+    });
   };
 
   const addCategory = (category: CategoryConfig) => {
-    setCategories(prev => [...prev, category]);
+    void categoryService.categoryService.create({
+      id: category.id,
+      name: category.name,
+      icon_name: category.iconName,
+      color: category.color,
+      sort_order: categories.length,
+      is_active: true,
+    }).then((created: any) => {
+      if (created) setCategories(prev => [...prev, mapCategoryRow(created)]);
+    });
   };
 
   const deleteCategory = (id: string) => {
-    setCategories(prev => prev.filter(c => c.id !== id));
+    void categoryService.categoryService.delete(id).then(success => {
+      if (success) setCategories(prev => prev.filter(category => category.id !== id));
+    });
   };
 
   const updateCategory = (id: string, name: string) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name: name as Category } : c));
+    void categoryService.categoryService.update(id, { name }).then((updated: any) => {
+      if (updated) setCategories(prev => prev.map(category => category.id === id ? mapCategoryRow(updated) : category));
+    });
   };
 
-  // Initialize from localStorage
-  useEffect(() => {
-    const savedUser = localStorage.getItem('sealify_user');
-    if (savedUser) {
-      const parsed = JSON.parse(savedUser);
-      setUser(parsed);
-      setIsAdmin(parsed.role === 'admin');
+  const updateSystemConfig = (updates: Record<string, boolean | number>) => {
+    setSystemConfig(prev => ({ ...prev, ...updates }));
+    void Promise.all(Object.entries(updates)
+      .filter(([, value]) => typeof value === 'boolean')
+      .map(([key, value]) => systemConfigService.systemConfigService.updateConfig(key, value as boolean)));
+  };
+
+  const updateSiteSettings = (settings: Partial<typeof siteSettings>) => {
+    setSiteSettings(prev => ({ ...prev, ...settings }));
+    void supabase.from('site_settings').select('id').limit(1).maybeSingle().then(({ data, error }) => {
+      if (error) throw error;
+      const databaseSettings = {
+        site_name: settings.siteName,
+        site_description: settings.siteDescription,
+        og_image: settings.ogImage,
+        contact_email: settings.contactEmail,
+        contact_phone: settings.contactPhone,
+        updated_at: new Date().toISOString(),
+      };
+      const query = data?.id
+        ? supabase.from('site_settings').update(databaseSettings).eq('id', data.id)
+        : supabase.from('site_settings').insert(databaseSettings);
+      return query;
+    });
+  };
+
+  const loadDatabaseState = async (authUser: any | null) => {
+    const [listingResult, categoryRows, subcategoryRows, announcementRows, safeSpotRows, promotionPlanRows, configRows, siteSettingsRow, reviewRows, buyerRequestRows, recentDealRows] = await Promise.all([
+      supabase
+        .from('ads')
+        .select('*, profiles!ads_seller_id_fkey(*), ad_images(image_url, sort_order)')
+        .order('created_at', { ascending: false }),
+      categoryService.categoryService.getAll(),
+      subcategoryService.subcategoryService.getAll(),
+      announcementService.announcementService.getAll(),
+      safeSpotService.safeSpotService.getAll(),
+      promotionPlanService.promotionPlanService.getAll(),
+      systemConfigService.systemConfigService.getAll(),
+      siteSettingsService.siteSettingsService.get(),
+      reviewService.reviewService.getAll(),
+      buyerRequestService.buyerRequestService.getAll(),
+      recentDealsService.recentDealsService.getAll(),
+    ]);
+
+    if (listingResult.error) throw listingResult.error;
+    const mappedListings = (listingResult.data || []).map(mapListingToListing);
+    setListings(mappedListings);
+
+    const mappedCategories = (categoryRows || []).map(mapCategoryRow);
+    setCategories(mappedCategories.length ? mappedCategories : MOCK_CATEGORIES);
+    setSubcategories(subcategoryRows || []);
+    setAnnouncements((announcementRows || []).map(mapAnnouncementRow));
+    setSafeSpots((safeSpotRows || []).map(mapSafeSpotRow));
+    setPromotionPlans((promotionPlanRows || []).map(mapPromotionPlanRow));
+    setSystemConfig((configRows || []).reduce((config: Record<string, boolean | number>, row: any) => {
+      config[row.key] = row.value;
+      return config;
+    }, {}));
+
+    if (siteSettingsRow) {
+      setSiteSettings({
+        siteName: siteSettingsRow.site_name || MOCK_SITE_SETTINGS.siteName,
+        siteDescription: siteSettingsRow.site_description || MOCK_SITE_SETTINGS.siteDescription,
+        ogImage: siteSettingsRow.og_image || MOCK_SITE_SETTINGS.ogImage,
+        contactEmail: siteSettingsRow.contact_email || MOCK_SITE_SETTINGS.contactEmail,
+        contactPhone: siteSettingsRow.contact_phone || MOCK_SITE_SETTINGS.contactPhone,
+      });
     }
-    const savedAdminEmail = localStorage.getItem('sealify_admin_email');
-    if (savedAdminEmail) setAdminEmail(savedAdminEmail);
-    const savedAdminPass = localStorage.getItem('sealify_admin_password');
-    if (savedAdminPass) setAdminPassword(savedAdminPass);
-    const savedAdminPin = localStorage.getItem('sealify_admin_pin');
-    if (savedAdminPin) setAdminPin(savedAdminPin);
-    setLoading(false);
+
+    setReviews((reviewRows || []).map(mapReviewRow));
+    setBuyerRequests((buyerRequestRows || []).map(mapBuyerRequestRow));
+    setRecentDeals(recentDealRows || []);
+    setAnalytics(prev => ({
+      ...prev,
+      totalAds: mappedListings.length,
+      soldAds: mappedListings.filter(listing => listing.status === 'sold').length,
+      categoryDistribution: mappedCategories.map(category => ({
+        name: category.name,
+        count: mappedListings.filter(listing => listing.category === category.name).length,
+      })),
+    }));
+
+    if (!authUser) {
+      applyAuthenticatedUser(null);
+      setSavedListingIds([]);
+      setNotifications([]);
+      setConversations([]);
+      setSearchAlerts([]);
+      setWallet(null);
+      setTransactions([]);
+      return;
+    }
+
+    const [favoriteIds, notificationRows, searchAlertRows, walletResult, transactionResult] = await Promise.all([
+      favoriteService.favoriteService.getByUserId(authUser.id),
+      notificationService.notificationService.getAll(authUser.id),
+      searchAlertService.searchAlertService.getAll(authUser.id),
+      supabase.from('wallets').select('*').eq('user_id', authUser.id).maybeSingle(),
+      supabase.from('transactions').select('*').eq('related_user_id', authUser.id).order('created_at', { ascending: false }),
+    ]);
+
+    setSavedListingIds(favoriteIds);
+    setNotifications((notificationRows || []).map(mapNotificationRow));
+    setSearchAlerts((searchAlertRows || []).map(mapSearchAlertRow));
+    setWallet(walletResult.data ? mapWalletRow(walletResult.data) : null);
+    setTransactions((transactionResult.data || []).map(mapTransactionRow));
+    await refreshConversations(authUser.id);
+
+    if (authUser.role === 'admin') {
+      const [profiles, verificationRows, passwordRows, promotionRows, reportRows, disputeRows, auditRows, intrusionRows] = await Promise.all([
+        userService.userService.getAll(),
+        verificationService.verificationService.getAll(),
+        passwordRequestService.passwordRequestService.getAll(),
+        promotionService.promotionService.getAll(),
+        reportService.reportService.getAll(),
+        disputeService.disputeService.getAll(),
+        auditService.auditService.getAll(),
+        intrusionService.intrusionService.getAll(),
+      ]);
+      setAllUsers(profiles);
+      setVerificationRequests(verificationRows || []);
+      setPasswordRequests(passwordRows || []);
+      setPromotionPaymentRequests(promotionRows || []);
+      setReports(reportRows || []);
+      setDisputeCases(disputeRows || []);
+      setAuditLogs(auditRows || []);
+      setIntrusionLogs(intrusionRows || []);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const hydrate = async (sessionOverride?: any) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const session = sessionOverride ?? (await supabase.auth.getSession()).data.session;
+        const profile = session?.user ? await loadProfileForAuthUser(session.user) : null;
+        if (profile) applyAuthenticatedUser(profile);
+        await loadDatabaseState(profile ? { ...session.user, role: profile.role } : null);
+      } catch (loadError: any) {
+        console.error('Supabase hydration failed:', loadError);
+        if (mounted) setError(loadError?.message || 'Unable to load marketplace data');
+      } finally {
+        if (mounted) {
+          setLastSyncTime(new Date().toLocaleTimeString());
+          setLoading(false);
+        }
+      }
+    };
+
+    void hydrate();
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => void hydrate(session), 0);
+    });
+
+    return () => {
+      mounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   const contextValue = useMemo(() => ({
@@ -1038,14 +1633,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     adminPin,
     updateAdminCredentials,
     systemConfig,
-    updateSystemConfig: (updates: Record<string, boolean | number>) => {
-      setSystemConfig(prev => ({ ...prev, ...updates }));
-    },
+    updateSystemConfig,
     siteSettings,
-    updateSiteSettings: (settings: Partial<typeof siteSettings>) => {
-      setSiteSettings(prev => ({ ...prev, ...settings }));
-      addAuditLog('Site Meta Updated', 'Modified global site description/contact', 'broadcast');
-    },
+    updateSiteSettings,
     promotionPlans,
     updatePromotionPlanRate,
     safeSpots,

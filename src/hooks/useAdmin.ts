@@ -16,9 +16,9 @@ export const useAdmin = () => {
       }
 
       const { data, error } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .select("role")
-        .eq("user_id", user.id)
+        .eq("id", user.id)
         .eq("role", "admin")
         .maybeSingle();
 

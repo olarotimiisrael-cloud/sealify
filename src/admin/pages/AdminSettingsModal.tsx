@@ -110,7 +110,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
 
     setIsSaving(true);
     try {
-      updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminPin.trim());
+      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminPin.trim());
       setIsSaving(false);
       toast.success('Admin credentials updated successfully!');
     } catch (err) {

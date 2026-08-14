@@ -32,6 +32,96 @@ const handleSupabaseError = (error: any, operation: string) => {
   throw error;
 };
 
+const CATEGORY_LABELS: Record<string, string> = {
+  vehicles: 'Vehicles',
+  real_estate: 'Real Estate',
+  electronics: 'Electronics',
+  fashion: 'Fashion',
+  home_furniture: 'Home & Furniture',
+  services: 'Services',
+  jobs: 'Jobs',
+  beauty_health: 'Beauty & Health',
+  utility_energy: 'Utility & Energy',
+  solar_clean_energy: 'Solar & Clean Energy',
+};
+
+export const mapProfileToUser = (row: any): DbUser => ({
+  id: row.id,
+  email: row.email || '',
+  fullName: row.full_name || row.email || 'Sealify User',
+  phoneNumber: row.phone_number || '',
+  avatarUrl: row.avatar_url || '',
+  storeBannerUrl: row.cover_url || undefined,
+  bio: row.bio || undefined,
+  role: row.role || 'buyer',
+  verified: Boolean(row.verified),
+  verificationType: row.verification_type || 'none',
+  businessName: row.business_name || undefined,
+  businessCategory: row.business_category || undefined,
+  businessAddress: row.business_address || undefined,
+  cacNumber: row.cac_number || undefined,
+  businessHours: row.business_hours || undefined,
+  bankName: row.bank_name || undefined,
+  accountNumber: row.account_number || undefined,
+  accountName: row.account_name || undefined,
+  websiteUrl: row.website_url || undefined,
+  instagramHandle: row.instagram_handle || undefined,
+  twitterHandle: row.twitter_handle || undefined,
+  whatsappNumber: row.whatsapp_number || undefined,
+  emailNotifications: row.email_notifications,
+  whatsappNotifications: row.whatsapp_notifications,
+  hidePhonePublicly: row.hide_phone_publicly,
+  hideLocationPublicly: row.hide_location_publicly,
+  memberSince: row.member_since || row.created_at || new Date().toISOString(),
+  location: row.location || 'Ogbomoso, Oyo State',
+  status: row.status || 'active',
+  restrictionReason: row.restriction_reason || undefined,
+  appealStatus: row.appeal_status || 'none',
+  totalValueTraded: Number(row.total_value_traded || 0),
+  completedDeals: Number(row.completed_deals || 0),
+});
+
+export const mapListingToListing = (row: any): DbListing => {
+  const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+  const imageRows = Array.isArray(row.ad_images)
+    ? [...row.ad_images].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+    : [];
+  const images = Array.isArray(row.images) && row.images.length > 0
+    ? row.images
+    : imageRows.map((image) => image.image_url).filter(Boolean);
+
+  return {
+    id: row.id,
+    sellerId: row.seller_id,
+    sellerName: row.seller_name || profile?.full_name || 'Sealify Seller',
+    sellerPhone: row.seller_phone || profile?.phone_number || '',
+    sellerAvatar: row.seller_avatar || profile?.avatar_url || '',
+    sellerVerified: Boolean(row.seller_verified ?? profile?.verified),
+    sellerVerificationType: row.seller_verification_type || profile?.verification_type || 'none',
+    title: row.title,
+    description: row.description,
+    price: Number(row.price || 0),
+    originalPrice: row.original_price == null ? undefined : Number(row.original_price),
+    category: (CATEGORY_LABELS[row.category_id] || row.category_id || 'Services') as any,
+    condition: row.condition,
+    location: row.location || 'Ogbomoso, Oyo State',
+    status: row.status || 'active',
+    images,
+    videoUrl: row.video_url || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    viewsCount: Number(row.views_count || 0),
+    featured: Boolean(row.featured),
+    promotionDurationMonths: row.promotion_duration_months == null ? undefined : Number(row.promotion_duration_months),
+    promotionPlanName: row.promotion_plan_name || undefined,
+    promotionStartDate: row.promotion_start_date || undefined,
+    promotionEndDate: row.promotion_end_date || undefined,
+    paymentStatus: row.payment_status || 'pending',
+    paymentProofUrl: row.payment_proof_url || undefined,
+    amountPaid: row.amount_paid == null ? undefined : Number(row.amount_paid),
+    specifications: row.specifications || {},
+  } as DbListing;
+};
+
 export const userService = {
   getProfile: async (id: string): Promise<DbUser | null> => {
     try {
@@ -42,7 +132,7 @@ export const userService = {
         .maybeSingle();
       
       if (error) handleSupabaseError(error, 'getProfile');
-      return data;
+      return data ? mapProfileToUser(data) : null;
     } catch (e) {
       console.error('getProfile failed:', e);
       return null;
@@ -57,7 +147,7 @@ export const userService = {
         .order('created_at', { ascending: false });
       
       if (error) handleSupabaseError(error, 'getAllUsers');
-      return data || [];
+      return (data || []).map(mapProfileToUser);
     } catch (e) {
       console.error('getAllUsers failed:', e);
       return [];
@@ -73,7 +163,7 @@ export const userService = {
         .single();
       
       if (error) handleSupabaseError(error, 'createUser');
-      return data;
+      return data ? mapProfileToUser(data) : null;
     } catch (e) {
       console.error('createUser failed:', e);
       return null;
@@ -90,7 +180,7 @@ export const userService = {
         .single();
       
       if (error) handleSupabaseError(error, 'updateUser');
-      return data;
+      return data ? mapProfileToUser(data) : null;
     } catch (e) {
       console.error('updateUser failed:', e);
       return null;
@@ -121,12 +211,12 @@ export const listingService = {
         .select(`
           *,
           profiles!ads_seller_id_fkey(*),
-          ad_images(image_url)
+          ad_images(image_url, sort_order)
         `)
         .order('created_at', { ascending: false });
       
       if (error) handleSupabaseError(error, 'getAllListings');
-      return data || [];
+      return (data || []).map(mapListingToListing);
     } catch (e) {
       console.error('getAllListings failed:', e);
       return [];
@@ -146,7 +236,7 @@ export const listingService = {
       
       if (images && images.length > 0) {
         const imageInserts = images.map((url, index) => ({
-          listing_id: newListing.id,
+          ad_id: newListing.id,
           image_url: url,
           sort_order: index
         }));
@@ -373,6 +463,22 @@ export const messageService = {
 };
 
 export const notificationService = {
+  getAll: async (userId: string): Promise<any[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) handleSupabaseError(error, 'getNotifications');
+      return data || [];
+    } catch (e) {
+      console.error('getNotifications failed:', e);
+      return [];
+    }
+  },
+
   create: async (notif: any): Promise<any> => {
     try {
       const { data, error } = await supabase
@@ -995,11 +1101,11 @@ export const favoriteService = {
     try {
       const { data, error } = await supabase
         .from('favorites')
-        .select('listing_id')
+        .select('ad_id')
         .eq('user_id', userId);
       
       if (error) handleSupabaseError(error, 'getFavorites');
-      return (data || []).map(f => f.listing_id);
+      return (data || []).map(f => f.ad_id);
     } catch (e) {
       console.error('getFavorites failed:', e);
       return [];
@@ -1013,12 +1119,12 @@ export const favoriteService = {
           .from('favorites')
           .delete()
           .eq('user_id', userId)
-          .eq('listing_id', listingId);
+          .eq('ad_id', listingId);
         if (error) handleSupabaseError(error, 'removeFavorite');
       } else {
         const { error } = await supabase
           .from('favorites')
-          .insert([{ user_id: userId, listing_id: listingId }]);
+          .insert([{ user_id: userId, ad_id: listingId }]);
         if (error) handleSupabaseError(error, 'addFavorite');
       }
       return true;

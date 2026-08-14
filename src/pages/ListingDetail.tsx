@@ -614,5 +614,3 @@ export default function ListingDetail() {
     </div>
   );
 };
-
-export default ListingDetail;
