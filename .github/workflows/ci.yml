@@ -81,7 +81,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: sealify-nigeria
+          projectName: sealify
           directory: dist
           branch: preview-${{ github.event.pull_request.number }}
           wranglerVersion: '3'
@@ -104,7 +104,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: sealify-nigeria
+          projectName: sealify
           directory: dist
           branch: main
           wranglerVersion: '3'
