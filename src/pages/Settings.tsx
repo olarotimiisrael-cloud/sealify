@@ -370,7 +370,6 @@ const Settings: React.FC = () => {
                 {[
                   { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
                   { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
-                  { id: 'wallet', label: 'Wallet', icon: WalletIcon, desc: 'Balance, payouts, transaction history' },
                   { id: 'security', label: 'Security', icon: Shield, desc: 'Password, biometric, 2FA, sessions' },
                   { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
                   { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
@@ -473,19 +472,6 @@ const Settings: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
-                    {/* Wallet Quick Access */}
-                    <Link 
-                      to="/wallet"
-                      className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-all group"
-                    >
-                      <WalletIcon className="w-4 h-4" />
-                      <div className="text-left">
-                        <p className="text-[8px] font-black uppercase leading-none opacity-60">Balance</p>
-                        <p className="text-sm font-black leading-tight">{formatNGN(wallet?.balance || 0)}</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 ml-1 opacity-40 group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
-
                     <button
                       onClick={() => setIsPasswordModalOpen(true)}
                       className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"
@@ -914,101 +900,6 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
               </>
-            )}
-
-            {/* Wallet Section */}
-            {activeSection === 'wallet' && (
-              <div className="space-y-6">
-                {/* Balance Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-8 rounded-[2.5rem] shadow-2xl shadow-emerald-500/20 space-y-4 relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-all"></div>
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-black text-emerald-100 uppercase tracking-widest">Available Balance</span>
-                      <WalletIcon className="w-5 h-5 text-white/50" />
-                    </div>
-                    <p className="text-4xl font-black text-white">{formatNGN(wallet?.balance || 0)}</p>
-                    <button 
-                      onClick={() => setActiveSection('wallet')}
-                      className="w-full py-3 bg-white text-emerald-700 font-black rounded-2xl text-xs shadow-lg hover:scale-105 active:scale-95 transition-all"
-                    >
-                      WITHDRAW TO BANK
-                    </button>
-                  </div>
-
-                  <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl space-y-2">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Escrow Pending</span>
-                    </div>
-                    <p className="text-2xl font-black text-white">{formatNGN(wallet?.pendingBalance || 0)}</p>
-                    <p className="text-[10px] text-slate-500">Locked until buyers confirm delivery</p>
-                  </div>
-
-                  <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] shadow-xl space-y-2">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <TrendingUp className="w-4 h-4" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Total Withdrawn</span>
-                    </div>
-                    <p className="text-2xl font-black text-emerald-400">{formatNGN(wallet?.totalWithdrawn || 0)}</p>
-                    <p className="text-[10px] text-slate-500">Lifetime earnings processed</p>
-                  </div>
-                </div>
-
-                {/* Transaction History */}
-                <section className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-black text-white">Recent Transactions</h2>
-                    <button className="text-[10px] font-black text-emerald-400 uppercase tracking-widest hover:underline flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3" /> Refresh Feed
-                    </button>
-                  </div>
-
-                  <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl divide-y divide-slate-800">
-                    {transactions.length === 0 ? (
-                      <div className="p-12 text-center text-slate-500 text-xs italic">No financial activity recorded yet.</div>
-                    ) : (
-                      transactions.map((tx) => (
-                        <div key={tx.id} className="p-5 flex items-center justify-between gap-4 hover:bg-slate-800/40 transition-colors">
-                          <div className="flex items-center gap-4">
-                            <div className={`p-3 rounded-2xl border ${
-                              tx.type === 'sale' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 
-                              tx.type === 'payout' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 
-                              'bg-slate-800 text-slate-400 border-slate-700'
-                            }`}>
-                              {tx.type === 'sale' ? <ArrowDownLeft className="w-5 h-5" /> : <ArrowUpRight className="w-5 h-5" />}
-                            </div>
-                            <div>
-                              <h4 className="font-bold text-sm text-white">{tx.description}</h4>
-                              <p className="text-[10px] text-slate-500 flex items-center gap-2">
-                                {tx.createdAt} • <span className="uppercase font-black text-emerald-500/80">{tx.status}</span>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className={`text-lg font-black ${tx.amount > 0 ? 'text-emerald-400' : 'text-slate-200'}`}>
-                              {tx.amount > 0 ? '+' : '-'}{formatNGN(tx.amount)}
-                            </p>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </section>
-
-                {/* Bank Details Hint */}
-                <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-3xl flex items-start gap-4">
-                  <div className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-black text-white uppercase tracking-widest">Settlement Bank</p>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Withdrawals are processed to the bank account linked in your profile settings. Standard settlement time is 2-4 hours across the Ogbomoso Node.
-                    </p>
-                  </div>
-                </div>
-              </div>
             )}
 
             {/* Security Section */}

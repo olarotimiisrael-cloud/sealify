@@ -92,7 +92,7 @@ export const Footer: React.FC = () => {
           <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 uppercase font-black tracking-widest">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-500" />
-              <span>© 2024 SEALIFY NIGERIA. ALL RIGHTS RESERVED.</span>
+              <span>© 2027 SEALIFY NIGERIA. ALL RIGHTS RESERVED.</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Globe className="w-3.5 h-3.5" />

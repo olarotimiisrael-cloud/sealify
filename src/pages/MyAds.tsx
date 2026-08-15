@@ -18,7 +18,6 @@ import {
   User,
   Camera,
   Award,
-  ChevronRight,
   FileSpreadsheet,
   LogOut,
   PlusCircle,
@@ -32,7 +31,6 @@ import {
   Clock,
   XCircle,
   ShieldCheck,
-  Wallet as WalletIcon,
 } from 'lucide-react';
 
 export default function MyAds() {
@@ -42,7 +40,6 @@ export default function MyAds() {
     updateUser, 
     promoteListing, 
     updateListing,
-    wallet,
     verificationRequests,
     isSyncing,
     lastSyncTime,
@@ -215,18 +212,6 @@ export default function MyAds() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
-            <Link 
-              to="/wallet"
-              className="flex items-center gap-2 px-5 py-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl hover:bg-emerald-500/20 transition-all group"
-            >
-              <WalletIcon className="w-4 h-4" />
-              <div className="text-left">
-                <p className="text-[8px] font-black uppercase leading-none opacity-60">Balance</p>
-                <p className="text-sm font-black leading-tight">{formatNGN(wallet?.balance || 0)}</p>
-              </div>
-              <ChevronRight className="w-4 h-4 ml-1 opacity-40 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-
             <button
               onClick={() => setIsSalesReportOpen(true)}
               className="flex items-center gap-1.5 px-4 py-3 bg-slate-800 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-700 transition-colors"

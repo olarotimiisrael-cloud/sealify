@@ -31,7 +31,6 @@ import {
   Users,
   PlayCircle,
   ArrowLeft,
-  Wallet,
   Newspaper,
   BadgeCheck,
   Bot,
@@ -232,10 +231,6 @@ const Navbar: React.FC = () => {
                       <Store className="w-4 h-4 text-emerald-400" />
                       <span>{t('my_ads')}</span>
                     </Link>
-                    <Link to="/wallet" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
-                      <Wallet className="w-4 h-4 text-blue-400" />
-                      <span>My Wallet</span>
-                    </Link>
                     <Link to="/vendors" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <Building2 className="w-4 h-4 text-amber-400" />
                       <span>Merchant Directory</span>
@@ -311,9 +306,6 @@ const Navbar: React.FC = () => {
             </div>
             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
               {t('requests')}
-            </Link>
-            <Link to="/wallet" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-blue-500/10 border border-blue-500/30 text-blue-300 font-bold rounded-xl text-center text-xs">
-              My Wallet
             </Link>
             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
               {t('post_free_ad').toUpperCase()}

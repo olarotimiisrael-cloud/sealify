@@ -14,7 +14,6 @@ import { categoriesRoutes } from "./api/categories";
 import { buyerRequestsRoutes } from "./api/buyer-requests";
 import { reviewsRoutes } from "./api/reviews";
 import { searchRoutes } from "./api/search";
-import { walletRoutes } from "./api/wallet";
 import { analyticsRoutes } from "./api/analytics";
 import { pushRoutes } from "./api/push";
 import { healthRoutes } from "./api/health";
@@ -51,7 +50,6 @@ app.route("/api/categories", categoriesRoutes);
 app.route("/api/buyer-requests", buyerRequestsRoutes);
 app.route("/api/reviews", reviewsRoutes);
 app.route("/api/search", searchRoutes);
-app.route("/api/wallet", walletRoutes);
 app.route("/api/analytics", analyticsRoutes);
 app.route("/api/push", pushRoutes);
 

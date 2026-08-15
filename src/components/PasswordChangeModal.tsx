@@ -21,7 +21,6 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ isOpen
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nin, setNin] = useState('');
-  const [newPassword, setNewPassword] = useState('');
   const [reason, setReason] = useState(REASONS[0]);
   const [idDoc, setIdDoc] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -53,17 +52,11 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ isOpen
       return;
     }
 
-    if (newPassword.length < 6) {
-      toast.error('New password must be at least 6 characters');
-      return;
-    }
-
     submitPasswordRequest({
       userId: user.id,
       userEmail: user.email,
       userName: user.fullName,
       nin,
-      newPassword,
       reason,
       id_document_url: idDoc,
     });
@@ -127,21 +120,6 @@ export const PasswordChangeModal: React.FC<PasswordChangeModalProps> = ({ isOpen
                     <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-emerald-400" />
-                  <span>Proposed New Password *</span>
-                </label>
-                <input
-                  type="password"
-                  required
-                  placeholder="Enter new secure password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500 transition-colors"
-                />
               </div>
 
               <div className="space-y-1.5">

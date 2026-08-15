@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, Home, Heart, PlusCircle, MessageSquare, Shield, User, Settings, Wallet, Store, HelpCircle, LogOut, Newspaper, BadgeCheck, TrendingUp, PlayCircle, Building2 } from 'lucide-react';
+import { X, Home, Heart, PlusCircle, MessageSquare, Shield, User, Settings, Store, HelpCircle, LogOut, Newspaper, BadgeCheck, TrendingUp, PlayCircle, Building2 } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 interface NavigationDrawerProps {
@@ -28,7 +28,6 @@ export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onCl
 
   const userItems = isAuthenticated ? [
     { path: '/my-ads', label: t('my_ads'), icon: Store },
-    { path: '/wallet', label: 'Wallet', icon: Wallet },
     { path: '/settings', label: t('settings'), icon: Settings },
     { path: '/escrow-verify', label: 'Verify Escrow', icon: BadgeCheck },
   ] : [

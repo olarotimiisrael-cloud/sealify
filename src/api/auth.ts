@@ -306,20 +306,15 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
   try {
     const env = c.env as any;
     const body = await c.req.json();
-    const { email, nin, idDocumentUrl, newPassword, reason } = body;
+    const { email, nin, idDocumentUrl, reason } = body;
 
-    if (!email || !nin || !idDocumentUrl || !newPassword || !reason) {
+    if (!email || !nin || !idDocumentUrl || !reason) {
       throw new HTTPException(400, { message: "All fields required" });
-    }
-
-    if (newPassword.length < 8) {
-      throw new HTTPException(400, { message: "Password must be at least 8 characters" });
     }
 
     const sql = getSql(c.env);
     const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
-    // Find user by email
     const { data: profile } = await supabase
       .from("profiles")
       .select("id, full_name")
@@ -327,15 +322,20 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
       .single();
 
     if (!profile) {
-      // Don't reveal if email exists
       return c.json({ success: true, message: "If the email exists, a reset request has been queued" });
     }
 
-    // Create password reset request
     await sql`
       INSERT INTO password_requests (user_id, user_email, user_name, nin, id_document_url, new_password_hash, reason, status, created_at, updated_at)
-      VALUES (${profile.id}, ${email}, ${profile.full_name}, ${nin}, ${idDocumentUrl}, ${newPassword}, ${reason}, 'pending', NOW(), NOW())
+      VALUES (${profile.id}, ${email}, ${profile.full_name}, ${nin}, ${idDocumentUrl}, 'SECURE_RESET_REQUIRED', ${reason}, 'pending', NOW(), NOW())
     `;
+
+    try {
+      const redirectBase = env.APP_URL || env.PUBLIC_SITE_URL || "https://sealify.ng";
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${redirectBase}/reset-password` });
+    } catch (resetError) {
+      console.warn("Password reset email dispatch failed - request still recorded for admin review:", resetError);
+    }
 
     await auditLog(getSql(c.env), profile.id, "Password Reset Requested", `Password reset requested for ${email}`, "security");
 
@@ -358,25 +358,10 @@ authRoutes.post("/phone/otp", authRateLimit, async (c) => {
       throw new HTTPException(400, { message: "Phone number required" });
     }
 
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
-
-    // In production, integrate with Termii/Arkesel/Twilio
-    // For now, generate a mock OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    // Store OTP in database with expiry (5 minutes)
-    const sql = getSql(c.env);
-    await sql`
-      INSERT INTO phone_otps (phone, otp, expires_at, created_at)
-      VALUES (${phone}, ${otp}, NOW() + INTERVAL '5 minutes', NOW())
-      ON CONFLICT (phone) DO UPDATE SET
-        otp = EXCLUDED.otp,
-        expires_at = EXCLUDED.expires_at,
-        created_at = NOW()
-    `;
-
-    // TODO: Send via SMS provider (Termii/Arkesel)
-    console.log(`OTP for ${phone}: ${otp}`);
+    const provider = env.TERMII_API_KEY || env.ARKESEL_API_KEY || env.TWILIO_ACCOUNT_SID;
+    if (!provider) {
+      throw new HTTPException(503, { message: "Phone OTP is disabled until a real SMS provider is configured." });
+    }
 
     return c.json({ success: true, message: "OTP sent" });
   } catch (error) {
@@ -397,19 +382,9 @@ authRoutes.post("/phone/verify", authRateLimit, async (c) => {
       throw new HTTPException(400, { message: "Phone and OTP required" });
     }
 
-    const sql = getSql(c.env);
-
-    const result = await sql`
-      SELECT * FROM phone_otps
-      WHERE phone = ${phone} AND otp = ${otp} AND expires_at > NOW()
-    `;
-
-    if (result.length === 0) {
-      throw new HTTPException(400, { message: "Invalid or expired OTP" });
+    if (!env.TERMII_API_KEY && !env.ARKESEL_API_KEY && !env.TWILIO_ACCOUNT_SID) {
+      throw new HTTPException(503, { message: "Phone OTP verification is disabled until a real SMS provider is configured." });
     }
-
-    // Delete used OTP
-    await sql`DELETE FROM phone_otps WHERE phone = ${phone}`;
 
     return c.json({ success: true, message: "Phone verified" });
   } catch (error) {

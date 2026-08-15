@@ -845,11 +845,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendPhoneOtp = async (phone: string) => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    throw new Error('Phone OTP is disabled until a real SMS provider is configured.');
   };
 
   const verifyPhoneOtp = async (phone: string, code: string) => {
-    return true;
+    throw new Error('Phone OTP verification is disabled until a real SMS provider is configured.');
   };
 
   const logout = () => {
@@ -1128,16 +1128,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const submitPasswordRequest = async (request: any) => {
     if (!user) return;
-    const passwordBytes = new TextEncoder().encode(request.newPassword || '');
-    const passwordDigest = await crypto.subtle.digest('SHA-256', passwordBytes);
-    const newPasswordHash = Array.from(new Uint8Array(passwordDigest)).map(byte => byte.toString(16).padStart(2, '0')).join('');
     const created = await passwordRequestService.passwordRequestService.create({
       user_id: user.id,
       user_email: user.email,
       user_name: user.fullName,
       nin: request.nin,
       id_document_url: request.id_document_url || request.idDocumentUrl,
-      new_password_hash: newPasswordHash,
+      new_password_hash: 'SECURE_RESET_REQUIRED',
       reason: request.reason,
     });
     if (created) setPasswordRequests(prev => [created, ...prev]);

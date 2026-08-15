@@ -27,7 +27,6 @@ const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const EscrowVerifier = lazy(() => import("./pages/EscrowVerifier"));
 const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
-const Wallet = lazy(() => import("./pages/Wallet"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
 
 const routeFallback = (
@@ -65,7 +64,6 @@ const App = () => (
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/escrow-verify" element={<EscrowVerifier />} />
           <Route path="/community" element={<CommunityBoard />} />
-          <Route path="/wallet" element={<Wallet />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
