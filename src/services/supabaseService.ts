@@ -896,9 +896,14 @@ export const systemConfigService = {
 export const siteSettingsService = {
   get: async (): Promise<DbSiteSettings | null> => {
     try {
-      const { data, error } = await supabase.from('site_settings').select('*').maybeSingle();
+      const { data, error } = await supabase
+        .from('site_settings')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
       if (error) handleSupabaseError(error, 'getSiteSettings');
-      return data;
+      return data?.[0] ?? null;
     } catch (e) {
       console.error('getSiteSettings failed:', e);
       return null;
@@ -907,13 +912,35 @@ export const siteSettingsService = {
   
   updateSettings: async (settings: Partial<DbSiteSettings>): Promise<DbSiteSettings | null> => {
     try {
-      const { data, error } = await supabase
+      const existing = await supabase
         .from('site_settings')
-        .upsert([{ ...settings, updated_at: new Date().toISOString() }])
-        .select()
-        .single();
-      if (error) handleSupabaseError(error, 'updateSiteSettings');
-      return data;
+        .select('id')
+        .order('updated_at', { ascending: false })
+        .limit(1);
+
+      if (existing.error) {
+        handleSupabaseError(existing.error, 'updateSiteSettings');
+        return null;
+      }
+
+      const payload = { ...settings, updated_at: new Date().toISOString() };
+      const targetId = existing.data?.[0]?.id;
+
+      const result = targetId
+        ? await supabase
+            .from('site_settings')
+            .update(payload)
+            .eq('id', targetId)
+            .select()
+            .single()
+        : await supabase
+            .from('site_settings')
+            .insert(payload)
+            .select()
+            .single();
+
+      if (result.error) handleSupabaseError(result.error, 'updateSiteSettings');
+      return result.data;
     } catch (e) {
       console.error('updateSiteSettings failed:', e);
       return null;

@@ -1483,21 +1483,35 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateSiteSettings = (settings: Partial<typeof siteSettings>) => {
     setSiteSettings(prev => ({ ...prev, ...settings }));
-    void supabase.from('site_settings').select('id').limit(1).maybeSingle().then(({ data, error }) => {
-      if (error) throw error;
-      const databaseSettings = {
-        site_name: settings.siteName,
-        site_description: settings.siteDescription,
-        og_image: settings.ogImage,
-        contact_email: settings.contactEmail,
-        contact_phone: settings.contactPhone,
-        updated_at: new Date().toISOString(),
-      };
-      const query = data?.id
-        ? supabase.from('site_settings').update(databaseSettings).eq('id', data.id)
-        : supabase.from('site_settings').insert(databaseSettings);
-      return query;
-    });
+    void supabase
+      .from('site_settings')
+      .select('id')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('updateSiteSettings lookup failed:', error);
+          return;
+        }
+
+        const databaseSettings = {
+          site_name: settings.siteName,
+          site_description: settings.siteDescription,
+          og_image: settings.ogImage,
+          contact_email: settings.contactEmail,
+          contact_phone: settings.contactPhone,
+          updated_at: new Date().toISOString(),
+        };
+
+        const targetRow = data?.[0];
+
+        if (targetRow?.id) {
+          void supabase.from('site_settings').update(databaseSettings).eq('id', targetRow.id);
+          return;
+        }
+
+        void supabase.from('site_settings').insert(databaseSettings);
+      });
   };
 
   const loadDatabaseState = async (authUser: any | null) => {
