@@ -1,10 +1,11 @@
 name = "sealify"
-compatibility_date = "2024-01-01"
+compatibility_date = "2026-08-16"
+compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
 [env.production]
 NODE_VERSION = "20"
 
-# Remove placeholder SESSION_KV binding - not used in application
-# If KV is needed later, create namespace via: wrangler kv:namespace create "SESSION_KV"
-# Then add binding with actual namespace ID
+# HYPERDRIVE must be attached to the Pages project in Cloudflare before
+# database-backed API routes can operate. The binding is intentionally not
+# hardcoded here because this repository does not contain the account-specific ID.

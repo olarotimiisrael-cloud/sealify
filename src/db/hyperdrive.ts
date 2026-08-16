@@ -1,30 +1,19 @@
-import postgres, { Sql, TransactionSql } from "postgres";
+import postgres, { TransactionSql } from "postgres";
 
 export interface HyperdriveEnv {
   HYPERDRIVE: any;
 }
 
-let sql: ReturnType<typeof postgres> | null = null;
-
 export function getSql(env: HyperdriveEnv) {
-  if (!sql) {
-    const connectionString = env.HYPERDRIVE.connectionString;
-    sql = postgres(connectionString, {
-      max: 10,
-      idle_timeout: 20,
-      connect_timeout: 10,
-      prepare: false,
-      onnotice: () => {},
-    });
+  if (!env.HYPERDRIVE?.connectionString) {
+    throw new Error("HYPERDRIVE binding is not configured");
   }
-  return sql;
-}
 
-export async function closeSql() {
-  if (sql) {
-    await sql.end();
-    sql = null;
-  }
+  return postgres(env.HYPERDRIVE.connectionString, {
+    max: 5,
+    fetch_types: false,
+    prepare: true,
+  });
 }
 
 // Helper functions
