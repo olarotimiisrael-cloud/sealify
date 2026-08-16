@@ -4,10 +4,8 @@ import { useSealify } from '@/context/SealifyContext';
 import Navbar from '@/components/Navbar';
 import SEO from '@/components/SEO';
 import { 
-  ShieldAlert, 
   Lock, 
   Mail, 
-  Key, 
   Terminal, 
   AlertTriangle, 
   ShieldCheck, 
@@ -24,7 +22,6 @@ const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [pin, setPin] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [isLockedOut, setIsLockedOut] = useState(false);
@@ -43,7 +40,7 @@ const AdminLogin: React.FC = () => {
     // Security delay to prevent timing attacks
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = await adminLogin(email, password, pin);
+    const success = await adminLogin(email, password);
     setIsAuthenticating(false);
 
     if (success) {
@@ -152,24 +149,6 @@ const AdminLogin: React.FC = () => {
                   >
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">
-                  Master PIN *
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-rose-400 absolute left-4 top-3.5" />
-                  <input
-                    type="password"
-                    required
-                    maxLength={6}
-                    value={pin}
-                    onChange={(e) => setPin(e.target.value)}
-                    placeholder="6-Digit Master PIN"
-                    className="w-full bg-slate-950 border border-rose-500/50 focus:border-rose-500 rounded-xl pl-11 pr-4 py-3 text-sm font-black text-rose-400 focus:outline-none font-mono tracking-widest transition-colors"
-                  />
                 </div>
               </div>
 

@@ -100,13 +100,6 @@ authRoutes.post("/register", authRateLimit, async (c) => {
         updated_at = NOW()
     `;
 
-    // Create wallet
-    await sql`
-      INSERT INTO wallets (user_id, balance, pending_balance, total_withdrawn, currency, updated_at)
-      VALUES (${userId}, 0, 0, 0, 'NGN', NOW())
-      ON CONFLICT (user_id) DO NOTHING
-    `;
-
     // Create user settings
     await sql`
       INSERT INTO user_settings (user_id, email_notifications, whatsapp_notifications, push_notifications, price_drop_alerts, new_message_alerts, weekly_digest, promotion_expiry_reminders, language, theme, created_at, updated_at)

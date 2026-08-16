@@ -20,7 +20,6 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import DeliveryEstimatorModal from '../components/DeliveryEstimatorModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
 import LightboxModal from '../components/LightboxModal';
-import DealQrScannerModal from '../components/DealQrScannerModal';
 import AiVoiceOverviewModal from '../components/AiVoiceOverviewModal';
 import PriceDropAlertModal from '../components/PriceDropAlertModal';
 import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
@@ -85,7 +84,6 @@ export default function ListingDetail() {
   const [isFlyerOpen, setIsFlyerOpen] = useState(false);
   const [isVoiceTourOpen, setIsVoiceTourOpen] = useState(false);
   const [isPriceDropOpen, setIsPriceDropOpen] = useState(false);
-  const [isDealScannerOpen, setIsDealScannerOpen] = useState(false);
   const [chatMessage, setChatMessage] = useState('Hi, is this item still available?');
   const [viewMode, setViewMode] = useState<'image' | 'video'>('image');
 
@@ -214,10 +212,6 @@ export default function ListingDetail() {
     navigate('/messages');
   };
 
-  const handleDealSealedInChat = (receiptMsg: string) => {
-    sendMessage(listing.id, listing.sellerId, receiptMsg);
-  };
-
   const handleDeleteListing = async () => {
     if (!confirm('Are you sure you want to delete this listing?')) return;
     try {
@@ -256,14 +250,6 @@ export default function ListingDetail() {
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
         <div className="flex items-center justify-end flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={() => setIsDealScannerOpen(true)}
-              className="p-2 bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center gap-1.5 text-xs font-black shadow-lg rounded-xl hover:scale-105 transition-all"
-              title="Verify In-Person Handover QR or PIN Code"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Verify Handover PIN</span>
-            </button>
 
             <button
               onClick={() => setIsVoiceTourOpen(true)}
@@ -581,7 +567,6 @@ export default function ListingDetail() {
       <DeliveryEstimatorModal isOpen={isDeliveryOpen} onClose={() => setIsDeliveryOpen(false)} itemTitle={listing.title} itemLocation={listing.location} onSendEstimateToChat={handleSendEstimateToChat} />
       <InspectionChecklistModal isOpen={isInspectionOpen} onClose={() => setIsInspectionOpen(false)} category={listing.category} itemTitle={listing.title} onSendChecklistToChat={handleSendInspectionReport} />
       <LightboxModal isOpen={isLightboxOpen} onClose={() => setIsLightboxOpen(false)} images={listing.images || []} currentIndex={activeImageIndex} onIndexChange={setActiveImageIndex} title={listing.title} />
-      <DealQrScannerModal isOpen={isDealScannerOpen} onClose={() => setIsDealScannerOpen(false)} listing={listing} onDealSealed={handleDealSealedInChat} />
       
       <AiVoiceOverviewModal
         isOpen={isVoiceTourOpen}

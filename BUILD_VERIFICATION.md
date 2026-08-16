@@ -87,9 +87,7 @@ Run npm run build
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ Set |
 | `SUPABASE_ANON_KEY` | ✅ Set |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Set (Secret) |
-| `ADMIN_EMAIL` | ✅ Set (Secret) |
-| `ADMIN_PASSWORD` | ✅ Set (Secret) |
-| `ADMIN_PIN` | ✅ Set (Secret) |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_PIN` | Not used; authenticate through Supabase Auth |
 | `NODE_VERSION` | `20` |
 | `NODE_ENV` | `production` |
 

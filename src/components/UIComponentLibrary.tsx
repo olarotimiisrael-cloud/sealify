@@ -76,8 +76,6 @@ const UIComponentLibrary: React.FC = () => {
     { name: 'SwapProposalModal', category: 'marketplace', variants: ['Item Input', 'Valuation', 'Cash Diff'], description: 'Barter/trade-in proposals', icon: ArrowRightLeft },
     { name: 'SafeMeetupModal', category: 'marketplace', variants: ['Zone Filter', 'Spot List', 'GPS Directions'], description: 'Verified safe spots', icon: MapPin },
     { name: 'InspectionChecklistModal', category: 'marketplace', variants: ['Electronics', 'Vehicles', 'Real Estate', 'General'], description: 'Category checklists', icon: CheckSquare },
-    { name: 'EscrowInitiatorModal', category: 'marketplace', variants: ['Amount', 'Location', 'Payment Method'], description: 'Secure fund locking', icon: Shield },
-    { name: 'DealQrScannerModal', category: 'marketplace', variants: ['Display QR', 'Verify PIN', 'Complete'], description: 'QR handover verification', icon: QrCode },
     { name: 'AiVoiceOverviewModal', category: 'marketplace', variants: ['Presenter Select', 'Speed Control', 'Transcript'], description: 'AI audio briefing', icon: Volume2 },
     { name: 'StorefrontFlycardModal', category: 'marketplace', variants: ['Canvas Gen', 'Download', 'Share'], description: 'Social promo cards', icon: ImageIcon },
     { name: 'PriceHistoryChart', category: 'marketplace', variants: ['Area Chart', 'Trend Indicator'], description: 'Market trends', icon: BarChart },

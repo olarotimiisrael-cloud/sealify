@@ -10,12 +10,8 @@ import SafeMeetupModal from '../components/SafeMeetupModal';
 import OfferModal from '../components/OfferModal';
 import SwapProposalModal from '../components/SwapProposalModal';
 import InspectionChecklistModal from '../components/InspectionChecklistModal';
-import EscrowInitiatorModal from '../components/EscrowInitiatorModal';
-import TransactionReceiptModal from '../components/TransactionReceiptModal';
 import {
   MessageSquare,
-  CheckCircle2,
-  Lock,
   ArrowRightLeft,
   CheckSquare,
   MapPin,
@@ -50,8 +46,6 @@ export default function Messages() {
   const [isOfferOpen, setIsOfferOpen] = useState(false);
   const [isSwapOpen, setIsSwapOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [isEscrowModalOpen, setIsEscrowModalOpen] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -152,15 +146,6 @@ export default function Messages() {
     });
   };
 
-  const handleSealTheDeal = (receiptMsg: string) => {
-    if (!activeConv) return;
-    sendMessageMutation.mutate({
-      conversationId: activeConv.listingId,
-      receiverId: activeConv.otherUser.id,
-      content: receiptMsg,
-    });
-  };
-
   const handleAcceptOfferInline = (offerText: string) => {
     if (!activeConv) return;
     sendMessageMutation.mutate({
@@ -256,24 +241,6 @@ export default function Messages() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {activeListing?.sellerId === user?.id && activeListing?.status === 'active' && (
-                    <button
-                      onClick={() => setIsReceiptOpen(true)}
-                      className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 transition-all"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Seal Deal</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => setIsEscrowModalOpen(true)}
-                    className="px-3 py-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 rounded-xl text-xs font-bold border border-teal-500/30 flex items-center gap-1.5 transition-colors"
-                  >
-                    <Lock className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Escrow</span>
-                  </button>
-
                   <button
                     onClick={() => setIsSwapOpen(true)}
                     className="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 rounded-xl text-xs font-bold border border-amber-500/30 flex items-center gap-1.5 transition-colors"
@@ -316,8 +283,6 @@ export default function Messages() {
                   const isOfferMsg = m.content.includes('OFFER PROPOSAL');
                   const isSwapMsg = m.content.includes('ITEM SWAP & TRADE-IN PROPOSAL');
                   const isInspectionMsg = m.content.includes('IN-PERSON INSPECTION REPORT');
-                  const isReceiptMsg = m.content.includes('OFFICIAL SEALIFY TRANSACTION RECEIPT');
-                  const isEscrowMsg = m.content.includes('SEALIFY SAFE ESCROW VAULT');
                   const isAudioMsg = m.content.includes('Voice Note');
 
                   return (
@@ -334,10 +299,6 @@ export default function Messages() {
                             ? 'bg-amber-950/90 border border-amber-400/50 text-amber-200 rounded-bl-none'
                             : isInspectionMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
-                            : isReceiptMsg
-                            ? 'bg-emerald-950/90 border border-emerald-500/50 text-emerald-300 rounded-bl-none'
-                            : isEscrowMsg
-                            ? 'bg-teal-950/90 border border-teal-400/50 text-teal-200 rounded-bl-none'
                             : isAudioMsg
                             ? 'bg-purple-950/80 border border-purple-500/40 text-purple-200 rounded-bl-none'
                             : 'bg-slate-800 text-slate-200 rounded-bl-none'
@@ -469,30 +430,6 @@ export default function Messages() {
         itemTitle={activeConv?.listingTitle || 'Item'}
         onSendChecklistToChat={handleSendInspectionReport}
       />
-
-      <EscrowInitiatorModal
-        isOpen={isEscrowModalOpen}
-        onClose={() => setIsEscrowModalOpen(false)}
-        listingTitle={activeConv?.listingTitle || 'Item'}
-        price={activeConv?.listingPrice || 0}
-        sellerName={activeConv?.otherUser.name || 'Merchant'}
-        onSendEscrowToChat={(msg) => {
-          if (activeConv) sendMessageMutation.mutate({
-            conversationId: activeConv.id,
-            receiverId: activeConv.otherUser.id,
-            content: msg,
-          });
-        }}
-      />
-
-      {activeListing && (
-        <TransactionReceiptModal
-          isOpen={isReceiptOpen}
-          onClose={() => setIsReceiptOpen(false)}
-          listing={activeListing}
-          onSendToChat={handleSealTheDeal}
-        />
-      )}
 
       <MobileNav />
     </div>

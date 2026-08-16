@@ -8,6 +8,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { adminFetch } from '@/lib/admin-api';
 
 const DatabaseDiagramViewer: React.FC = () => {
   const [sqlContent, setSqlContent] = useState<string>('');
@@ -21,7 +22,7 @@ const DatabaseDiagramViewer: React.FC = () => {
   const generateSchema = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch('/admin/db-schema');
+      const response = await adminFetch('/api/admin/schema');
       if (response.ok) {
         const data = await response.text();
         setSqlContent(data);

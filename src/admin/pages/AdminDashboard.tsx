@@ -77,8 +77,6 @@ const AdminDashboard: React.FC = () => {
     bulkDeleteUsers,
     bulkUpdateListings,
     bulkDeleteListings,
-    wallet,
-    transactions,
     searchAlerts,
     reviews,
     buyerRequests,
@@ -191,7 +189,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'users', label: 'User Management', icon: Users },
     { id: 'content', label: 'Content Moderation', icon: Shield },
-    { id: 'finance', label: 'Finance & Revenue', icon: TrendingUp },
+    { id: 'finance', label: 'Promotion Revenue', icon: TrendingUp },
     { id: 'security', label: 'Security & Audit', icon: ShieldCheck },
     { id: 'system', label: 'System Controls', icon: Settings },
     { id: 'database', label: 'Database Tools', icon: Database },
@@ -394,8 +392,8 @@ const AdminDashboard: React.FC = () => {
                           <TrendingUp className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="font-bold text-white">Finance Dashboard</p>
-                          <p className="text-xs text-slate-400">Revenue, payouts, promotion revenue</p>
+                          <p className="font-bold text-white">Promotion Revenue Dashboard</p>
+                          <p className="text-xs text-slate-400">Promotion revenue and paid listing performance</p>
                         </div>
                       </div>
                     </button>
@@ -740,33 +738,19 @@ const AdminDashboard: React.FC = () => {
 
           {activeTab === 'finance' && (
             <div className="space-y-8">
-              <h2 className="text-xl font-black text-white">Finance & Revenue Dashboard</h2>
+              <h2 className="text-xl font-black text-white">Promotion Revenue Dashboard</h2>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl shadow-xl">
                   <p className="text-xs font-black text-emerald-100 uppercase tracking-wider">Total Revenue</p>
                   <p className="text-3xl font-black text-white mt-2">{formatNGN(stats.totalRevenue)}</p>
                   <p className="text-xs text-emerald-200 mt-1">From approved promotions</p>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Pending Payouts</p>
-                  <p className="text-3xl font-black text-white mt-2">{formatNGN(wallet?.pendingBalance || 0)}</p>
-                  <p className="text-xs text-slate-500 mt-1">Escrow held funds</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Total Withdrawn</p>
-                  <p className="text-3xl font-black text-emerald-400 mt-2">{formatNGN(wallet?.totalWithdrawn || 0)}</p>
-                  <p className="text-xs text-slate-500 mt-1">Lifetime processed</p>
-                </div>
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Available Balance</p>
-                  <p className="text-3xl font-black text-blue-400 mt-2">{formatNGN(wallet?.balance || 0)}</p>
-                  <p className="text-xs text-slate-500 mt-1">Ready for payout</p>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                 {/* Financial transaction history removed; promotion requests remain above. */}
+                 <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
                   <h3 className="font-bold text-white mb-4">Promotion Plans & Revenue</h3>
                   <div className="space-y-3">
                     {promotionPlans.map((plan) => (
@@ -782,8 +766,8 @@ const AdminDashboard: React.FC = () => {
                           <div>
                             <p className="font-bold text-white">{plan.label}</p>
                             <p className="text-xs text-slate-400">{formatNGN(plan.rate)}/month</p>
-                          </div>
-                        </div>
+                 </div>
+               </div>
                         <div className="flex items-center gap-2">
                           <input 
                             type="number" 
@@ -798,7 +782,7 @@ const AdminDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                {/* <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
                   <h3 className="font-bold text-white mb-4">Recent Transactions</h3>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
                     {transactions.slice(0, 15).map((tx) => (
@@ -822,7 +806,7 @@ const AdminDashboard: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           )}

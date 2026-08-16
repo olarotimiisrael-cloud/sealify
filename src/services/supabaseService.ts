@@ -13,8 +13,6 @@ import {
   DbReview, 
   DbCategoryStats, 
   DbBuyerRequest, 
-  DbWallet, 
-  DbTransaction,
   DbSafeSpot,
   DbSystemAnnouncement,
   DbMarketplaceDeal,

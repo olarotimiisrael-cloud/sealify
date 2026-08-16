@@ -21,7 +21,6 @@ import {
   Award, 
   KeyRound, 
   Store, 
-  CreditCard, 
   Globe, 
   Instagram, 
   Twitter, 
@@ -35,7 +34,6 @@ import {
   MessageSquare,
   TrendingUp,
   Settings as SettingsIcon,
-  Wallet as WalletIcon,
   HelpCircle,
   LogOut,
   ChevronRight,
@@ -131,21 +129,6 @@ import {
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 
-const NIGERIAN_BANKS = [
-  'Access Bank',
-  'First Bank of Nigeria',
-  'Guaranty Trust Bank (GTB)',
-  'OPay',
-  'PalmPay',
-  'Kuda Bank',
-  'Moniepoint Microfinance Bank',
-  'United Bank for Africa (UBA)',
-  'Zenith Bank',
-  'Wema Bank / ALAT',
-  'Stanbic IBTC Bank',
-  'Fidelity Bank',
-];
-
 const Settings: React.FC = () => {
   const { 
     user, 
@@ -154,10 +137,7 @@ const Settings: React.FC = () => {
     lastSyncTime, 
     syncDatabase, 
     exportDatabaseBackup, 
-    listings, 
-    wallet,
-    transactions,
-    requestPayout,
+    listings,
     conversations,
     savedListingIds,
     reviews,
@@ -183,11 +163,6 @@ const Settings: React.FC = () => {
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [storeBannerUrl, setStoreBannerUrl] = useState(user?.storeBannerUrl || '');
 
-  // Bank Settlement Details
-  const [bankName, setBankName] = useState(user?.bankName || 'OPay');
-  const [accountNumber, setAccountNumber] = useState(user?.accountNumber || '');
-  const [accountName, setAccountName] = useState(user?.accountName || '');
-
   // Social & Web Links
   const [websiteUrl, setWebsiteUrl] = useState(user?.websiteUrl || '');
   const [instagramHandle, setInstagramHandle] = useState(user?.instagramHandle || '');
@@ -202,13 +177,30 @@ const Settings: React.FC = () => {
   const [isVerificationModalOpen, setIsVerificationOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<'profile' | 'storefront' | 'wallet' | 'security' | 'notifications' | 'pwa'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'storefront' | 'security' | 'notifications' | 'pwa'>('profile');
   const [biometricEnabled, setBiometricEnabled] = useState(
     localStorage.getItem('sealify_biometric') === 'true'
   );
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
   const myVerificationReq = user?.verificationType;
+  const profileCompletion = Math.round(
+    [
+      fullName.trim().length > 1,
+      phoneNumber.trim().length > 5,
+      bio.trim().length > 20,
+      location.trim().length > 2,
+      Boolean(avatarUrl || user.avatarUrl),
+      Boolean(businessName.trim() || user.businessName),
+    ].filter(Boolean).length / 6 * 100
+  );
+  const activeMessages = conversations.filter((c) => c.unreadCount > 0).length;
+  const safetyChecks = [
+    user.verified ? 'Verification complete' : 'Verification required',
+    myAds.length > 0 ? `${myAds.length} active listings` : 'Add a first listing',
+    savedListingIds.length > 0 ? `${savedListingIds.length} saved listings` : 'Save a listing',
+    activeMessages > 0 ? `${activeMessages} unread conversations` : 'Conversations are current',
+  ];
   
   const handleLogout = () => {
     logout();
@@ -264,10 +256,6 @@ const Settings: React.FC = () => {
         avatarUrl: avatarUrl.trim() || user.avatarUrl,
         storeBannerUrl: storeBannerUrl.trim(),
 
-        bankName,
-        accountNumber: accountNumber.trim(),
-        accountName: accountName.trim(),
-
         websiteUrl: websiteUrl.trim(),
         instagramHandle: instagramHandle.trim(),
         twitterHandle: twitterHandle.trim(),
@@ -306,7 +294,7 @@ const Settings: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 font-sans">
-      <SEO title="Profile & Store Settings — Sealify Nigeria" description="Edit your profile details, cover photo, business information, bank payout details, and app security settings on Sealify." />
+      <SEO title="Profile & Store Settings — Sealify Nigeria" description="Edit your profile details, cover photo, business information, settlement account details, and app security settings on Sealify." />
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 space-y-8 flex-1">
@@ -315,7 +303,7 @@ const Settings: React.FC = () => {
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-white tracking-tight">Profile & Store Settings</h1>
-            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, bio, bank payout account, and storefront branding</p>
+            <p className="text-xs text-slate-400 mt-1">Manage your identity, cover photo, bio, and storefront branding</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -495,6 +483,56 @@ const Settings: React.FC = () => {
                       <PlusCircle className="w-4 h-4" />
                       <span>Post Ad</span>
                     </Link>
+                  </div>
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+                  <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-800 mb-6">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400">Trust & Activity</p>
+                      <h3 className="text-lg font-black text-white mt-2">Account Health Overview</h3>
+                    </div>
+                    <div className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-[10px] font-black text-emerald-300">
+                      {profileCompletion}% complete
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Verification</p>
+                      <p className="mt-3 text-xl font-black text-white">{user.verified ? 'Verified' : 'Pending'}</p>
+                      <p className="mt-1 text-[11px] text-slate-400">{user.verified ? 'Marketplace trust is active.' : 'Complete verification to boost buyer confidence.'}</p>
+                    </div>
+
+                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Profile Completion</p>
+                      <p className="mt-3 text-xl font-black text-white">{profileCompletion}%</p>
+                      <p className="mt-1 text-[11px] text-slate-400">Increase trust with a complete business profile.</p>
+                    </div>
+
+                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Listings</p>
+                      <p className="mt-3 text-xl font-black text-white">{myAds.length}</p>
+                      <p className="mt-1 text-[11px] text-slate-400">{myAds.filter((ad) => ad.status === 'active').length} live listings on the market.</p>
+                    </div>
+
+                    <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Saved Items</p>
+                      <p className="mt-3 text-xl font-black text-white">{savedListingIds.length}</p>
+                      <p className="mt-1 text-[11px] text-slate-400">Keep a shortlist of items that matter to you.</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 p-4 bg-slate-950 border border-slate-800 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Recommended actions</p>
+                    <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                      {safetyChecks.map((item) => (
+                        <li key={item} className="flex items-start gap-2">
+                          <span className="mt-1 h-2 w-2 rounded-full bg-emerald-400"></span>
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 </div>
 
@@ -758,52 +796,6 @@ const Settings: React.FC = () => {
                             value={location}
                             onChange={(e) => setLocation(e.target.value)}
                             placeholder="e.g. Under G, Ogbomoso"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Bank Settlement Account */}
-                    <div className="space-y-6 pt-6 border-t border-slate-800">
-                      <h3 className="text-lg font-black text-white flex items-center gap-2 pb-3 border-b border-slate-800">
-                        <CreditCard className="w-5 h-5 text-blue-400" />
-                        <span>Bank Settlement Account (For Wallet Withdrawals)</span>
-                      </h3>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Bank Name</label>
-                          <select
-                            value={bankName}
-                            onChange={(e) => setBankName(e.target.value)}
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
-                          >
-                            {NIGERIAN_BANKS.map((b) => (
-                              <option key={b} value={b}>{b}</option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Number</label>
-                          <input
-                            type="text"
-                            maxLength={10}
-                            value={accountNumber}
-                            onChange={(e) => setAccountNumber(e.target.value)}
-                            placeholder="10-Digit Account No."
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono tracking-wider"
-                          />
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Account Name</label>
-                          <input
-                            type="text"
-                            value={accountName}
-                            onChange={(e) => setAccountName(e.target.value)}
-                            placeholder="Match official bank name"
                             className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-medium"
                           />
                         </div>

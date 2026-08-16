@@ -69,7 +69,6 @@ export const analytics = {
   messageSent: (conversationId: string) => trackEvent('message_sent', { conversationId }),
   offerMade: (adId: string, amount: number) => trackEvent('offer_made', { adId, amount }),
   profileView: (userId: string) => trackEvent('profile_view', { userId }),
-  walletAction: (action: string, amount: number) => trackEvent('wallet_action', { action, amount }),
   verificationStarted: (type: string) => trackEvent('verification_started', { type }),
   promotionPurchased: (plan: string, amount: number) => trackEvent('promotion_purchased', { plan, amount }),
 };

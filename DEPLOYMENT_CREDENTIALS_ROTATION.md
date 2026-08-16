@@ -13,9 +13,7 @@
 | `VITE_SUPABASE_ANON_KEY` | Supabase | 🔴 PENDING | Public anon key - low risk but rotate anyway |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase | 🔴 PENDING | **CRITICAL** - Full database admin access |
 | `SUPABASE_URL` | Supabase | 🔴 PENDING | Project reference |
-| `ADMIN_EMAIL` | Admin Auth | 🔴 PENDING | Admin terminal access |
-| `ADMIN_PASSWORD` | Admin Auth | 🔴 PENDING | **CRITICAL** - Root admin access |
-| `ADMIN_PIN` | Admin Auth | 🔴 PENDING | **CRITICAL** - 2FA for admin terminal |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_PIN` | Legacy Admin Auth | 🔴 ROTATE/REMOVE | No longer used; rotate previously exposed values and remove runtime configuration |
 | `VAPID_PRIVATE_KEY` | Push Notifications | 🔴 PENDING | Web Push signing key |
 | `VITE_VAPID_PUBLIC_KEY` | Push Notifications | 🔴 PENDING | Public key - low risk |
 
@@ -29,14 +27,11 @@
 # 4. Update local .env files
 ```
 
-### 2. Admin Credentials
+### 2. Legacy Admin Credentials
 ```bash
-# 1. Generate new secure password (32+ chars)
-# 2. Generate new 6-digit PIN
-# 3. Update Cloudflare Pages secrets:
-#    - ADMIN_PASSWORD
-#    - ADMIN_PIN
-# 4. Clear browser sessions
+# 1. Rotate any previously exposed legacy admin password/PIN
+# 2. Remove ADMIN_EMAIL, ADMIN_PASSWORD, and ADMIN_PIN from runtime configuration
+# 3. Clear browser sessions
 ```
 
 ### 3. VAPID Keys

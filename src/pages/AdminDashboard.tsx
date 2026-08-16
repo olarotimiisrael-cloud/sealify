@@ -15,7 +15,7 @@ import {
   Smartphone, Zap as ZapIcon, Globe as GlobeIcon, Sparkles,
   Menu, X as XIcon, Sun, Moon, Laptop, Tablet, Smartphone as PhoneIcon,
   Layout, Grid, List, BarChart2, PieChart, DollarSign, CreditCard,
-  Wallet, Lock as LockIcon, Shield as ShieldIcon2, Crown as CrownIcon,
+  Crown as CrownIcon,
   Award as AwardIcon, BadgeCheck, TrendingDown, Eye as EyeIcon,
   MoreHorizontal, ArrowUpRight, ArrowDownLeft, RefreshCw as RefreshIcon,
   Filter as FilterIcon, Columns, Maximize2, Minimize2, Heart,
@@ -200,8 +200,6 @@ const AdminDashboard: React.FC = () => {
     bulkDeleteUsers,
     bulkUpdateListings,
     bulkDeleteListings,
-    wallet,
-    transactions,
     searchAlerts,
     reviews,
     buyerRequests,
@@ -221,6 +219,11 @@ const AdminDashboard: React.FC = () => {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isSqlViewerOpen, setIsSqlViewerOpen] = useState(false);
   const [isSchemaGeneratorOpen, setIsSchemaGeneratorOpen] = useState(false);
+  const [broadcastForm, setBroadcastForm] = useState({
+    target: 'all',
+    title: '',
+    message: '',
+  });
   const [isMigrationOpen, setIsMigrationOpen] = useState(false);
   const [isDatabaseTestOpen, setIsDatabaseTestOpen] = useState(false);
   const [showProjectDocs, setShowProjectDocs] = useState(false);
@@ -328,7 +331,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: Layout, desc: 'System health & quick actions' },
     { id: 'users', label: 'Users', icon: Users, desc: 'Manage all accounts' },
     { id: 'content', label: 'Content', icon: Shield, desc: 'Moderation queue' },
-    { id: 'finance', label: 'Finance', icon: DollarSign, desc: 'Revenue & payouts' },
+    { id: 'finance', label: 'Promotion Revenue', icon: DollarSign, desc: 'Paid promotion revenue' },
     { id: 'security', label: 'Security', icon: ShieldCheck, desc: 'Audit & intrusion' },
     { id: 'system', label: 'System', icon: Settings, desc: 'Platform controls' },
     { id: 'database', label: 'Database', icon: Database, desc: 'SQL & migrations' },
@@ -403,6 +406,10 @@ const AdminDashboard: React.FC = () => {
             <button onClick={() => setIsSettingsModalOpen(true)} className="px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 hover:text-white font-bold rounded-xl text-xs border border-slate-700 transition-all flex items-center gap-2">
               <Settings className="w-4 h-4" />
               <span>Root Config</span>
+            </button>
+            <button onClick={() => window.location.href = '/admin/ai-settings'} className="px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 font-bold rounded-xl text-xs border border-emerald-500/30 transition-all flex items-center gap-2">
+              <Sparkles className="w-4 h-4" />
+              <span>AI & Copilot</span>
             </button>
             <button onClick={syncDatabase} disabled={isSyncing} className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50">
               <RefreshIcon className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -631,7 +638,7 @@ const AdminDashboard: React.FC = () => {
                   {[
                     { label: 'Manage Users', desc: 'View, edit, verify, suspend accounts', icon: Users, color: 'from-blue-500 to-cyan-500', action: () => setActiveTab('users') },
                     { label: 'Moderate Content', desc: 'Review reports, disputes, verifications', icon: Shield, color: 'from-amber-500 to-orange-500', action: () => setActiveTab('content') },
-                    { label: 'Finance Dashboard', desc: 'Revenue, payouts, promotion revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500', action: () => setActiveTab('finance') },
+                     { label: 'Promotion Revenue', desc: 'Review paid promotion requests and revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500', action: () => setActiveTab('finance') },
                     { label: 'Security Audit', desc: 'Intrusion logs, audit trail, 2FA', icon: ShieldCheck, color: 'from-rose-500 to-pink-500', action: () => setActiveTab('security') },
                     { label: 'Database Tools', desc: 'Schema, migrations, backups, SQL', icon: Database, color: 'from-purple-500 to-indigo-500', action: () => setActiveTab('database') },
                     { label: 'Broadcast Center', desc: 'Mass notifications, email digests', icon: Megaphone, color: 'from-teal-500 to-green-500', action: () => setActiveTab('broadcast') },
@@ -946,33 +953,19 @@ const AdminDashboard: React.FC = () => {
       case 'finance':
         return (
           <div className="space-y-8">
-            <h2 className="text-xl font-black text-white">Finance & Revenue Dashboard</h2>
+            <h2 className="text-xl font-black text-white">Promotion Revenue Dashboard</h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 rounded-2xl shadow-xl">
                 <p className="text-xs font-black text-emerald-100 uppercase tracking-wider">Total Revenue</p>
                 <p className="text-3xl font-black text-white mt-2">{formatNGN(stats.totalRevenue)}</p>
                 <p className="text-xs text-emerald-200 mt-1">From approved promotions</p>
               </div>
-              <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Pending Payouts</p>
-                <p className="text-3xl font-black text-white mt-2">{formatNGN(wallet?.pendingBalance || 0)}</p>
-                <p className="text-xs text-slate-500 mt-1">Escrow held funds</p>
-              </div>
-              <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Total Withdrawn</p>
-                <p className="text-3xl font-black text-emerald-400 mt-2">{formatNGN(wallet?.totalWithdrawn || 0)}</p>
-                <p className="text-xs text-slate-500 mt-1">Lifetime processed</p>
-              </div>
-              <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
-                <p className="text-xs font-black text-slate-400 uppercase tracking-wider">Available Balance</p>
-                <p className="text-3xl font-black text-blue-400 mt-2">{formatNGN(wallet?.balance || 0)}</p>
-                <p className="text-xs text-slate-500 mt-1">Ready for payout</p>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
+               {/* Financial transaction history removed; promotion requests remain above. */}
+               <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
                 <h3 className="font-bold text-white mb-4">Promotion Plans & Revenue</h3>
                 <div className="space-y-3">
                   {promotionPlans.map((plan) => (
@@ -988,8 +981,8 @@ const AdminDashboard: React.FC = () => {
                         <div>
                           <p className="font-bold text-white">{plan.label}</p>
                           <p className="text-xs text-slate-400">{formatNGN(plan.rate)}/month</p>
-                        </div>
-                      </div>
+               </div>
+             </div>
                       <div className="flex items-center gap-2">
                         <input 
                           type="number" 
@@ -1004,7 +997,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
+              {/* <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-2xl">
                 <h3 className="font-bold text-white mb-4">Recent Transactions</h3>
                 <div className="space-y-3 max-h-96 overflow-y-auto">
                   {transactions.slice(0, 15).map((tx) => (
@@ -1028,7 +1021,7 @@ const AdminDashboard: React.FC = () => {
                     </div>
                   ))}
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         );
@@ -1164,6 +1157,14 @@ const AdminDashboard: React.FC = () => {
                 <h3 className="font-bold text-white mb-4">Site Metadata</h3>
                 <div className="space-y-4">
                   <div className="p-4 bg-slate-950/50 border border-slate-800/50 rounded-xl space-y-2">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Logo URL</label>
+                    <input
+                      value={siteSettings.logoUrl}
+                      onChange={(e) => updateSiteSettings({ logoUrl: e.target.value })}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="p-4 bg-slate-950/50 border border-slate-800/50 rounded-xl space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Site Name</label>
                     <input
                       value={siteSettings.siteName}
@@ -1281,7 +1282,11 @@ const AdminDashboard: React.FC = () => {
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
-                    <select className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                    <select
+                      value={broadcastForm.target}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, target: e.target.value }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
                       <option value="all">All Users</option>
                       <option value="buyer">Buyers Only</option>
                       <option value="seller">Sellers Only</option>
@@ -1289,13 +1294,40 @@ const AdminDashboard: React.FC = () => {
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Notification Title</label>
-                    <input type="text" placeholder="e.g. New Feature Release" className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                    <input
+                      type="text"
+                      value={broadcastForm.title}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="e.g. New Feature Release"
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Message Content</label>
-                    <textarea rows={4} placeholder="Broadcast message..." className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                    <textarea
+                      rows={4}
+                      value={broadcastForm.message}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, message: e.target.value }))}
+                      placeholder="Broadcast message..."
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
                   </div>
-                  <button className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs shadow-lg">SEND BROADCAST</button>
+                  <button
+                    onClick={() => {
+                      if (!broadcastForm.title.trim() || !broadcastForm.message.trim()) {
+                        toast.error('Title and message are required');
+                        return;
+                      }
+                      void broadcastMassNotification({
+                        target: broadcastForm.target,
+                        title: broadcastForm.title.trim(),
+                        message: broadcastForm.message.trim(),
+                      });
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black rounded-xl text-xs shadow-lg"
+                  >
+                    SEND BROADCAST
+                  </button>
                 </div>
               </div>
 

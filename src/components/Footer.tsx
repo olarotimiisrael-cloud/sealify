@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, MapPin, Mail, Phone, Facebook, Twitter, Instagram, Globe, Lock, Gavel, Radio, MessageCircle, ExternalLink, HelpCircle, Newspaper, BadgeCheck, Smartphone, Download } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
-import EscrowProtectionModal from './EscrowProtectionModal';
 import Logo from './Logo';
 import PwaInstallButton from './PwaInstallButton';
 
 export const Footer: React.FC = () => {
   const { t } = useSealify();
-  const [isEscrowOpen, setIsEscrowOpen] = useState(false);
 
   return (
     <>
@@ -50,8 +48,6 @@ export const Footer: React.FC = () => {
                 <li><Link to="/" className="hover:text-emerald-400 transition-colors">Browse All Ads</Link></li>
                 <li><Link to="/community" className="text-amber-400 hover:text-amber-300 font-bold transition-colors flex items-center gap-1"><Newspaper className="w-3.5 h-3.5" /> Community News Board</Link></li>
                 <li><Link to="/vendors" className="hover:text-emerald-400 transition-colors">Verified Merchants Directory</Link></li>
-                <li><Link to="/escrow-verify" className="text-teal-400 hover:text-teal-300 font-bold transition-colors flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5" /> Authenticate Escrow Code</Link></li>
-                <li><button onClick={() => setIsEscrowOpen(true)} className="hover:text-teal-400 transition-colors text-left">Escrow Protection Protocol</button></li>
                 <li><Link to="/post-ad" className="hover:text-emerald-400 transition-colors">Post an Ad</Link></li>
                 <li><Link to="/safety" className="hover:text-emerald-400 transition-colors">Safety Center</Link></li>
               </ul>
@@ -102,7 +98,6 @@ export const Footer: React.FC = () => {
         </div>
       </footer>
 
-      <EscrowProtectionModal isOpen={isEscrowOpen} onClose={() => setIsEscrowOpen(false)} />
     </>
   );
 };

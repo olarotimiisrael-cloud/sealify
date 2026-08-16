@@ -1,85 +1,16 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getSql } from "../db/hyperdrive";
-import { createClient } from "@supabase/supabase-js";
-import { requireAdmin, requireAuth, auditLog, logIntrusionAttempt, rateLimit } from "../middleware/security";
+import { maskSecret, resolveAiConfig, setRuntimeAiConfig, isModelSupported, type SupportedAIProvider } from "../lib/ai/providers";
+import { requireAdmin, auditLog, rateLimit } from "../middleware/security";
 
 export const adminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql>; user: any; supabase: any; profile: any } }>();
 
 // Apply rate limiting to all admin routes
 adminRoutes.use("/*", rateLimit({ windowMs: 60000, maxRequests: 100 })); // 100 req/min
+// Every admin endpoint requires a Supabase Auth bearer token and an admin
+// profile. There is intentionally no custom admin login or token format.
 adminRoutes.use("/*", requireAdmin);
-
-// Admin login with intrusion logging
-adminRoutes.post("/login", async (c) => {
-  const env = c.env as any;
-  const body = await c.req.json();
-  const { email, password, pin } = body;
-
-  if (!email || !password || !pin) {
-    throw new HTTPException(400, { message: "Email, password, and PIN required" });
-  }
-
-  const sql = getSql(env);
-  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
-
-  // Check against environment variables (set in Cloudflare Dashboard)
-  const adminEmail = env.ADMIN_EMAIL;
-  const adminPassword = env.ADMIN_PASSWORD;
-  const adminPin = env.ADMIN_PIN;
-
-  if (!adminEmail || !adminPassword || !adminPin) {
-    throw new HTTPException(500, { message: "Admin credentials not configured" });
-  }
-
-  // Log intrusion attempt for any failed login
-  const isValid = email === adminEmail && password === adminPassword && pin === adminPin;
-
-  if (!isValid) {
-    await logIntrusionAttempt(getSql(env), email, c.req.raw, {
-      reason: "invalid_credentials",
-      providedEmail: email,
-    });
-    throw new HTTPException(401, { message: "Invalid credentials" });
-  }
-
-  // Verify user exists in profiles with admin role
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("email", adminEmail)
-    .eq("role", "admin")
-    .single();
-
-  if (!profile) {
-    await logIntrusionAttempt(getSql(env), email, c.req.raw, {
-      reason: "no_admin_profile",
-    });
-    throw new HTTPException(403, { message: "Admin profile not found" });
-  }
-
-  // Create session token (in production, use proper JWT)
-  const sessionToken = btoa(JSON.stringify({
-    sub: profile.id,
-    email: profile.email,
-    role: "admin",
-    exp: Math.floor(Date.now() / 1000) + 3600, // 1 hour
-  }));
-
-  await auditLog(getSql(env), profile.id, "Admin Login", "Successful admin terminal access", "security");
-
-  return c.json({
-    success: true,
-    token: sessionToken,
-    user: {
-      id: profile.id,
-      email: profile.email,
-      fullName: profile.full_name,
-      role: profile.role,
-      verified: profile.verified,
-    },
-  });
-});
 
 // Get admin stats
 adminRoutes.get("/stats", async (c) => {
@@ -520,9 +451,118 @@ adminRoutes.put("/system-config", async (c) => {
 });
 
 // Site settings
+const normalizeAiConfigResponse = (env: any) => {
+  const config = resolveAiConfig(env as Record<string, string | undefined>);
+  const safeProvider = (config.provider || "gemini") as SupportedAIProvider;
+  const status = config.enabled && config.apiKey ? "configured" : "disabled";
+
+  return {
+    provider: safeProvider,
+    enabled: config.enabled !== false && Boolean(config.apiKey),
+    model: config.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash"),
+    webSearchEnabled: config.webSearchEnabled !== false,
+    maxRequestLength: Number(config.maxRequestLength || 1600),
+    perUserRateLimit: Number(config.perUserRateLimit || 10),
+    dailyRequestLimit: Number(config.dailyRequestLimit || 500),
+    maskedApiKey: maskSecret(config.apiKey),
+    status,
+    lastSuccessfulConnection: env.AI_LAST_SUCCESSFUL_CONNECTION || null,
+    lastError: env.AI_LAST_ERROR || null,
+  };
+};
+
+adminRoutes.get("/ai-settings", async (c) => {
+  const env = c.env as any;
+  return c.json(normalizeAiConfigResponse(env));
+});
+
+adminRoutes.put("/ai-settings", async (c) => {
+  const env = c.env as any;
+  const body = await c.req.json();
+  const current = resolveAiConfig(env as Record<string, string | undefined>);
+  const provider = (body.provider || current.provider || "gemini").toLowerCase();
+  const safeProvider = provider === "openai" || provider === "gemini" ? provider : "gemini";
+  const nextModel = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash")).trim();
+
+  if (!isModelSupported(safeProvider, nextModel)) {
+    throw new HTTPException(400, { message: "Unsupported AI model for the selected provider" });
+  }
+
+  const rawApiKey = body.apiKey === undefined ? current.apiKey || "" : String(body.apiKey).trim();
+  const nextConfig = {
+    provider: safeProvider,
+    enabled: body.enabled ?? current.enabled ?? Boolean(rawApiKey),
+    model: nextModel,
+    apiKey: rawApiKey,
+    webSearchEnabled: body.webSearchEnabled ?? current.webSearchEnabled ?? true,
+    maxRequestLength: Number(body.maxRequestLength ?? current.maxRequestLength ?? 1600),
+    perUserRateLimit: Number(body.perUserRateLimit ?? current.perUserRateLimit ?? 10),
+    dailyRequestLimit: Number(body.dailyRequestLimit ?? current.dailyRequestLimit ?? 500),
+  };
+
+  setRuntimeAiConfig(nextConfig);
+
+  return c.json({
+    ...normalizeAiConfigResponse({ ...env, AI_PROVIDER: safeProvider, AI_WEB_SEARCH_ENABLED: String(nextConfig.webSearchEnabled), AI_MAX_REQUEST_LENGTH: String(nextConfig.maxRequestLength), AI_PER_USER_RATE_LIMIT: String(nextConfig.perUserRateLimit), AI_DAILY_LIMIT: String(nextConfig.dailyRequestLimit), ...(nextConfig.apiKey ? { [`${safeProvider.toUpperCase()}_API_KEY`]: nextConfig.apiKey } : {}) }),
+    ...(nextConfig.apiKey ? { message: "AI configuration saved securely." } : { message: "AI configuration updated without a credential value." }),
+  });
+});
+
+adminRoutes.post("/ai-settings/test", async (c) => {
+  const env = c.env as any;
+  const body = await c.req.json();
+  const current = resolveAiConfig(env as Record<string, string | undefined>);
+  const provider = ((body.provider || current.provider || "gemini") as SupportedAIProvider).toLowerCase();
+  const safeProvider = provider === "openai" || provider === "gemini" ? provider : "gemini";
+  const model = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash")).trim();
+  const apiKey = body.apiKey === undefined ? (current.apiKey || "") : String(body.apiKey).trim();
+
+  if (!apiKey) {
+    throw new HTTPException(400, { message: "AI provider credential is required for a connection test." });
+  }
+
+  if (!isModelSupported(safeProvider, model)) {
+    throw new HTTPException(400, { message: "Unsupported AI model for the selected provider." });
+  }
+
+  try {
+    if (safeProvider === "openai") {
+      const res = await fetch("https://api.openai.com/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!res.ok) {
+        throw new HTTPException(res.status, { message: "OpenAI credentials are invalid or expired." });
+      }
+    } else {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Connection test for Sealify Copilot." }] }] }),
+      });
+      if (!res.ok) {
+        throw new HTTPException(res.status, { message: "Gemini credentials are invalid or expired." });
+      }
+    }
+
+    const successAt = new Date().toISOString();
+    return c.json({
+      success: true,
+      message: `Connection test successful for ${safeProvider}.`,
+      provider: safeProvider,
+      model,
+      lastSuccessfulConnection: successAt,
+    });
+  } catch (error: any) {
+    if (error instanceof HTTPException) {
+      throw error;
+    }
+    throw new HTTPException(500, { message: "Connection test failed: the provider could not be reached." });
+  }
+});
+
 adminRoutes.get("/site-settings", async (c) => {
   const sql = getSql(c.env);
-  const settings = await sql`SELECT * FROM site_settings LIMIT 1`;
+  const settings = await sql`SELECT * FROM site_settings ORDER BY updated_at DESC LIMIT 1`;
   return c.json({ settings: settings[0] || null });
 });
 
@@ -530,21 +570,39 @@ adminRoutes.put("/site-settings", async (c) => {
   const sql = getSql(c.env);
   const body = await c.req.json();
 
-  await sql`
-    INSERT INTO site_settings (site_name, site_description, og_image, contact_email, contact_phone, updated_at)
-    VALUES (${body.siteName}, ${body.siteDescription}, ${body.ogImage}, ${body.contactEmail}, ${body.contactPhone}, NOW())
-    ON CONFLICT DO UPDATE SET
-      site_name = EXCLUDED.site_name,
-      site_description = EXCLUDED.site_description,
-      og_image = EXCLUDED.og_image,
-      contact_email = EXCLUDED.contact_email,
-      contact_phone = EXCLUDED.contact_phone,
-      updated_at = NOW()
-  `;
+  const existing = await sql`SELECT id FROM site_settings ORDER BY updated_at DESC LIMIT 1`;
+  const payload = {
+    logo_url: body.logoUrl ?? body.logo_url ?? null,
+    site_name: body.siteName ?? body.site_name ?? null,
+    site_description: body.siteDescription ?? body.site_description ?? null,
+    og_image: body.ogImage ?? body.og_image ?? null,
+    contact_email: body.contactEmail ?? body.contact_email ?? null,
+    contact_phone: body.contactPhone ?? body.contact_phone ?? null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (existing[0]?.id) {
+    await sql`
+      UPDATE site_settings
+      SET logo_url = ${payload.logo_url},
+          site_name = ${payload.site_name},
+          site_description = ${payload.site_description},
+          og_image = ${payload.og_image},
+          contact_email = ${payload.contact_email},
+          contact_phone = ${payload.contact_phone},
+          updated_at = NOW()
+      WHERE id = ${existing[0].id}
+    `;
+  } else {
+    await sql`
+      INSERT INTO site_settings (logo_url, site_name, site_description, og_image, contact_email, contact_phone, updated_at)
+      VALUES (${payload.logo_url}, ${payload.site_name}, ${payload.site_description}, ${payload.og_image}, ${payload.contact_email}, ${payload.contact_phone}, NOW())
+    `;
+  }
 
   await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "system");
 
-  return c.json({ success: true });
+  return c.json({ success: true, settings: payload });
 });
 
 // Broadcast
@@ -579,15 +637,50 @@ adminRoutes.post("/broadcast", async (c) => {
   return c.json({ success: true, sent: users.length });
 });
 
+adminRoutes.post("/email-digest", async (c) => {
+  const sql = getSql(c.env);
+  const body = await c.req.json().catch(() => ({}));
+  const audience = body.audience || "all";
+
+  if (!['all', 'buyers', 'sellers'].includes(audience)) {
+    throw new HTTPException(400, { error: "Audience must be all, buyers, or sellers" });
+  }
+
+  let whereClause = "";
+  if (audience === "buyers") whereClause = "WHERE role = 'buyer'";
+  else if (audience === "sellers") whereClause = "WHERE role = 'seller'";
+
+  const users = await sql`
+    SELECT id, full_name FROM profiles ${sql(whereClause)}
+  `;
+
+  const digestTitle = "Sealify Weekly Digest";
+  const digestMessage = "Fresh marketplace updates, verified opportunities, and platform news are now available on Sealify.";
+
+  for (const user of users) {
+    await sql`
+      INSERT INTO notifications (user_id, type, title, description, created_at)
+      VALUES (${user.id}, 'system', ${digestTitle}, ${digestMessage}, NOW())
+    `;
+  }
+
+  await auditLog(sql, c.get("user").id, "Email Digest Sent", `Queued digest for ${audience}: ${users.length} recipients`, "broadcast");
+
+  return c.json({
+    success: true,
+    audience,
+    sent: users.length,
+    message: `Weekly digest queued for ${users.length} recipients.`,
+  });
+});
+
 // Database backup
 adminRoutes.get("/backup", async (c) => {
   const sql = getSql(c.env);
 
-  const [users, listings, transactions, wallets, configs, settings] = await Promise.all([
+  const [users, listings, configs, settings] = await Promise.all([
     sql`SELECT * FROM profiles`,
     sql`SELECT * FROM ads`,
-    sql`SELECT * FROM transactions`,
-    sql`SELECT * FROM wallets`,
     sql`SELECT * FROM system_configs`,
     sql`SELECT * FROM site_settings`,
   ]);
@@ -595,7 +688,7 @@ adminRoutes.get("/backup", async (c) => {
   const backup = {
     timestamp: new Date().toISOString(),
     version: "1.0",
-    data: { users, listings, transactions, wallets, configs, settings },
+    data: { users, listings, configs, settings },
   };
 
   c.header("Content-Type", "application/json");

@@ -9,7 +9,7 @@ interface AdminSettingsModalProps {
 }
 
 export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { user, updateUser, updateAdminCredentials, adminEmail, adminPassword, adminPin } = useSealify();
+  const { user, updateUser, updateAdminCredentials, adminEmail } = useSealify();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,8 +23,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
   const [avatarUrl, setAvatarUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState(adminEmail);
-  const [newAdminPass, setNewAdminPassword] = useState(adminPassword);
-  const [newAdminPin, setNewAdminPin] = useState(adminPin);
+  const [newAdminPass, setNewAdminPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'security'>('profile');
 
@@ -99,18 +98,14 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
 
   const handleUpdateCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAdminEmail.trim() || !newAdminPass.trim() || !newAdminPin.trim()) {
+    if (!newAdminEmail.trim() || !newAdminPass.trim()) {
       toast.error('All credential fields are required');
-      return;
-    }
-    if (newAdminPin.length !== 6) {
-      toast.error('PIN must be exactly 6 digits');
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminPin.trim());
+      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim());
       setIsSaving(false);
       toast.success('Admin credentials updated successfully!');
     } catch (err) {
@@ -355,8 +350,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                 <span>SECURITY WARNING</span>
               </div>
               <p className="text-xs text-rose-200 leading-relaxed">
-                Changing these credentials will immediately invalidate all active admin sessions. 
-                Ensure you store the new credentials securely. The 6-digit Master PIN is required for all administrative actions.
+                 Supabase Auth manages the administrator email and password. Updating them may invalidate the current session; no separate admin PIN is used.
               </p>
             </div>
 
@@ -376,7 +370,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Access Password *</label>
                 <input
-                  type="text"
+                   type="password"
                   required
                   value={newAdminPass}
                   onChange={(e) => setNewAdminPassword(e.target.value)}
@@ -385,18 +379,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">6-Digit Master Security PIN *</label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={newAdminPin}
-                  onChange={(e) => setNewAdminPin(e.target.value)}
-                  placeholder="6-Digit PIN"
-                  className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-3 text-rose-400 font-black focus:outline-none font-mono tracking-widest text-center text-lg"
-                />
-              </div>
             </div>
 
             <button

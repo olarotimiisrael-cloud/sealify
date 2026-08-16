@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '@/lib/api-client';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
   user: any | null;
@@ -21,10 +21,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await api.getSession();
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         if (currentSession?.user) {
-          const { data: { user: currentUser } } = await api.getUser();
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
           setUser(currentUser);
         }
       } catch (error) {
@@ -36,10 +36,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    const { data: { subscription } } = api.onAuthStateChange((_event, currentSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
       setSession(currentSession);
       if (currentSession?.user) {
-        api.getUser().then(({ data: { user: currentUser } }) => setUser(currentUser));
+        supabase.auth.getUser().then(({ data: { user: currentUser } }) => setUser(currentUser));
       } else {
         setUser(null);
       }
@@ -49,31 +49,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await api.signIn(email, password);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);
     setSession(data.session);
-    const { data: { user: currentUser } } = await api.getUser();
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
     setUser(currentUser);
   };
 
   const signUp = async (email: string, password: string, fullName: string, phoneNumber?: string) => {
-    const { data, error } = await api.signUp(email, password, fullName, phoneNumber);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName, phone: phoneNumber } },
+    });
     if (error) throw new Error(error.message);
     if (data.session) {
       setSession(data.session);
-      const { data: { user: currentUser } } = await api.getUser();
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
     }
   };
 
   const signOut = async () => {
-    await api.signOut();
+    await supabase.auth.signOut();
     setSession(null);
     setUser(null);
   };
 
   const resetPassword = async (email: string) => {
-    await api.resetPassword(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw new Error(error.message);
   };
 
   return (

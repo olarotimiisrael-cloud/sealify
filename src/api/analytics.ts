@@ -44,8 +44,6 @@ analyticsRoutes.get("/overview", async (c) => {
       totalAds,
       activeAds,
       totalRevenue,
-      totalTransactions,
-      totalEscrow,
       pendingReports,
       pendingDisputes,
       pendingVerifications
@@ -54,9 +52,7 @@ analyticsRoutes.get("/overview", async (c) => {
       sql`SELECT COUNT(*) as count FROM profiles WHERE status = 'active' AND created_at > NOW() - INTERVAL '30 days'`,
       sql`SELECT COUNT(*) as count FROM ads`,
       sql`SELECT COUNT(*) as count FROM ads WHERE status = 'active'`,
-      sql`SELECT SUM(amount) as total FROM transactions WHERE type = 'sale' AND status = 'completed'`,
-      sql`SELECT COUNT(*) as count FROM transactions WHERE status = 'completed'`,
-      sql`SELECT COUNT(*) as count FROM escrow_orders WHERE status IN ('created', 'funded', 'inspection')`,
+      sql`SELECT SUM(amount) as total FROM promotion_payments WHERE status = 'approved'`,
       sql`SELECT COUNT(*) as count FROM reports WHERE status = 'pending'`,
       sql`SELECT COUNT(*) as count FROM disputes WHERE status = 'pending'`,
       sql`SELECT COUNT(*) as count FROM verification_requests WHERE status = 'pending'`,
@@ -66,8 +62,6 @@ analyticsRoutes.get("/overview", async (c) => {
       users: { total: totalUsers[0]?.count || 0, active: activeUsers[0]?.count || 0 },
       ads: { total: totalAds[0]?.count || 0, active: activeAds[0]?.count || 0 },
       revenue: totalRevenue[0]?.total || 0,
-      transactions: totalTransactions[0]?.count || 0,
-      escrow: { active: totalEscrow[0]?.count || 0 },
       pending: {
         reports: pendingReports[0]?.count || 0,
         disputes: pendingDisputes[0]?.count || 0,
@@ -135,9 +129,9 @@ analyticsRoutes.get("/revenue", async (c) => {
       SELECT 
         DATE(created_at) as date,
         SUM(amount) as daily_revenue,
-        COUNT(*) as transaction_count
-      FROM transactions
-      WHERE type IN ('sale', 'promotion') AND status = 'completed'
+        COUNT(*) as promotion_count
+      FROM promotion_payments
+      WHERE status = 'approved'
       AND created_at > NOW() - INTERVAL '${days} days'
       GROUP BY DATE(created_at)
       ORDER BY date ASC

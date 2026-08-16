@@ -93,7 +93,7 @@ export const DisputeResolution: React.FC = () => {
             <div className="space-y-3 text-center sm:text-left">
               <div className="inline-flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-black px-3.5 py-1 rounded-full shadow-sm">
                 <Gavel className="w-4 h-4" />
-                <span>Formal Trade Arbitration & Escrow Protection</span>
+                <span>Formal Trade Arbitration & Mediation</span>
               </div>
               <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                 Dispute Resolution Portal

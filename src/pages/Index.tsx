@@ -63,6 +63,7 @@ export default function Index() {
   const [isAlertsOpen, setIsAlertsOpen] = useState(false);
   const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
   const [heroSearch, setHeroSearch] = useState('');
+  const [announcementIndex, setAnnouncementIndex] = useState(0);
 
   // Sync URL search parameters with filter state
   useEffect(() => {
@@ -89,6 +90,24 @@ export default function Index() {
     () => [...new Map(announcements.filter((a) => a.active).map((a) => [a.id, a])).values()],
     [announcements],
   );
+
+  useEffect(() => {
+    if (activeAnnouncements.length <= 1) return;
+
+    const intervalId = window.setInterval(() => {
+      setAnnouncementIndex((current) => (current + 1) % activeAnnouncements.length);
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeAnnouncements]);
+
+  useEffect(() => {
+    if (announcementIndex >= activeAnnouncements.length) {
+      setAnnouncementIndex(0);
+    }
+  }, [activeAnnouncements.length, announcementIndex]);
+
+  const currentAnnouncement = activeAnnouncements[announcementIndex] ?? null;
 
   const listings = listingsData?.listings || [];
   const totalCount = listingsData?.total || 0;
@@ -216,14 +235,49 @@ export default function Index() {
           </form>
         </section>
 
-        {activeAnnouncements.length > 0 && (
-          <div className="space-y-2">
-            {activeAnnouncements.map((ann) => (
-              <div key={ann.id} className="p-3.5 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/30 rounded-2xl flex items-center gap-3 text-xs shadow-lg animate-in fade-in">
-                <span className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0"><Sparkles className="w-4 h-4 animate-pulse" /></span>
-                <p className="min-w-0 truncate"><strong className="text-white font-black">{ann.title}: </strong>{ann.message}</p>
+        {currentAnnouncement && (
+          <div className="p-3.5 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/30 rounded-2xl shadow-lg">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="p-1.5 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0"><Sparkles className="w-4 h-4 animate-pulse" /></span>
+              <p className="min-w-0 flex-1"><strong className="text-white font-black">{currentAnnouncement.title}: </strong>{currentAnnouncement.message}</p>
+
+              {activeAnnouncements.length > 1 && (
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    aria-label="Previous announcement"
+                    onClick={() => setAnnouncementIndex((current) => (current - 1 + activeAnnouncements.length) % activeAnnouncements.length)}
+                    className="h-7 w-7 rounded-full border border-slate-700 bg-slate-950/70 text-slate-300 hover:text-white transition-colors"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next announcement"
+                    onClick={() => setAnnouncementIndex((current) => (current + 1) % activeAnnouncements.length)}
+                    className="h-7 w-7 rounded-full border border-slate-700 bg-slate-950/70 text-slate-300 hover:text-white transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {activeAnnouncements.length > 1 && (
+              <div className="mt-3 flex items-center gap-2 justify-center">
+                {activeAnnouncements.map((announcement, index) => (
+                  <button
+                    key={announcement.id}
+                    type="button"
+                    aria-label={`Show announcement ${index + 1}`}
+                    onClick={() => setAnnouncementIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      index === announcementIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-slate-600 hover:bg-slate-500'
+                    }`}
+                  />
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 

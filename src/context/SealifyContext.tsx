@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, Wallet, Transaction, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
+import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { mapListingToListing, mapProfileToUser } from '@/services/supabaseService';
+import { adminFetch } from '@/lib/admin-api';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
@@ -52,10 +53,11 @@ const dedupeAnnouncements = (rows: Array<any> = []): SystemAnnouncement[] => {
 
   rows.forEach((row) => {
     const mapped = mapAnnouncementRow(row);
-    const existing = deduped.get(mapped.id);
+    const contentKey = `${mapped.type}|${(mapped.title || '').trim().toLowerCase()}|${(mapped.message || '').trim().toLowerCase()}`;
+    const existing = deduped.get(contentKey);
 
     if (!existing || new Date(mapped.createdAt).getTime() > new Date(existing.createdAt).getTime()) {
-      deduped.set(mapped.id, mapped);
+      deduped.set(contentKey, mapped);
     }
   });
 
@@ -130,27 +132,6 @@ const mapBuyerRequestRow = (row: any): BuyerRequest => ({
   responsesCount: Number(row.responses_count || 0),
 });
 
-const mapWalletRow = (row: any): Wallet => ({
-  id: row.id,
-  userId: row.user_id,
-  balance: Number(row.balance || 0),
-  pendingBalance: Number(row.pending_balance || 0),
-  totalWithdrawn: Number(row.total_withdrawn || 0),
-  currency: row.currency || 'NGN',
-  updatedAt: row.updated_at || new Date().toISOString(),
-});
-
-const mapTransactionRow = (row: any): Transaction => ({
-  id: row.id,
-  walletId: row.wallet_id,
-  type: row.type,
-  amount: Number(row.amount || 0),
-  status: row.status,
-  description: row.description || '',
-  reference: row.reference || undefined,
-  createdAt: row.created_at || new Date().toISOString(),
-});
-
 interface SealifyContextType {
   // Auth
   user: UserProfile | null;
@@ -158,17 +139,15 @@ interface SealifyContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   adminEmail: string;
-  adminPassword: string;
-  adminPin: string;
-  updateAdminCredentials: (email: string, password: string, pin: string) => Promise<void>;
+  updateAdminCredentials: (email: string, password: string) => Promise<void>;
   
   // System config
   systemConfig: Record<string, boolean | number>;
   updateSystemConfig: (updates: Record<string, boolean | number>) => void;
   
   // Site settings
-  siteSettings: { siteName: string; siteDescription: string; ogImage: string; contactEmail: string; contactPhone: string } | null;
-  updateSiteSettings: (settings: Partial<{ siteName: string; siteDescription: string; ogImage: string; contactEmail: string; contactPhone: string }>) => void;
+  siteSettings: { logoUrl: string; siteName: string; siteDescription: string; ogImage: string; contactEmail: string; contactPhone: string } | null;
+  updateSiteSettings: (settings: Partial<{ logoUrl: string; siteName: string; siteDescription: string; ogImage: string; contactEmail: string; contactPhone: string }>) => void;
   
   // Promotion plans
   promotionPlans: { months: number; label: string; rate: number; badge?: string; isActive: boolean }[];
@@ -203,7 +182,7 @@ interface SealifyContextType {
   signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
   sendPhoneOtp: (phone: string) => Promise<string>;
   verifyPhoneOtp: (phone: string, code: string) => Promise<boolean>;
-  adminLogin: (email: string, password: string, pin: string) => Promise<boolean>;
+  adminLogin: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   
   // Listings
@@ -301,11 +280,6 @@ interface SealifyContextType {
   createBuyerRequest: (request: Omit<BuyerRequest, 'id' | 'createdAt' | 'responsesCount'>) => Promise<void>;
   deleteBuyerRequest: (id: string) => Promise<void>;
   
-  // Wallet
-  wallet: Wallet | null;
-  transactions: Transaction[];
-  requestPayout: (amount: number) => Promise<void>;
-  
   // State
   loading: boolean;
   isSyncing: boolean;
@@ -373,6 +347,7 @@ const MOCK_SYSTEM_CONFIG = {
 };
 
 const MOCK_SITE_SETTINGS = {
+  logoUrl: '/logo.svg',
   siteName: 'Sealify Nigeria',
   siteDescription: 'Nigeria\'s Trusted Local Marketplace for Ogbomosoland & Oyo State.',
   ogImage: '/og-image.png',
@@ -415,7 +390,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     welcome: 'Welcome back',
     search_btn: 'Search',
     all_categories: 'All Categories',
-    safe_escrow: 'Safe Escrow',
     requests: 'Requests',
     insights: 'Insights',
     online_now: 'online now',
@@ -472,7 +446,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     welcome: 'Kaabo pada',
     search_btn: 'Wa',
     all_categories: 'Gbogbo Ẹka',
-    safe_escrow: 'Aabo Escrow',
     requests: 'Awọn Ebe',
     insights: 'Inú Rẹ',
     online_now: 'wa lori intanẹẹti',
@@ -529,7 +502,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     welcome: 'Barka da dawowa',
     search_btn: 'Nema',
     all_categories: 'Duk Rukunoni',
-    safe_escrow: 'Amintaccen Escrow',
     requests: 'Mabuƙata',
     insights: 'Kasuwa Insights',
     online_now: 'suna yanar gizo',
@@ -586,7 +558,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     welcome: 'Nnọọ ọzọ',
     search_btn: 'Chọọ',
     all_categories: 'Ụdị Niile',
-    safe_escrow: 'Nchekwa Ego',
     requests: 'Arịrịọ Ahịa',
     insights: 'Nyocha Ahịa',
     online_now: 'nọ na intanetị',
@@ -643,7 +614,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
     welcome: '欢迎回来',
     search_btn: '搜索',
     all_categories: '全部分类',
-    safe_escrow: '安全托管',
     requests: '求购需求',
     insights: '市场洞察',
     online_now: '在线',
@@ -672,8 +642,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
-  const [adminPin, setAdminPin] = useState('');
   const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
   const [promotionPlans, setPromotionPlans] = useState(MOCK_PROMOTION_PLANS);
@@ -731,14 +699,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
-  const [wallet, setWallet] = useState<Wallet | null>(null);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [error, setError] = useState<string | null>(null);
 
-  const updateAdminCredentials = async (email: string, password: string, pin: string) => {
+  const updateAdminCredentials = async (email: string, password: string) => {
     const { data: { user: authUser } } = await supabase.auth.getUser();
     if (!authUser) throw new Error('Authentication required');
 
@@ -755,10 +721,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     setAdminEmail(nextEmail || authUser.email || '');
-    setAdminPassword('');
-    setAdminPin('');
-    localStorage.setItem('sealify_admin_email', nextEmail || authUser.email || '');
-    void pin;
   };
 
   const t = (key: string) => TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || key;
@@ -802,11 +764,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const adminLogin = async (email: string, password: string, pin: string) => {
+  const adminLogin = async (email: string, password: string) => {
     try {
-      const configuredPin = String(import.meta.env.VITE_ADMIN_PIN || '').trim();
-      if (configuredPin && pin !== configuredPin) return false;
-
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
       if (authError || !data.user) return false;
 
@@ -859,8 +818,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSavedListingIds([]);
     setNotifications([]);
     setConversations([]);
-    setWallet(null);
-    setTransactions([]);
   };
 
   const addRecentlyViewed = (id: string) => {
@@ -1118,12 +1075,42 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (success) setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const broadcastMassNotification = (data: { target: string; title: string; message: string }) => {
-    toast.success(`Broadcast sent to ${data.target}`);
+  const broadcastMassNotification = async (data: { target: string; title: string; message: string }) => {
+    try {
+      const response = await adminFetch('/api/admin/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Broadcast failed');
+      }
+
+      toast.success(`Broadcast sent to ${data.target} (${result.sent ?? 0} recipients)`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Broadcast failed');
+    }
   };
 
-  const dispatchPromotionalEmailDigest = () => {
-    toast.success('Weekly digest dispatched!');
+  const dispatchPromotionalEmailDigest = async () => {
+    try {
+      const response = await adminFetch('/api/admin/email-digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ audience: 'all', includeTopListings: true }),
+      });
+
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Digest dispatch failed');
+      }
+
+      toast.success(result.message || 'Weekly digest queue started');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Digest dispatch failed');
+    }
   };
 
   const submitPasswordRequest = async (request: any) => {
@@ -1325,31 +1312,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (success) setBuyerRequests(prev => prev.filter(request => request.id !== id));
   };
 
-  const requestPayout = async (amount: number) => {
-    if (!user || !wallet || amount <= 0 || wallet.balance < amount) {
-      toast.error('Insufficient balance');
-      return;
-    }
-    const { data: transaction, error: transactionError } = await supabase.from('transactions').insert({
-      wallet_id: wallet.id,
-      type: 'payout',
-      amount: -amount,
-      status: 'pending',
-      description: 'Withdrawal to bank',
-      related_user_id: user.id,
-    }).select().single();
-    if (transactionError) throw transactionError;
-
-    const { data: updatedWallet, error: walletError } = await supabase.from('wallets').update({
-      balance: wallet.balance - amount,
-      pending_balance: wallet.pendingBalance + amount,
-    }).eq('id', wallet.id).eq('user_id', user.id).select().single();
-    if (walletError) throw walletError;
-
-    setWallet(mapWalletRow(updatedWallet));
-    setTransactions(prev => [mapTransactionRow(transaction), ...prev]);
-    toast.success(`Payout of ₦${amount.toLocaleString()} requested`);
-  };
 
   const syncDatabase = async () => {
     setIsSyncing(true);
@@ -1495,11 +1457,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
 
         const databaseSettings = {
-          site_name: settings.siteName,
-          site_description: settings.siteDescription,
-          og_image: settings.ogImage,
-          contact_email: settings.contactEmail,
-          contact_phone: settings.contactPhone,
+          logo_url: settings.logoUrl ?? siteSettings?.logoUrl ?? MOCK_SITE_SETTINGS.logoUrl,
+          site_name: settings.siteName ?? siteSettings?.siteName ?? MOCK_SITE_SETTINGS.siteName,
+          site_description: settings.siteDescription ?? siteSettings?.siteDescription ?? MOCK_SITE_SETTINGS.siteDescription,
+          og_image: settings.ogImage ?? siteSettings?.ogImage ?? MOCK_SITE_SETTINGS.ogImage,
+          contact_email: settings.contactEmail ?? siteSettings?.contactEmail ?? MOCK_SITE_SETTINGS.contactEmail,
+          contact_phone: settings.contactPhone ?? siteSettings?.contactPhone ?? MOCK_SITE_SETTINGS.contactPhone,
           updated_at: new Date().toISOString(),
         };
 
@@ -1549,6 +1512,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (siteSettingsRow) {
       setSiteSettings({
+        logoUrl: siteSettingsRow.logo_url || MOCK_SITE_SETTINGS.logoUrl,
         siteName: siteSettingsRow.site_name || MOCK_SITE_SETTINGS.siteName,
         siteDescription: siteSettingsRow.site_description || MOCK_SITE_SETTINGS.siteDescription,
         ogImage: siteSettingsRow.og_image || MOCK_SITE_SETTINGS.ogImage,
@@ -1576,24 +1540,18 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setNotifications([]);
       setConversations([]);
       setSearchAlerts([]);
-      setWallet(null);
-      setTransactions([]);
       return;
     }
 
-    const [favoriteIds, notificationRows, searchAlertRows, walletResult, transactionResult] = await Promise.all([
+    const [favoriteIds, notificationRows, searchAlertRows] = await Promise.all([
       favoriteService.favoriteService.getByUserId(authUser.id),
       notificationService.notificationService.getAll(authUser.id),
       searchAlertService.searchAlertService.getAll(authUser.id),
-      supabase.from('wallets').select('*').eq('user_id', authUser.id).maybeSingle(),
-      supabase.from('transactions').select('*').eq('related_user_id', authUser.id).order('created_at', { ascending: false }),
     ]);
 
     setSavedListingIds(favoriteIds);
     setNotifications((notificationRows || []).map(mapNotificationRow));
     setSearchAlerts((searchAlertRows || []).map(mapSearchAlertRow));
-    setWallet(walletResult.data ? mapWalletRow(walletResult.data) : null);
-    setTransactions((transactionResult.data || []).map(mapTransactionRow));
     await refreshConversations(authUser.id);
 
     if (authUser.role === 'admin') {
@@ -1657,8 +1615,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isAuthenticated: !!user,
     isAdmin,
     adminEmail,
-    adminPassword,
-    adminPin,
     updateAdminCredentials,
     systemConfig,
     updateSystemConfig,
@@ -1759,16 +1715,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     buyerRequests,
     createBuyerRequest,
     deleteBuyerRequest,
-    wallet,
-    transactions,
-    requestPayout,
     loading,
     isSyncing,
     lastSyncTime,
     syncDatabase,
     error
   }), [
-    user, isAdmin, adminEmail, adminPassword, adminPin, systemConfig, siteSettings, promotionPlans, safeSpots,
+    user, isAdmin, adminEmail, systemConfig, siteSettings, promotionPlans, safeSpots,
     language, categories, subcategories, analytics, marketStats, login, signup, adminLogin, logout,
     listings, allUsers, updateUser, addUser, deleteUser, savedListingIds, recentlyViewedIds, userInterests,
     addRecentlyViewed, toggleSaveListing, isSaved, filters, setFilters, resetFilters,
@@ -1781,7 +1734,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,
     recentDeals, sealDeal, intrusionLogs, recordIntrusion, searchAlerts, saveSearchAlert, deleteSearchAlert,
     reviews, addReview, deleteReview, buyerRequests, createBuyerRequest, deleteBuyerRequest,
-    wallet, transactions, requestPayout, loading, isSyncing, lastSyncTime, syncDatabase, error
+    loading, isSyncing, lastSyncTime, syncDatabase, error
   ]);
 
   return (

@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import MagicSearch from './MagicSearch';
-import EscrowProtectionModal from './EscrowProtectionModal';
 import AiShoppingAssistantModal from './AiShoppingAssistantModal';
 import Logo from './Logo';
 import AuthModal from './AuthModal';
@@ -19,7 +18,6 @@ import {
   ShieldCheck,
   Building2,
   Command,
-  Lock,
   Settings as SettingsIcon,
   Package,
   User,
@@ -32,7 +30,6 @@ import {
   PlayCircle,
   ArrowLeft,
   Newspaper,
-  BadgeCheck,
   Bot,
   Sparkles
 } from 'lucide-react';
@@ -62,7 +59,6 @@ const Navbar: React.FC = () => {
   const { pathname } = useLocation();
   
   const [isMagicSearchOpen, setIsMagicSearchOpen] = useState(false);
-  const [isEscrowOpen, setIsEscrowOpen] = useState(false);
   const [isAiAssistantOpen, setIsAiAssistantOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -160,14 +156,6 @@ const Navbar: React.FC = () => {
               <span>{t('insights')}</span>
             </Link>
 
-            <button
-              onClick={() => setIsEscrowOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-teal-400 hover:text-teal-300 transition-colors mr-1 bg-teal-500/10 rounded-xl border border-teal-500/20"
-            >
-              <Lock className="w-3.5 h-3.5" />
-              <span>{t('safe_escrow')}</span>
-            </button>
-
             <div className="relative group">
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
@@ -234,10 +222,6 @@ const Navbar: React.FC = () => {
                     <Link to="/vendors" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <Building2 className="w-4 h-4 text-amber-400" />
                       <span>Merchant Directory</span>
-                    </Link>
-                    <Link to="/escrow-verify" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
-                      <BadgeCheck className="w-4 h-4 text-teal-400" />
-                      <span>Verify Escrow Code</span>
                     </Link>
                     <Link to="/settings" onClick={() => setShowUserDropdown(false)} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors">
                       <SettingsIcon className="w-4 h-4 text-purple-400" />
@@ -319,7 +303,6 @@ const Navbar: React.FC = () => {
       </header>
 
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
-      <EscrowProtectionModal isOpen={isEscrowOpen} onClose={() => setIsEscrowOpen(false)} />
       <AiShoppingAssistantModal isOpen={isAiAssistantOpen} onClose={() => setIsAiAssistantOpen(false)} />
     </>
   );

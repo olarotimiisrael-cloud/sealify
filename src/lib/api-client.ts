@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mapListingToListing } from "@/services/supabaseService";
@@ -13,94 +12,10 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
-  private supabase: ReturnType<typeof createClient>;
-  private accessToken: string | null = null;
-  private refreshToken: string | null = null;
-  private tokenExpiry: number = 0;
-  private refreshPromise: Promise<string> | null = null;
+  private authClient = supabase;
 
   constructor() {
     this.baseUrl = API_BASE;
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL!,
-      import.meta.env.VITE_SUPABASE_ANON_KEY!
-    );
-
-    this.loadTokens();
-
-    this.supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        this.setTokens(session.access_token, session.refresh_token, session.expires_at!);
-      } else {
-        this.clearTokens();
-      }
-    });
-  }
-
-  private loadTokens() {
-    this.accessToken = localStorage.getItem("sb-access-token");
-    this.refreshToken = localStorage.getItem("sb-refresh-token");
-    const expiry = localStorage.getItem("sb-token-expiry");
-    this.tokenExpiry = expiry ? parseInt(expiry) : 0;
-  }
-
-  private setTokens(access: string, refresh: string, expiresAt: number) {
-    this.accessToken = access;
-    this.refreshToken = refresh;
-    this.tokenExpiry = expiresAt * 1000;
-    localStorage.setItem("sb-access-token", access);
-    localStorage.setItem("sb-refresh-token", refresh);
-    localStorage.setItem("sb-token-expiry", String(expiresAt * 1000));
-  }
-
-  private clearTokens() {
-    this.accessToken = null;
-    this.refreshToken = null;
-    this.tokenExpiry = 0;
-    localStorage.removeItem("sb-access-token");
-    localStorage.removeItem("sb-refresh-token");
-    localStorage.removeItem("sb-token-expiry");
-  }
-
-  private async refreshAccessToken(): Promise<string> {
-    if (this.refreshPromise) return this.refreshPromise;
-
-    this.refreshPromise = (async () => {
-      if (!this.refreshToken) throw new Error("No refresh token");
-
-      const { data, error } = await this.supabase.auth.refreshSession({
-        refresh_token: this.refreshToken,
-      });
-
-      if (error || !data.session) {
-        this.clearTokens();
-        throw new Error("Session expired");
-      }
-
-      this.setTokens(data.session.access_token, data.session.refresh_token, data.session.expires_at!);
-      return data.session.access_token;
-    })();
-
-    try {
-      return await this.refreshPromise;
-    } finally {
-      this.refreshPromise = null;
-    }
-  }
-
-  private async getValidAccessToken(): Promise<string | null> {
-    if (!this.accessToken) return null;
-
-    if (Date.now() >= this.tokenExpiry - 30000) {
-      try {
-        return await this.refreshAccessToken();
-      } catch {
-        this.clearTokens();
-        return null;
-      }
-    }
-
-    return this.accessToken;
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string>): string {
@@ -125,9 +40,9 @@ class ApiClient {
     };
 
     if (requireAuth) {
-      const token = await this.getValidAccessToken();
-      if (token) {
-        requestHeaders["Authorization"] = `Bearer ${token}`;
+      const { data: { session } } = await this.authClient.auth.getSession();
+      if (session?.access_token) {
+        requestHeaders["Authorization"] = `Bearer ${session.access_token}`;
       }
     }
 
@@ -137,7 +52,6 @@ class ApiClient {
     });
 
     if (response.status === 401) {
-      this.clearTokens();
       if (window.location.pathname !== "/login" && window.location.pathname !== "/admin/login") {
         window.location.href = "/login";
       }
@@ -174,7 +88,7 @@ class ApiClient {
   }
 
   async signUp(email: string, password: string, fullName: string, phoneNumber?: string) {
-    const { data, error } = await this.supabase.auth.signUp({
+    const { data, error } = await this.authClient.auth.signUp({
       email,
       password,
       options: { data: { full_name: fullName, phone: phoneNumber } },
@@ -184,38 +98,37 @@ class ApiClient {
   }
 
   async signIn(email: string, password: string) {
-    const { data, error } = await this.supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await this.authClient.auth.signInWithPassword({ email, password });
     if (error) throw new Error(error.message);
     return data;
   }
 
   async signOut() {
-    await this.supabase.auth.signOut();
-    this.clearTokens();
+    await this.authClient.auth.signOut();
   }
 
   async resetPassword(email: string) {
-    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await this.authClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) throw new Error(error.message);
   }
 
   async updatePassword(password: string) {
-    const { error } = await this.supabase.auth.updateUser({ password });
+    const { error } = await this.authClient.auth.updateUser({ password });
     if (error) throw new Error(error.message);
   }
 
   getSession() {
-    return this.supabase.auth.getSession();
+    return this.authClient.auth.getSession();
   }
 
   getUser() {
-    return this.supabase.auth.getUser();
+    return this.authClient.auth.getUser();
   }
 
   onAuthStateChange(callback: (event: string, session: any) => void) {
-    return this.supabase.auth.onAuthStateChange(callback);
+    return this.authClient.auth.onAuthStateChange(callback);
   }
 }
 
@@ -242,8 +155,6 @@ export const queryKeys = {
   profile: (id: string) => ["profile", id] as const,
   myListings: () => ["my-listings"] as const,
   savedListings: () => ["saved-listings"] as const,
-  wallet: () => ["wallet"] as const,
-  transactions: (params?: any) => ["transactions", params] as const,
   conversations: () => ["conversations"] as const,
   messages: (conversationId: string) => ["messages", conversationId] as const,
   notifications: (params?: any) => ["notifications", params] as const,
@@ -559,63 +470,6 @@ export function useMarkAllNotificationsRead() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications() });
       queryClient.invalidateQueries({ queryKey: queryKeys.unreadCount() });
-    },
-  });
-}
-
-export function useWallet() {
-  return useQuery({
-    queryKey: queryKeys.wallet(),
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      const { data, error } = await supabase.from("wallets").select("*").eq("user_id", userId).maybeSingle();
-      if (error) throw error;
-      return { wallet: data };
-    },
-    staleTime: 1000 * 60,
-  });
-}
-
-export function useTransactions(params?: any) {
-  return useQuery({
-    queryKey: queryKeys.transactions(params),
-    queryFn: async () => {
-      const userId = await getCurrentUserId();
-      const { data, error } = await supabase.from("transactions").select("*").eq("related_user_id", userId).order("created_at", { ascending: false });
-      if (error) throw error;
-      return { transactions: data || [] };
-    },
-    staleTime: 1000 * 60,
-  });
-}
-
-export function useRequestPayout() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (amount: number) => {
-      const userId = await getCurrentUserId();
-      const { data: wallet, error: walletError } = await supabase.from("wallets").select("*").eq("user_id", userId).single();
-      if (walletError) throw walletError;
-      if (amount <= 0 || Number(wallet.balance) < amount) throw new Error("Insufficient balance");
-      const { data: transaction, error: transactionError } = await supabase.from("transactions").insert({
-        wallet_id: wallet.id,
-        type: "payout",
-        amount: -amount,
-        status: "pending",
-        description: "Withdrawal to bank",
-        related_user_id: userId,
-      }).select().single();
-      if (transactionError) throw transactionError;
-      const { data: updatedWallet, error: updateError } = await supabase.from("wallets").update({
-        balance: Number(wallet.balance) - amount,
-        pending_balance: Number(wallet.pending_balance) + amount,
-      }).eq("id", wallet.id).eq("user_id", userId).select().single();
-      if (updateError) throw updateError;
-      return { wallet: updatedWallet, transaction };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.wallet() });
-      queryClient.invalidateQueries({ queryKey: queryKeys.transactions() });
     },
   });
 }

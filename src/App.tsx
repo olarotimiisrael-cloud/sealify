@@ -18,6 +18,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminAiSettingsPage = lazy(() => import("./pages/AdminAiSettings"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SafetyCenter = lazy(() => import("./pages/SafetyCenter"));
@@ -25,7 +26,6 @@ const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
 const MarketInsights = lazy(() => import("./pages/MarketInsights"));
 const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
-const EscrowVerifier = lazy(() => import("./pages/EscrowVerifier"));
 const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
 
@@ -55,6 +55,7 @@ const App = () => (
           <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/ai-settings" element={<AdminAiSettingsPage />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/safety" element={<SafetyCenter />} />
@@ -62,7 +63,6 @@ const App = () => (
           <Route path="/market-insights" element={<MarketInsights />} />
           <Route path="/requests" element={<BuyerRequests />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
-          <Route path="/escrow-verify" element={<EscrowVerifier />} />
           <Route path="/community" element={<CommunityBoard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -17,6 +17,7 @@ import { searchRoutes } from "./api/search";
 import { analyticsRoutes } from "./api/analytics";
 import { pushRoutes } from "./api/push";
 import { healthRoutes } from "./api/health";
+import { copilotRoutes } from "./api/copilot";
 
 type Env = {
   HYPERDRIVE: any;
@@ -41,6 +42,7 @@ app.route("/api", healthRoutes);
 
 // API Routes
 app.route("/api/auth", authRoutes);
+app.route("/api/copilot", copilotRoutes);
 app.route("/api/listings", listingsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/messages", messagesRoutes);
