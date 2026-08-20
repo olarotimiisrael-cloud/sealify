@@ -31,6 +31,8 @@ dist-ssr
 .last-run.json
 .dyad/
 .wrangler-config/
+.wrangler/
+.continue/
 
 # Environment files - MUST be ignored
 .env
