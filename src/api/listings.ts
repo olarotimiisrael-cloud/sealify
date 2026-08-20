@@ -116,7 +116,7 @@ listingsRoutes.get("/", listingsRateLimit, async (c) => {
       SELECT
         a.*,
         p.full_name as seller_name,
-        p.phone_number as seller_phone,
+        CASE WHEN COALESCE(p.hide_phone_publicly, false) THEN NULL ELSE p.phone_number END as seller_phone,
         p.avatar_url as seller_avatar,
         p.verified as seller_verified,
         p.verification_type as seller_verification_type
@@ -156,7 +156,7 @@ listingsRoutes.get("/:id", listingsRateLimit, async (c) => {
       SELECT
         a.*,
         p.full_name as seller_name,
-        p.phone_number as seller_phone,
+        CASE WHEN COALESCE(p.hide_phone_publicly, false) THEN NULL ELSE p.phone_number END as seller_phone,
         p.avatar_url as seller_avatar,
         p.verified as seller_verified,
         p.verification_type as seller_verification_type

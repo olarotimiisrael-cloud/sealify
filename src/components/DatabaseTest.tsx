@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { adminFetch } from '@/lib/admin-api';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { toast as sonnerToast } from 'sonner';
@@ -69,9 +70,10 @@ export const DatabaseTest: React.FC = () => {
 
     // Test 4: RLS
     try {
-      const { data, error } = await supabase.from('system_configs').select('*');
-      if (error) throw error;
-      newTests[4] = { ...newTests[4], status: 'success', message: `Configs loaded: ${data?.length || 0}` };
+      const response = await adminFetch('/api/admin/system-config');
+      if (!response.ok) throw new Error('Admin system configuration endpoint unavailable');
+      const payload = await response.json();
+      newTests[4] = { ...newTests[4], status: 'success', message: `Configs loaded: ${payload.configs?.length || 0}` };
     } catch (e: any) {
       newTests[4] = { ...newTests[4], status: 'error', message: e.message };
     }

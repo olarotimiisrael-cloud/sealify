@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { EventContext } from '@cloudflare/workers-types';
 
 import { authRoutes } from '../../src/api/auth';
 import { listingsRoutes } from '../../src/api/listings';
@@ -26,14 +27,6 @@ interface Env {
   NEXT_PUBLIC_SUPABASE_URL?: string;
   SUPABASE_ANON_KEY: string;
   [key: string]: unknown;
-}
-
-interface PagesContext {
-  request: Request;
-  env: Env;
-  params: Record<string, string | string[]>;
-  waitUntil(promise: Promise<unknown>): void;
-  next(): Promise<Response>;
 }
 
 const api = new Hono<{ Bindings: Env }>();
@@ -70,12 +63,12 @@ api.route('/api/search', searchRoutes);
 api.route('/api/analytics', analyticsRoutes);
 api.route('/api/push', pushRoutes);
 
-export const onRequest = (context: PagesContext): Promise<Response> => {
+export const onRequest = (context: EventContext<Env>): Promise<Response> => {
   const env: Env = {
     ...context.env,
     NEXT_PUBLIC_SUPABASE_URL:
       context.env.SUPABASE_URL || context.env.NEXT_PUBLIC_SUPABASE_URL,
   };
 
-  return api.fetch(context.request, env, context as any);
+  return api.fetch(context.request, env, context);
 };

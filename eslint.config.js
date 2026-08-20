@@ -5,7 +5,9 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  // Wrangler and Vite generate JavaScript artifacts outside the application
+  // source tree. They are build output, not files we author or lint.
+  { ignores: ["dist/**", ".wrangler/**", ".output/**", ".npm-cache/**"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

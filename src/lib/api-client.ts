@@ -71,6 +71,10 @@ class ApiClient {
     return this.request<T>(endpoint, { method: "GET", params });
   }
 
+  getPublic<T>(endpoint: string, params?: Record<string, string>) {
+    return this.request<T>(endpoint, { method: "GET", params, requireAuth: false });
+  }
+
   post<T>(endpoint: string, data: any) {
     return this.request<T>(endpoint, { method: "POST", body: JSON.stringify(data) });
   }

@@ -11,14 +11,11 @@ A full-featured classifieds marketplace for Ogbomosoland, Oyo State, and across 
 - **AI-Powered Tools** — Smart pricing, description generation, voice overviews, and shopping copilot
 - **Real-time Chat** — Direct messaging with quick replies, voice notes, and photo sharing
 - **Escrow Protection** — Secure fund holding with QR code verification for in-person handover
-- **Price History & Market Insights** — AI-analyzed pricing trends and demand scores
 
 ### Advanced Features
 - **Social Promo Cards** — Generate high-res 1080x1080 flyers with QR codes for WhatsApp/social sharing
 - **Item Swap & Trade-In** — Propose barter deals with cash top-up options
 - **Physical Inspection Checklists** — Category-specific verification guides
-- **Dispute Resolution** — Formal arbitration with evidence submission
-- **Merchant Wallet** — Balance tracking, escrow pending, and bank withdrawals
 - **PWA Support** — Install as native app on iOS/Android with offline access
 - **Multi-language** — English, Yorùbá, Hausa, Igbo, 中文
 
@@ -66,18 +63,14 @@ src/
 │   ├── PostAd.tsx       # Multi-step ad creation wizard
 │   ├── MyAds.tsx        # User inventory management
 │   ├── Messages.tsx     # Real-time chat inbox
-│   ├── Wallet.tsx       # Merchant wallet & payouts
 │   ├── Settings.tsx     # Profile, storefront, security
 │   ├── SellerProfile.tsx # Public vendor storefront
 │   ├── VendorsPage.tsx  # Verified merchant directory
-│   ├── MarketInsights.tsx # Price index & analytics
 │   ├── AdminDashboard.tsx # Master admin terminal
 │   ├── AdminLogin.tsx   # Secure admin authentication
 │   ├── BuyerRequests.tsx # Want board / item requests
 │   ├── CommunityBoard.tsx # News & announcements
 │   ├── SafetyCenter.tsx # Trust & safety guidelines
-│   ├── EscrowVerifier.tsx # Escrow code authentication
-│   ├── DisputeResolution.tsx # Formal dispute filing
 │   ├── HowItWorks.tsx   # Platform guide & FAQ
 │   ├── Notifications.tsx # Notification center
 │   ├── SavedAds.tsx     # Bookmarked listings
@@ -180,9 +173,6 @@ vercel --prod
 - **categories/subcategories** — Hierarchical taxonomy with spec fields
 - **conversations/messages** — Real-time chat with read receipts
 - **notifications** — Multi-type alerts (price drop, message, offer, etc.)
-- **favorites** — User bookmarks
-- **wallets/transactions** — Merchant balance & payout ledger
-- **escrow_transactions** — Secure fund holding with handover codes
 - **verification_requests** — NIN/CAC/Student ID applications
 - **promotion_payments** — Top Ad boost receipts
 - **disputes/reports** — Safety & moderation
@@ -201,7 +191,6 @@ vercel --prod
 - **Admin Terminal** — Triple-factor auth (Email + Password + 6-digit PIN)
 - **Intrusion Logging** — Device fingerprinting on failed admin attempts
 - **Row Level Security** — Supabase RLS policies on all tables
-- **Biometric App Lock** — Fingerprint/FaceID for mobile PWA
 - **Escrow QR Verification** — Cryptographic handover codes
 - **Phone OTP** — SMS verification for sensitive actions
 - **Password Reset** — NIN + ID document required
@@ -251,10 +240,6 @@ npm run preview
 | `OfferModal` | Price negotiation |
 | `SwapProposalModal` | Barter/trade-in deals |
 | `SafeMeetupModal` | Verified location picker |
-| `InspectionChecklistModal` | Category-specific verification |
-| `DealQrScannerModal` | In-person handover QR/PIN |
-| `EscrowInitiatorModal` | Secure fund locking |
-| `TransactionReceiptModal` | Digital sales receipts |
 | `StorefrontFlycardModal` | 1080x1080 social promo cards |
 | `AiVoiceOverviewModal` | Spoken product briefings |
 | `PromoteModal` | Top Ad boost payments |
@@ -268,8 +253,6 @@ npm run preview
 - `ListingCard` — Product grid card with actions
 - `VerifiedBadge` — Trust tier indicators (Individual/Business/Premium/Student)
 - `TrustScore` — Seller reputation widget
-- `PriceGuard` — AI market valuation
-- `PriceHistoryChart` — Recharts trend visualization
 - `CategoryBar/Grid` — Filter navigation
 - `NeighborhoodFilter` — Ogbomoso zone picker
 - `FilterDrawer` — Advanced search filters

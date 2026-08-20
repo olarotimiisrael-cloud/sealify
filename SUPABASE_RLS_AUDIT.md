@@ -1,5 +1,11 @@
 # 📊 SUPABASE RLS PERFORMANCE AUDIT & REMEDIATION PLAN
 
+> Phase 2F production alignment: the live production schema uses `ad_images`
+> and `escrow_orders`. References to `listing_images` and
+> `escrow_transactions` below are historical repository findings and must not
+> be treated as active production table names. The unsafe examples in this
+> document are not to be executed directly.
+
 ## Findings from Supabase Advisor
 
 ### 1. Multiple Permissive Policies

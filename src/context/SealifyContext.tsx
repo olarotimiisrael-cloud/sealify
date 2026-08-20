@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { mapListingToListing, mapProfileToUser } from '@/services/supabaseService';
 import { adminFetch } from '@/lib/admin-api';
+import { api } from '@/lib/api-client';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
@@ -21,7 +22,6 @@ import * as auditService from '@/services/supabaseService';
 import * as reviewService from '@/services/supabaseService';
 import * as buyerRequestService from '@/services/supabaseService';
 import * as announcementService from '@/services/supabaseService';
-import * as systemConfigService from '@/services/supabaseService';
 import * as siteSettingsService from '@/services/supabaseService';
 import * as safeSpotService from '@/services/supabaseService';
 import * as promotionPlanService from '@/services/supabaseService';
@@ -1341,7 +1341,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
     const fieldMap: Record<string, string> = {
       fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'cover_url',
-      bio: 'bio', role: 'role', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
+      bio: 'bio', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
       businessCategory: 'business_category', businessAddress: 'business_address', cacNumber: 'cac_number', businessHours: 'business_hours',
       bankName: 'bank_name', accountNumber: 'account_number', accountName: 'account_name', websiteUrl: 'website_url',
       instagramHandle: 'instagram_handle', twitterHandle: 'twitter_handle', whatsappNumber: 'whatsapp_number',
@@ -1353,6 +1353,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (fieldMap[key]) mapped[fieldMap[key]] = value;
       return mapped;
     }, {});
+    if (isAdmin && updates.role !== undefined) databaseUpdates.role = updates.role;
     const updated = await userService.userService.update(id, databaseUpdates as any);
     if (!updated) return;
     setAllUsers(prev => prev.map(existingUser => existingUser.id === id ? updated : existingUser));
@@ -1438,9 +1439,16 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const updateSystemConfig = (updates: Record<string, boolean | number>) => {
     setSystemConfig(prev => ({ ...prev, ...updates }));
-    void Promise.all(Object.entries(updates)
-      .filter(([, value]) => typeof value === 'boolean')
-      .map(([key, value]) => systemConfigService.systemConfigService.updateConfig(key, value as boolean)));
+    if (!isAdmin) return;
+    void adminFetch('/api/admin/system-config', {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    }).then(async response => {
+      if (!response.ok) throw new Error('Unable to update system configuration');
+    }).catch(error => {
+      console.error('updateSystemConfig failed:', error);
+      toast.error('System configuration could not be updated');
+    });
   };
 
   const updateSiteSettings = (settings: Partial<typeof siteSettings>) => {
@@ -1478,25 +1486,29 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const loadDatabaseState = async (authUser: any | null) => {
+    const listingResultPromise = api.getPublic<{ listings: any[] }>('/listings', { limit: '100' });
+    const configRowsPromise = authUser?.role === 'admin'
+      ? adminFetch('/api/admin/system-config').then(async response => {
+          if (!response.ok) throw new Error('Unable to load system configuration');
+          const payload = await response.json();
+          return payload.configs || [];
+        })
+      : Promise.resolve([]);
     const [listingResult, categoryRows, subcategoryRows, announcementRows, safeSpotRows, promotionPlanRows, configRows, siteSettingsRow, reviewRows, buyerRequestRows, recentDealRows] = await Promise.all([
-      supabase
-        .from('ads')
-        .select('*, profiles!ads_seller_id_fkey(*), ad_images(image_url, sort_order)')
-        .order('created_at', { ascending: false }),
+      listingResultPromise,
       categoryService.categoryService.getAll(),
       subcategoryService.subcategoryService.getAll(),
       announcementService.announcementService.getAll(),
       safeSpotService.safeSpotService.getAll(),
       promotionPlanService.promotionPlanService.getAll(),
-      systemConfigService.systemConfigService.getAll(),
+      configRowsPromise,
       siteSettingsService.siteSettingsService.get(),
       reviewService.reviewService.getAll(),
       buyerRequestService.buyerRequestService.getAll(),
       recentDealsService.recentDealsService.getAll(),
     ]);
 
-    if (listingResult.error) throw listingResult.error;
-    const mappedListings = (listingResult.data || []).map(mapListingToListing);
+    const mappedListings = (listingResult.listings || []).map(mapListingToListing);
     setListings(mappedListings);
 
     const mappedCategories = (categoryRows || []).map(mapCategoryRow);
@@ -1505,10 +1517,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAnnouncements(dedupeAnnouncements(announcementRows || []));
     setSafeSpots((safeSpotRows || []).map(mapSafeSpotRow));
     setPromotionPlans((promotionPlanRows || []).map(mapPromotionPlanRow));
-    setSystemConfig((configRows || []).reduce((config: Record<string, boolean | number>, row: any) => {
-      config[row.key] = row.value;
-      return config;
-    }, {}));
+    if (configRows.length > 0) {
+      setSystemConfig(configRows.reduce((config: Record<string, boolean | number>, row: any) => {
+        config[row.key] = row.value;
+        return config;
+      }, {}));
+    }
 
     if (siteSettingsRow) {
       setSiteSettings({

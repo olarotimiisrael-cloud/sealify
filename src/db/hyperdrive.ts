@@ -1,7 +1,9 @@
 import postgres, { TransactionSql } from "postgres";
 
 export interface HyperdriveEnv {
-  HYPERDRIVE: any;
+  HYPERDRIVE?: {
+    connectionString: string;
+  };
 }
 
 export function getSql(env: HyperdriveEnv) {
@@ -9,6 +11,8 @@ export function getSql(env: HyperdriveEnv) {
     throw new Error("HYPERDRIVE binding is not configured");
   }
 
+  // Pages Functions receive the connection string from the Hyperdrive binding.
+  // The postgres client preserves the tagged-template API used by all routes.
   return postgres(env.HYPERDRIVE.connectionString, {
     max: 5,
     fetch_types: false,
@@ -24,7 +28,7 @@ export async function queryDb<T>(env: HyperdriveEnv, query: string, params: any[
 
 export async function queryOneDb<T>(env: HyperdriveEnv, query: string, params: any[] = []): Promise<T | null> {
   const results = await queryDb<T>(env, query, params);
-  return results[0] || null;
+  return results.length > 0 ? results[0] : null;
 }
 
 export async function executeDb(env: HyperdriveEnv, query: string, params: any[] = []): Promise<any> {

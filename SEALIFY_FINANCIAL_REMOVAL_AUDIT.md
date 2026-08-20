@@ -163,15 +163,9 @@ References:
 
 It is financial-only at the application level, but analytics and admin backup currently consume it. Those consumers must be rewritten or removed before the table can be considered safe to remove.
 
-### `escrow_transactions`
+### `escrow_orders`
 
-References:
-
-- initial/performance/proposed migrations;
-- embedded `SqlSchemaViewer` SQL;
-- legacy schema documentation.
-
-The active server escrow routes do **not** use this name; they use `escrow_orders`. This is a schema/application discrepancy and a blocker. Do not remove either object until the deployed catalog and application database are reconciled.
+Production uses `escrow_orders`, with `ad_id`, `buyer_id`, and `seller_id` foreign keys to the active `ads`/`profiles` model. The repository’s historical migrations and embedded SQL still contain the legacy `escrow_transactions` name. Those historical references must not be applied to production and must not be used to remove the live escrow table.
 
 ### `promotion_payments`
 
@@ -188,7 +182,7 @@ It is coupled to promoted/featured ad visibility and admin moderation. It cannot
 
 ### Other financial/payment-related objects
 
-- `escrow_orders`: active server-route table name, not consistently represented in repository migrations/schema sources;
+- `escrow_orders`: confirmed active production and server-route table name;
 - `promotion_plans`: configuration/catalog table used to calculate and display promoted-listing plans;
 - ad fields `promotion_plan_name`, `promotion_duration_months`, `promotion_start_date`, `promotion_end_date`, and `featured`;
 - profile payout/bank fields such as bank name, account number, and account name;
@@ -200,7 +194,7 @@ It is coupled to promoted/featured ad visibility and admin moderation. It cannot
 
 The visible SQL explicitly shows `transactions.wallet_id` referencing `wallets.id` with cascade behavior in the active/embedded model. The repository also shows escrow relationships to ad/listing and buyer/seller identifiers in schema/viewer definitions.
 
-No complete authoritative deployed foreign-key inventory can be established because the repository contains conflicting active and legacy schema sources. `escrow_orders` is used by active server code but is not represented consistently in the migration files reviewed.
+Production inspection confirmed the relevant `escrow_orders` foreign keys. The repository migration set remains inconsistent because historical files still describe `escrow_transactions`.
 
 No confirmed financial database view or materialized view definition was found in repository SQL. `src/api/admin.ts` and `src/api/analytics.ts` use direct queries rather than a repository-defined view.
 

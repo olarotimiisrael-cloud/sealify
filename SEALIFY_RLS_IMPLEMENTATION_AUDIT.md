@@ -2,7 +2,9 @@
 
 **Audit mode:** read-only repository/schema audit. No migration was applied, no production or staging data was changed, and no application code was changed. This report is the only artifact created for this audit.
 
-**Important limitation:** the repository does not contain a reliable single canonical representation of the deployed Supabase database. The initial migration is incomplete/truncated at the beginning, `supabase/schema.sql` describes a conflicting legacy model, and the existing RLS migration is not a live catalog dump. Therefore, “current” below means **present in repository sources**, not confirmed deployed state. Before implementation, query the target Supabase catalog and reconcile the result with this report.
+**Important limitation:** the repository does not contain a reliable single canonical representation of the deployed Supabase database. The initial migration is incomplete/truncated at the beginning, `supabase/schema.sql` describes a conflicting legacy model, and the existing RLS migration is not a live catalog dump. Phase 2F read-only production inspection has now confirmed that the active image table is `ad_images`, the active escrow table is `escrow_orders`, and RLS is enabled on the inspected sensitive tables. Policy definitions, grants, and function metadata remain production-catalog facts rather than repository facts.
+
+**Phase 2F production alignment:** Production currently contains overlapping policies, including unsafe public SELECT policies on `ad_images`, `profiles`, and `system_configs`. The canonical reconciliation migration is repository-only and remains unapplied.
 
 ## A. Current schema inventory
 
@@ -55,10 +57,10 @@ The initial migration references or defines the following active-model tables. E
 | `phone_otps` | `id`; phone/user reference | OTP material and verification state | Not enabled |
 | `wallets` | `id`; unique `user_id` | balances and withdrawal totals | Enabled |
 | `transactions` | `id`; `wallet_id` foreign key | amount, type, status, references | Enabled |
-| `escrow_transactions` | `id`; buyer/ad/listing references | amount, escrow state, parties | Enabled |
+| `escrow_orders` | `id`; buyer/ad references | amount, escrow state, parties | Enabled |
 | `reports` | `id`; reporter reference | abuse reports and moderation state | Enabled |
-| `ad_images` | Used by active application; no complete repository CREATE TABLE found | image URL, `ad_id`, sort order | Not certifiable |
-| `listing_images` | Used by legacy `listings` model; no complete active CREATE TABLE found | image URL, `listing_id` | Not certifiable |
+| `ad_images` | Production-confirmed; `ad_id` references `ads.id` | image URL, storage path, sort order, primary flag | Enabled in production |
+| `listing_images` | Legacy repository-only model; not found in production inspection | legacy listing image fields | Not active |
 
 Foreign keys are only reported where the repository explicitly showed them or the relationship is clear from policy/query code. The incomplete initial migration prevents a trustworthy complete PK/FK/column inventory. A pre-implementation catalog query is mandatory.
 
@@ -219,12 +221,12 @@ No view or materialized-view definition was found in repository SQL. Deployed vi
 
 The active application uses `ad_images`: `src/services/supabaseService.ts` selects `ad_images(image_url, sort_order)` and inserts rows with `ad_id`, `image_url`, and `sort_order`. Active application code also uses `ads`, not `listings`.
 
-`listing_images` belongs to the legacy `users`/`listings` model in `supabase/schema.sql` and the embedded schema viewers. No complete authoritative CREATE TABLE for either image table was found in the migration set. Therefore:
+`listing_images` belongs to the legacy `users`/`listings` model in `supabase/schema.sql` and the embedded schema viewers. Read-only production inspection confirmed that `ad_images` exists and `listing_images` was not found among the relevant production tables. Therefore:
 
 1. Active application intent is `ads` + `ad_images`.
 2. Legacy documentation intent is `listings` + `listing_images`.
-3. The deployed table cannot be determined from repository sources alone.
-4. Do not create, rename, delete, or alter either table until the target catalog and active Supabase queries are confirmed.
+3. Production `ad_images` has `ad_id`, `image_url`, `storage_path`, `sort_order`, `is_primary`, and `created_at`.
+4. Do not create, rename, delete, or alter either table; the repository migration now targets only `ad_images`.
 
 ## J. Recommended policy architecture
 
