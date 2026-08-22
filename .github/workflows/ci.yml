@@ -2,29 +2,23 @@ name: Sealify CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - main
-      - develop
-
+    branches: [main, develop]
   pull_request:
-    branches:
-      - main
-
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  NODE_VERSION: "22"
-  CLOUDFLARE_PROJECT_NAME: "sealify"
-  PRODUCTION_URL: "https://sealify.pages.dev"
+  NODE_VERSION: '22'
+  CLOUDFLARE_PROJECT_NAME: sealify
+  PRODUCTION_URL: https://sealify.pages.dev
 
 jobs:
   lint-and-typecheck:
     name: Lint & TypeCheck
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,27 +30,21 @@ jobs:
           cache: npm
 
       - name: Validate package manager files
-        run: |
-          if [ ! -f package-lock.json ]; then
-            echo "❌ package-lock.json was not found."
-            echo "This workflow uses npm ci, so package-lock.json must exist."
-            exit 1
-          fi
+        run: test -f package-lock.json
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
+      - name: Run lint
         run: npm run lint
 
-      - name: Run TypeScript check
+      - name: Run TypeScript validation
         run: npm run typecheck
 
   build:
     name: Build Application
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,12 +56,7 @@ jobs:
           cache: npm
 
       - name: Validate package manager files
-        run: |
-          if [ ! -f package-lock.json ]; then
-            echo "❌ package-lock.json was not found."
-            echo "This workflow uses npm ci, so package-lock.json must exist."
-            exit 1
-          fi
+        run: test -f package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -86,19 +69,8 @@ jobs:
 
       - name: Verify build output
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build failed: dist directory does not exist."
-            exit 1
-          fi
-
-          if [ -z "$(find dist -mindepth 1 -maxdepth 1 -print -quit)" ]; then
-            echo "❌ Build failed: dist directory is empty."
-            exit 1
-          fi
-
-          echo "✅ Build output verified."
-          echo "📦 Contents of dist:"
-          find dist -maxdepth 2 -type f | sort
+          test -d dist
+          test "$(find dist -type f | wc -l)" -gt 0
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -112,12 +84,9 @@ jobs:
     name: Deploy Preview
     runs-on: ubuntu-latest
     needs: build
-
     if: github.event_name == 'pull_request'
-
     permissions:
       contents: read
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -128,17 +97,12 @@ jobs:
           name: sealify-dist-${{ github.sha }}
           path: dist
 
-      - name: Verify downloaded artifact
+      - name: Verify build artifact
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ dist directory was not downloaded."
-            exit 1
-          fi
+          test -d dist
+          test "$(find dist -type f | wc -l)" -gt 0
 
-          echo "✅ Preview artifact verified."
-          find dist -maxdepth 2 -type f | sort
-
-      - name: Deploy to Cloudflare Pages Preview
+      - name: Deploy Cloudflare Pages preview
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -146,22 +110,18 @@ jobs:
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
           directory: dist
           branch: preview-${{ github.event.pull_request.number }}
-          wranglerVersion: "3"
+          wranglerVersion: '3'
 
   deploy-production:
     name: Deploy Production
     runs-on: ubuntu-latest
     needs: build
-
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     environment:
       name: production
       url: https://sealify.pages.dev
-
     permissions:
       contents: read
-
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -169,23 +129,12 @@ jobs:
           name: sealify-dist-${{ github.sha }}
           path: dist
 
-      - name: Verify production artifact
+      - name: Verify build artifact
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ dist directory was not downloaded."
-            exit 1
-          fi
+          test -d dist
+          test "$(find dist -type f | wc -l)" -gt 0
 
-          if [ -z "$(find dist -mindepth 1 -maxdepth 1 -print -quit)" ]; then
-            echo "❌ dist directory is empty."
-            exit 1
-          fi
-
-          echo "✅ Production artifact verified."
-          echo "📦 Files:"
-          find dist -maxdepth 2 -type f | sort
-
-      - name: Deploy to Cloudflare Pages Production
+      - name: Deploy Cloudflare Pages production
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -193,21 +142,14 @@ jobs:
           projectName: ${{ env.CLOUDFLARE_PROJECT_NAME }}
           directory: dist
           branch: main
-          wranglerVersion: "3"
+          wranglerVersion: '3'
 
-      - name: Deployment summary
+      - name: Publish deployment summary
         run: |
-          echo "========================================"
-          echo "       SEALIFY DEPLOYMENT SUCCESS"
-          echo "========================================"
-          echo ""
-          echo "✅ Build completed"
-          echo "✅ Artifact verified"
-          echo "✅ Cloudflare Pages deployment completed"
-          echo ""
-          echo "🌐 Production URL:"
-          echo "${{ env.PRODUCTION_URL }}"
-          echo ""
-          echo "📌 Commit:"
-          echo "${{ github.sha }}"
-          echo "========================================"
+          {
+            echo "## Sealify production deployment"
+            echo ""
+            echo "Deployment completed for commit \`${GITHUB_SHA}\`."
+            echo ""
+            echo "Production URL: ${PRODUCTION_URL}"
+          } >> "$GITHUB_STEP_SUMMARY"
