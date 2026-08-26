@@ -1,5 +1,5 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { AlertCircle, CheckCircle2, Video, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Video, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdVideoUpload } from '@/lib/storage';
 

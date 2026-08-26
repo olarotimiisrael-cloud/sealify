@@ -11,7 +11,6 @@ import VerifiedBadge from '../components/VerifiedBadge';
 import { 
   ShieldCheck, 
   Bell, 
-  Fingerprint, 
   Camera, 
   Share2, 
   User, 
@@ -52,6 +51,7 @@ import {
   Trash2,
   Edit3,
   Plus,
+  PlusCircle,
   Search,
   Filter,
   SlidersHorizontal,
@@ -178,9 +178,6 @@ const Settings: React.FC = () => {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeSection, setActiveSection] = useState<'profile' | 'storefront' | 'security' | 'notifications' | 'pwa'>('profile');
-  const [biometricEnabled, setBiometricEnabled] = useState(
-    localStorage.getItem('sealify_biometric') === 'true'
-  );
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
   const myVerificationReq = user?.verificationType;
@@ -274,12 +271,6 @@ const Settings: React.FC = () => {
     }
   };
 
-  const toggleBiometric = () => {
-    const nextState = !biometricEnabled;
-    setBiometricEnabled(nextState);
-    localStorage.setItem('sealify_biometric', nextState.toString());
-    toast.success(nextState ? 'Biometric App Lock Enabled' : 'Biometric Lock Disabled');
-  };
 
   const formatNGN = (amount: number) => {
     return new Intl.NumberFormat('en-NG', {
@@ -358,7 +349,7 @@ const Settings: React.FC = () => {
                 {[
                   { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
                   { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
-                  { id: 'security', label: 'Security', icon: Shield, desc: 'Password, biometric, 2FA, sessions' },
+                  { id: 'security', label: 'Security', icon: Shield, desc: 'Password and sessions' },
                   { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
                   { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
                 ].map((section) => (
@@ -970,25 +961,9 @@ const Settings: React.FC = () => {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap gap-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 bg-teal-500/10 text-teal-400 rounded-xl">
-                          <Fingerprint className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-black text-white">Biometric App Lock</p>
-                          <p className="text-[10px] text-slate-400">Require fingerprint or FaceID on launch</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={toggleBiometric}
-                        className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${
-                          biometricEnabled ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
-                        }`}
-                      >
-                        {biometricEnabled ? 'ACTIVE' : 'OFF'}
-                      </button>
+                    <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
+                      <p className="text-xs font-black text-white">Session security</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Sealify uses Supabase Auth sessions and refresh handling for account security.</p>
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap gap-3">

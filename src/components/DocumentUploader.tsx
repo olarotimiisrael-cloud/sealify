@@ -29,11 +29,11 @@ export const DocumentUploader: React.FC<DocumentUploaderProps> = ({
   const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
   const createPreviews = useCallback((files: File[]) => {
-    const newPreviews = files.map(file => ({
+    const newPreviews: { file: File; preview: string; id: string; type: 'image' | 'pdf' }[] = files.map(file => ({
       file,
       preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
       id: `${file.name}-${Date.now()}-${Math.random()}`,
-      type: file.type.startsWith('image/') ? 'image' : 'pdf',
+      type: file.type.startsWith('image/') ? 'image' as const : 'pdf' as const,
     }));
     setPreviews(prev => [...prev, ...newPreviews]);
   }, []);

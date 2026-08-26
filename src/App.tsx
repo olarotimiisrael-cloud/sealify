@@ -28,6 +28,7 @@ const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
+const Verify = lazy(() => import("./pages/Verify"));
 
 const routeFallback = (
   <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300 text-sm font-medium">
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/requests" element={<BuyerRequests />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/community" element={<CommunityBoard />} />
+          <Route path="/verify" element={<Verify />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

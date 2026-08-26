@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, CheckCircle2, Upload, Building2, User, GraduationCap } from 'lucide-react';
-import { useSealify } from '../context/SealifyContext';
+import { useSealify } from '../../context/SealifyContext';
 import { toast } from 'sonner';
 
 interface VerificationModalProps {

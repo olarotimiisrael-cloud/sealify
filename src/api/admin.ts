@@ -3,6 +3,7 @@ import { HTTPException } from "hono/http-exception";
 import { getSql } from "../db/hyperdrive";
 import { maskSecret, resolveAiConfig, setRuntimeAiConfig, isModelSupported, type SupportedAIProvider } from "../lib/ai/providers";
 import { requireAdmin, auditLog, rateLimit } from "../middleware/security";
+import { z } from "zod";
 
 export const adminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql>; user: any; supabase: any; profile: any } }>();
 
@@ -11,6 +12,24 @@ adminRoutes.use("/*", rateLimit({ windowMs: 60000, maxRequests: 100 })); // 100 
 // Every admin endpoint requires a Supabase Auth bearer token and an admin
 // profile. There is intentionally no custom admin login or token format.
 adminRoutes.use("/*", requireAdmin);
+
+const idSchema = z.string().uuid();
+const moderationStatusSchema = z.enum(["pending", "in_review", "approved", "rejected", "resolved", "dismissed"]);
+const adminUserUpdateSchema = z.object({
+  full_name: z.string().min(2).max(100).optional(), phone_number: z.string().max(20).nullable().optional(),
+  avatar_url: z.string().url().nullable().optional(), store_banner_url: z.string().url().nullable().optional(),
+  bio: z.string().max(500).nullable().optional(), location: z.string().max(100).nullable().optional(),
+  business_name: z.string().max(100).nullable().optional(), cac_number: z.string().max(100).nullable().optional(),
+  business_hours: z.string().max(100).nullable().optional(), bank_name: z.string().max(100).nullable().optional(),
+  account_number: z.string().max(30).nullable().optional(), account_name: z.string().max(100).nullable().optional(),
+  website_url: z.string().url().nullable().optional(), instagram_handle: z.string().max(50).nullable().optional(),
+  twitter_handle: z.string().max(50).nullable().optional(), whatsapp_number: z.string().max(20).nullable().optional(),
+  email_notifications: z.boolean().optional(), whatsapp_notifications: z.boolean().optional(),
+  hide_phone_publicly: z.boolean().optional(), hide_location_publicly: z.boolean().optional(),
+  role: z.enum(["buyer", "seller", "admin"]).optional(), status: z.enum(["active", "suspended", "banned", "restricted"]).optional(),
+  verified: z.boolean().optional(), verification_type: z.enum(["individual", "business", "premium", "student", "none"]).optional(),
+  restriction_reason: z.string().max(500).nullable().optional(), appeal_status: z.enum(["none", "pending", "resolved"]).optional(),
+}).strict();
 
 // Get admin stats
 adminRoutes.get("/stats", async (c) => {
@@ -107,24 +126,8 @@ adminRoutes.get("/users", async (c) => {
 
 adminRoutes.put("/users/:id", async (c) => {
   const sql = getSql(c.env);
-  const id = c.req.param("id");
-  const body = await c.req.json();
-
-  const allowedFields = [
-    'full_name', 'phone_number', 'avatar_url', 'store_banner_url',
-    'bio', 'location', 'business_name', 'cac_number', 'business_hours',
-    'bank_name', 'account_number', 'account_name',
-    'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',
-    'email_notifications', 'whatsapp_notifications', 'hide_phone_publicly', 'hide_location_publicly',
-    'role', 'status', 'verified', 'verification_type', 'restriction_reason', 'appeal_status'
-  ];
-
-  const updates: any = { updated_at: new Date() };
-  for (const field of allowedFields) {
-    if (body[field] !== undefined) {
-      updates[field] = body[field];
-    }
-  }
+  const id = idSchema.parse(c.req.param("id"));
+  const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(await c.req.json()) };
 
   const result = await sql`
     UPDATE profiles SET ${sql(updates)} WHERE id = ${id} RETURNING *
@@ -157,20 +160,19 @@ adminRoutes.delete("/users/:id", async (c) => {
 adminRoutes.post("/users/bulk", async (c) => {
   const sql = getSql(c.env);
   const body = await c.req.json();
-  const { ids, action, data } = body;
+  const { ids, data } = body;
 
-  if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    throw new HTTPException(400, { error: "No user IDs provided" });
+  if (!Array.isArray(ids) || ids.length === 0 || ids.some((id: unknown) => !idSchema.safeParse(id).success)) {
+    throw new HTTPException(400, { message: "No user IDs provided" });
   }
 
-  const updates: any = { updated_at: new Date() };
-  if (data) {
-    Object.assign(updates, data);
-  }
+  const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(data || {}) };
+  const updateEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+  if (updateEntries.length === 0) throw new HTTPException(400, { message: "No updates provided" });
 
   const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
-  const query = `UPDATE profiles SET ${Object.entries(updates).map(([k, v], i) => `${k} = $${ids.length + i + 1}`).join(', ')}, updated_at = NOW() WHERE id IN (${placeholders})`;
-  const values = [...ids, ...Object.values(updates)];
+  const query = `UPDATE profiles SET ${updateEntries.map(([k], i) => `${k} = $${ids.length + i + 1}`).join(', ')}, updated_at = NOW() WHERE id IN (${placeholders})`;
+  const values = [...ids, ...updateEntries.map(([, value]) => value)];
 
   await sql.unsafe(query, values);
   await auditLog(sql, c.get("user").id, "Bulk User Update", `Updated ${ids.length} users`, "user");
@@ -216,7 +218,8 @@ adminRoutes.put("/reports/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { status, admin_notes } = body;
+  const status = z.enum(["resolved", "dismissed"]).parse(body.status);
+  const admin_notes = z.string().max(2000).nullable().optional().parse(body.admin_notes);
 
   const result = await sql`
     UPDATE reports SET status = ${status}, admin_notes = ${admin_notes || null}, reviewed_at = NOW() WHERE id = ${id} RETURNING *
@@ -252,7 +255,8 @@ adminRoutes.put("/disputes/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { status, admin_notes } = body;
+  const status = z.enum(["in_review", "resolved"]).parse(body.status);
+  const admin_notes = z.string().max(2000).nullable().optional().parse(body.admin_notes);
 
   const result = await sql`
     UPDATE disputes SET status = ${status}, admin_notes = ${admin_notes || null}, ${status === 'resolved' ? 'resolved_at = NOW()' : ''} WHERE id = ${id} RETURNING *
@@ -286,7 +290,8 @@ adminRoutes.put("/verifications/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { status, admin_notes } = body;
+  const status = z.enum(["approved", "rejected"]).parse(body.status);
+  const admin_notes = z.string().max(2000).nullable().optional().parse(body.admin_notes);
 
   const result = await sql`
     UPDATE verification_requests SET status = ${status}, admin_notes = ${admin_notes || null}, reviewed_at = NOW() WHERE id = ${id} RETURNING *
@@ -329,7 +334,8 @@ adminRoutes.put("/promotions/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { status, admin_notes } = body;
+  const status = z.enum(["approved", "rejected"]).parse(body.status);
+  const admin_notes = z.string().max(2000).nullable().optional().parse(body.admin_notes);
 
   const result = await sql`
     UPDATE promotion_payments SET status = ${status}, admin_notes = ${admin_notes || null}, reviewed_at = NOW() WHERE id = ${id} RETURNING *
@@ -445,7 +451,7 @@ adminRoutes.put("/system-config", async (c) => {
     `;
   }
 
-  await auditLog(sql, c.get("user").id, "System Config Updated", `Updated config: ${Object.keys(body).join(", ")}`, "system");
+  await auditLog(sql, c.get("user").id, "System Config Updated", `Updated config: ${Object.keys(body).join(", ")}`, "security");
 
   return c.json({ success: true });
 });
@@ -531,7 +537,7 @@ adminRoutes.post("/ai-settings/test", async (c) => {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!res.ok) {
-        throw new HTTPException(res.status, { message: "OpenAI credentials are invalid or expired." });
+        throw new HTTPException(res.status as any, { message: "OpenAI credentials are invalid or expired." });
       }
     } else {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -540,7 +546,7 @@ adminRoutes.post("/ai-settings/test", async (c) => {
         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Connection test for Sealify Copilot." }] }] }),
       });
       if (!res.ok) {
-        throw new HTTPException(res.status, { message: "Gemini credentials are invalid or expired." });
+        throw new HTTPException(res.status as any, { message: "Gemini credentials are invalid or expired." });
       }
     }
 
@@ -600,7 +606,7 @@ adminRoutes.put("/site-settings", async (c) => {
     `;
   }
 
-  await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "system");
+  await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "security");
 
   return c.json({ success: true, settings: payload });
 });
@@ -612,13 +618,13 @@ adminRoutes.post("/broadcast", async (c) => {
   const { target, title, message } = body;
 
   if (!target || !title || !message) {
-    throw new HTTPException(400, { error: "Target, title, and message required" });
+    throw new HTTPException(400, { message: "Target, title, and message required" });
   }
 
   let whereClause = "";
   if (target === "buyer") whereClause = "WHERE role = 'buyer'";
   else if (target === "seller") whereClause = "WHERE role = 'seller'";
-  else if (target !== "all") throw new HTTPException(400, { error: "Invalid target" });
+   else if (target !== "all") throw new HTTPException(400, { message: "Invalid target" });
 
   const users = await sql`
     SELECT id FROM profiles ${sql(whereClause)}
@@ -643,7 +649,7 @@ adminRoutes.post("/email-digest", async (c) => {
   const audience = body.audience || "all";
 
   if (!['all', 'buyers', 'sellers'].includes(audience)) {
-    throw new HTTPException(400, { error: "Audience must be all, buyers, or sellers" });
+    throw new HTTPException(400, { message: "Audience must be all, buyers, or sellers" });
   }
 
   let whereClause = "";
@@ -720,7 +726,7 @@ adminRoutes.get("/schema", async (c) => {
 
   for (const [tableName, columns] of Object.entries(tableGroups)) {
     schema += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
-    const colDefs = columns.map((col: any) => {
+    const colDefs = (columns as any[]).map((col: any) => {
       let def = `  ${col.column_name} ${col.data_type}`;
       if (col.is_nullable === 'NO') def += ' NOT NULL';
       if (col.column_default) def += ` DEFAULT ${col.column_default}`;

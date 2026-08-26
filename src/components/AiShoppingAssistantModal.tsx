@@ -71,7 +71,7 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    const nextConversation = [...conversation, { role: 'user', content: trimmed }];
+    const nextConversation: Array<{ role: 'user' | 'assistant'; content: string }> = [...conversation, { role: 'user', content: trimmed }];
     setMessages((prev) => [...prev, userMsg]);
     setConversation(nextConversation);
     setInputQuery('');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, CheckSquare, Square, Send, RotateCcw, AlertCircle } from 'lucide-react';
-import { Category } from '../types/sealify';
+import { Category } from '../../types/sealify';
 import { toast } from 'sonner';
 
 interface InspectionChecklistModalProps {

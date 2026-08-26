@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner';
 import VerifiedBadge from '../VerifiedBadge';
 import Logo from '../Logo';
-import { VerificationBadgeType } from '../types/sealify';
+import { VerificationBadgeType } from '../../types/sealify';
 
 interface StorefrontFlycardModalProps {
   isOpen: boolean;

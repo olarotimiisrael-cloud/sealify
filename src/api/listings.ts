@@ -22,12 +22,7 @@ const createListingSchema = z.object({
 });
 
 const updateListingSchema = createListingSchema.partial().extend({
-  status: z.enum(["active", "sold", "draft", "pending_review"]).optional(),
-  featured: z.boolean().optional(),
-  promotion_plan_name: z.string().optional().nullable(),
-  promotion_duration_months: z.number().int().min(1).max(12).optional().nullable(),
-  promotion_start_date: z.string().datetime().optional().nullable(),
-  promotion_end_date: z.string().datetime().optional().nullable(),
+  status: z.literal("sold").optional(),
 });
 
 const querySchema = z.object({
@@ -109,8 +104,8 @@ listingsRoutes.get("/", listingsRateLimit, async (c) => {
     else if (sortBy === "price-desc") orderClause = "ORDER BY a.price DESC";
     else if (sortBy === "popular") orderClause = "ORDER BY a.views_count DESC";
 
-    const limitNum = Math.min(parseInt(limit) || 20, 100);
-    const offsetNum = parseInt(offset) || 0;
+    const limitNum = Math.min(parseInt(String(limit)) || 20, 100);
+    const offsetNum = parseInt(String(offset)) || 0;
 
     const listings = await sql`
       SELECT
@@ -258,8 +253,7 @@ listingsRoutes.put("/:id", requireAuth, async (c) => {
     const allowedFields = [
       'title', 'description', 'price', 'category_id', 'subcategory_id',
       'condition', 'location', 'images', 'video_url', 'specifications',
-      'status', 'featured', 'promotion_plan_name', 'promotion_duration_months',
-      'promotion_start_date', 'promotion_end_date'
+      'status'
     ];
 
     const updates: any = { updated_at: new Date() };

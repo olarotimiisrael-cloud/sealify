@@ -116,7 +116,7 @@ copilotRoutes.post('/', async (c) => {
       }, 400);
     }
 
-    const response = await askSealifyCopilot(message, conversation, userContext, env as Record<string, string | undefined>);
+    const response = await askSealifyCopilot(message, conversation as { role: 'user' | 'assistant'; content: string }[], userContext, env as Record<string, string | undefined>);
 
     return c.json({
       message: response.text,

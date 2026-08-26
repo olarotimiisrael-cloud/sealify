@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
-import { rateLimit, sanitizeInput, auditLog } from "../middleware/security";
+import { rateLimit, sanitizeInput, auditLog, logIntrusionAttempt } from "../middleware/security";
 import { z } from "zod";
 
 export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
@@ -43,6 +43,14 @@ const updateProfileSchema = z.object({
 
 // Rate limiting for auth endpoints
 const authRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }); // 10 req/15min
+
+// This is deliberately keyed by normalized email, not browser state or IP.
+// Supabase Auth remains the credential authority; intrusion_logs makes the
+// temporary throttle durable across browser refreshes and Worker instances.
+const ADMIN_LOGIN_COOLDOWN_MS = 5 * 60 * 1000;
+const ADMIN_LOGIN_MAX_FAILURES = 5;
+
+const genericAdminLoginError = () => new HTTPException(401, { message: "Unable to authenticate administrator" });
 
 // Register
 authRoutes.post("/register", authRateLimit, async (c) => {
@@ -128,6 +136,55 @@ authRoutes.post("/register", authRateLimit, async (c) => {
     console.error("Registration error:", error);
     throw new HTTPException(500, { message: "Registration failed" });
   }
+});
+
+// Admin login uses the same Supabase Auth credentials as ordinary login, but
+// performs the role decision server-side and returns one generic failure for
+// bad credentials and non-admin accounts.
+authRoutes.post("/admin-login", async (c) => {
+  const env = c.env as any;
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = loginSchema.safeParse(body);
+  if (!parsed.success) throw genericAdminLoginError();
+
+  const email = parsed.data.email.trim().toLowerCase();
+  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  const sql = getSql(env);
+  const recentFailures = await sql`
+    SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
+    FROM intrusion_logs
+    WHERE attempted_email = ${email}
+      AND status = 'flagged'
+      AND created_at >= NOW() - INTERVAL '15 minutes'
+  `;
+  const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
+  if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
+      && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
+    throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
+  }
+  const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
+
+  if (error || !data.user) {
+    await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authentication_failed" }).catch(() => undefined);
+    throw genericAdminLoginError();
+  }
+
+  const isAdmin = await sql`SELECT private.is_admin(${data.user.id}) AS is_admin`;
+  if (!isAdmin[0]?.is_admin) {
+    await supabase.auth.signOut();
+    await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
+    throw genericAdminLoginError();
+  }
+
+  await sql`
+    UPDATE intrusion_logs
+    SET status = 'dismissed'
+    WHERE attempted_email = ${email}
+      AND status = 'flagged'
+      AND created_at >= NOW() - INTERVAL '15 minutes'
+  `;
+  await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
+  return c.json({ session: data.session });
 });
 
 // Login

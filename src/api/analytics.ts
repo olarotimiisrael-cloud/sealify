@@ -1,36 +1,8 @@
 import { Hono } from "hono";
 import { getSql } from "../db/hyperdrive";
-import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "../middleware/security";
 
 export const analyticsRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
-
-async function requireAdmin(c: any, next: any) {
-  const env = c.env as any;
-  const authHeader = c.req.header("Authorization");
-  
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  const token = authHeader.substring(7);
-  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
-  
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  
-  if (error || !user) {
-    return c.json({ error: "Invalid token" }, 401);
-  }
-
-  const sql = getSql(env);
-  const profile = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
-  
-  if (profile.length === 0 || profile[0].role !== 'admin') {
-    return c.json({ error: "Forbidden: Admin access required" }, 403);
-  }
-
-  c.set("sql", sql);
-  await next();
-}
 
 analyticsRoutes.use("/*", requireAdmin);
 

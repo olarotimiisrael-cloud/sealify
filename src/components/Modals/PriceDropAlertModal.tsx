@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, TrendingDown, Bell, CheckCircle2, ShieldCheck, Send } from 'lucide-react';
-import { useSealify } from '../context/SealifyContext';
+import { useSealify } from '../../context/SealifyContext';
 import { toast } from 'sonner';
 
 interface PriceDropAlertModalProps {

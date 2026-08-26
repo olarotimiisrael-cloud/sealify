@@ -264,8 +264,8 @@ export async function createBucket(
   try {
     const { error } = await supabase.storage.createBucket(bucketName, {
       public: options.public ?? false,
-      file_size_limit: options.fileSizeLimit,
-      allowed_mime_types: options.allowedMimeTypes,
+      fileSizeLimit: options.fileSizeLimit,
+      allowedMimeTypes: options.allowedMimeTypes,
     });
     if (error) throw error;
     return true;
@@ -321,7 +321,6 @@ export async function initializeBuckets(): Promise<void> {
 }
 
 // React hooks for file uploads
-import { useState, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 
 export function useFileUpload(bucket: BucketName, folder?: string) {

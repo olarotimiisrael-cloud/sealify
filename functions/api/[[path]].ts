@@ -63,12 +63,12 @@ api.route('/api/search', searchRoutes);
 api.route('/api/analytics', analyticsRoutes);
 api.route('/api/push', pushRoutes);
 
-export const onRequest = (context: EventContext<Env>): Promise<Response> => {
+export const onRequest = async (context: EventContext<Env, string, Record<string, unknown>>): Promise<Response> => {
   const env: Env = {
     ...context.env,
     NEXT_PUBLIC_SUPABASE_URL:
       context.env.SUPABASE_URL || context.env.NEXT_PUBLIC_SUPABASE_URL,
   };
 
-  return api.fetch(context.request, env, context);
+  return await api.fetch(context.request as any, env, context as any);
 };

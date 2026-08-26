@@ -7,7 +7,6 @@ import {
   Lock, 
   Mail, 
   Terminal, 
-  AlertTriangle, 
   ShieldCheck, 
   Siren,
   EyeOff,
@@ -18,22 +17,15 @@ import {
 import { toast } from 'sonner';
 
 const AdminLogin: React.FC = () => {
-  const { adminLogin, recordIntrusion } = useSealify();
+  const { adminLogin } = useSealify();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
-  const [isLockedOut, setIsLockedOut] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (isLockedOut) {
-      toast.error('🚨 TERMINAL LOCKED: Intrusion protocol engaged. Cybercrime agents notified.');
-      return;
-    }
 
     setIsAuthenticating(true);
 
@@ -44,25 +36,9 @@ const AdminLogin: React.FC = () => {
     setIsAuthenticating(false);
 
     if (success) {
-      setFailedAttempts(0);
       navigate('/admin');
     } else {
-      const newCount = failedAttempts + 1;
-      setFailedAttempts(newCount);
-      
-      // Collect device metadata for forensic security tracking
-      const deviceMetadata = `IP_LOGGED | Device: ${navigator.platform} | UserAgent: ${navigator.userAgent.slice(0, 40)}... | Attempt ${newCount}/3`;
-      recordIntrusion(email || 'UNAUTHORIZED_ATTEMPT', deviceMetadata);
-
-      toast.error(
-        `🚨 WRONG CREDENTIALS! Attempt ${newCount}/3. Hardware fingerprint captured and logged to security database!`,
-        { duration: 6000 }
-      );
-
-      if (newCount >= 3) {
-        setIsLockedOut(true);
-        toast.error('⛔ MAXIMUM FAILED ATTEMPTS REACHED! Terminal permanently locked for this session.');
-      }
+      toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
     }
   };
 
@@ -88,7 +64,7 @@ const AdminLogin: React.FC = () => {
           </div>
 
           <p className="text-xs text-rose-100 leading-relaxed font-sans border-t border-rose-800/80 pt-2.5 font-medium">
-            ⚠️ <strong>SECURITY WARNING:</strong> This terminal is strictly reserved for authorized Sealify Administrators. <strong className="text-rose-300">Any wrong attempt will automatically submit your device hardware info, IP location, and biometric fingerprint to security agents for tracking and anti-hacking prosecution.</strong>
+            <strong>SECURITY NOTICE:</strong> This area is restricted to authorized Sealify administrators. Authentication attempts may be recorded for security monitoring and abuse prevention.
           </p>
         </div>
 
@@ -104,16 +80,7 @@ const AdminLogin: React.FC = () => {
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">ENCRYPTED ENDPOINT • NODE OGBOMOSO</p>
           </div>
 
-          {isLockedOut ? (
-            <div className="p-4 bg-rose-950/90 border-2 border-rose-500 rounded-2xl text-xs text-rose-200 space-y-2 text-center">
-              <AlertTriangle className="w-8 h-8 text-rose-400 mx-auto animate-bounce" />
-              <p className="font-black uppercase tracking-wider">TERMINAL LOCKOUT ENGAGED</p>
-              <p className="text-[11px] text-slate-300 font-sans">
-                3 Failed login attempts recorded. Device information has been transmitted to Sealify Cyber Security Intelligence.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 font-sans text-xs">
+          <form onSubmit={handleSubmit} className="space-y-4 font-sans text-xs">
               <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">
                   Official Email ID *
@@ -172,8 +139,7 @@ const AdminLogin: React.FC = () => {
                   </>
                 )}
               </button>
-            </form>
-          )}
+          </form>
 
           <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[9px] text-slate-500 font-mono">
             <span className="flex items-center gap-1">
