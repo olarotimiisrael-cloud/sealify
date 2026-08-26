@@ -766,11 +766,20 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = async (email: string, password: string) => {
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError || !data.user) return false;
+      const response = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!response.ok) return false;
 
-      const profile = await loadProfileForAuthUser(data.user);
-      if (!profile || profile.role !== 'admin') {
+      const result = await response.json();
+      if (!result.session) return false;
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
+      if (sessionError || !sessionData.user) return false;
+
+      const profile = await loadProfileForAuthUser(sessionData.user);
+      if (!profile) {
         await supabase.auth.signOut();
         return false;
       }
@@ -787,7 +796,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
-      options: { data: { full_name: data.fullName, phone: data.phoneNumber } },
+      options: { data: { full_name: data.fullName, phone: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
     });
 
     if (authError) throw authError;
@@ -900,16 +909,12 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (updates.originalPrice !== undefined) databaseUpdates.original_price = updates.originalPrice;
     if (updates.condition !== undefined) databaseUpdates.condition = updates.condition;
     if (updates.location !== undefined) databaseUpdates.location = updates.location;
-    if (updates.status !== undefined) databaseUpdates.status = updates.status;
+    // Sellers may mark their own listing sold, but moderation and promotion
+    // state is controlled only by the admin/payment workflow.
+    if (updates.status === 'sold') databaseUpdates.status = updates.status;
     if (updates.images !== undefined) databaseUpdates.images = updates.images;
     if (updates.videoUrl !== undefined) databaseUpdates.video_url = updates.videoUrl;
     if (updates.specifications !== undefined) databaseUpdates.specifications = updates.specifications;
-    if (updates.featured !== undefined) databaseUpdates.featured = updates.featured;
-    if (updates.promotionPlanName !== undefined) databaseUpdates.promotion_plan_name = updates.promotionPlanName;
-    if (updates.promotionDurationMonths !== undefined) databaseUpdates.promotion_duration_months = updates.promotionDurationMonths;
-    if (updates.paymentStatus !== undefined) databaseUpdates.payment_status = updates.paymentStatus;
-    if (updates.paymentProofUrl !== undefined) databaseUpdates.payment_proof_url = updates.paymentProofUrl;
-    if (updates.amountPaid !== undefined) databaseUpdates.amount_paid = updates.amountPaid;
 
     const { data: updatedAd, error: updateError } = await supabase
       .from('ads')
@@ -934,14 +939,21 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const toggleFeaturedListing = async (id: string) => {
-    const listing = listings.find(l => l.id === id);
-    if (listing) {
-      await updateListing(id, { featured: !listing.featured });
-    }
+    void id;
+    toast.error('Featured status is applied after promotion payment approval.');
   };
 
   const promoteListing = async (id: string, durationMonths: number, planName: string) => {
-    await updateListing(id, { featured: true, promotionPlanName: planName, promotionDurationMonths: durationMonths });
+    const plan = promotionPlans.find(item => item.months === durationMonths && item.label === planName)
+      || promotionPlans.find(item => item.months === durationMonths);
+    if (!plan) throw new Error('Promotion plan is unavailable');
+    await submitPromotionPaymentRequest({
+      listingId: id,
+      amount: plan.rate,
+      paymentMethod: 'transfer',
+      planName: plan.label,
+      durationMonths: plan.months,
+    });
   };
 
   const refreshConversations = async (userId: string) => {
@@ -1147,8 +1159,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const processVerificationRequest = async (id: string, status: string) => {
-    const success = await verificationService.verificationService.updateStatus(id, status);
-    if (success) setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const response = await adminFetch(`/api/admin/verifications/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+    if (!response.ok) throw new Error('Unable to process verification request');
+    setVerificationRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitPromotionPaymentRequest = async (request: any) => {
@@ -1166,8 +1179,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const processPromotionPaymentRequest = async (id: string, status: string) => {
-    const success = await promotionService.promotionService.updateStatus(id, status);
-    if (success) setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const response = await adminFetch(`/api/admin/promotions/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+    if (!response.ok) throw new Error('Unable to process promotion payment');
+    setPromotionPaymentRequests(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const addAnnouncement = async (announcement: Omit<SystemAnnouncement, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -1210,8 +1224,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const processReport = async (id: string, status: string) => {
-    const success = await reportService.reportService.updateStatus(id, status);
-    if (success) setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
+    const response = await adminFetch(`/api/admin/reports/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+    if (!response.ok) throw new Error('Unable to process report');
+    setReports(prev => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
   const submitDisputeCase = async (dispute: any) => {
@@ -1231,8 +1246,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const processDisputeCase = async (id: string, status: string) => {
-    const success = await disputeService.disputeService.updateStatus(id, status);
-    if (success) setDisputeCases(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+    const response = await adminFetch(`/api/admin/disputes/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+    if (!response.ok) throw new Error('Unable to process dispute');
+    setDisputeCases(prev => prev.map(d => d.id === id ? { ...d, status } : d));
   };
 
   const addAuditLog = (action: string, details: string, type: string) => {

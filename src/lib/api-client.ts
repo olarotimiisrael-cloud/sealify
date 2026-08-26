@@ -95,7 +95,7 @@ class ApiClient {
     const { data, error } = await this.authClient.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, phone: phoneNumber } },
+      options: { data: { full_name: fullName, phone: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
     });
     if (error) throw new Error(error.message);
     return data;

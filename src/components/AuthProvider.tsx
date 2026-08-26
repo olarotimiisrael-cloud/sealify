@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, phone: phoneNumber } },
+      options: { data: { full_name: fullName, phone: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
     });
     if (error) throw new Error(error.message);
     if (data.session) {

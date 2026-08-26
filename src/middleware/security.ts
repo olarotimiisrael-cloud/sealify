@@ -62,20 +62,18 @@ export async function requireAuth(c: any, next: any) {
 export async function requireAdmin(c: any, next: any) {
   await requireAuth(c, async () => {
     const user = c.get("user");
-    const supabase = c.get("supabase");
     const sql = getSql(c.env);
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    // Authorization is evaluated by the production private-schema helper.
+    // Do not trust a client-readable profile field as the authorization source.
+    const result = await sql`SELECT private.is_admin(${user.id}) AS is_admin`;
 
-    if (!profile || profile.role !== "admin") {
+    if (!result[0]?.is_admin) {
       throw new HTTPException(403, { message: "Admin access required" });
     }
 
-    c.set("profile", profile);
+    c.set("sql", sql);
+    c.set("profile", { role: "admin" });
     return next();
   });
 }

@@ -82,7 +82,7 @@ const ArchitectureDiagram: React.FC = () => {
               </div>
               <ul className="text-xs text-slate-400 space-y-1">
                 <li>• CSP Headers (Strict)</li>
-                <li>• Biometric App Lock (WebAuthn)</li>
+                <li>• Supabase Auth session security</li>
                 <li>• Secure QR Handover</li>
                 <li>• Rate Limiting (Client-side)</li>
                 <li>• Input Sanitization</li>
