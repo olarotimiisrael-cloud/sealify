@@ -81,7 +81,7 @@ export const ComparisonTable: React.FC<ComparisonTableProps> = ({ isOpen, onClos
                           {item.sellerVerified ? '✓ Verified' : 'Not Verified'}
                         </span>
                       ) : attr.formatter ? (
-                        attr.formatter(item[attr.key as keyof typeof item])
+                        attr.formatter(item[attr.key as keyof typeof item] as never)
                       ) : (
                         item[attr.key as keyof typeof item] as string
                       )}

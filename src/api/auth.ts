@@ -162,7 +162,7 @@ authRoutes.post("/admin-login", async (c) => {
       && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
     throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
   }
-  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
 
   if (error || !data.user) {
     await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authentication_failed" }).catch(() => undefined);

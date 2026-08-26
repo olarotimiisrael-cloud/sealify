@@ -4,8 +4,8 @@ import {
   Crown, ArrowRight, Upload, ExternalLink, Info, Copy, CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Listing } from '../types/sealify';
-import { useSealify } from '../context/SealifyContext';
+import { Listing } from '../../types/sealify';
+import { useSealify } from '../../context/SealifyContext';
 
 interface PromoteModalProps {
   isOpen: boolean;

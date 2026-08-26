@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, Wand2, Check } from 'lucide-react';
-import { Category, Condition } from '../types/sealify';
+import { Category, Condition } from '../../types/sealify';
 import { toast } from 'sonner';
 
 interface AiAdAssistantModalProps {

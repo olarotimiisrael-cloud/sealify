@@ -163,12 +163,12 @@ adminRoutes.post("/users/bulk", async (c) => {
   const { ids, data } = body;
 
   if (!Array.isArray(ids) || ids.length === 0 || ids.some((id: unknown) => !idSchema.safeParse(id).success)) {
-    throw new HTTPException(400, { error: "No user IDs provided" });
+    throw new HTTPException(400, { message: "No user IDs provided" });
   }
 
   const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(data || {}) };
   const updateEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
-  if (updateEntries.length === 0) throw new HTTPException(400, { error: "No updates provided" });
+  if (updateEntries.length === 0) throw new HTTPException(400, { message: "No updates provided" });
 
   const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
   const query = `UPDATE profiles SET ${updateEntries.map(([k], i) => `${k} = $${ids.length + i + 1}`).join(', ')}, updated_at = NOW() WHERE id IN (${placeholders})`;
@@ -451,7 +451,7 @@ adminRoutes.put("/system-config", async (c) => {
     `;
   }
 
-  await auditLog(sql, c.get("user").id, "System Config Updated", `Updated config: ${Object.keys(body).join(", ")}`, "system");
+  await auditLog(sql, c.get("user").id, "System Config Updated", `Updated config: ${Object.keys(body).join(", ")}`, "security");
 
   return c.json({ success: true });
 });
@@ -537,7 +537,7 @@ adminRoutes.post("/ai-settings/test", async (c) => {
         headers: { Authorization: `Bearer ${apiKey}` },
       });
       if (!res.ok) {
-        throw new HTTPException(res.status, { message: "OpenAI credentials are invalid or expired." });
+        throw new HTTPException(res.status as any, { message: "OpenAI credentials are invalid or expired." });
       }
     } else {
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -546,7 +546,7 @@ adminRoutes.post("/ai-settings/test", async (c) => {
         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Connection test for Sealify Copilot." }] }] }),
       });
       if (!res.ok) {
-        throw new HTTPException(res.status, { message: "Gemini credentials are invalid or expired." });
+        throw new HTTPException(res.status as any, { message: "Gemini credentials are invalid or expired." });
       }
     }
 
@@ -606,7 +606,7 @@ adminRoutes.put("/site-settings", async (c) => {
     `;
   }
 
-  await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "system");
+  await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "security");
 
   return c.json({ success: true, settings: payload });
 });
@@ -618,13 +618,13 @@ adminRoutes.post("/broadcast", async (c) => {
   const { target, title, message } = body;
 
   if (!target || !title || !message) {
-    throw new HTTPException(400, { error: "Target, title, and message required" });
+    throw new HTTPException(400, { message: "Target, title, and message required" });
   }
 
   let whereClause = "";
   if (target === "buyer") whereClause = "WHERE role = 'buyer'";
   else if (target === "seller") whereClause = "WHERE role = 'seller'";
-  else if (target !== "all") throw new HTTPException(400, { error: "Invalid target" });
+   else if (target !== "all") throw new HTTPException(400, { message: "Invalid target" });
 
   const users = await sql`
     SELECT id FROM profiles ${sql(whereClause)}
@@ -649,7 +649,7 @@ adminRoutes.post("/email-digest", async (c) => {
   const audience = body.audience || "all";
 
   if (!['all', 'buyers', 'sellers'].includes(audience)) {
-    throw new HTTPException(400, { error: "Audience must be all, buyers, or sellers" });
+    throw new HTTPException(400, { message: "Audience must be all, buyers, or sellers" });
   }
 
   let whereClause = "";
@@ -726,7 +726,7 @@ adminRoutes.get("/schema", async (c) => {
 
   for (const [tableName, columns] of Object.entries(tableGroups)) {
     schema += `CREATE TABLE IF NOT EXISTS ${tableName} (\n`;
-    const colDefs = columns.map((col: any) => {
+    const colDefs = (columns as any[]).map((col: any) => {
       let def = `  ${col.column_name} ${col.data_type}`;
       if (col.is_nullable === 'NO') def += ' NOT NULL';
       if (col.column_default) def += ` DEFAULT ${col.column_default}`;

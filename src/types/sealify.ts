@@ -357,6 +357,7 @@ export interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   messages: Message[];
+  unreadCount?: number;
 }
 
 export interface AppNotification {
@@ -379,3 +380,5 @@ export interface SearchFilter {
   location: string;
   sortBy: 'newest' | 'price-asc' | 'price-desc' | 'popular';
 }
+
+export type StatusFilter = 'all' | 'active' | 'sold' | 'featured';

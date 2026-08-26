@@ -15,18 +15,6 @@ export const ToasterWrapper: React.FC = () => {
           color: '#f8fafc',
           border: '1px solid #1e293b',
         },
-        success: {
-          iconTheme: {
-            primary: '#10b981',
-            secondary: '#0f172a',
-          },
-        },
-        error: {
-          iconTheme: {
-            primary: '#ef4444',
-            secondary: '#0f172a',
-          },
-        },
       }}
     />
   );

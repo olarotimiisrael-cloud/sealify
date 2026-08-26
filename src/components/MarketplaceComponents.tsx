@@ -3,12 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Package, MapPin, Eye, Shield, Star, Tag, 
+import {
+  Package, MapPin, Eye, Shield, Star, Tag,
   ArrowRightLeft, QrCode, Volume2, Image as ImageIcon,
-  BarChart, Calculator, Sparkles, Share2, 
+  BarChart, Calculator, Sparkles, Share2,
   Truck, CheckSquare, Heart, MessageSquare,
-  ShieldCheck, Zap, Crown, BadgeCheck
+  ShieldCheck, Zap, Crown, BadgeCheck,
+  Clock, Info, Building2, GraduationCap
 } from 'lucide-react';
 
 // Re-export all marketplace components as a unified library

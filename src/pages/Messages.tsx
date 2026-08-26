@@ -183,7 +183,7 @@ export default function Messages() {
 
   const conversationsList = conversationsData?.conversations || conversations;
   const activeConvData = activeConv || conversationsList[0];
-  const activeConvMessages = messagesData?.messages || activeConvData?.messages || [];
+  const activeConvMessages = messagesData?.messages || [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col pb-16 md:pb-0 font-sans">

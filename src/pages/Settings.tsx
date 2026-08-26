@@ -51,6 +51,7 @@ import {
   Trash2,
   Edit3,
   Plus,
+  PlusCircle,
   Search,
   Filter,
   SlidersHorizontal,

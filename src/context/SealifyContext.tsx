@@ -1541,13 +1541,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     if (siteSettingsRow) {
+      const dbRow = siteSettingsRow as any;
       setSiteSettings({
-        logoUrl: siteSettingsRow.logo_url || MOCK_SITE_SETTINGS.logoUrl,
-        siteName: siteSettingsRow.site_name || MOCK_SITE_SETTINGS.siteName,
-        siteDescription: siteSettingsRow.site_description || MOCK_SITE_SETTINGS.siteDescription,
-        ogImage: siteSettingsRow.og_image || MOCK_SITE_SETTINGS.ogImage,
-        contactEmail: siteSettingsRow.contact_email || MOCK_SITE_SETTINGS.contactEmail,
-        contactPhone: siteSettingsRow.contact_phone || MOCK_SITE_SETTINGS.contactPhone,
+        logoUrl: dbRow.logo_url || MOCK_SITE_SETTINGS.logoUrl,
+        siteName: dbRow.site_name || MOCK_SITE_SETTINGS.siteName,
+        siteDescription: dbRow.site_description || MOCK_SITE_SETTINGS.siteDescription,
+        ogImage: dbRow.og_image || MOCK_SITE_SETTINGS.ogImage,
+        contactEmail: dbRow.contact_email || MOCK_SITE_SETTINGS.contactEmail,
+        contactPhone: dbRow.contact_phone || MOCK_SITE_SETTINGS.contactPhone,
       });
     }
 

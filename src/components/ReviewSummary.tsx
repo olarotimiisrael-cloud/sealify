@@ -1,6 +1,8 @@
 import React from 'react';
 import { Star, ShieldCheck, Users, TrendingUp } from 'lucide-react';
-import { Review } from '../types/sealify';
+import { Review as BaseReview } from '../types/sealify';
+
+type Review = BaseReview & { status?: string };
 
 interface ReviewSummaryProps {
   reviews: Review[];

@@ -4,6 +4,7 @@ import { useSealify } from '../context/SealifyContext';
 import { useListing, useUpdateListing, useDeleteListing } from '../lib/api-client';
 import { toast } from 'sonner';
 import SEO from '../components/SEO';
+import AdSenseBanner from '../components/AdSenseBanner';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import ListingCard from '../components/ListingCard';
@@ -541,6 +542,8 @@ export default function ListingDetail() {
               </div>
             )}
           </div>
+
+          <AdSenseBanner slot={import.meta.env.VITE_ADSENSE_SLOT_LISTING_DETAIL} />
 
           {relatedListings.length > 0 && (
             <div className="space-y-4 pt-6 border-t border-slate-800">

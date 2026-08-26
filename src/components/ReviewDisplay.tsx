@@ -1,5 +1,7 @@
 import React from 'react';
-import { Review } from '../types/sealify';
+import { Review as BaseReview } from '../types/sealify';
+
+type Review = BaseReview & { status?: string };
 import { Star, ShieldCheck, Calendar, User, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 

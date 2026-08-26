@@ -104,8 +104,8 @@ listingsRoutes.get("/", listingsRateLimit, async (c) => {
     else if (sortBy === "price-desc") orderClause = "ORDER BY a.price DESC";
     else if (sortBy === "popular") orderClause = "ORDER BY a.views_count DESC";
 
-    const limitNum = Math.min(parseInt(limit) || 20, 100);
-    const offsetNum = parseInt(offset) || 0;
+    const limitNum = Math.min(parseInt(String(limit)) || 20, 100);
+    const offsetNum = parseInt(String(offset)) || 0;
 
     const listings = await sql`
       SELECT

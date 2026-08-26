@@ -16,6 +16,7 @@ import CompareModal from '../components/CompareModal';
 import SavedAlertsModal from '../components/SavedAlertsModal';
 import AiShoppingAssistantModal from '../components/AiShoppingAssistantModal';
 import SEO from '../components/SEO';
+import AdSenseBanner from '../components/AdSenseBanner';
 import { useListings } from '../lib/api-client';
 import {
   Grid,
@@ -482,15 +483,25 @@ export default function Index() {
           </div>
         </div>
 
-        {viewMode === 'map' ? (
-          <MapView listings={sortedListings} />
-        ) : sortedListings.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {sortedListings.map((item) => (
-              <ListingCard key={item.id} listing={item} />
-            ))}
-          </div>
-        ) : (
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 lg:items-start">
+          <div>
+            {viewMode === 'map' ? (
+              <MapView listings={sortedListings} />
+            ) : sortedListings.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+                {sortedListings.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    <ListingCard listing={item} />
+                    {(index + 1) % 8 === 0 && (
+                      <AdSenseBanner
+                        slot={import.meta.env.VITE_ADSENSE_SLOT_LISTINGS}
+                        className="col-span-full"
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            ) : (
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 text-xs my-6 space-y-4 shadow-xl">
             <div className="w-16 h-16 bg-slate-950 rounded-2xl flex items-center justify-center mx-auto border border-slate-800">
               <Package className="w-8 h-8 text-slate-600" />
@@ -506,7 +517,18 @@ export default function Index() {
               Reset All Filters
             </button>
           </div>
-        )}
+            )}
+          </div>
+
+          <aside className="hidden lg:block lg:sticky lg:top-24">
+            <AdSenseBanner
+              slot={import.meta.env.VITE_ADSENSE_SLOT_LISTINGS_SIDEBAR}
+              format="vertical"
+            />
+          </aside>
+        </div>
+
+        <AdSenseBanner slot={import.meta.env.VITE_ADSENSE_SLOT_HOME} />
 
         {/* Floating AI Copilot Action Widget */}
         <div className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-30">

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, ShieldCheck, User, Mail, Phone, MapPin, Save, Camera, Building2, FileText, CreditCard, Layout, Award, KeyRound, Lock, Unlock, Users, Heart, Tag, DollarSign, Truck, Smartphone, Laptop, Home, Car, Shirt, Sparkles, Wrench, Briefcase, GraduationCap, Building, Zap, ShieldCheck as ShieldCheckIcon, CheckCircle, XCircle, Loader2, FileText as FileTextIcon, Image, Video, Music, Film, Code, Database, Server, Cloud, Globe, Wifi, Bluetooth, Usb, Monitor, Printer, Headphones, Mic, Speaker, Keyboard, Mouse, Cpu, HardDrive, MemoryStick, Battery, Power, Wifi as WifiIcon, Bluetooth as BluetoothIcon, Usb as UsbIcon, Monitor as MonitorIcon, Printer as PrinterIcon, Headphones as HeadphonesIcon, Mic as MicIcon, Speaker as SpeakerIcon, Keyboard as KeyboardIcon, Mouse as MouseIcon, Cpu as CpuIcon, HardDrive as HardDriveIcon, MemoryStick as MemoryStickIcon, Battery as BatteryIcon, Power as PowerIcon, TrendingDown, Info, Terminal, AlertTriangle, Siren, Radio, MapPin as MapPinIcon, Shield, Lock as LockIcon, Unlock as UnlockIcon,  Heart as HeartIcon, Tag as TagIcon, DollarSign as DollarSignIcon, Truck as TruckIcon, Smartphone as SmartphoneIcon, Laptop as LaptopIcon, Home as HomeIcon, Car as CarIcon, Shirt as ShirtIcon, Sparkles as SparklesIcon, Wrench as WrenchIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, Building as BuildingIcon, Zap as ZapIcon, ShieldCheck as ShieldCheckIcon2, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Loader2 as Loader2Icon, FileText as FileTextIcon2, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, Film as FilmIcon, Code as CodeIcon, Database as DatabaseIcon, Server as ServerIcon, Cloud as CloudIcon, Globe as GlobeIcon, Wifi as WifiIcon2, Bluetooth as BluetoothIcon2, Usb as UsbIcon2, Monitor as MonitorIcon2, Printer as PrinterIcon2, Headphones as HeadphonesIcon2, Mic as MicIcon2, Speaker as SpeakerIcon2, Keyboard as KeyboardIcon2, Mouse as MouseIcon2, Cpu as CpuIcon2, HardDrive as HardDriveIcon2, MemoryStick as MemoryStickIcon2, Battery as BatteryIcon2, Power as PowerIcon2,  Info } from 'lucide-react';
+import { X, ShieldCheck, User, Phone, MapPin, Save, Camera, Building2, FileText, KeyRound, Lock, Unlock, Heart, Tag, DollarSign, Truck, Smartphone, Laptop, Home, Car, Shirt, Sparkles, Wrench, Briefcase, GraduationCap, Building, Zap, CheckCircle, XCircle, Loader2, Image, Video, Music, Film, Code, Database, Server, Cloud, Globe, Wifi, Bluetooth, Usb, Monitor, Printer, Headphones, Mic, Speaker, Keyboard, Mouse, Cpu, HardDrive, MemoryStick, Battery, Power, Info, Terminal, Siren, Shield } from 'lucide-react';
 import { useSealify } from '@/context/SealifyContext';
 import { toast } from 'sonner';
 
@@ -9,7 +9,7 @@ interface AdminSettingsModalProps {
 }
 
 export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { user, updateUser, updateAdminCredentials, adminEmail, adminPassword, adminPin } = useSealify();
+  const { user, updateUser, updateAdminCredentials, adminEmail } = useSealify();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -23,8 +23,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
   const [avatarUrl, setAvatarUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState(adminEmail);
-  const [newAdminPass, setNewAdminPassword] = useState(adminPassword);
-  const [newAdminPin, setNewAdminPin] = useState(adminPin);
+  const [newAdminPass, setNewAdminPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'security'>('profile');
 
@@ -99,18 +98,14 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
 
   const handleUpdateCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAdminEmail.trim() || !newAdminPass.trim() || !newAdminPin.trim()) {
+    if (!newAdminEmail.trim() || !newAdminPass.trim()) {
       toast.error('All credential fields are required');
-      return;
-    }
-    if (newAdminPin.length !== 6) {
-      toast.error('PIN must be exactly 6 digits');
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminPin.trim());
+      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim());
       setIsSaving(false);
       toast.success('Admin credentials updated successfully!');
     } catch (err) {
@@ -356,7 +351,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               </div>
               <p className="text-xs text-rose-200 leading-relaxed">
                 Changing these credentials will immediately invalidate all active admin sessions. 
-                Ensure you store the new credentials securely. The 6-digit Master PIN is required for all administrative actions.
+                Ensure you store the new credentials securely.
               </p>
             </div>
 
@@ -382,19 +377,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                   onChange={(e) => setNewAdminPassword(e.target.value)}
                   placeholder="Enter new master password"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono tracking-wider"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">6-Digit Master Security PIN *</label>
-                <input
-                  type="text"
-                  required
-                  maxLength={6}
-                  value={newAdminPin}
-                  onChange={(e) => setNewAdminPin(e.target.value)}
-                  placeholder="6-Digit PIN"
-                  className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-4 py-3 text-rose-400 font-black focus:outline-none font-mono tracking-widest text-center text-lg"
                 />
               </div>
             </div>

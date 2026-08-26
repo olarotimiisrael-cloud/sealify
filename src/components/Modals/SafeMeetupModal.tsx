@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, MapPin, Navigation, Clock, Share2, Check, ExternalLink, Building2, Coffee, Shield, Filter } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSealify } from '../context/SealifyContext';
+import { useSealify } from '../../context/SealifyContext';
 
 interface SafeMeetupModalProps {
   isOpen: boolean;

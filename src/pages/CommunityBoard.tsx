@@ -26,17 +26,18 @@ import {
   Loader2,
   AlertCircle,
   Heart,
-  Copy,
-  Check,
-  Activity,
-  X,
+   Copy,
+   Check,
+   Activity,
+   X,
+   Link as LinkIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CommunityBoard: React.FC = () => {
   const { announcements, allUsers, broadcastMassNotification } = useSealify();
 
-  const [activeFilter, setActiveFilter] = useState<'all' | 'security' | 'features' | 'news'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'info' | 'warning' | 'success' | 'alert'>('all');
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastTitle, setBroadcastTitle] = useState('');
   const [broadcastMessage, setBroadcastMessage] = useState('');
@@ -133,7 +134,7 @@ export const CommunityBoard: React.FC = () => {
                 className="px-8 py-4 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-2xl flex items-center justify-center gap-2 transition-all text-xs"
                 onClick={() => handleCopyInviteLink()}
               >
-                 <Link className="w-4 h-4" />
+                  <LinkIcon className="w-4 h-4" />
                  <span>Copy Invite Link</span>
               </button>
            </div>
@@ -181,7 +182,7 @@ export const CommunityBoard: React.FC = () => {
         {/* Filter Tabs & Broadcast Button */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            {(['all', 'security', 'features', 'news'] as const).map((filter) => (
+            {(['all', 'info', 'warning', 'success', 'alert'] as const).map((filter) => (
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
