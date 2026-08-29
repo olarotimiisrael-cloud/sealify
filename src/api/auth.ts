@@ -141,6 +141,8 @@ authRoutes.post("/register", authRateLimit, async (c) => {
 // Admin login uses the same Supabase Auth credentials as ordinary login, but
 // performs the role decision server-side and returns one generic failure for
 // bad credentials and non-admin accounts.
+// Authentication happens BEFORE any database access so that Hyperdrive
+// unavailability cannot prevent credential verification.
 authRoutes.post("/admin-login", async (c) => {
   const env = c.env as any;
   const body = await c.req.json().catch(() => ({}));
@@ -149,26 +151,54 @@ authRoutes.post("/admin-login", async (c) => {
 
   const email = parsed.data.email.trim().toLowerCase();
   const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
-  const sql = getSql(env);
-  const recentFailures = await sql`
-    SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
-    FROM intrusion_logs
-    WHERE attempted_email = ${email}
-      AND status = 'flagged'
-      AND created_at >= NOW() - INTERVAL '15 minutes'
-  `;
-  const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
-  if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
-      && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
-    throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
-  }
-  const { data, error } = await supabase.auth.signInWithPassword({ email: parsed.data.email, password: parsed.data.password });
 
+  // Step 1: Authenticate with Supabase FIRST (no database dependency)
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: parsed.data.email,
+    password: parsed.data.password
+  });
+
+  // Step 2: If authentication fails, attempt to record intrusion (if DB available)
   if (error || !data.user) {
-    await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authentication_failed" }).catch(() => undefined);
+    try {
+      const sql = getSql(env);
+      await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authentication_failed" });
+    } catch {
+      // Database unavailable - still return generic error, do not leak details
+    }
     throw genericAdminLoginError();
   }
 
+  // Step 3: Authentication succeeded - now obtain database connection
+  let sql;
+  try {
+    sql = getSql(env);
+  } catch {
+    // Hyperdrive not available - cannot verify admin role, deny access
+    await supabase.auth.signOut();
+    throw genericAdminLoginError();
+  }
+
+  // Step 4: Check rate limiting (only if database is available)
+  try {
+    const recentFailures = await sql`
+      SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
+      FROM intrusion_logs
+      WHERE attempted_email = ${email}
+        AND status = 'flagged'
+        AND created_at >= NOW() - INTERVAL '15 minutes'
+    `;
+    const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
+    if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
+        && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
+      throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
+    }
+  } catch (rateLimitError) {
+    if (rateLimitError instanceof HTTPException) throw rateLimitError;
+    // Rate limit check failed - continue (admin check is mandatory)
+  }
+
+  // Step 5: Verify admin role (MANDATORY - uses private.is_admin())
   const isAdmin = await sql`SELECT private.is_admin(${data.user.id}) AS is_admin`;
   if (!isAdmin[0]?.is_admin) {
     await supabase.auth.signOut();
@@ -176,6 +206,7 @@ authRoutes.post("/admin-login", async (c) => {
     throw genericAdminLoginError();
   }
 
+  // Step 6: Success - clear intrusion logs and record audit
   await sql`
     UPDATE intrusion_logs
     SET status = 'dismissed'
