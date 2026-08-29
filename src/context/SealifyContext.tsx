@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { mapListingToListing, mapProfileToUser } from '@/services/supabaseService';
 import { adminFetch } from '@/lib/admin-api';
+import { apiUrl } from '@/lib/env';
 import { api } from '@/lib/api-client';
 
 // Service imports
@@ -766,7 +767,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const adminLogin = async (email: string, password: string) => {
     try {
-      const response = await fetch('/api/auth/admin-login', {
+      const response = await fetch(apiUrl('/api/auth/admin-login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

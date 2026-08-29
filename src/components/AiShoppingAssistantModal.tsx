@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { apiUrl } from '@/lib/env';
 
 interface AiShoppingAssistantModalProps {
   isOpen: boolean;
@@ -79,7 +80,7 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/api/copilot', {
+      const response = await fetch(apiUrl('/api/copilot'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -19,7 +19,22 @@ class ApiClient {
   }
 
   private buildUrl(endpoint: string, params?: Record<string, string>): string {
-    const url = new URL(`${this.baseUrl}${endpoint}`, window.location.origin);
+    const base = this.baseUrl;
+    const fullPath = `${base}${endpoint}`;
+
+    if (base.startsWith('http')) {
+      const url = new URL(fullPath);
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            url.searchParams.append(key, value);
+          }
+        });
+      }
+      return url.toString();
+    }
+
+    const url = new URL(fullPath, window.location.origin);
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
         if (value !== undefined && value !== null) {

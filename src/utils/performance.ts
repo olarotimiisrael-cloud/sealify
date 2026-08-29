@@ -1,4 +1,6 @@
 // Performance monitoring utilities
+import { apiUrl } from '@/lib/env';
+
 interface PerformanceMetric {
   name: string;
   value: number;
@@ -82,7 +84,7 @@ export const reportMetrics = async (): Promise<void> => {
   if (METRICS.length === 0) return;
 
   try {
-    await fetch('/api/analytics/performance', {
+    await fetch(apiUrl('/api/analytics/performance'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ metrics: METRICS, sessionId: crypto.randomUUID() }),

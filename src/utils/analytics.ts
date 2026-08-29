@@ -1,4 +1,6 @@
 // Lightweight analytics utility (no external dependencies)
+import { apiUrl } from '@/lib/env';
+
 interface AnalyticsEvent {
   event: string;
   properties?: Record<string, any>;
@@ -40,7 +42,7 @@ export const flushEvents = async (): Promise<void> => {
 
   try {
     // Send to your analytics endpoint (replace with your endpoint)
-    await fetch('/api/analytics/batch', {
+    await fetch(apiUrl('/api/analytics/batch'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ events }),

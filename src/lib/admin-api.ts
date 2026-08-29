@@ -1,10 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
+import { apiUrl } from '@/lib/env';
 
-/**
- * Call a protected admin endpoint with the current Supabase session token.
- * Supabase owns session persistence and refresh; this helper never reads or
- * writes auth tokens through application storage.
- */
 export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const { data: { session } } = await supabase.auth.getSession();
   const headers = new Headers(init.headers);
@@ -17,5 +13,6 @@ export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {
     headers.set('Authorization', `Bearer ${session.access_token}`);
   }
 
-  return fetch(input, { ...init, headers });
+  const url = typeof input === 'string' && input.startsWith('/api/') ? apiUrl(input) : input;
+  return fetch(url, { ...init, headers });
 }

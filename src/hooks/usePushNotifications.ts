@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { apiUrl } from '@/lib/env';
 
 export const usePushNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -40,7 +40,7 @@ export const usePushNotifications = () => {
       setSubscription(sub);
       
       // Send subscription to server
-      await fetch('/api/push/subscribe', {
+      await fetch(apiUrl('/api/push/subscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(sub)
@@ -55,7 +55,7 @@ export const usePushNotifications = () => {
       await subscription.unsubscribe();
       setSubscription(null);
       
-      await fetch('/api/push/unsubscribe', {
+      await fetch(apiUrl('/api/push/unsubscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ endpoint: subscription.endpoint })
