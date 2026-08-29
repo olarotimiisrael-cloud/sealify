@@ -1,4 +1,3 @@
-import { createRequestHandler } from "react-router";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { handle } from "hono/cloudflare-pages";
@@ -24,15 +23,21 @@ type Env = {
   NEXT_PUBLIC_SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
-  // ... other secrets
 };
 
 const app = new Hono<{ Bindings: Env }>();
 
 // CORS middleware
 app.use("/*", cors({
-  origin: ["https://sealify.ng", "https://www.sealify.ng", "http://localhost:5173"],
-  allowHeaders: ["Content-Type", "Authorization"],
+  origin: [
+    "https://sealify.ng",
+    "https://www.sealify.ng",
+    "https://sealify.pages.dev",
+    "https://sealify.thesealconsult.com.ng",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+  ],
+  allowHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true,
 }));
@@ -55,18 +60,4 @@ app.route("/api/search", searchRoutes);
 app.route("/api/analytics", analyticsRoutes);
 app.route("/api/push", pushRoutes);
 
-// React Router SSR handler for all other routes
-const requestHandler = createRequestHandler(
-  () => import("virtual:react-router/server-build") as Promise<any>,
-  import.meta.env.MODE
-);
-
-app.all("*", async (c) => {
-  const response = await requestHandler(c.req.raw, {
-    env: c.env,
-    ctx: c.executionCtx
-  } as any);
-  return response;
-});
-
-export const onRequest: any = handle(app);
+export const onRequest = handle(app);
