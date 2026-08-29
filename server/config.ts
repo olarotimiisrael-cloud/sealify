@@ -9,7 +9,7 @@ function getEnv(key: string, fallback?: string): string {
 const isProduction = process.env.NODE_ENV === 'production';
 
 const allowedOrigins = getEnv(
-  'CORS_ORIGIN',
+  'CORS_ORIGINS',
   isProduction
     ? 'https://sealify.ng,https://www.sealify.ng,https://sealify.pages.dev'
     : 'http://localhost:5173,http://127.0.0.1:5173'
