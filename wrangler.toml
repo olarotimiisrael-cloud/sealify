@@ -1,15 +1,10 @@
-name = "sealify"
-compatibility_date = "2026-08-16"
+name = "sealify-ng"
+compatibility_date = "2026-08-31"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = "dist"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
 
 [env.production]
 NODE_VERSION = "20"
-
-# Cloudflare Pages build configuration:
-# Build command: npm ci && npm run build
-# Environment variable: SKIP_DEPENDENCY_INSTALL=true
-#
-# HYPERDRIVE must be attached to the Pages project in Cloudflare before
-# database-backed API routes can operate. The binding is intentionally not
-# hardcoded here because this repository does not contain the account-specific ID.
