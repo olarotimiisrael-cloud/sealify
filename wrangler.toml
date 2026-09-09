@@ -1,17 +1,7 @@
 name = "sealify-ng"
 compatibility_date = "2026-08-31"
 compatibility_flags = ["nodejs_compat"]
-<<<<<<< HEAD
 
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
-
-[env.production]
-NODE_VERSION = "20"
-=======
-
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
->>>>>>> 5a81939 (fix: stabilize Cloudflare Worker deployment with Wrangler 4)

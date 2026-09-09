@@ -15,13 +15,8 @@
     "start": "concurrently \"npm:serve\" \"npm:preview\"",
     "dev:full": "concurrently \"npm:dev\" \"npm:serve\"",
     "server": "tsx server/index.ts",
-<<<<<<< HEAD
-    "deploy": "wrangler deploy",
-    "deploy:worker": "npm run build && wrangler deploy",
-=======
     "deploy": "wrangler deploy --config wrangler.toml",
     "deploy:worker": "npm run build && wrangler deploy --config wrangler.toml",
->>>>>>> 5a81939 (fix: stabilize Cloudflare Worker deployment with Wrangler 4)
     "cf-typegen": "wrangler types --env-interface CloudflareEnv",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
