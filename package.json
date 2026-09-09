@@ -15,8 +15,13 @@
     "start": "concurrently \"npm:serve\" \"npm:preview\"",
     "dev:full": "concurrently \"npm:dev\" \"npm:serve\"",
     "server": "tsx server/index.ts",
+<<<<<<< HEAD
     "deploy": "wrangler deploy",
     "deploy:worker": "npm run build && wrangler deploy",
+=======
+    "deploy": "wrangler deploy --config wrangler.toml",
+    "deploy:worker": "npm run build && wrangler deploy --config wrangler.toml",
+>>>>>>> 5a81939 (fix: stabilize Cloudflare Worker deployment with Wrangler 4)
     "cf-typegen": "wrangler types --env-interface CloudflareEnv",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "typecheck": "tsc --noEmit",
@@ -87,7 +92,7 @@
     "zod": "^3.25.0"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260702.1",
+    "@cloudflare/workers-types": "^5.20260908.1",
     "@dyad-sh/react-vite-component-tagger": "^0.9.0",
     "@eslint/js": "^9.9.0",
     "@react-router/dev": "^7.18.2",
@@ -111,6 +116,6 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
     "vite": "^8.0.0",
-    "wrangler": "^3.80.0"
+    "wrangler": "^4.129.0"
   }
 }

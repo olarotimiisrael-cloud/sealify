@@ -1,4 +1,4 @@
-name: Sealify CI/CD Pipeline
+name: Sealify CI
 
 on:
   push:
@@ -79,6 +79,7 @@ jobs:
           name: sealify-dist
           path: dist
           retention-days: 1
+<<<<<<< HEAD
 
   deploy-cloudflare:
     name: Deploy to Cloudflare Worker
@@ -105,3 +106,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: deploy
+=======
+>>>>>>> 5a81939 (fix: stabilize Cloudflare Worker deployment with Wrangler 4)
