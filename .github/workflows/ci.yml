@@ -79,4 +79,3 @@ jobs:
           name: sealify-dist
           path: dist
           retention-days: 1
->>>>>>> 5a81939 (fix: stabilize Cloudflare Worker deployment with Wrangler 4)
