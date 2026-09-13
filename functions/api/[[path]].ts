@@ -93,6 +93,7 @@ app.onError((err, c) => handleError(err, c));
 const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password required'),
+  accessKey: z.string().trim().min(1, 'Access key required').optional(),
 });
 
 app.post('/api/auth/admin-login', async (c) => {

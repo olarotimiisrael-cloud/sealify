@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { createClient } from '@supabase/supabase-js';
 import { getSql } from '../../_middleware/db';
 import { requireAdmin } from '../../_middleware/auth';
 import { auditLog } from '../../_middleware/admin-service';
@@ -387,23 +388,175 @@ adminRoutes.put('/site-settings', async (c) => {
   }
 });
 
-adminRoutes.post('/broadcast', async (c) => {
+adminRoutes.post('/users', async (c) => {
   try {
     const sql = getSql(c.env);
     const body = await c.req.json();
-    const { target, title, message } = body;
-    const userIds = target === 'all'
-      ? (await sql`SELECT id FROM profiles`).map((r: any) => r.id)
-      : (await sql`SELECT id FROM profiles WHERE role = ${target}`).map((r: any) => r.id);
-    for (const userId of userIds) {
-      await sql`INSERT INTO notifications (user_id, title, message, type, created_at) VALUES (${userId}, ${title}, ${message}, 'broadcast', NOW())`;
+    const {
+      email,
+      password = 'TempPass123!',
+      fullName,
+      full_name,
+      phoneNumber,
+      phone_number,
+      location = 'Ogbomoso, Oyo State',
+      role = 'buyer',
+      status = 'active',
+      verified = false,
+      verificationType = 'none',
+      verification_type = 'none',
+      businessName,
+      business_name,
+      cacNumber,
+      cac_number,
+      bio,
+      avatarUrl,
+      avatar_url,
+      storeBannerUrl,
+      store_banner_url,
+      bankName,
+      bank_name,
+      accountNumber,
+      account_number,
+      accountName,
+      account_name,
+      websiteUrl,
+      website_url,
+      instagramHandle,
+      instagram_handle,
+      twitterHandle,
+      twitter_handle,
+      whatsappNumber,
+      whatsapp_number,
+      emailNotifications = true,
+      email_notifications = true,
+      whatsappNotifications = true,
+      whatsapp_notifications = true,
+      hidePhonePublicly = false,
+      hide_phone_publicly = false,
+      hideLocationPublicly = false,
+      hide_location_publicly = false,
+    } = body;
+
+    const finalFullName = fullName || full_name;
+    const finalPhone = phoneNumber || phone_number;
+    const finalLocation = location;
+    const finalRole = role;
+    const finalStatus = status;
+    const finalVerified = verified;
+    const finalVerificationType = verificationType || verification_type;
+    const finalBusinessName = businessName || business_name;
+    const finalCacNumber = cacNumber || cac_number;
+    const finalBio = bio;
+    const finalAvatarUrl = avatarUrl || avatar_url;
+    const finalStoreBannerUrl = storeBannerUrl || store_banner_url;
+    const finalBankName = bankName || bank_name;
+    const finalAccountNumber = accountNumber || account_number;
+    const finalAccountName = accountName || account_name;
+    const finalWebsiteUrl = websiteUrl || website_url;
+    const finalInstagramHandle = instagramHandle || instagram_handle;
+    const finalTwitterHandle = twitterHandle || twitter_handle;
+    const finalWhatsappNumber = whatsappNumber || whatsapp_number;
+    const finalEmailNotifications = emailNotifications ?? email_notifications ?? true;
+    const finalWhatsappNotifications = whatsappNotifications ?? whatsapp_notifications ?? true;
+    const finalHidePhonePublicly = hidePhonePublicly ?? hide_phone_publicly ?? false;
+    const finalHideLocationPublicly = hideLocationPublicly ?? hide_location_publicly ?? false;
+
+    if (!email || !finalFullName) {
+      throw new HTTPException(400, { message: 'Email and fullName are required' });
     }
+
+    // Check if user already exists
+    const existing = await sql`SELECT id FROM profiles WHERE email = ${email}`;
+    if (existing.length > 0) {
+      throw new HTTPException(409, { message: 'Email already registered' });
+    }
+
+    const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_SERVICE_ROLE_KEY || c.env.SUPABASE_ANON_KEY);
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { full_name: finalFullName, phone: finalPhone }
+    });
+
+    if (authError) {
+      throw new HTTPException(400, { message: authError.message });
+    }
+
+    if (!authData.user) {
+      throw new HTTPException(500, { message: 'Failed to create user' });
+    }
+
+    const userId = authData.user.id;
+
+    await sql`
+      INSERT INTO profiles (
+        id, email, full_name, phone_number, role, status, location, 
+        verified, verification_type, business_name, cac_number, bio,
+        avatar_url, store_banner_url, bank_name, account_number, account_name,
+        website_url, instagram_handle, twitter_handle, whatsapp_number,
+        email_notifications, whatsapp_notifications, hide_phone_publicly, hide_location_publicly,
+        created_at, updated_at
+      ) VALUES (
+        ${userId}, ${email}, ${finalFullName}, ${finalPhone || null}, ${finalRole}, ${finalStatus}, ${finalLocation},
+        ${finalVerified}, ${finalVerificationType}, ${finalBusinessName || null}, ${finalCacNumber || null}, ${finalBio || null},
+        ${finalAvatarUrl || null}, ${finalStoreBannerUrl || null}, ${finalBankName || null}, ${finalAccountNumber || null}, ${finalAccountName || null},
+        ${finalWebsiteUrl || null}, ${finalInstagramHandle || null}, ${finalTwitterHandle || null}, ${finalWhatsappNumber || null},
+        ${finalEmailNotifications}, ${finalWhatsappNotifications}, ${finalHidePhonePublicly}, ${finalHideLocationPublicly},
+        NOW(), NOW()
+      )
+    `;
+
+    await sql`
+      INSERT INTO user_settings (user_id, email_notifications, whatsapp_notifications, push_notifications, price_drop_alerts, new_message_alerts, weekly_digest, promotion_expiry_reminders, language, theme, created_at, updated_at)
+      VALUES (${userId}, ${finalEmailNotifications}, ${finalWhatsappNotifications}, true, true, true, true, true, 'en', 'dark', NOW(), NOW())
+      ON CONFLICT (user_id) DO NOTHING
+    `;
+
     const user = c.get('user')!;
-    await auditLog(sql, user.id, 'Broadcast Sent', `Sent to ${userIds.length} users`, 'notification');
+    await auditLog(sql, user.id, 'User Created', `Created user ${email} with role ${finalRole}`, 'user');
+
+    return c.json({ user: { id: userId, email, fullName: finalFullName, role: finalRole, status: finalStatus } }, 201);
+  } catch (err) {
+    if (err instanceof HTTPException) throw err;
+    console.error('Admin create user error:', err);
+    throw new HTTPException(500, { message: 'Failed to create user' });
+  }
+});
+
+adminRoutes.post('/email-digest', async (c) => {
+  try {
+    const sql = getSql(c.env);
+    const body = await c.req.json();
+    const { subject, content, targetRole } = body;
+
+    if (!subject || !content) {
+      throw new HTTPException(400, { message: 'Subject and content are required' });
+    }
+
+    let userIds: string[];
+    if (targetRole && targetRole !== 'all') {
+      const users = await sql`SELECT id FROM profiles WHERE role = ${targetRole}`;
+      userIds = users.map((r: any) => r.id);
+    } else {
+      const users = await sql`SELECT id FROM profiles`;
+      userIds = users.map((r: any) => r.id);
+    }
+
+    // Store as notifications for now (email sending would need a separate service)
+    for (const userId of userIds) {
+      await sql`INSERT INTO notifications (user_id, title, message, type, created_at) VALUES (${userId}, ${subject}, ${content}, 'email_digest', NOW())`;
+    }
+
+    const user = c.get('user')!;
+    await auditLog(sql, user.id, 'Email Digest Sent', `Sent to ${userIds.length} users (role: ${targetRole || 'all'})`, 'notification');
+
     return c.json({ success: true, recipients: userIds.length });
   } catch (err) {
-    console.error('Admin broadcast error:', err);
-    throw new HTTPException(500, { message: 'Failed to send broadcast' });
+    if (err instanceof HTTPException) throw err;
+    console.error('Admin email digest error:', err);
+    throw new HTTPException(500, { message: 'Failed to send email digest' });
   }
 });
 

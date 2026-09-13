@@ -18,6 +18,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(1, "Password required"),
+  accessKey: z.string().trim().min(1, "Access key required").optional(),
 });
 
 const updateProfileSchema = z.object({

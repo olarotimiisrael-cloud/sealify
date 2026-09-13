@@ -18,6 +18,7 @@ import pushRoutes from './push';
 import copilotRoutes from './copilot';
 import adminRoutes from './admin';
 import healthRoutes from './health';
+import marketInsightsRoutes from './market-insights';
 
 // Create main app
 const app = new Hono<{ Bindings: Env }>();
@@ -47,6 +48,7 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/push', pushRoutes);
 app.route('/api/copilot', copilotRoutes);
 app.route('/api/admin', adminRoutes);
+app.route('/api/market-insights', marketInsightsRoutes);
 
 // 404 handler
 app.notFound((c) => {

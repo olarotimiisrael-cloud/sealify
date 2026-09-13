@@ -20,7 +20,7 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://localhost:8788",
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
     },
@@ -29,7 +29,7 @@ export default defineConfig({
     port: 4173,
     proxy: {
       "/api": {
-        target: "http://localhost:8788",
+        target: "http://localhost:3000",
         changeOrigin: true,
       },
     },
