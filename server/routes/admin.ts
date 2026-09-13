@@ -38,6 +38,36 @@ const adminUserUpdateSchema = z.object({
   appeal_status: z.enum(["none", "pending", "resolved"]).optional(),
 }).strict();
 
+const adminUserCreateSchema = z.object({
+  email: z.string().trim().email(),
+  full_name: z.string().trim().min(2).max(100).optional(),
+  phone_number: z.string().trim().max(20).nullable().optional(),
+  location: z.string().trim().max(100).nullable().optional(),
+  role: z.enum(["buyer", "seller", "admin"]).optional().default("buyer"),
+  status: z.enum(["active", "suspended", "banned", "restricted"]).optional().default("active"),
+  verified: z.boolean().optional().default(false),
+  verification_type: z.enum(["individual", "business", "premium", "student", "none"]).optional().default("none"),
+  business_name: z.string().trim().max(100).nullable().optional(),
+  cac_number: z.string().trim().max(100).nullable().optional(),
+  bio: z.string().trim().max(500).nullable().optional(),
+  avatar_url: z.string().trim().url().nullable().optional(),
+  cover_url: z.string().trim().url().nullable().optional(),
+  bank_name: z.string().trim().max(100).nullable().optional(),
+  account_number: z.string().trim().max(30).nullable().optional(),
+  account_name: z.string().trim().max(100).nullable().optional(),
+  website_url: z.string().trim().url().nullable().optional(),
+  instagram_handle: z.string().trim().max(50).nullable().optional(),
+  twitter_handle: z.string().trim().max(50).nullable().optional(),
+  whatsapp_number: z.string().trim().max(20).nullable().optional(),
+  email_notifications: z.boolean().optional().default(true),
+  whatsapp_notifications: z.boolean().optional().default(true),
+  hide_phone_publicly: z.boolean().optional().default(false),
+  hide_location_publicly: z.boolean().optional().default(false),
+  member_since: z.string().datetime().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+}).strict();
+
 adminRouter.use(requireAdmin);
 
 adminRouter.get('/stats', async (req: Request, res: Response, next: NextFunction) => {
@@ -90,6 +120,52 @@ adminRouter.get('/users', async (req: Request, res: Response, next: NextFunction
     const users = await sql`SELECT * FROM profiles ${sql(whereClause)} ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offsetNum}`;
     const countResult = await sql`SELECT COUNT(*) as total FROM profiles ${sql(whereClause)}`;
     res.json({ users, total: parseInt(countResult[0]?.total || '0'), limit: limitNum, offset: offsetNum });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/users', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const sql = getSql();
+    const body = adminUserCreateSchema.parse(req.body);
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const userRecord = {
+      id,
+      email: body.email,
+      full_name: body.full_name ?? body.email.split('@')[0],
+      phone_number: body.phone_number ?? null,
+      location: body.location ?? 'Ogbomoso, Oyo State',
+      role: body.role ?? 'buyer',
+      status: body.status ?? 'active',
+      verified: Boolean(body.verified),
+      verification_type: body.verification_type ?? 'none',
+      business_name: body.business_name ?? null,
+      cac_number: body.cac_number ?? null,
+      bio: body.bio ?? null,
+      avatar_url: body.avatar_url ?? null,
+      cover_url: body.cover_url ?? null,
+      bank_name: body.bank_name ?? null,
+      account_number: body.account_number ?? null,
+      account_name: body.account_name ?? null,
+      website_url: body.website_url ?? null,
+      instagram_handle: body.instagram_handle ?? null,
+      twitter_handle: body.twitter_handle ?? null,
+      whatsapp_number: body.whatsapp_number ?? null,
+      email_notifications: body.email_notifications ?? true,
+      whatsapp_notifications: body.whatsapp_notifications ?? true,
+      hide_phone_publicly: body.hide_phone_publicly ?? false,
+      hide_location_publicly: body.hide_location_publicly ?? false,
+      member_since: body.member_since ?? now,
+      created_at: body.created_at ?? now,
+      updated_at: body.updated_at ?? now,
+    };
+
+    const result = await sql`INSERT INTO profiles ${sql(userRecord)} RETURNING *`;
+    await auditLog((req as any).user.id, 'User Created', `Created user ${id}`, 'user');
+    res.status(201).json({ user: result[0] });
   } catch (err) {
     next(err);
   }

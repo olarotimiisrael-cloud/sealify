@@ -9,12 +9,14 @@ interface AdminEditUserModalProps {
   user: UserProfile | null;
   onClose: () => void;
   onSave: (id: string, updated: Partial<UserProfile>) => void;
+  onCreate?: (profile: Partial<UserProfile>) => Promise<UserProfile | null> | UserProfile | null;
 }
 
 export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
   user,
   onClose,
   onSave,
+  onCreate,
 }) => {
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -87,9 +89,10 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(user.id, {
+
+    const payload: Partial<UserProfile> = {
       fullName: fullName.trim(),
       email: email.trim(),
       phoneNumber: phoneNumber.trim(),
@@ -106,7 +109,21 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
       bankName: bankName.trim() || undefined,
       accountNumber: accountNumber.trim() || undefined,
       accountName: accountName.trim() || undefined,
-    });
+      memberSince: user.memberSince || new Date().toISOString(),
+    };
+
+    if (isNewUser) {
+      if (onCreate) {
+        const created = await onCreate(payload);
+        if (!created) {
+          toast.error('Failed to create user profile.');
+          return;
+        }
+      }
+    } else {
+      onSave(user.id, payload);
+    }
+
     onClose();
   };
 

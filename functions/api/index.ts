@@ -27,26 +27,26 @@ app.use('*', corsMiddleware);
 app.use('*', errorMiddleware);
 
 // Health check (no auth required)
-app.route('/health', healthRoutes);
+app.route('/api/health', healthRoutes);
 
 // Auth routes (public)
-app.route('/auth', authRoutes);
+app.route('/api/auth', authRoutes);
 
 // Protected routes
-app.route('/listings', listingsRoutes);
-app.route('/categories', categoriesRoutes);
-app.route('/search', searchRoutes);
-app.route('/reviews', reviewsRoutes);
-app.route('/buyer-requests', buyerRequestsRoutes);
-app.route('/messages', messagesRoutes);
-app.route('/notifications', notificationsRoutes);
-app.route('/users', usersRoutes);
+app.route('/api/listings', listingsRoutes);
+app.route('/api/categories', categoriesRoutes);
+app.route('/api/search', searchRoutes);
+app.route('/api/reviews', reviewsRoutes);
+app.route('/api/buyer-requests', buyerRequestsRoutes);
+app.route('/api/messages', messagesRoutes);
+app.route('/api/notifications', notificationsRoutes);
+app.route('/api/users', usersRoutes);
 
 // Admin-only routes
-app.route('/analytics', analyticsRoutes);
-app.route('/push', pushRoutes);
-app.route('/copilot', copilotRoutes);
-app.route('/admin', adminRoutes);
+app.route('/api/analytics', analyticsRoutes);
+app.route('/api/push', pushRoutes);
+app.route('/api/copilot', copilotRoutes);
+app.route('/api/admin', adminRoutes);
 
 // 404 handler
 app.notFound((c) => {

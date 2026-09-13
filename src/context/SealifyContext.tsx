@@ -42,26 +42,50 @@ const decodeTemporaryAdminSecret = (encoded: string): string => {
   }
 };
 
-const TEMP_ADMIN_EMAIL = (import.meta.env.VITE_ADMIN_EMAIL || 'admin@sealify.ng').trim().toLowerCase();
-const TEMP_ADMIN_PASSWORD = (import.meta.env.VITE_ADMIN_PASSWORD || 'sealify2027').trim();
-const TEMP_ADMIN_MASTER_KEY = (import.meta.env.VITE_ADMIN_MASTER_KEY || decodeTemporaryAdminSecret('MzM2Njk5')).trim();
+const TEMP_ADMIN_EMAIL_FALLBACK = 'admin@sealify.ng';
+const TEMP_ADMIN_PASSWORD_FALLBACK = 'sealify2027';
+const TEMP_ADMIN_MASTER_KEY_FALLBACK = decodeTemporaryAdminSecret('MzM2Njk5');
+const ADMIN_ACCESS_KEY_FALLBACK = '336699';
+const TEMP_ADMIN_EMAIL = TEMP_ADMIN_EMAIL_FALLBACK;
+const TEMP_ADMIN_PASSWORD = TEMP_ADMIN_PASSWORD_FALLBACK;
+const TEMP_ADMIN_ACCESS_KEY = ADMIN_ACCESS_KEY_FALLBACK;
 
-const ADMIN_ACCESS_KEY = (import.meta.env.VITE_ADMIN_ACCESS_KEY || '336699').trim();
+const getEnvAdminValue = (envKey: string, fallback: string): string => {
+  const envValue = (import.meta.env?.[envKey] ?? '').toString().trim();
+  return envValue || fallback;
+};
+
+const getStoredAdminValue = (storageKey: string, fallback: string) => {
+  if (typeof window === 'undefined') return fallback;
+
+  const storedValue = window.localStorage.getItem(storageKey);
+  if (storedValue !== null && storedValue.trim() !== '') return storedValue.trim();
+
+  return fallback;
+};
+
+const getTemporaryAdminLoginConfig = () => ({
+  email: getEnvAdminValue('VITE_ADMIN_EMAIL', getStoredAdminValue('sealify_admin_email', TEMP_ADMIN_EMAIL_FALLBACK)).trim().toLowerCase(),
+  password: getEnvAdminValue('VITE_ADMIN_PASSWORD', getStoredAdminValue('sealify_admin_password', TEMP_ADMIN_PASSWORD_FALLBACK)).trim(),
+  accessKey: getEnvAdminValue('VITE_ADMIN_ACCESS_KEY', getStoredAdminValue('sealify_admin_access_key', ADMIN_ACCESS_KEY_FALLBACK)).trim(),
+  masterKey: getEnvAdminValue('VITE_ADMIN_MASTER_KEY', getStoredAdminValue('sealify_admin_master_key', TEMP_ADMIN_MASTER_KEY_FALLBACK)).trim(),
+});
 
 const isTemporaryAdminLogin = (email: string, password: string, accessKey: string): boolean => {
+  const { email: expectedEmail, password: expectedPassword, accessKey: expectedAccessKey, masterKey: expectedMasterKey } = getTemporaryAdminLoginConfig();
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedPassword = password.trim();
   const normalizedAccessKey = accessKey.trim();
-  const hasEmailMatch = normalizedEmail === TEMP_ADMIN_EMAIL;
-  const hasPasswordMatch = normalizedPassword === TEMP_ADMIN_PASSWORD;
-  const hasAccessKeyMatch = normalizedAccessKey === ADMIN_ACCESS_KEY;
+  const hasEmailMatch = normalizedEmail === expectedEmail;
+  const hasPasswordMatch = normalizedPassword === expectedPassword;
+  const hasAccessKeyMatch = normalizedAccessKey === expectedAccessKey;
   if (!hasEmailMatch || !hasPasswordMatch || !hasAccessKeyMatch) return false;
 
   const params = new URLSearchParams(window.location.search);
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
   const requestMasterKey = params.get('master_key') || hashParams.get('master_key');
 
-  return requestMasterKey === null || requestMasterKey === TEMP_ADMIN_MASTER_KEY;
+  return requestMasterKey === null || requestMasterKey === expectedMasterKey;
 };
 
 const mapCategoryRow = (row: any): CategoryConfig => ({
@@ -173,7 +197,8 @@ interface SealifyContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   adminEmail: string;
-  updateAdminCredentials: (email: string, password: string) => Promise<void>;
+  adminAccessKey: string;
+  updateAdminCredentials: (email: string, password: string, accessKey: string) => Promise<void>;
   
   // System config
   systemConfig: Record<string, boolean | number>;
@@ -222,6 +247,7 @@ interface SealifyContextType {
   // Listings
   listings: Listing[];
   allUsers: UserProfile[];
+  createUser: (newUser: Partial<UserProfile>) => Promise<UserProfile | null>;
   updateUser: (id: string, updates: Partial<UserProfile>) => Promise<void>;
   addUser: (user: UserProfile) => void;
   deleteUser: (id: string) => void;
@@ -675,7 +701,8 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState('');
+  const [adminEmail, setAdminEmail] = useState(() => getStoredAdminValue('sealify_admin_email', TEMP_ADMIN_EMAIL_FALLBACK));
+  const [adminAccessKey, setAdminAccessKey] = useState(() => getStoredAdminValue('sealify_admin_access_key', ADMIN_ACCESS_KEY_FALLBACK));
   const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
   const [promotionPlans, setPromotionPlans] = useState(MOCK_PROMOTION_PLANS);
@@ -738,23 +765,36 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [error, setError] = useState<string | null>(null);
 
-  const updateAdminCredentials = async (email: string, password: string) => {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-    if (!authUser) throw new Error('Authentication required');
-
-    const updates: { email?: string; password?: string } = {};
+  const updateAdminCredentials = async (email: string, password: string, accessKey: string) => {
     const nextEmail = email.trim();
     const nextPassword = password.trim();
+    const nextAccessKey = accessKey.trim();
 
-    if (nextEmail && nextEmail !== authUser.email) updates.email = nextEmail;
-    if (nextPassword) updates.password = nextPassword;
-
-    if (Object.keys(updates).length > 0) {
-      const { error: authError } = await supabase.auth.updateUser(updates);
-      if (authError) throw authError;
+    if (!nextEmail || !nextPassword || !nextAccessKey) {
+      throw new Error('Email, password, and access key are required');
     }
 
-    setAdminEmail(nextEmail || authUser.email || '');
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+
+    if (authUser) {
+      const updates: { email?: string; password?: string } = {};
+      if (nextEmail && nextEmail !== authUser.email) updates.email = nextEmail;
+      if (nextPassword) updates.password = nextPassword;
+
+      if (Object.keys(updates).length > 0) {
+        const { error: authError } = await supabase.auth.updateUser(updates);
+        if (authError) throw authError;
+      }
+    }
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('sealify_admin_email', nextEmail.toLowerCase());
+      window.localStorage.setItem('sealify_admin_password', nextPassword);
+      window.localStorage.setItem('sealify_admin_access_key', nextAccessKey);
+    }
+
+    setAdminEmail(nextEmail);
+    setAdminAccessKey(nextAccessKey);
   };
 
   const t = (key: string) => TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || key;
@@ -803,9 +843,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (!email.trim() || !password.trim() || !(accessKey || '').trim()) return false;
 
       if (isTemporaryAdminLogin(email, password, accessKey || '')) {
+        const configuredAdmin = getTemporaryAdminLoginConfig();
         const fallbackProfile: UserProfile = {
           id: 'temporary-admin',
-          email: TEMP_ADMIN_EMAIL,
+          email: configuredAdmin.email || TEMP_ADMIN_EMAIL,
           fullName: 'Temporary Admin',
           phoneNumber: '+2340000000000',
           avatarUrl: '',
@@ -817,6 +858,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
 
         applyAuthenticatedUser(fallbackProfile);
+        setAdminEmail(configuredAdmin.email || TEMP_ADMIN_EMAIL);
+        setAdminAccessKey(configuredAdmin.accessKey || TEMP_ADMIN_ACCESS_KEY);
         toast.success('Temporary admin access granted for local validation. Supabase check is still recommended.', { duration: 4000 });
         return true;
       }
@@ -1399,6 +1442,75 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await syncDatabase();
   };
 
+  const createUser = async (newUser: Partial<UserProfile>): Promise<UserProfile | null> => {
+    const payload = {
+      email: (newUser.email || '').trim(),
+      fullName: (newUser.fullName || '').trim(),
+      full_name: (newUser.fullName || '').trim(),
+      phoneNumber: (newUser.phoneNumber || '').trim(),
+      phone_number: (newUser.phoneNumber || '').trim(),
+      location: (newUser.location || 'Ogbomoso, Oyo State').trim(),
+      role: newUser.role || 'buyer',
+      status: newUser.status || 'active',
+      verified: Boolean(newUser.verified),
+      verificationType: newUser.verificationType || 'none',
+      verification_type: newUser.verificationType || 'none',
+      businessName: newUser.businessName || null,
+      business_name: newUser.businessName || null,
+      cacNumber: newUser.cacNumber || null,
+      cac_number: newUser.cacNumber || null,
+      bio: newUser.bio || null,
+      avatarUrl: newUser.avatarUrl || null,
+      avatar_url: newUser.avatarUrl || null,
+      storeBannerUrl: newUser.storeBannerUrl || null,
+      cover_url: newUser.storeBannerUrl || null,
+      bankName: newUser.bankName || null,
+      bank_name: newUser.bankName || null,
+      accountNumber: newUser.accountNumber || null,
+      account_number: newUser.accountNumber || null,
+      accountName: newUser.accountName || null,
+      account_name: newUser.accountName || null,
+      websiteUrl: newUser.websiteUrl || null,
+      website_url: newUser.websiteUrl || null,
+      instagramHandle: newUser.instagramHandle || null,
+      instagram_handle: newUser.instagramHandle || null,
+      twitterHandle: newUser.twitterHandle || null,
+      twitter_handle: newUser.twitterHandle || null,
+      whatsappNumber: newUser.whatsappNumber || null,
+      whatsapp_number: newUser.whatsappNumber || null,
+      emailNotifications: newUser.emailNotifications ?? true,
+      email_notifications: newUser.emailNotifications ?? true,
+      whatsappNotifications: newUser.whatsappNotifications ?? true,
+      whatsapp_notifications: newUser.whatsappNotifications ?? true,
+      hidePhonePublicly: newUser.hidePhonePublicly ?? false,
+      hide_phone_publicly: newUser.hidePhonePublicly ?? false,
+      hideLocationPublicly: newUser.hideLocationPublicly ?? false,
+      hide_location_publicly: newUser.hideLocationPublicly ?? false,
+      memberSince: newUser.memberSince || new Date().toISOString(),
+      member_since: newUser.memberSince || new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const response = await adminFetch('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const details = await response.text();
+      console.error('[AdminCreateUser] Failed:', details);
+      throw new Error('Failed to create user via admin API');
+    }
+
+    const result = await response.json();
+    const created = result?.user ? mapProfileToUser(result.user) : null;
+    if (!created) return null;
+
+    setAllUsers(prev => [created, ...prev]);
+    return created;
+  };
+
   const addUser = (newUser: UserProfile) => {
     setAllUsers(prev => [newUser, ...prev]);
   };
@@ -1701,6 +1813,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isAuthenticated: !!user,
     isAdmin,
     adminEmail,
+    adminAccessKey,
     updateAdminCredentials,
     systemConfig,
     updateSystemConfig,
@@ -1730,6 +1843,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     logout,
     listings,
     allUsers,
+    createUser,
     updateUser,
     addUser,
     deleteUser,
@@ -1807,9 +1921,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     syncDatabase,
     error
   }), [
-    user, isAdmin, adminEmail, systemConfig, siteSettings, promotionPlans, safeSpots,
+    user, isAdmin, adminEmail, adminAccessKey, systemConfig, siteSettings, promotionPlans, safeSpots,
     language, categories, subcategories, analytics, marketStats, login, signup, adminLogin, logout,
-    listings, allUsers, updateUser, addUser, deleteUser, savedListingIds, recentlyViewedIds, userInterests,
+    listings, allUsers, createUser, updateUser, addUser, deleteUser, savedListingIds, recentlyViewedIds, userInterests,
     addRecentlyViewed, toggleSaveListing, isSaved, filters, setFilters, resetFilters,
     activeCategory, setActiveCategory, compareListingIds, toggleCompareListing, isInCompare, clearCompare,
     createListing, updateListing, deleteListing, markAsSold, conversations, sendMessage,

@@ -77,6 +77,7 @@ const AdminDashboard: React.FC = () => {
     dispatchPromotionalEmailDigest,
     passwordRequests,
     processPasswordRequest,
+    createUser,
     addUser,
     deleteUser,
     updateUser,
@@ -430,6 +431,7 @@ const AdminDashboard: React.FC = () => {
         user={selectedUser}
         onClose={() => { setIsEditUserOpen(false); setSelectedUser(null); }}
         onSave={updateUser}
+        onCreate={createUser}
       />
 
       <AdminSettingsModal
@@ -602,7 +604,21 @@ const AdminDashboard: React.FC = () => {
                   <option value="true">Verified</option>
                   <option value="false">Unverified</option>
                 </select>
-                <button onClick={() => { setSelectedUser({} as UserProfile); setIsEditUserOpen(true); }} className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2">
+                <button onClick={() => {
+                  setSelectedUser({
+                    id: '',
+                    email: '',
+                    fullName: '',
+                    phoneNumber: '',
+                    avatarUrl: '',
+                    role: 'buyer',
+                    verified: false,
+                    memberSince: new Date().toISOString(),
+                    location: 'Ogbomoso, Oyo State',
+                    status: 'active',
+                  } as UserProfile);
+                  setIsEditUserOpen(true);
+                }} className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2">
                   <Plus className="w-4 h-4" />
                   <span>Add User</span>
                 </button>

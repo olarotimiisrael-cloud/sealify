@@ -9,7 +9,7 @@ interface AdminSettingsModalProps {
 }
 
 export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { user, updateUser, updateAdminCredentials, adminEmail } = useSealify();
+  const { user, updateUser, updateAdminCredentials, adminEmail, adminAccessKey } = useSealify();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +24,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
   const [coverUrl, setCoverUrl] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState(adminEmail);
   const [newAdminPass, setNewAdminPassword] = useState('');
+  const [newAdminAccessKey, setNewAdminAccessKey] = useState(adminAccessKey);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'security'>('profile');
 
@@ -40,6 +41,11 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
       setCoverUrl(user.storeBannerUrl || '');
     }
   }, [user]);
+
+  useEffect(() => {
+    setNewAdminEmail(adminEmail);
+    setNewAdminAccessKey(adminAccessKey);
+  }, [adminEmail, adminAccessKey]);
 
   if (!isOpen || !user) return null;
 
@@ -98,19 +104,19 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
 
   const handleUpdateCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAdminEmail.trim() || !newAdminPass.trim()) {
-      toast.error('All credential fields are required');
+    if (!newAdminEmail.trim() || !newAdminPass.trim() || !newAdminAccessKey.trim()) {
+      toast.error('Email, password, and access key are required');
       return;
     }
 
     setIsSaving(true);
     try {
-      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim());
+      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminAccessKey.trim());
       setIsSaving(false);
       toast.success('Admin credentials updated successfully!');
     } catch (err) {
       setIsSaving(false);
-      toast.error('Failed to update credentials');
+      toast.error(err instanceof Error ? err.message : 'Failed to update credentials');
     }
   };
 
@@ -350,7 +356,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
                 <span>SECURITY WARNING</span>
               </div>
               <p className="text-xs text-rose-200 leading-relaxed">
-                 Supabase Auth manages the administrator email and password. Updating them may invalidate the current session; no separate admin PIN is used.
+                 Supabase Auth manages the administrator email and password. The access key is checked separately for the admin terminal and must match the live login policy.
               </p>
             </div>
 
@@ -370,11 +376,23 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Access Password *</label>
                 <input
-                   type="password"
+                  type="password"
                   required
                   value={newAdminPass}
                   onChange={(e) => setNewAdminPassword(e.target.value)}
                   placeholder="Enter new master password"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono tracking-wider"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Access Key *</label>
+                <input
+                  type="password"
+                  required
+                  value={newAdminAccessKey}
+                  onChange={(e) => setNewAdminAccessKey(e.target.value)}
+                  placeholder="Enter admin access key"
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono tracking-wider"
                 />
               </div>
