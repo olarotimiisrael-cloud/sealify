@@ -6,9 +6,9 @@ import { useSealify } from '@/context/SealifyContext';
 import { adminFetch } from '@/lib/admin-api';
 
 const providerOptions = [
-  { value: 'sealify', label: 'Sealify' },
-  { value: 'gemini', label: 'Gemini' },
-  { value: 'openai', label: 'OpenAI' },
+  { value: 'sealify', label: 'Sealify', badge: 'Free & Unlimited' },
+  { value: 'gemini', label: 'Gemini', badge: 'API Key Required' },
+  { value: 'openai', label: 'OpenAI', badge: 'API Key Required' },
 ];
 
 const getModelOptions = (provider: string) => {
@@ -215,7 +215,10 @@ const AdminAiSettingsPage: React.FC = () => {
                           onClick={() => handleProviderChange(option.value as 'sealify' | 'gemini' | 'openai')}
                           className={`rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wide transition ${settings.provider === option.value ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800'}`}
                         >
-                          {option.label}
+                          <div className="flex flex-col items-center gap-1">
+                            <span>{option.label}</span>
+                            <span className="text-[8px] font-normal opacity-70">{option.badge}</span>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -293,20 +296,22 @@ const AdminAiSettingsPage: React.FC = () => {
                   </div>
                 )}
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div>
-                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Max Request Length</label>
-                    <input type="number" value={settings.maxRequestLength} onChange={(event) => setSettings((current) => ({ ...current, maxRequestLength: Number(event.target.value || 1600) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                {settings.provider !== 'sealify' && (
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Max Request Length</label>
+                      <input type="number" value={settings.maxRequestLength} onChange={(event) => setSettings((current) => ({ ...current, maxRequestLength: Number(event.target.value || 1600) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Per-user Rate Limit</label>
+                      <input type="number" value={settings.perUserRateLimit} onChange={(event) => setSettings((current) => ({ ...current, perUserRateLimit: Number(event.target.value || 10) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Daily App Limit</label>
+                      <input type="number" value={settings.dailyRequestLimit} onChange={(event) => setSettings((current) => ({ ...current, dailyRequestLimit: Number(event.target.value || 500) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Per-user Rate Limit</label>
-                    <input type="number" value={settings.perUserRateLimit} onChange={(event) => setSettings((current) => ({ ...current, perUserRateLimit: Number(event.target.value || 10) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Daily App Limit</label>
-                    <input type="number" value={settings.dailyRequestLimit} onChange={(event) => setSettings((current) => ({ ...current, dailyRequestLimit: Number(event.target.value || 500) }))} className="w-full rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
-                  </div>
-                </div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-2">
                   <button
