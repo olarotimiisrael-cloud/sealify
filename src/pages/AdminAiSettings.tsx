@@ -22,7 +22,7 @@ const getModelOptions = (provider: string) => {
 };
 
 type AiSettingsResponse = {
-  provider: 'gemini' | 'openai';
+  provider: 'sealify' | 'gemini' | 'openai';
   enabled: boolean;
   model: string;
   webSearchEnabled: boolean;
@@ -31,14 +31,15 @@ type AiSettingsResponse = {
   dailyRequestLimit: number;
   maskedApiKey: string;
   status: string;
+  baseUrl?: string;
   lastSuccessfulConnection?: string | null;
   lastError?: string | null;
 };
 
 const emptyConfig: AiSettingsResponse = {
-  provider: 'gemini',
-  enabled: false,
-  model: 'gemini-2.5-flash',
+  provider: 'sealify',
+  enabled: true,
+  model: 'sealify-mini',
   webSearchEnabled: true,
   maxRequestLength: 1600,
   perUserRateLimit: 10,
@@ -66,6 +67,7 @@ const AdminAiSettingsPage: React.FC = () => {
         if (!response.ok) throw new Error('Unable to load Copilot settings');
         const data: AiSettingsResponse = await response.json();
         setSettings(data);
+        setSealifyBaseUrl(data.baseUrl || 'http://localhost:11434');
         setApiKey('');
       } catch (error) {
         toast.error('Unable to load AI settings');

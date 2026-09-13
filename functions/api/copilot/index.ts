@@ -2,12 +2,14 @@ import { Hono } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
+import { getSql } from '../../_middleware/db';
+import { requireAuth } from '../../_middleware/auth';
 import type { AppContext } from '../../_middleware/types';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
-const MAX_MESSAGE_CHARS = 1600;
-const MAX_CONVERSATION_CHARS = 12000;
+const MAX_MESSAGE_CHARS = 2000;
+const MAX_CONVERSATION_CHARS = 15000;
 const RATE_LIMIT_BUCKETS = new Map<string, { count: number; windowStart: number }>();
 
 const copilotSchema = z.object({
@@ -18,6 +20,7 @@ const copilotSchema = z.object({
       content: z.string().min(1).max(8000),
     })
   ).max(12).default([]),
+  stream: z.boolean().default(false),
 });
 
 const getRateLimitKey = (c: any) => {
@@ -41,7 +44,6 @@ const enforceRateLimit = (c: any, provider?: SupportedAIProvider): boolean => {
   return true;
 };
 
-// AI Provider types
 type SupportedAIProvider = 'openai' | 'gemini' | 'sealify';
 
 interface AIProvider {
@@ -88,21 +90,63 @@ function needsWebSearch(input: string): boolean {
   return searchTriggers.some(trigger => input.toLowerCase().includes(trigger));
 }
 
+// Function definitions for AI to call
+const FUNCTIONS = [
+  {
+    name: 'search_listings',
+    description: 'Search for active listings on Sealify marketplace',
+    parameters: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+        category: { type: 'string', description: 'Category filter' },
+        maxPrice: { type: 'number', description: 'Maximum price in NGN' },
+        minPrice: { type: 'number', description: 'Minimum price in NGN' },
+        location: { type: 'string', description: 'Location filter' },
+        condition: { type: 'string', description: 'Condition filter' },
+        limit: { type: 'number', description: 'Number of results', default: 5 },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'get_categories',
+    description: 'Get all active categories with subcategories',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_user_context',
+    description: 'Get current user profile and activity context',
+    parameters: { type: 'object', properties: {} },
+  },
+  {
+    name: 'get_safe_meetup_spots',
+    description: 'Get verified safe meetup locations in Ogbomoso',
+    parameters: { type: 'object', properties: {} },
+  },
+];
+
 async function callOpenAI(
   messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
   model: string,
   apiKey: string,
   useWebSearch: boolean,
+  enableFunctions: boolean = true,
 ) {
   const body: Record<string, unknown> = {
     model,
     messages,
     temperature: 0.7,
-    max_tokens: 1200,
+    max_tokens: 1500,
   };
 
+  if (enableFunctions) {
+    body.tools = FUNCTIONS.map(f => ({ type: 'function', function: f }));
+    body.tool_choice = 'auto';
+  }
+
   if (useWebSearch) {
-    body.tools = [{ type: 'web_search_preview' }];
+    body.tools = [...(body.tools || []), { type: 'web_search_preview' }];
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -120,7 +164,9 @@ async function callOpenAI(
   }
 
   const payload = await response.json();
-  const content = payload.choices?.[0]?.message?.content || 'I could not generate a response.';
+  const choice = payload.choices?.[0];
+  const message = choice?.message;
+  const content = message?.content || 'I could not generate a response.';
 
   const citations = ((payload as any).citations || []).map((item: any) => ({
     title: item.title || item.url || 'Source',
@@ -132,6 +178,7 @@ async function callOpenAI(
     text: content,
     citations: citations.length ? citations : undefined,
     usedWebSearch: useWebSearch,
+    functionCall: message?.tool_calls?.[0]?.function,
     provider: 'openai' as const,
     model,
   };
@@ -152,7 +199,7 @@ async function callGemini(
     systemInstruction: { parts: [{ text: systemText }] },
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 1200,
+      maxOutputTokens: 1500,
     },
   };
 
@@ -223,16 +270,131 @@ async function callSealifyLocal(
   };
 }
 
+// Execute function calls
+async function executeFunctionCall(functionCall: any, env: Record<string, string | undefined>, userId?: string) {
+  const { name, arguments: args } = functionCall;
+  const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
+
+  try {
+    switch (name) {
+      case 'search_listings': {
+        const sql = getSql(env);
+        let whereClause = 'WHERE a.status = \'active\'';
+        const params: any[] = [];
+        let paramIndex = 1;
+
+        if (parsedArgs.query) {
+          whereClause += ` AND (a.title ILIKE $${paramIndex} OR a.description ILIKE $${paramIndex} OR a.category_id ILIKE $${paramIndex})`;
+          params.push(`%${parsedArgs.query}%`);
+          paramIndex++;
+        }
+        if (parsedArgs.category) {
+          whereClause += ` AND a.category_id = $${paramIndex}`;
+          params.push(parsedArgs.category);
+          paramIndex++;
+        }
+        if (parsedArgs.minPrice) {
+          whereClause += ` AND a.price >= $${paramIndex}`;
+          params.push(parsedArgs.minPrice);
+          paramIndex++;
+        }
+        if (parsedArgs.maxPrice) {
+          whereClause += ` AND a.price <= $${paramIndex}`;
+          params.push(parsedArgs.maxPrice);
+          paramIndex++;
+        }
+        if (parsedArgs.location) {
+          whereClause += ` AND a.location ILIKE $${paramIndex}`;
+          params.push(`%${parsedArgs.location}%`);
+          paramIndex++;
+        }
+        if (parsedArgs.condition) {
+          whereClause += ` AND a.condition = $${paramIndex}`;
+          params.push(parsedArgs.condition);
+          paramIndex++;
+        }
+
+        const limit = Math.min(parsedArgs.limit || 5, 10);
+        const listings = await sql`
+          SELECT a.id, a.title, a.description, a.price, a.category_id, a.condition, a.location, a.images, a.created_at,
+                 p.full_name as seller_name, p.verified as seller_verified
+          FROM ads a
+          LEFT JOIN profiles p ON a.seller_id = p.id
+          ${sql(whereClause)}
+          ORDER BY a.created_at DESC
+          LIMIT ${limit}
+        `;
+        return { success: true, data: listings };
+      }
+      case 'get_categories': {
+        const sql = getSql(env);
+        const categories = await sql`SELECT * FROM categories WHERE is_active = true ORDER BY sort_order`;
+        const subcategories = await sql`SELECT * FROM subcategories WHERE is_active = true ORDER BY sort_order`;
+        const result = categories.map((cat: any) => ({
+          ...cat,
+          subcategories: subcategories.filter((sub: any) => sub.category_id === cat.id),
+        }));
+        return { success: true, data: result };
+      }
+      case 'get_user_context': {
+        if (!userId) return { success: false, error: 'User not authenticated' };
+        const sql = getSql(env);
+        const [profile, listingsCount, savedCount, unreadMessages, notifications] = await Promise.all([
+          sql`SELECT * FROM profiles WHERE id = ${userId}`,
+          sql`SELECT COUNT(*) as count FROM ads WHERE seller_id = ${userId} AND status = 'active'`,
+          sql`SELECT COUNT(*) as count FROM favorites WHERE user_id = ${userId}`,
+          sql`SELECT COUNT(*) as count FROM messages WHERE receiver_id = ${userId} AND read = false`,
+          sql`SELECT COUNT(*) as count FROM notifications WHERE user_id = ${userId} AND read = false`,
+        ]);
+        return {
+          success: true,
+          data: {
+            profile: profile[0] || null,
+            listingCount: parseInt(listingsCount[0]?.count || '0'),
+            savedListingCount: parseInt(savedCount[0]?.count || '0'),
+            unreadMessageCount: parseInt(unreadMessages[0]?.count || '0'),
+            notificationCount: parseInt(notifications[0]?.count || '0'),
+          },
+        };
+      }
+      case 'get_safe_meetup_spots': {
+        const sql = getSql(env);
+        const spots = await sql`SELECT * FROM safe_meetup_spots WHERE is_active = true ORDER BY sort_order`;
+        return { success: true, data: spots };
+      }
+      default:
+        return { success: false, error: `Unknown function: ${name}` };
+    }
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : 'Function execution failed' };
+  }
+}
+
 function buildSealifySystemPrompt(userContext?: any): string {
   const basePrompt = `You are Sealify Copilot, an AI assistant for Sealify Nigeria — a trusted marketplace for Ogbomoso and surrounding areas. You help users with:
-- Finding products and services on Sealify
-- Pricing guidance for listings
-- Writing effective ad descriptions
-- Safety tips for transactions
-- Platform features and how to use them
-- General questions about buying/selling in Ogbomoso
 
-Be helpful, concise, and friendly. Reference Sealify features when relevant. If you don't know something specific to Sealify, say so honestly.`;
+**Marketplace Assistance:**
+- Finding products and services on Sealify (use search_listings function)
+- Pricing guidance for listings based on category and condition
+- Writing effective, compelling ad descriptions
+- Safety tips for in-person transactions
+- Platform features and how to use them
+- Category and subcategory navigation
+
+**General Assistance:**
+- General knowledge questions
+- Web-grounded research when needed (prices, trends, news)
+- Technology explanations
+- Nigerian/Ogbomoso local context
+
+**Guidelines:**
+- Be helpful, concise, and friendly
+- Always reference Sealify features when relevant
+- Use function calls to get real-time data from the marketplace
+- If you don't know something specific to Sealify, say so honestly
+- Prioritize user safety in transaction advice
+- Format prices in NGN (₦)
+- Mention safe meetup spots for in-person deals`;
 
   if (!userContext) {
     return basePrompt;
@@ -240,7 +402,7 @@ Be helpful, concise, and friendly. Reference Sealify features when relevant. If 
 
   return `${basePrompt}
 
-Current user context:
+**Current User Context:**
 - Authenticated: ${userContext.authenticated}
 - Name: ${userContext.fullName}
 - Role: ${userContext.role}
@@ -260,6 +422,7 @@ copilotRoutes.get('/health', (c) => {
     provider,
     configured: Boolean(provider === 'sealify' || (c.env.AI_PROVIDER && (c.env.OPENAI_API_KEY || c.env.GEMINI_API_KEY))),
     webSearchEnabled: c.env.AI_WEB_SEARCH_ENABLED !== 'false',
+    functionsEnabled: true,
   });
 });
 
@@ -278,11 +441,12 @@ copilotRoutes.post('/', async (c) => {
     const body = await c.req.json();
     const parsed = copilotSchema.safeParse(body);
     if (!parsed.success) {
-      return c.json({ message: 'Sealify Copilot is temporarily unavailable. Please try again later.', citations: [], provider: 'none' }, 400);
+      return c.json({ message: 'Invalid request format.', citations: [], provider: 'none' }, 400);
     }
 
     const authHeader = c.req.header('authorization');
     let userContext: any = undefined;
+    let userId: string | undefined;
 
     if (authHeader?.startsWith('Bearer ')) {
       try {
@@ -290,6 +454,7 @@ copilotRoutes.post('/', async (c) => {
         const supabase = createClient(c.env.SUPABASE_URL || '', c.env.SUPABASE_ANON_KEY || '');
         const { data: { user }, error } = await supabase.auth.getUser(token);
         if (!error && user) {
+          userId = user.id;
           userContext = {
             authenticated: true,
             userId: user.id,
@@ -307,10 +472,38 @@ copilotRoutes.post('/', async (c) => {
       }
     }
 
-    const { message, conversation } = parsed.data;
+    // Fetch user context if authenticated
+    if (userId) {
+      try {
+        const sql = getSql(c.env);
+        const [profile, listingsCount, savedCount, unreadMessages, notifications] = await Promise.all([
+          sql`SELECT * FROM profiles WHERE id = ${userId}`,
+          sql`SELECT COUNT(*) as count FROM ads WHERE seller_id = ${userId} AND status = 'active'`,
+          sql`SELECT COUNT(*) as count FROM favorites WHERE user_id = ${userId}`,
+          sql`SELECT COUNT(*) as count FROM messages WHERE receiver_id = ${userId} AND read = false`,
+          sql`SELECT COUNT(*) as count FROM notifications WHERE user_id = ${userId} AND read = false`,
+        ]);
+        if (profile[0]) {
+          userContext = {
+            ...userContext,
+            fullName: profile[0].full_name,
+            role: profile[0].role,
+            verified: profile[0].verified,
+            listingCount: parseInt(listingsCount[0]?.count || '0'),
+            savedListingCount: parseInt(savedCount[0]?.count || '0'),
+            unreadMessageCount: parseInt(unreadMessages[0]?.count || '0'),
+            notificationCount: parseInt(notifications[0]?.count || '0'),
+          };
+        }
+      } catch {
+        // Ignore context fetch errors
+      }
+    }
+
+    const { message, conversation, stream } = parsed.data;
     const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
     if (conversationUsed > MAX_CONVERSATION_CHARS) {
-      return c.json({ message: 'Sealify Copilot is temporarily unavailable. Please try again later.', citations: [], provider: 'none' }, 400);
+      return c.json({ message: 'Conversation too long. Please start a new chat.', citations: [], provider: 'none' }, 400);
     }
 
     const messages = [
@@ -320,32 +513,70 @@ copilotRoutes.post('/', async (c) => {
     ];
 
     const useWebSearch = needsWebSearch(message) && provider.webSearchEnabled;
+    const enableFunctions = provider.provider === 'openai';
+
+    async function processWithProvider(prov: AIProvider) {
+      let response;
+      if (prov.provider === 'sealify') {
+        response = await callSealifyLocal(messages, prov.model, prov.baseUrl || 'http://localhost:11434');
+      } else if (prov.provider === 'openai') {
+        response = await callOpenAI(messages, prov.model, prov.apiKey || '', useWebSearch, enableFunctions);
+      } else {
+        response = await callGemini(messages, prov.model, prov.apiKey || '', useWebSearch);
+      }
+
+      // Handle function calls
+      if (response.functionCall) {
+        const functionResult = await executeFunctionCall(response.functionCall, c.env as Record<string, string | undefined>, userId);
+        
+        // Add function result to conversation and get final response
+        const functionMessage = {
+          role: 'function' as const,
+          name: response.functionCall.name,
+          content: JSON.stringify(functionResult),
+        };
+        
+        const followUpMessages = [...messages, { role: 'assistant' as const, content: response.text || '', tool_calls: [{ type: 'function', function: response.functionCall }] }, functionMessage];
+        
+        let finalResponse;
+        if (prov.provider === 'sealify') {
+          finalResponse = await callSealifyLocal(followUpMessages, prov.model, prov.baseUrl || 'http://localhost:11434');
+        } else if (prov.provider === 'openai') {
+          finalResponse = await callOpenAI(followUpMessages, prov.model, prov.apiKey || '', useWebSearch, false);
+        } else {
+          finalResponse = await callGemini(followUpMessages, prov.model, prov.apiKey || '', useWebSearch);
+        }
+        
+        return {
+          ...finalResponse,
+          functionCalled: response.functionCall.name,
+          functionResult: functionResult.success ? functionResult.data : undefined,
+        };
+      }
+
+      return response;
+    }
 
     try {
-      let response;
-      if (provider.provider === 'sealify') {
-        response = await callSealifyLocal(messages, provider.model, provider.baseUrl || 'http://localhost:11434');
-      } else if (provider.provider === 'openai') {
-        response = await callOpenAI(messages, provider.model, provider.apiKey || '', useWebSearch);
-      } else {
-        response = await callGemini(messages, provider.model, provider.apiKey || '', useWebSearch);
-      }
+      const response = await processWithProvider(provider);
 
       return c.json({
         message: response.text,
         citations: response.citations || [],
         usedWebSearch: !!response.usedWebSearch,
+        functionCalled: response.functionCalled,
+        functionResult: response.functionResult,
         provider: response.provider,
         model: response.model,
       });
     } catch (error) {
       console.error('Copilot request failed', error);
-      const message = error instanceof Error ? error.message : 'AI request failed';
+      const errorMessage = error instanceof Error ? error.message : 'AI request failed';
 
       if (provider.fallbackEnabled) {
         const fallback = getActiveProvider({
           ...c.env,
-          AI_PROVIDER: provider.provider === 'openai' ? 'gemini' : 'openai',
+          AI_PROVIDER: provider.provider === 'openai' ? 'gemini' : provider.provider === 'gemini' ? 'openai' : 'sealify',
         } as Record<string, string | undefined>);
 
         if (fallback && fallback.provider !== provider.provider) {
@@ -360,7 +591,7 @@ copilotRoutes.post('/', async (c) => {
             if (fallback.provider === 'sealify') {
               fallbackResponse = await callSealifyLocal(fallbackMessages, fallback.model, fallback.baseUrl || 'http://localhost:11434');
             } else if (fallback.provider === 'openai') {
-              fallbackResponse = await callOpenAI(fallbackMessages, fallback.model, fallback.apiKey || '', useWebSearch);
+              fallbackResponse = await callOpenAI(fallbackMessages, fallback.model, fallback.apiKey || '', useWebSearch, enableFunctions);
             } else {
               fallbackResponse = await callGemini(fallbackMessages, fallback.model, fallback.apiKey || '', useWebSearch);
             }
@@ -370,6 +601,7 @@ copilotRoutes.post('/', async (c) => {
               usedWebSearch: !!fallbackResponse.usedWebSearch,
               provider: fallbackResponse.provider,
               model: fallbackResponse.model,
+              fallback: true,
             });
           } catch {
             return c.json({ message: 'Sealify Copilot is temporarily unavailable. Please try again.', citations: [], provider: 'none' }, 503);
