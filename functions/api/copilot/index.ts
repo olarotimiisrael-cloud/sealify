@@ -24,7 +24,9 @@ const getRateLimitKey = (c: any) => {
   return c.req.header('x-forwarded-for') || c.req.header('x-real-ip') || 'local-user';
 };
 
-const enforceRateLimit = (c: any): boolean => {
+const enforceRateLimit = (c: any, provider?: SupportedAIProvider): boolean => {
+  if (provider === 'sealify') return true;
+  
   const key = getRateLimitKey(c);
   const now = Date.now();
   const bucket = RATE_LIMIT_BUCKETS.get(key);
@@ -263,7 +265,13 @@ copilotRoutes.get('/health', (c) => {
 
 copilotRoutes.post('/', async (c) => {
   try {
-    if (!enforceRateLimit(c)) {
+    const provider = getActiveProvider(c.env as Record<string, string | undefined>);
+
+    if (!provider) {
+      return c.json({ message: 'Sealify Copilot is not configured yet. Add the required AI provider credentials in the server environment.', citations: [], provider: 'none' }, 503);
+    }
+
+    if (!enforceRateLimit(c, provider.provider)) {
       return c.json({ message: 'Sealify Copilot is temporarily unavailable. Please try again later.', citations: [], provider: 'none' }, 429);
     }
 
@@ -303,12 +311,6 @@ copilotRoutes.post('/', async (c) => {
     const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
     if (conversationUsed > MAX_CONVERSATION_CHARS) {
       return c.json({ message: 'Sealify Copilot is temporarily unavailable. Please try again later.', citations: [], provider: 'none' }, 400);
-    }
-
-    const provider = getActiveProvider(c.env as Record<string, string | undefined>);
-
-    if (!provider) {
-      return c.json({ message: 'Sealify Copilot is not configured yet. Add the required AI provider credentials in the server environment.', citations: [], provider: 'none' }, 503);
     }
 
     const messages = [

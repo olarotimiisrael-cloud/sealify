@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { askSealifyCopilot } from '../lib/ai/assistant';
+import { getActiveProvider, type SupportedAIProvider } from '../lib/ai/providers';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
@@ -23,7 +24,9 @@ const getRateLimitKey = (c: any) => {
   return c.req.header('CF-Connecting-IP') || c.req.header('x-real-ip') || c.req.header('x-forwarded-for') || 'local-user';
 };
 
-const enforceRateLimit = (c: any) => {
+const enforceRateLimit = (c: any, provider?: SupportedAIProvider) => {
+  if (provider === 'sealify') return true;
+  
   const key = getRateLimitKey(c);
   const now = Date.now();
   const bucket = RATE_LIMIT_BUCKETS.get(key);
@@ -75,7 +78,7 @@ copilotRoutes.get('/health', (c) => {
   return c.json({
     ok: true,
     provider,
-    configured: Boolean(env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY)),
+    configured: Boolean(provider === 'sealify' || (env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY))),
     webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== 'false',
   });
 });
@@ -84,7 +87,17 @@ copilotRoutes.post('/', async (c) => {
   try {
     const env = c.env as any;
 
-    if (!enforceRateLimit(c)) {
+    const provider = getActiveProvider(env);
+
+    if (!provider) {
+      return c.json({
+        message: 'Sealify Copilot is not configured yet. Add the required AI provider credentials in the server environment.',
+        citations: [],
+        provider: 'none',
+      }, 503);
+    }
+
+    if (!enforceRateLimit(c, provider.provider)) {
       return c.json({
         message: 'Sealify Copilot is temporarily unavailable. Please try again later.',
         citations: [],

@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { askSealifyCopilot } from '../../src/lib/ai/assistant.js';
+import { getActiveProvider, type SupportedAIProvider } from '../../src/lib/ai/providers.js';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
@@ -23,7 +24,9 @@ const getRateLimitKey = (req: Request) => {
   return req.ip || req.headers['x-real-ip'] as string || req.headers['x-forwarded-for'] as string || 'local-user';
 };
 
-const enforceRateLimit = (req: Request): boolean => {
+const enforceRateLimit = (req: Request, provider?: SupportedAIProvider): boolean => {
+  if (provider === 'sealify') return true;
+  
   const key = getRateLimitKey(req);
   const now = Date.now();
   const bucket = RATE_LIMIT_BUCKETS.get(key);
@@ -45,14 +48,21 @@ copilotRouter.get('/health', (req: Request, res: Response) => {
   res.json({
     ok: true,
     provider,
-    configured: Boolean(process.env.AI_PROVIDER && (process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY)),
+    configured: Boolean(provider === 'sealify' || (process.env.AI_PROVIDER && (process.env.OPENAI_API_KEY || process.env.GEMINI_API_KEY))),
     webSearchEnabled: process.env.AI_WEB_SEARCH_ENABLED !== 'false',
   });
 });
 
 copilotRouter.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!enforceRateLimit(req)) {
+    const provider = getActiveProvider(process.env as Record<string, string | undefined>);
+
+    if (!provider) {
+      res.status(503).json({ message: 'Sealify Copilot is not configured yet. Add the required AI provider credentials in the server environment.', citations: [], provider: 'none' });
+      return;
+    }
+
+    if (!enforceRateLimit(req, provider.provider)) {
       res.status(429).json({ message: 'Sealify Copilot is temporarily unavailable. Please try again later.', citations: [], provider: 'none' });
       return;
     }
