@@ -6,6 +6,7 @@ import { useSealify } from '@/context/SealifyContext';
 import { adminFetch } from '@/lib/admin-api';
 
 const providerOptions = [
+  { value: 'sealify', label: 'Sealify' },
   { value: 'gemini', label: 'Gemini' },
   { value: 'openai', label: 'OpenAI' },
 ];
@@ -14,7 +15,10 @@ const getModelOptions = (provider: string) => {
   if (provider === 'openai') {
     return ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1-mini'];
   }
-  return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  if (provider === 'gemini') {
+    return ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  }
+  return ['sealify-mini', 'sealify-pro', 'sealify-vision'];
 };
 
 type AiSettingsResponse = {
@@ -48,6 +52,7 @@ const AdminAiSettingsPage: React.FC = () => {
   const { isAdmin } = useSealify();
   const [settings, setSettings] = useState<AiSettingsResponse>(emptyConfig);
   const [apiKey, setApiKey] = useState('');
+  const [sealifyBaseUrl, setSealifyBaseUrl] = useState('http://localhost:11434');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,11 +92,11 @@ const AdminAiSettingsPage: React.FC = () => {
     );
   }
 
-  const handleProviderChange = (provider: 'gemini' | 'openai') => {
+  const handleProviderChange = (provider: 'sealify' | 'gemini' | 'openai') => {
     setSettings((current) => ({
       ...current,
       provider,
-      model: provider === 'openai' ? 'gpt-4o-mini' : 'gemini-2.5-flash',
+      model: provider === 'openai' ? 'gpt-4o-mini' : provider === 'gemini' ? 'gemini-2.5-flash' : 'sealify-mini',
     }));
   };
 
@@ -103,6 +108,7 @@ const AdminAiSettingsPage: React.FC = () => {
         enabled: settings.enabled,
         model: settings.model,
         apiKey: apiKey.trim() || undefined,
+        baseUrl: settings.provider === 'sealify' ? sealifyBaseUrl.trim() || 'http://localhost:11434' : undefined,
         webSearchEnabled: settings.webSearchEnabled,
         maxRequestLength: Number(settings.maxRequestLength),
         perUserRateLimit: Number(settings.perUserRateLimit),
@@ -132,6 +138,7 @@ const AdminAiSettingsPage: React.FC = () => {
         maskedApiKey: data.maskedApiKey || current.maskedApiKey,
         status: data.status || current.status,
       }));
+      if (settings.provider === 'sealify') setSealifyBaseUrl((sealifyBaseUrl || 'http://localhost:11434').trim());
       setApiKey('');
       toast.success('AI provider settings saved securely.');
     } catch (error) {
@@ -205,7 +212,7 @@ const AdminAiSettingsPage: React.FC = () => {
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => handleProviderChange(option.value as 'gemini' | 'openai')}
+                          onClick={() => handleProviderChange(option.value as 'sealify' | 'gemini' | 'openai')}
                           className={`rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wide transition ${settings.provider === option.value ? 'bg-emerald-500 text-slate-950' : 'text-slate-400 hover:bg-slate-800'}`}
                         >
                           {option.label}
@@ -242,23 +249,40 @@ const AdminAiSettingsPage: React.FC = () => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">API Credential</label>
-                  <div className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2">
-                    <Lock className="h-4 w-4 text-slate-400" />
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      value={apiKey || settings.maskedApiKey}
-                      onChange={(event) => setApiKey(event.target.value)}
-                      placeholder={settings.maskedApiKey ? 'Enter replacement credential to update' : 'Paste server-side AI credential'}
-                      className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
-                    />
-                    <button type="button" onClick={() => setShowApiKey((current) => !current)} className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:text-white">
-                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
+                {settings.provider === 'sealify' ? (
+                  <div>
+                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Sealify Model Endpoint</label>
+                    <div className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2">
+                      <Lock className="h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={sealifyBaseUrl}
+                        onChange={(event) => setSealifyBaseUrl(event.target.value)}
+                        placeholder="http://localhost:11434"
+                        className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                      />
+                    </div>
+                    <p className="mt-2 text-[10px] text-emerald-300">This mode runs the native Sealify model locally or on your own no-cost self-hosted endpoint.</p>
                   </div>
-                  <p className="mt-2 text-[10px] text-slate-500">Stored credentials are never exposed to the browser after saving. Existing credentials are shown masked only.</p>
-                </div>
+                ) : (
+                  <div>
+                    <label className="mb-2 block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">API Credential</label>
+                    <div className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-950 px-3 py-2">
+                      <Lock className="h-4 w-4 text-slate-400" />
+                      <input
+                        type={showApiKey ? 'text' : 'password'}
+                        value={apiKey || settings.maskedApiKey}
+                        onChange={(event) => setApiKey(event.target.value)}
+                        placeholder={settings.maskedApiKey ? 'Enter replacement credential to update' : 'Paste server-side AI credential'}
+                        className="flex-1 bg-transparent text-sm text-white outline-none placeholder:text-slate-500"
+                      />
+                      <button type="button" onClick={() => setShowApiKey((current) => !current)} className="rounded-lg border border-slate-700 p-2 text-slate-400 hover:text-white">
+                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <p className="mt-2 text-[10px] text-slate-500">Stored credentials are never exposed to the browser after saving. Existing credentials are shown masked only.</p>
+                  </div>
+                )}
 
                 <div className="grid gap-4 md:grid-cols-3">
                   <div>

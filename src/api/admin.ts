@@ -532,13 +532,13 @@ adminRoutes.put("/system-config", async (c) => {
 // Site settings
 const normalizeAiConfigResponse = (env: any) => {
   const config = resolveAiConfig(env as Record<string, string | undefined>);
-  const safeProvider = (config.provider || "gemini") as SupportedAIProvider;
-  const status = config.enabled && config.apiKey ? "configured" : "disabled";
+  const safeProvider = (config.provider || "sealify") as SupportedAIProvider;
+  const status = config.enabled && (safeProvider === "sealify" || config.apiKey) ? "configured" : "disabled";
 
   return {
     provider: safeProvider,
-    enabled: config.enabled !== false && Boolean(config.apiKey),
-    model: config.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash"),
+    enabled: config.enabled !== false && (safeProvider === "sealify" || Boolean(config.apiKey)),
+    model: config.model || (safeProvider === "openai" ? "gpt-4o-mini" : safeProvider === "gemini" ? "gemini-2.5-flash" : "sealify-mini"),
     webSearchEnabled: config.webSearchEnabled !== false,
     maxRequestLength: Number(config.maxRequestLength || 1600),
     perUserRateLimit: Number(config.perUserRateLimit || 10),
@@ -559,9 +559,9 @@ adminRoutes.put("/ai-settings", async (c) => {
   const env = c.env as any;
   const body = await c.req.json();
   const current = resolveAiConfig(env as Record<string, string | undefined>);
-  const provider = (body.provider || current.provider || "gemini").toLowerCase();
-  const safeProvider = provider === "openai" || provider === "gemini" ? provider : "gemini";
-  const nextModel = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash")).trim();
+  const provider = (body.provider || current.provider || "sealify").toLowerCase();
+  const safeProvider = provider === "openai" || provider === "gemini" || provider === "sealify" ? provider : "sealify";
+  const nextModel = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : safeProvider === "gemini" ? "gemini-2.5-flash" : "sealify-mini")).trim();
 
   if (!isModelSupported(safeProvider, nextModel)) {
     throw new HTTPException(400, { message: "Unsupported AI model for the selected provider" });
@@ -570,9 +570,10 @@ adminRoutes.put("/ai-settings", async (c) => {
   const rawApiKey = body.apiKey === undefined ? current.apiKey || "" : String(body.apiKey).trim();
   const nextConfig = {
     provider: safeProvider,
-    enabled: body.enabled ?? current.enabled ?? Boolean(rawApiKey),
+    enabled: body.enabled ?? current.enabled ?? (safeProvider === "sealify" ? true : Boolean(rawApiKey)),
     model: nextModel,
     apiKey: rawApiKey,
+    baseUrl: body.baseUrl || current.baseUrl || (safeProvider === "sealify" ? "http://localhost:11434" : undefined),
     webSearchEnabled: body.webSearchEnabled ?? current.webSearchEnabled ?? true,
     maxRequestLength: Number(body.maxRequestLength ?? current.maxRequestLength ?? 1600),
     perUserRateLimit: Number(body.perUserRateLimit ?? current.perUserRateLimit ?? 10),
@@ -591,12 +592,13 @@ adminRoutes.post("/ai-settings/test", async (c) => {
   const env = c.env as any;
   const body = await c.req.json();
   const current = resolveAiConfig(env as Record<string, string | undefined>);
-  const provider = ((body.provider || current.provider || "gemini") as SupportedAIProvider).toLowerCase();
-  const safeProvider = provider === "openai" || provider === "gemini" ? provider : "gemini";
-  const model = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : "gemini-2.5-flash")).trim();
+  const provider = ((body.provider || current.provider || "sealify") as SupportedAIProvider).toLowerCase();
+  const safeProvider = provider === "openai" || provider === "gemini" || provider === "sealify" ? provider : "sealify";
+  const model = (body.model || current.model || (safeProvider === "openai" ? "gpt-4o-mini" : safeProvider === "gemini" ? "gemini-2.5-flash" : "sealify-mini")).trim();
   const apiKey = body.apiKey === undefined ? (current.apiKey || "") : String(body.apiKey).trim();
+  const baseUrl = body.baseUrl || current.baseUrl || "http://localhost:11434";
 
-  if (!apiKey) {
+  if (safeProvider !== "sealify" && !apiKey) {
     throw new HTTPException(400, { message: "AI provider credential is required for a connection test." });
   }
 
@@ -605,7 +607,18 @@ adminRoutes.post("/ai-settings/test", async (c) => {
   }
 
   try {
-    if (safeProvider === "openai") {
+    if (safeProvider === "sealify") {
+      const url = String(baseUrl).replace(/\/$/, "") + "/api/chat";
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: "Connection test for Sealify Copilot." }], stream: false }),
+      });
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({ error: { message: "Sealify model endpoint is unreachable." } }));
+        throw new HTTPException(res.status as any, { message: payload?.error?.message || "Sealify model endpoint is unreachable." });
+      }
+    } else if (safeProvider === "openai") {
       const res = await fetch("https://api.openai.com/v1/models", {
         headers: { Authorization: `Bearer ${apiKey}` },
       });

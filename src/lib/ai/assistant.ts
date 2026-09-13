@@ -129,6 +129,40 @@ async function callGemini(
   };
 }
 
+async function callLocalModel(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  model: string,
+  baseUrl: string,
+): Promise<CopilotResponse> {
+  const url = `${baseUrl.replace(/\/$/, '')}/api/chat`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: false,
+      options: { temperature: 0.7 },
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await safeJson<{ error?: { message?: string } }>(response);
+    throw new Error(payload?.error?.message || 'Local model request failed');
+  }
+
+  const payload = await safeJson<{ message?: { content?: string }; done_reason?: string }>(response);
+  const content = payload.message?.content || 'I could not generate a response.';
+
+  return {
+    text: content,
+    citations: [],
+    usedWebSearch: false,
+    provider: 'local',
+    model,
+  };
+}
+
 export async function askSealifyCopilot(
   input: string,
   conversation: Array<{ role: 'user' | 'assistant'; content: string }>,
@@ -150,6 +184,10 @@ export async function askSealifyCopilot(
   const useWebSearch = needsWebSearch(input) && provider.webSearchEnabled;
 
   try {
+    if (provider.provider === 'sealify') {
+      return await callLocalModel(messages, provider.model, provider.baseUrl || 'http://localhost:11434');
+    }
+
     if (provider.provider === 'openai') {
       if (!provider.apiKey) throw new Error('OpenAI API key missing');
       return await callOpenAI(messages, provider.model, provider.apiKey, useWebSearch);
@@ -162,10 +200,10 @@ export async function askSealifyCopilot(
     if (provider.fallbackEnabled) {
       const fallback = getActiveProvider({
         ...env,
-        AI_PROVIDER: provider.provider === 'openai' ? 'gemini' : 'openai',
+        AI_PROVIDER: provider.provider === 'openai' ? 'gemini' : provider.provider === 'gemini' ? 'openai' : 'openai',
       });
 
-      if (fallback && fallback.apiKey && fallback.provider !== provider.provider) {
+      if (fallback && fallback.provider !== provider.provider) {
         const fallbackMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
           { role: 'system', content: buildSealifySystemPrompt(userContext) },
           ...conversation.map((item) => ({ role: item.role, content: item.content })),
@@ -173,9 +211,14 @@ export async function askSealifyCopilot(
         ];
 
         try {
+          if (fallback.provider === 'sealify') {
+            return await callLocalModel(fallbackMessages, fallback.model, fallback.baseUrl || 'http://localhost:11434');
+          }
           if (fallback.provider === 'openai') {
+            if (!fallback.apiKey) throw new Error('OpenAI API key missing');
             return await callOpenAI(fallbackMessages, fallback.model, fallback.apiKey, useWebSearch);
           }
+          if (!fallback.apiKey) throw new Error('Gemini API key missing');
           return await callGemini(fallbackMessages, fallback.model, fallback.apiKey, useWebSearch);
         } catch {
           throw new Error('Sealify Copilot is temporarily unavailable. Please try again.');

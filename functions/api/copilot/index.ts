@@ -40,19 +40,30 @@ const enforceRateLimit = (c: any): boolean => {
 };
 
 // AI Provider types
-type SupportedAIProvider = 'openai' | 'gemini';
+type SupportedAIProvider = 'openai' | 'gemini' | 'sealify';
 
 interface AIProvider {
   provider: SupportedAIProvider;
-  apiKey: string;
+  apiKey?: string;
   model: string;
+  baseUrl?: string;
   webSearchEnabled: boolean;
   fallbackEnabled: boolean;
 }
 
 function getActiveProvider(env: Record<string, string | undefined>): AIProvider | null {
-  const providerName = env.AI_PROVIDER as SupportedAIProvider;
-  if (!providerName) return null;
+  const rawProviderName = (env.AI_PROVIDER || 'sealify').toLowerCase();
+  const providerName = rawProviderName === 'local' ? 'sealify' : rawProviderName === 'openai' || rawProviderName === 'gemini' || rawProviderName === 'sealify' ? rawProviderName : 'sealify';
+
+  if (providerName === 'sealify') {
+    return {
+      provider: 'sealify',
+      model: env.SEALIFY_MODEL || 'sealify-mini',
+      baseUrl: env.SEALIFY_MODEL_BASE_URL || env.AI_LOCAL_BASE_URL || 'http://localhost:11434',
+      webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== 'false',
+      fallbackEnabled: env.AI_FALLBACK_ENABLED !== 'false',
+    };
+  }
 
   const apiKey = providerName === 'openai' ? env.OPENAI_API_KEY : env.GEMINI_API_KEY;
   if (!apiKey) return null;
@@ -176,6 +187,40 @@ async function callGemini(
   };
 }
 
+async function callSealifyLocal(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  model: string,
+  baseUrl: string,
+) {
+  const url = `${baseUrl.replace(/\/$/, '')}/api/chat`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: false,
+      options: { temperature: 0.7 },
+    }),
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({ error: { message: 'Sealify model request failed' } }));
+    throw new Error(payload?.error?.message || 'Sealify model request failed');
+  }
+
+  const payload = await response.json();
+  const content = payload.message?.content || 'I could not generate a response.';
+
+  return {
+    text: content,
+    citations: [],
+    usedWebSearch: false,
+    provider: 'sealify' as const,
+    model,
+  };
+}
+
 function buildSealifySystemPrompt(userContext?: any): string {
   const basePrompt = `You are Sealify Copilot, an AI assistant for Sealify Nigeria — a trusted marketplace for Ogbomoso and surrounding areas. You help users with:
 - Finding products and services on Sealify
@@ -211,7 +256,7 @@ copilotRoutes.get('/health', (c) => {
   return c.json({
     ok: true,
     provider,
-    configured: Boolean(c.env.AI_PROVIDER && (c.env.OPENAI_API_KEY || c.env.GEMINI_API_KEY)),
+    configured: Boolean(provider === 'sealify' || (c.env.AI_PROVIDER && (c.env.OPENAI_API_KEY || c.env.GEMINI_API_KEY))),
     webSearchEnabled: c.env.AI_WEB_SEARCH_ENABLED !== 'false',
   });
 });
@@ -276,10 +321,12 @@ copilotRoutes.post('/', async (c) => {
 
     try {
       let response;
-      if (provider.provider === 'openai') {
-        response = await callOpenAI(messages, provider.model, provider.apiKey, useWebSearch);
+      if (provider.provider === 'sealify') {
+        response = await callSealifyLocal(messages, provider.model, provider.baseUrl || 'http://localhost:11434');
+      } else if (provider.provider === 'openai') {
+        response = await callOpenAI(messages, provider.model, provider.apiKey || '', useWebSearch);
       } else {
-        response = await callGemini(messages, provider.model, provider.apiKey, useWebSearch);
+        response = await callGemini(messages, provider.model, provider.apiKey || '', useWebSearch);
       }
 
       return c.json({
@@ -299,7 +346,7 @@ copilotRoutes.post('/', async (c) => {
           AI_PROVIDER: provider.provider === 'openai' ? 'gemini' : 'openai',
         } as Record<string, string | undefined>);
 
-        if (fallback && fallback.apiKey && fallback.provider !== provider.provider) {
+        if (fallback && fallback.provider !== provider.provider) {
           const fallbackMessages = [
             { role: 'system' as const, content: buildSealifySystemPrompt(userContext) },
             ...conversation.map((item) => ({ role: item.role, content: item.content })),
@@ -308,10 +355,12 @@ copilotRoutes.post('/', async (c) => {
 
           try {
             let fallbackResponse;
-            if (fallback.provider === 'openai') {
-              fallbackResponse = await callOpenAI(fallbackMessages, fallback.model, fallback.apiKey, useWebSearch);
+            if (fallback.provider === 'sealify') {
+              fallbackResponse = await callSealifyLocal(fallbackMessages, fallback.model, fallback.baseUrl || 'http://localhost:11434');
+            } else if (fallback.provider === 'openai') {
+              fallbackResponse = await callOpenAI(fallbackMessages, fallback.model, fallback.apiKey || '', useWebSearch);
             } else {
-              fallbackResponse = await callGemini(fallbackMessages, fallback.model, fallback.apiKey, useWebSearch);
+              fallbackResponse = await callGemini(fallbackMessages, fallback.model, fallback.apiKey || '', useWebSearch);
             }
             return c.json({
               message: fallbackResponse.text,

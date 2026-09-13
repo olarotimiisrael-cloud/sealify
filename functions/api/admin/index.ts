@@ -560,4 +560,108 @@ adminRoutes.post('/email-digest', async (c) => {
   }
 });
 
+adminRoutes.get('/ai-settings', async (c) => {
+  try {
+    const sql = getSql(c.env);
+    const configs = await sql`SELECT key, value FROM system_configs WHERE key LIKE 'ai_%' ORDER BY key`;
+    return c.json({ settings: configs });
+  } catch (err) {
+    console.error('Admin get AI settings error:', err);
+    throw new HTTPException(500, { message: 'Failed to fetch AI settings' });
+  }
+});
+
+adminRoutes.put('/ai-settings', async (c) => {
+  try {
+    const sql = getSql(c.env);
+    const body = await c.req.json();
+    for (const [key, value] of Object.entries(body)) {
+      if (key.startsWith('ai_')) {
+        const typedValue = value as boolean | number | string;
+        await sql`INSERT INTO system_configs (key, value, description) VALUES (${key}, ${typedValue}, 'AI setting') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`;
+      }
+    }
+    const user = c.get('user')!;
+    await auditLog(sql, user.id, 'AI Settings Updated', `Updated AI settings: ${Object.keys(body).join(', ')}`, 'settings');
+    return c.json({ success: true });
+  } catch (err) {
+    console.error('Admin update AI settings error:', err);
+    throw new HTTPException(500, { message: 'Failed to update AI settings' });
+  }
+});
+
+adminRoutes.post('/ai-settings/test', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { provider, apiKey, model, baseUrl, testPrompt } = body;
+    const testMessage = testPrompt || 'Hello, this is a test message from Sealify Admin.';
+    const normalizedProvider = String(provider || 'sealify').toLowerCase();
+
+    if (normalizedProvider === 'sealify' || normalizedProvider === 'local') {
+      const url = `${String(baseUrl || 'http://localhost:11434').replace(/\/$/, '')}/api/chat`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: model || 'llama3.1',
+          messages: [{ role: 'user', content: testMessage }],
+          stream: false,
+        }),
+      });
+
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({ error: { message: 'Local model test failed' } }));
+        throw new HTTPException(res.status, { message: payload?.error?.message || 'Local model test failed' });
+      }
+
+      return c.json({ success: true, message: 'Local model connection is ready.' });
+    }
+
+    if (!normalizedProvider || (normalizedProvider !== 'sealify' && normalizedProvider !== 'local' && !apiKey)) {
+      throw new HTTPException(400, { message: 'Provider and API key are required' });
+    }
+
+    let response: any;
+    if (normalizedProvider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({ model: model || 'gpt-4o-mini', messages: [{ role: 'user', content: testMessage }], max_tokens: 50 }),
+      });
+      response = await res.json();
+    } else if (normalizedProvider === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model || 'gemini-1.5-flash'}:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: testMessage }] }], generationConfig: { maxOutputTokens: 50 } }),
+      });
+      response = await res.json();
+    } else {
+      throw new HTTPException(400, { message: 'Invalid provider' });
+    }
+
+    return c.json({ success: true, response });
+  } catch (err) {
+    console.error('Admin AI settings test error:', err);
+    if (err instanceof HTTPException) throw err;
+    throw new HTTPException(500, { message: 'Failed to test AI settings' });
+  }
+});
+
+adminRoutes.get('/schema', async (c) => {
+  try {
+    const sql = getSql(c.env);
+    const tables = await sql`
+      SELECT table_name, column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+      ORDER BY table_name, ordinal_position
+    `;
+    return c.json({ schema: tables });
+  } catch (err) {
+    console.error('Admin get schema error:', err);
+    throw new HTTPException(500, { message: 'Failed to fetch database schema' });
+  }
+});
+
 export default adminRoutes;
