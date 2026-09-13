@@ -10,6 +10,7 @@ export const authRouter = Router();
 const loginSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: z.string().min(1, 'Password required'),
+  accessKey: z.string().min(1, 'Access key required').optional(),
 });
 
 const ADMIN_LOGIN_COOLDOWN_MS = 5 * 60 * 1000;
@@ -23,6 +24,13 @@ authRouter.post('/admin-login', async (req, res, next) => {
     if (!parsed.success) throw genericAdminLoginError();
 
     const email = parsed.data.email.trim().toLowerCase();
+    const accessKey = (parsed.data.accessKey || '').trim();
+    const requiredAccessKey = (process.env.ADMIN_ACCESS_KEY || process.env.VITE_ADMIN_ACCESS_KEY || 'sealify-admin-access-key').trim();
+
+    if (!accessKey || accessKey !== requiredAccessKey) {
+      throw genericAdminLoginError();
+    }
+
     const supabase = getSupabase();
 
     // Step 1: Authenticate with Supabase FIRST (no database dependency)

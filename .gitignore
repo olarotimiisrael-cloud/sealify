@@ -37,8 +37,12 @@ dist-ssr
 # Environment files - MUST be ignored
 .env
 .env.*
+.dev.vars
 !.env.example
 !.env.production.example
+
+# Local generated runtime files
+node/
 
 # IDE
 .vscode

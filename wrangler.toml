@@ -5,3 +5,29 @@ compatibility_flags = ["nodejs_compat"]
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
+
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "<YOUR_HYPERDRIVE_ID>"
+
+[vars]
+SUPABASE_URL = "<YOUR_SUPABASE_URL>"
+SUPABASE_ANON_KEY = "<YOUR_SUPABASE_ANON_KEY>"
+SUPABASE_SERVICE_ROLE_KEY = "<YOUR_SUPABASE_SERVICE_ROLE_KEY>"
+AI_PROVIDER = "openai"
+OPENAI_API_KEY = "<YOUR_OPENAI_API_KEY>"
+GEMINI_API_KEY = "<YOUR_GEMINI_API_KEY>"
+AI_WEB_SEARCH_ENABLED = "true"
+AI_FALLBACK_ENABLED = "true"
+TERMII_API_KEY = "<YOUR_TERMII_API_KEY>"
+ARKESEL_API_KEY = "<YOUR_ARKESEL_API_KEY>"
+TWILIO_ACCOUNT_SID = "<YOUR_TWILIO_ACCOUNT_SID>"
+APP_URL = "https://sealify.ng"
+PUBLIC_SITE_URL = "https://sealify.ng"
+NODE_ENV = "production"
+
+[env.development]
+[vars]
+NODE_ENV = "development"
+APP_URL = "http://localhost:8788"
+PUBLIC_SITE_URL = "http://localhost:8788"
