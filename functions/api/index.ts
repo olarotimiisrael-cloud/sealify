@@ -55,4 +55,12 @@ app.notFound((c) => {
   return c.json({ error: 'Not found' }, 404);
 });
 
+// Cloudflare Pages Functions entry point.
+// This file lives at functions/api/index.ts and therefore handles ALL /api/* requests.
+// No [[path]].ts catch-all is needed — that file would shadow the specific
+// /functions/api/health/index.ts route and cause 404s on /api/health.
+export const onRequest: PagesFunction<Env> = async (context) => {
+  return app.fetch(context.request, context.env, context);
+};
+
 export default app;
