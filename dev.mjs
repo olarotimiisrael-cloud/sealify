@@ -34,7 +34,7 @@ function runCommand(command, args, name, color) {
 console.log('\x1b[36m[sealify-dev]\x1b[0m Starting development servers...\n');
 
 // Start Wrangler Pages dev server (serves both static assets and Functions)
-const wrangler = runCommand('npx', ['wrangler', 'pages', 'dev', './dist', '--port', '8788', '--compatibility-date', '2026-08-31', '--compatibility-flag', 'nodejs_compat'], 'wrangler', '35');
+const wrangler = runCommand('npx', ['wrangler', 'pages', 'dev', './dist', '--port', '8788', '--functions-dir', 'functions', '--compatibility-date', '2026-08-31', '--compatibility-flag', 'nodejs_compat'], 'wrangler', '35');
 
 // Give Wrangler a moment to start
 setTimeout(() => {

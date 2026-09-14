@@ -7,7 +7,6 @@
 # 1. Create project at supabase.com
 # 2. Run migrations in SQL Editor:
 #    - supabase/migrations/20240101000000_initial_schema.sql
-#    - server/db/schema.sql
 # 3. Enable Realtime for: messages, notifications, conversations, ads, escrow_orders
 # 4. Create 3 PUBLIC storage buckets: profile-media, ad-images, documents
 # 5. Run storage policies (see PRODUCTION_SETUP.md)
@@ -64,7 +63,7 @@ Proxy: ✅ On
 
 ---
 
-## API ENDPOINTS (Render backend)
+## API ENDPOINTS (Cloudflare Pages Functions)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -83,8 +82,8 @@ Proxy: ✅ On
 | GET | `/api/conversations/:id/messages` | Get messages |
 | GET | `/api/notifications` | User notifications |
 | PUT | `/api/notifications/read-all` | Mark all read |
-| POST | `/api/escrow` | Create escrow |
-| POST | `/api/escrow/:id/release` | Release escrow |
+- `POST` | `/api/escrow` | Create escrow |
+- `POST` | `/api/escrow/:id/release` | Release escrow |
 
 ---
 
@@ -130,7 +129,7 @@ npm run lint
 - `GET /api/health/db` - Database connectivity
 
 ### Logs
-- `Render API`: Dashboard → Render → Logs
+- **Cloudflare Pages**: Dashboard → Pages → sealify → Logs
 - Supabase: Dashboard → Logs → Database/Realtime/Auth
 
 ### Common Issues

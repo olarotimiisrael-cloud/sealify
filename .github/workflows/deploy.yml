@@ -43,7 +43,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_API_URL: https://sealify-api.onrender.com
+          VITE_API_URL: https://sealify.pages.dev
           NODE_ENV: production
 
       - name: Verify dist
@@ -67,4 +67,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           quiet: false
-          command: pages deploy dist --project-name=sealify
+          command: pages deploy dist --project-name=sealify --functions-dir=functions

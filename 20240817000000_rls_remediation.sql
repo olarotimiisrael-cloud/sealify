@@ -16,7 +16,7 @@ ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.buyer_request_responses ENABLE ROW LEVEL SECURITY;
 
--- For telemetry tables from server/db/schema.sql
+-- For telemetry tables
 ALTER TABLE public.analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.performance_metrics ENABLE ROW LEVEL SECURITY;
 

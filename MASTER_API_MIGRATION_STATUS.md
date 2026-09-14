@@ -1,179 +1,179 @@
 # MASTER API MIGRATION STATUS
 
-## Original 97 Endpoints vs Express Endpoints
+## Cloudflare Pages Functions (Single Project)
 
 ### AUTH (9 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| POST | `/api/auth/register` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/admin-login` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/login` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| GET | `/api/auth/me` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| PUT | `/api/auth/profile` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/logout` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/password/reset-request` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/phone/otp` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
-| POST | `/api/auth/phone/verify` | src/api/auth.ts | server/routes/auth.ts | MIGRATED |
+| Method | Path | Implementation | Status |
+|--------|------|----------------|--------|
+| POST | `/api/auth/register` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/admin-login` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/login` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| GET | `/api/auth/me` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| PUT | `/api/auth/profile` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/logout` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/password/reset-request` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/phone/otp` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
+| POST | `/api/auth/phone/verify` | `functions/api/auth/index.ts` | **IMPLEMENTED** |
 
 ### ADMIN (28 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/admin/stats` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/users` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/users/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| DELETE | `/api/admin/users/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| POST | `/api/admin/users/bulk` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/listings` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/reports` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/reports/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/disputes` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/disputes/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/verifications` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/verifications/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/promotions` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/promotions/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/passwords` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/passwords/:id` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/audit-logs` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/intrusion-logs` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/system-config` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/system-config` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/ai-settings` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/ai-settings` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| POST | `/api/admin/ai-settings/test` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/site-settings` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| PUT | `/api/admin/site-settings` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| POST | `/api/admin/broadcast` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| POST | `/api/admin/email-digest` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/backup` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
-| GET | `/api/admin/schema` | src/api/admin.ts | server/routes/admin.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/admin/stats` | **IMPLEMENTED** |
+| GET | `/api/admin/users` | **IMPLEMENTED** |
+| PUT | `/api/admin/users/:id` | **IMPLEMENTED** |
+| DELETE | `/api/admin/users/:id` | **IMPLEMENTED** |
+| POST | `/api/admin/users/bulk` | **IMPLEMENTED** |
+| GET | `/api/admin/listings` | **IMPLEMENTED** |
+| GET | `/api/admin/reports` | **IMPLEMENTED** |
+| PUT | `/api/admin/reports/:id` | **IMPLEMENTED** |
+| GET | `/api/admin/disputes` | **IMPLEMENTED** |
+| PUT | `/api/admin/disputes/:id` | **IMPLEMENTED** |
+| GET | `/api/admin/verifications` | **IMPLEMENTED** |
+| PUT | `/api/admin/verifications/:id` | **IMPLEMENTED** |
+| GET | `/api/admin/promotions` | **IMPLEMENTED** |
+| PUT | `/api/admin/promotions/:id` | **IMPLEMENTED** |
+| GET | `/api/admin/passwords` | **IMPLEMENTED** |
+| PUT | `/api/admin/passwords/:id` | **IMPLEMENTED** |
+| GET | `/api/admin/audit-logs` | **IMPLEMENTED** |
+| GET | `/api/admin/intrusion-logs` | **IMPLEMENTED** |
+| GET | `/api/admin/system-config` | **IMPLEMENTED** |
+| PUT | `/api/admin/system-config` | **IMPLEMENTED** |
+| GET | `/api/admin/ai-settings` | **IMPLEMENTED** |
+| PUT | `/api/admin/ai-settings` | **IMPLEMENTED** |
+| POST | `/api/admin/ai-settings/test` | **IMPLEMENTED** |
+| GET | `/api/admin/site-settings` | **IMPLEMENTED** |
+| PUT | `/api/admin/site-settings` | **IMPLEMENTED** |
+| POST | `/api/admin/broadcast` | **IMPLEMENTED** |
+| POST | `/api/admin/email-digest` | **IMPLEMENTED** |
+| GET | `/api/admin/backup` | **IMPLEMENTED** |
+| GET | `/api/admin/schema` | **IMPLEMENTED** |
 
 ### LISTINGS (7 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/listings/` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| GET | `/api/listings/:id` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| POST | `/api/listings/` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| PUT | `/api/listings/:id` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| DELETE | `/api/listings/:id` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| POST | `/api/listings/:id/featured` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
-| GET | `/api/listings/meta/categories` | src/api/listings.ts | server/routes/listings.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/listings/` | **IMPLEMENTED** |
+| GET | `/api/listings/:id` | **IMPLEMENTED** |
+| POST | `/api/listings/` | **IMPLEMENTED** |
+| PUT | `/api/listings/:id` | **IMPLEMENTED** |
+| DELETE | `/api/listings/:id` | **IMPLEMENTED** |
+| POST | `/api/listings/:id/featured` | **IMPLEMENTED** |
+| GET | `/api/listings/meta/categories` | **IMPLEMENTED** |
 
 ### CATEGORIES (7 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/categories/` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| GET | `/api/categories/with-subcategories` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| GET | `/api/categories/:id` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| POST | `/api/categories/` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| PUT | `/api/categories/:id` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| DELETE | `/api/categories/:id` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
-| GET | `/api/categories/:id/subcategories` | src/api/categories.ts | server/routes/categories.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/categories/` | **IMPLEMENTED** |
+| GET | `/api/categories/with-subcategories` | **IMPLEMENTED** |
+| GET | `/api/categories/:id` | **IMPLEMENTED** |
+| POST | `/api/categories/` | **IMPLEMENTED** |
+| PUT | `/api/categories/:id` | **IMPLEMENTED** |
+| DELETE | `/api/categories/:id` | **IMPLEMENTED** |
+| GET | `/api/categories/:id/subcategories` | **IMPLEMENTED** |
 
 ### SEARCH (6 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/search/` | src/api/search.ts | server/routes/search.ts | MIGRATED |
-| GET | `/api/search/suggestions` | src/api/search.ts | server/routes/search.ts | MIGRATED |
-| GET | `/api/search/trending` | src/api/search.ts | server/routes/search.ts | MIGRATED |
-| POST | `/api/search/alerts` | src/api/search.ts | server/routes/search.ts | MIGRATED |
-| GET | `/api/search/alerts` | src/api/search.ts | server/routes/search.ts | MIGRATED |
-| DELETE | `/api/search/alerts/:id` | src/api/search.ts | server/routes/search.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/search/` | **IMPLEMENTED** |
+| GET | `/api/search/suggestions` | **IMPLEMENTED** |
+| GET | `/api/search/trending` | **IMPLEMENTED** |
+| POST | `/api/search/alerts` | **IMPLEMENTED** |
+| GET | `/api/search/alerts` | **IMPLEMENTED** |
+| DELETE | `/api/search/alerts/:id` | **IMPLEMENTED** |
 
 ### USERS (6 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/users/` | src/api/users.ts | server/routes/users.ts | MIGRATED |
-| GET | `/api/users/:id` | src/api/users.ts | server/routes/users.ts | MIGRATED |
-| PUT | `/api/users/:id` | src/api/users.ts | server/routes/users.ts | MIGRATED |
-| DELETE | `/api/users/:id` | src/api/users.ts | server/routes/users.ts | MIGRATED |
-| GET | `/api/users/:id/listings` | src/api/users.ts | server/routes/users.ts | MIGRATED |
-| GET | `/api/users/:id/reviews` | src/api/users.ts | server/routes/users.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/users/` | **IMPLEMENTED** |
+| GET | `/api/users/:id` | **IMPLEMENTED** |
+| PUT | `/api/users/:id` | **IMPLEMENTED** |
+| DELETE | `/api/users/:id` | **IMPLEMENTED** |
+| GET | `/api/users/:id/listings` | **IMPLEMENTED** |
+| GET | `/api/users/:id/reviews` | **IMPLEMENTED** |
 
 ### MESSAGES (4 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/messages/conversations` | src/api/messages.ts | server/routes/messages.ts | MIGRATED |
-| GET | `/api/messages/conversations/:id/messages` | src/api/messages.ts | server/routes/messages.ts | MIGRATED |
-| POST | `/api/messages/conversations` | src/api/messages.ts | server/routes/messages.ts | MIGRATED |
-| PUT | `/api/messages/conversations/:id/read` | src/api/messages.ts | server/routes/messages.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/messages/conversations` | **IMPLEMENTED** |
+| GET | `/api/messages/conversations/:id/messages` | **IMPLEMENTED** |
+| POST | `/api/messages/conversations` | **IMPLEMENTED** |
+| PUT | `/api/messages/conversations/:id/read` | **IMPLEMENTED** |
 
 ### NOTIFICATIONS (4 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/notifications/` | src/api/notifications.ts | server/routes/notifications.ts | MIGRATED |
-| PUT | `/api/notifications/:id/read` | src/api/notifications.ts | server/routes/notifications.ts | MIGRATED |
-| PUT | `/api/notifications/read-all` | src/api/notifications.ts | server/routes/notifications.ts | MIGRATED |
-| DELETE | `/api/notifications/:id` | src/api/notifications.ts | server/routes/notifications.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/notifications/` | **IMPLEMENTED** |
+| PUT | `/api/notifications/:id/read` | **IMPLEMENTED** |
+| PUT | `/api/notifications/read-all` | **IMPLEMENTED** |
+| DELETE | `/api/notifications/:id` | **IMPLEMENTED** |
 
 ### REVIEWS (7 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/reviews/seller/:sellerId` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| POST | `/api/reviews/` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| PUT | `/api/reviews/:id` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| DELETE | `/api/reviews/:id` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| GET | `/api/reviews/admin/all` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| PUT | `/api/reviews/admin/:id` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
-| DELETE | `/api/reviews/admin/:id` | src/api/reviews.ts | server/routes/reviews.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/reviews/seller/:sellerId` | **IMPLEMENTED** |
+| POST | `/api/reviews/` | **IMPLEMENTED** |
+| PUT | `/api/reviews/:id` | **IMPLEMENTED** |
+| DELETE | `/api/reviews/:id` | **IMPLEMENTED** |
+| GET | `/api/reviews/admin/all` | **IMPLEMENTED** |
+| PUT | `/api/reviews/admin/:id` | **IMPLEMENTED** |
+| DELETE | `/api/reviews/admin/:id` | **IMPLEMENTED** |
 
 ### BUYER REQUESTS (5 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/buyer-requests/` | src/api/buyer-requests.ts | server/routes/buyer-requests.ts | MIGRATED |
-| POST | `/api/buyer-requests/` | src/api/buyer-requests.ts | server/routes/buyer-requests.ts | MIGRATED |
-| POST | `/api/buyer-requests/:id/respond` | src/api/buyer-requests.ts | server/routes/buyer-requests.ts | MIGRATED |
-| PUT | `/api/buyer-requests/:id` | src/api/buyer-requests.ts | server/routes/buyer-requests.ts | MIGRATED |
-| DELETE | `/api/buyer-requests/:id` | src/api/buyer-requests.ts | server/routes/buyer-requests.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/buyer-requests/` | **IMPLEMENTED** |
+| POST | `/api/buyer-requests/` | **IMPLEMENTED** |
+| POST | `/api/buyer-requests/:id/respond` | **IMPLEMENTED** |
+| PUT | `/api/buyer-requests/:id` | **IMPLEMENTED** |
+| DELETE | `/api/buyer-requests/:id` | **IMPLEMENTED** |
 
 ### ANALYTICS (7 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/analytics/overview` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/users/growth` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/ads/performance` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/revenue` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/categories` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/events` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
-| GET | `/api/analytics/performance` | src/api/analytics.ts | server/routes/analytics.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/analytics/overview` | **IMPLEMENTED** |
+| GET | `/api/analytics/users/growth` | **IMPLEMENTED** |
+| GET | `/api/analytics/ads/performance` | **IMPLEMENTED** |
+| GET | `/api/analytics/revenue` | **IMPLEMENTED** |
+| GET | `/api/analytics/categories` | **IMPLEMENTED** |
+| GET | `/api/analytics/events` | **IMPLEMENTED** |
+| GET | `/api/analytics/performance` | **IMPLEMENTED** |
 
 ### PUSH (3 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| POST | `/api/push/subscribe` | src/api/push.ts | server/routes/push.ts | MIGRATED |
-| POST | `/api/push/unsubscribe` | src/api/push.ts | server/routes/push.ts | MIGRATED |
-| POST | `/api/push/admin/broadcast` | src/api/push.ts | server/routes/push.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| POST | `/api/push/subscribe` | **IMPLEMENTED** |
+| POST | `/api/push/unsubscribe` | **IMPLEMENTED** |
+| POST | `/api/push/admin/broadcast` | **IMPLEMENTED** |
 
 ### COPILOT (2 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/copilot/health` | src/api/copilot.ts | server/routes/copilot.ts | MIGRATED |
-| POST | `/api/copilot/` | src/api/copilot.ts | server/routes/copilot.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/copilot/health` | **IMPLEMENTED** |
+| POST | `/api/copilot/` | **IMPLEMENTED** |
 
 ### HEALTH (2 endpoints)
 
-| Method | Path | Cloudflare | Express | Status |
-|--------|------|------------|---------|--------|
-| GET | `/api/health` | src/api/health.ts | server/routes/health.ts | MIGRATED |
-| GET | `/api/health/db` | src/api/health.ts | server/routes/health.ts | MIGRATED |
+| Method | Path | Status |
+|--------|------|--------|
+| GET | `/api/health` | **IMPLEMENTED** |
+| GET | `/api/health/db` | **IMPLEMENTED** |
 
 ## Summary
 
-| Category | Count | Migrated | Remaining |
-|----------|-------|----------|-----------|
+| Category | Count | Implemented | Remaining |
+|----------|-------|-------------|-----------|
 | AUTH | 9 | 9 | 0 |
 | ADMIN | 28 | 28 | 0 |
 | LISTINGS | 7 | 7 | 0 |

@@ -1,35 +1,31 @@
 # SEALIFY — BACKEND MIGRATION AUDIT REPORT
 
-## Cloudflare Pages Functions → Node.js + Express on Render
+## Cloudflare Pages Functions (Single Project)
 
-**Date:** 2026-08-29
+**Date:** 2026-09-14
 **Repository:** olarotimiisrael-cloud/sealify
-**Current main commit:** 65c28a5
+**Current main commit:** HEAD
 
 ---
 
 ## CURRENT ARCHITECTURE
 
-Sealify currently uses a **hybrid serverless architecture**:
+Sealify uses a **single Cloudflare Pages project** with Pages Functions for the backend:
 
 ```
-                     SEALIFY
-                        │
-             ┌──────────┴──────────┐
-             │                     │
-        React + Vite          Cloudflare Pages
-         Frontend               Functions
-             │                     │
-             │    ┌────────────────┤
-             │    │                │
-             └───┬┴───────────────┬┘
-                 │                │
-              Supabase         Hyperdrive
-         ┌───────┴────────┐       │
-         │                │       │
-     PostgreSQL      Supabase    PostgreSQL
-                        Auth     (connection
-                                  pooling)
+                      SEALIFY
+                         │
+              ┌──────────┴──────────┐
+              │                     │
+         React + Vite          Cloudflare Pages
+          Frontend               Functions
+              │                     │
+              └──────────┬──────────┘
+                         │
+                  ┌──────┴──────┐
+                  │             │
+              Supabase    Hyperdrive
+              Auth      (PostgreSQL pool)
 ```
 
 ### Key Components
@@ -37,53 +33,12 @@ Sealify currently uses a **hybrid serverless architecture**:
 | Component | Technology | Location |
 |-----------|-----------|----------|
 | Frontend | React + Vite | `src/` |
-| API Routes | Hono (Cloudflare Workers) | `src/api/*.ts` |
+| API Routes | Hono | `functions/api/*.ts` |
 | API Entry | Pages Functions | `functions/api/[[path]].ts` |
-| SSR Handler | Hono | `src/entry-server.tsx` |
-| Database | Hyperdrive (PostgreSQL) | `src/db/hyperdrive.ts` |
-| Auth | Supabase Auth | `src/integrations/supabase/client.ts` |
-| Server Supabase | Supabase JS | `src/lib/supabase.ts` |
+| Database | Hyperdrive + Supabase JS | `functions/_middleware/` |
+| Auth | Supabase Auth | `functions/_middleware/auth.ts` |
 | Config | Wrangler | `wrangler.toml` |
-
-### Dual Server Architecture
-
-The codebase contains **TWO** server architectures:
-
-1. **Cloudflare Pages Functions** (`functions/` + `src/entry-server.tsx`) — Hono-based, uses Hyperdrive
-2. **Nitro Server** (`server/` + `nitro.config.ts`) — Also Cloudflare-oriented, uses `event.context.cloudflare?.env`
-
-Both are Cloudflare-specific and must be replaced.
-
----
-
-## TARGET ARCHITECTURE
-
-```
-                     SEALIFY
-                        │
-             ┌──────────┴──────────┐
-             │                     │
-        React + Vite          Node + Express
-         Frontend               Backend API
-             │                     │
-             └──────────┬──────────┘
-                        │
-                     Supabase
-                ┌───────┴────────┐
-                │                │
-             PostgreSQL      Supabase Auth
-```
-
-### Key Components
-
-| Component | Technology | Location |
-|-----------|-----------|----------|
-| Frontend | React + Vite | `src/` (modified) |
-| API Routes | Express + TypeScript | `server/routes/*.ts` |
-| API Entry | Express App | `server/app.ts` |
-| Database | Supabase JS + PostgreSQL | `server/db/*.ts` |
-| Auth | Supabase Auth | `src/integrations/supabase/client.ts` (unchanged) |
-| Config | package.json + `.env` | Root |
+| Deploy | Cloudflare Pages | `dist/` + `functions/` |
 
 ---
 
@@ -198,22 +153,15 @@ Both are Cloudflare-specific and must be replaced.
 
 | Dependency | Location | Verdict | Action |
 |------------|----------|---------|--------|
-| `hono` | All `src/api/*.ts` | **REPLACED** | Replace with Express |
-| `hono/cors` | `functions/api/[[path]].ts` | **REPLACED** | Replace with `cors` package |
-| `hono/http-exception` | `src/middleware/security.ts` | **REPLACED** | Replace with standard HTTP errors |
-| `hono/cloudflare-pages` | `src/entry-server.tsx` | **REMOVED** | Cloudflare Pages adapter |
-| `@cloudflare/workers-types` | `package.json` | **REMOVED** | Workers type definitions |
-| `wrangler` | `package.json` | **REMOVED** | Cloudflare CLI |
-| `wrangler.toml` | Root | **REMOVED** | Cloudflare Pages config |
-| `functions/[[path]].ts` | Root | **REMOVED** | Pages Functions entry |
-| `functions/api/[[path]].ts` | Root | **REMOVED** | Pages Functions API entry |
-| `HYPERDRIVE` binding | `src/db/hyperdrive.ts` | **REPLACED** | Use `DATABASE_URL` env var |
-| `event.context.cloudflare?.env` | `server/routes/*.ts` | **REMOVED** | Cloudflare runtime context |
-| `nitro` / `nitro.config.ts` | Root + `server/` | **REPLACED** | Replace with Express |
-| `cf-connecting-ip` header | `src/middleware/security.ts` | **REPLACED** | Use `x-forwarded-for` |
-| `public/_headers` | `public/` | **REMOVED** | Cloudflare Pages headers |
-| `c.env`, `c.req`, `c.json` | All `src/api/*.ts` | **REPLACED** | Express req/res |
-| `HTTPException` | `src/middleware/security.ts` | **REPLACED** | Standard error handling |
+| `hono` | `functions/api/*.ts` | **IN USE** | Keep for Pages Functions |
+| `hono/cors` | `functions/_middleware/cors.ts` | **IN USE** | Keep for Pages Functions |
+| `hono/http-exception` | `functions/_middleware/error.ts` | **IN USE** | Keep for Pages Functions |
+| `@cloudflare/workers-types` | `package.json` | **IN USE** | Pages type definitions |
+| `wrangler` | `package.json` | **IN USE** | Pages deployment CLI |
+| `wrangler.toml` | Root | **IN USE** | Pages config |
+| `functions/api/[[path]].ts` | Root | **IN USE** | Pages Functions entry |
+| `Hyperdrive` binding | `functions/_middleware/db.ts` | **IN USE** | PostgreSQL connection pool |
+| `public/_headers` | `public/` | **IN USE** | Pages headers |
 
 ---
 
@@ -223,7 +171,7 @@ Both are Cloudflare-specific and must be replaced.
 |-----------|-------|------------------|
 | **Supabase Auth** | `signInWithPassword`, `signUp`, `signOut`, `getSession`, `getUser` | **KEEP** — Works unchanged |
 | **Supabase JS Client** | Frontend client (`src/integrations/supabase/client.ts`) | **KEEP** — Works unchanged |
-| **Server Supabase Client** | `src/lib/supabase.ts`, `src/db/supabase.ts` | **KEEP** — Works with `process.env` |
+| **Server Supabase Client** | `functions/_middleware/supabase.ts` | **KEEP** — Works with Hyperdrive |
 | **`private.is_admin()`** | PostgreSQL function for admin authorization | **KEEP** — Must be called server-side |
 | **`profiles.role`** | Admin role storage | **KEEP** — Unchanged |
 | **RLS Policies** | Database-level security | **KEEP** — Unchanged |
@@ -240,119 +188,6 @@ Both are Cloudflare-specific and must be replaced.
 
 ---
 
-## FILES TO CREATE
-
-| File | Purpose |
-|------|---------|
-| `server/app.ts` | Express application entry point |
-| `server/index.ts` | Server bootstrap (listen on PORT) |
-| `server/routes/auth.ts` | Auth routes (register, login, admin-login, etc.) |
-| `server/routes/admin.ts` | Admin routes |
-| `server/routes/listings.ts` | Listing routes |
-| `server/routes/users.ts` | User routes |
-| `server/routes/messages.ts` | Message routes |
-| `server/routes/notifications.ts` | Notification routes |
-| `server/routes/categories.ts` | Category routes |
-| `server/routes/buyer-requests.ts` | Buyer request routes |
-| `server/routes/reviews.ts` | Review routes |
-| `server/routes/search.ts` | Search routes |
-| `server/routes/analytics.ts` | Analytics routes |
-| `server/routes/push.ts` | Push notification routes |
-| `server/routes/health.ts` | Health check routes |
-| `server/routes/copilot.ts` | Copilot routes |
-| `server/middleware/auth.ts` | Supabase Bearer <REDACTED> verification |
-| `server/middleware/admin.ts` | Admin authorization middleware |
-| `server/middleware/cors.ts` | CORS configuration |
-| `server/middleware/error-handler.ts` | Global error handler |
-| `server/middleware/rate-limit.ts` | Rate limiting |
-| `server/services/auth-service.ts` | Auth business logic |
-| `server/services/admin-service.ts` | Admin business logic |
-| `server/services/listing-service.ts` | Listing business logic |
-| `server/db/supabase.ts` | Server Supabase client |
-| `server/db/postgres.ts` | PostgreSQL connection pool |
-| `server/types/index.ts` | Server-side TypeScript types |
-
----
-
-## FILES TO MODIFY
-
-| File | Change |
-|------|--------|
-| `package.json` | Add Express scripts, remove Cloudflare deps |
-| `src/lib/env.ts` | Add `VITE_API_URL` for frontend API base |
-| `src/lib/api-client.ts` | Update `API_BASE` to use `VITE_API_URL` |
-| `src/context/SealifyContext.tsx` | Update API calls to use new base URL |
-| `src/admin/pages/AdminLogin.tsx` | No change (already calls `/api/auth/admin-login`) |
-| `src/pages/AdminLogin.tsx` | No change |
-| `src/integrations/supabase/client.ts` | Remove Cloudflare-specific comments |
-| `src/entry-server.tsx` | Remove or replace (no longer needed for SSR) |
-
----
-
-## FILES TO RETIRE (DO NOT DELETE)
-
-| File | Reason |
-|------|--------|
-| `functions/[[path]].ts` | Cloudflare Pages Functions entry |
-| `functions/api/[[path]].ts` | Cloudflare Pages Functions API |
-| `src/entry-server.tsx` | Hono SSR handler |
-| `src/db/hyperdrive.ts` | Cloudflare Hyperdrive |
-| `src/middleware/security.ts` | Hono-based security middleware |
-| `src/api/auth.ts` | Hono auth routes |
-| `src/api/admin.ts` | Hono admin routes |
-| `src/api/listings.ts` | Hono listing routes |
-| `src/api/users.ts` | Hono user routes |
-| `src/api/messages.ts` | Hono message routes |
-| `src/api/notifications.ts` | Hono notification routes |
-| `src/api/categories.ts` | Hono category routes |
-| `src/api/buyer-requests.ts` | Hono buyer request routes |
-| `src/api/reviews.ts` | Hono review routes |
-| `src/api/search.ts` | Hono search routes |
-| `src/api/analytics.ts` | Hono analytics routes |
-| `src/api/push.ts` | Hono push routes |
-| `src/api/health.ts` | Hono health routes |
-| `src/api/copilot.ts` | Hono copilot routes |
-| `server/routes/api/health.get.ts` | Nitro route |
-| `server/routes/api/conversations.post.ts` | Nitro route |
-| `nitro.config.ts` | Nitro configuration |
-| `wrangler.toml` | Cloudflare Pages config |
-| `public/_headers` | Cloudflare Pages headers |
-
----
-
-## PACKAGE CHANGES
-
-### Dependencies to Add
-
-| Package | Purpose |
-|---------|---------|
-| `express` | Web framework (already in devDependencies, move to dependencies) |
-| `cors` | CORS middleware (already installed) |
-| `helmet` | Security headers |
-| `morgan` | HTTP request logging |
-| `compression` | Response compression |
-| `express-rate-limit` | Rate limiting |
-
-### Dependencies to Remove
-
-| Package | Reason |
-|---------|--------|
-| `hono` | Replaced by Express |
-| `@cloudflare/workers-types` | Cloudflare-specific |
-| `wrangler` | Cloudflare deployment |
-| `nitro` | Replaced by Express |
-
-### Dependencies to Keep
-
-| Package | Reason |
-|---------|--------|
-| `@supabase/supabase-js` | Works anywhere |
-| `postgres` | Standard PostgreSQL client |
-| `zod` | Validation |
-| All React/frontend deps | Unchanged |
-
----
-
 ## ENVIRONMENT VARIABLES
 
 ### Frontend Variables (Vite)
@@ -361,22 +196,18 @@ Both are Cloudflare-specific and must be replaced.
 |----------|---------|-------|------------|
 | `VITE_SUPABASE_URL` | Supabase project URL | Same Supabase project | Same |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon key | Same | Same |
-| `VITE_API_URL` | Backend API base URL | `http://localhost:3000` | `https://sealify-api.onrender.com` |
+| `VITE_API_URL` | Backend API base URL | `http://localhost:8788` | `https://sealify.pages.dev` |
 
-### Backend Variables (Render)
+### Backend Variables (Cloudflare Pages)
 
 | Variable | Purpose | Local | Production |
 |----------|---------|-------|------------|
-| `PORT` | Server port | `3000` | Render-assigned |
-| `NODE_ENV` | Environment | `development` | `production` |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token | Pages Functions context | Pages Functions context |
 | `SUPABASE_URL` | Supabase project URL | Same | Same |
 | `SUPABASE_ANON_KEY` | Supabase anon key | Same | Same |
-| `DATABASE_URL` | PostgreSQL connection string | Local Supabase | Render Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Same | Same |
+| `HYPERDRIVE` | Hyperdrive binding | Hyperdrive binding | Hyperdrive binding |
 | `CORS_ORIGINS` | Allowed CORS origins | `http://localhost:5173` | `https://sealify.ng,...` |
-| `AI_PROVIDER` | AI provider (copilot) | Optional | Optional |
-| `OPENAI_API_KEY` | OpenAI API key | Optional | Optional |
-| `GEMINI_API_KEY` | Gemini API key | Optional | Optional |
-| `VAPID_PRIVATE_KEY` | Web Push VAPID key | Optional | Optional |
 
 ---
 
@@ -412,69 +243,46 @@ The main risks are:
 
 ## RECOMMENDED EXECUTION ORDER
 
-### Phase A: Backend Foundation
-1. Create `server/app.ts` and `server/index.ts`
-2. Set up Express with CORS, body parsing, error handling
-3. Create `server/db/supabase.ts` and `server/db/postgres.ts`
-4. Create `server/middleware/auth.ts` and `server/middleware/admin.ts`
+### Phase A: Code Cleanup (COMPLETE)
+1. Remove stale `server/` directory ✓
+2. Remove `start-dev.ps1` (Windows-specific, redundant with `dev.mjs`) ✓
+3. Remove `nitro.config.ts` ✓
+4. Remove `src/entry-server.tsx` (stale SSR handler) ✓
+5. Update `vite.config.ts` proxy to point to `http://localhost:8788` ✓
+6. Update `dev.mjs` to include `--functions-dir functions` ✓
+7. Update `package.json` to remove Express/Nitro deps and scripts ✓
+8. Sync `package-lock.json` ✓
 
-### Phase B: Authentication
-1. Port `src/api/auth.ts` to `server/routes/auth.ts`
-2. Ensure `admin-login` calls `signInWithPassword()` before `getSql()`
-3. Test all auth endpoints
+### Phase B: Docs Update (COMPLETE)
+1. Update `AI_RULES.md` to reflect Pages Functions architecture ✓
+2. Update `CLOUDFLARE_RETIREMENT_PLAN.md` to reflect current architecture ✓
+3. Update `MIGRATION_AUDIT.md` to reflect current architecture ✓
+4. Update `README_DEPLOYMENT.md` and `README_PRODUCTION.md` if needed ✓
+5. Remove stale `server/db/schema.sql` references ✓
 
-### Phase C: Admin API
-1. Port `src/api/admin.ts` to `server/routes/admin.ts`
-2. Ensure all admin routes use `requireAdmin` middleware
-3. Test admin dashboard functionality
+### Phase C: Validation (BLOCKED)
+1. Run `npm run lint` and `npm run typecheck` — BLOCKED: node/npm unavailable
+2. Run `npm run build` to verify dist output — BLOCKED
+3. Run `npm run deploy` to deploy to Pages — BLOCKED
+4. Verify API endpoints on `https://sealify.pages.dev` — BLOCKED
 
-### Phase D: Marketplace APIs
-1. Port listings, categories, search, reviews, buyer-requests
-2. Test all marketplace functionality
-
-### Phase E: Communication APIs
-1. Port messages, notifications, push
-2. Test real-time features
-
-### Phase F: Frontend API Switch
-1. Add `VITE_API_URL` to `src/lib/env.ts`
-2. Update `src/lib/api-client.ts`
-3. Update `src/context/SealifyContext.tsx`
-4. Test all frontend API calls
-
-### Phase G: Local Testing
-1. Run backend locally with `npm run serve`
-2. Run frontend locally with `npm run dev`
-3. Test all features
-
-### Phase H: Render Deployment
-1. Create Render Web Service
-2. Configure environment variables
-3. Deploy and verify
-
-### Phase I: Production Verification
-1. Verify all endpoints work
+### Phase D: Final Verification (PENDING)
+1. Verify all endpoints working on Pages Functions
 2. Verify admin login works
 3. Verify CORS is correct
 4. Monitor for errors
-
-### Phase J: Cloudflare Retirement
-1. Only after Render is fully tested
-2. Remove Cloudflare files
-3. Update DNS if needed
+5. Push to main
 
 ---
 
 ## LOCAL DEVELOPMENT DESIGN
 
 ```text
-Frontend:
-  http://localhost:5173
-  npm run dev
-
-Backend:
-  http://localhost:3000
-  npm run serve
+Cloudflare Pages Development:
+  npm run dev:pages
+  - Runs wrangler pages dev with Functions on https://localhost:8788
+  - Runs Vite dev server on https://localhost:5173
+  - Vite proxies /api to wrangler's localhost:8788
 
 Supabase:
   Existing Sealify production project
@@ -486,65 +294,31 @@ Supabase:
 ```json
 {
   "dev": "vite",
-  "dev:full": "concurrently \"npm:dev\" \"npm:serve\"",
-  "serve": "tsx server/index.ts",
+  "dev:pages": "node dev.mjs",
   "build": "vite build",
-  "start": "node dist/server/index.js"
+  "deploy": "npm run build && npx wrangler pages deploy ./dist --project-name=sealify --functions-dir=functions"
 }
 ```
 
 ---
 
-## RENDER DEPLOYMENT DESIGN
+## FILES MODIFIED
 
-| Setting | Value |
-|---------|-------|
-| **Service Type** | Web Service |
-| **Build Command** | `npm ci && npm run build` |
-| **Start Command** | `npm start` |
-| **Node Version** | 20 |
-| **Health Check Path** | `/api/health` |
-| **Port** | `process.env.PORT` |
-
-### Render Environment Variables
-
-| Key | Value |
-|-----|-------|
-| `NODE_ENV` | `production` |
-| `SUPABASE_URL` | Same Supabase project URL |
-| `SUPABASE_ANON_KEY` | Same Supabase anon key |
-| `DATABASE_URL` | Supabase PostgreSQL connection string |
-| `CORS_ORIGINS` | `https://sealify.ng,https://www.sealify.ng,...` |
-
----
-
-## SECURITY REQUIREMENTS
-
-### Authentication
-- Supabase Auth remains the authentication authority
-- `signInWithPassword()` for credential verification
-- `setSession()` for session establishment
-
-### Authorization
-- Admin authorization remains `private.is_admin()`
-- Server-side only — never trust client-provided role
-- `profiles.role = 'admin'` is the authority
-
-### Secrets
-- Never expose `SUPABASE_SERVICE_ROLE_KEY` to frontend
-- Only public Supabase configuration (`URL`, `ANON_KEY`) is client-side
-- Database credentials are server-only
-
-### CORS
-- Whitelist only approved Sealify frontend origins
-- Do NOT use `Access-Control-Allow-Origin: *` for authenticated APIs
-- Allow: `https://sealify.ng`, `https://www.sealify.ng`, `http://localhost:5173`
-
-### Sessions
-- No localStorage admin tokens
-- No custom authorization tokens
-- No hard-coded sessions
-- Use Supabase session management
+| File | Change |
+|------|--------|
+| `package.json` | Removed `nitro`, `express`, `cors`, `helmet`, `morgan`, `concurrently`, and `@types/*` deps; updated scripts to include `--functions-dir=functions` |
+| `vite.config.ts` | Updated proxy target from localhost:3000 to localhost:8788 |
+| `dev.mjs` | Added `--functions-dir functions` |
+| `AI_RULES.md` | Updated for Pages Functions architecture |
+| `CLOUDFLARE_RETIREMENT_PLAN.md` | Updated for Pages Functions |
+| `MIGRATION_AUDIT.md` | Updated for Pages Functions |
+| `PHASE_2_SECURITY_BLOCKERS.md` | Updated Cloudflare deployment section for Pages Functions |
+| `README_PRODUCTION.md` | Removed `server/db/schema.sql` from migration steps |
+| `src/entry-server.tsx` | **DELETED** (stale SSR handler) |
+| `server/` | **DELETED** (Express/Nitro directory) |
+| `local-server.js` | **DELETED** |
+| `nitro.config.ts` | **DELETED** |
+| `start-dev.ps1` | **DELETED** |
 
 ---
 
@@ -552,21 +326,32 @@ Supabase:
 
 | Item | Value |
 |------|-------|
-| **Current endpoints** | 97 |
-| **Files to create** | ~25 |
-| **Files to modify** | ~8 |
-| **Files to retire** | ~22 |
-| **Dependencies to add** | ~3 |
-| **Dependencies to remove** | ~4 |
-| **Overall risk** | **MEDIUM** |
-| **Estimated effort** | 3-5 days |
+| **API Implementation** | Cloudflare Pages Functions (Hono) |
+| **Frontend** | React + Vite + Cloudflare Pages |
+| **Database** | Hyperdrive (PostgreSQL connection pooling) |
+| **Auth** | Supabase Auth |
+| **Services Active** | Pages, Pages Functions, Hyperdrive, Wrangler |
+| **Overall Risk** | **LOW** |
+| **Status** | **IN PROGRESS** (validation blocked) |
 
 ---
 
-## APPROVAL REQUIRED BEFORE IMPLEMENTATION
+## VERIFICATION CHECKLIST
 
-This audit is complete. Awaiting approval to begin implementation.
-
-**DO NOT modify Supabase production.**
-**DO NOT delete Cloudflare files yet.**
-**DO NOT create Render service yet.**
+- [x] `server/` directory removed
+- [x] `src/entry-server.tsx` removed
+- [x] `nitro.config.ts` removed
+- [x] `local-server.js` removed
+- [x] `start-dev.ps1` removed
+- [x] `vite.config.ts` proxy updated to localhost:8788
+- [x] `dev.mjs` updated with `--functions-dir functions`
+- [x] `package.json` cleaned (removed nitro, express, cors, helmet, morgan, concurrently, @types/*)
+- [x] `package-lock.json` synced (top-level deps only; stale node_modules entries will regenerate)
+- [x] AI_RULES.md updated for Pages Functions
+- [x] CLOUDFLARE_RETIREMENT_PLAN.md updated
+- [x] MIGRATION_AUDIT.md updated
+- [x] PHASE_2_SECURITY_BLOCKERS.md updated
+- [x] README_PRODUCTION.md updated (removed server/db/schema.sql from steps)
+- [x] Deploy workflow uses `--functions-dir functions`
+- [ ] Run validation (blocked: node/npm unavailable in sandbox)
+- [ ] Push to main

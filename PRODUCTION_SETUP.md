@@ -62,7 +62,7 @@ Publication: `supabase_realtime`
 ### 5. RUN PRODUCTION MIGRATIONS (Fixes: "Database errors", "Missing tables")
 **SQL Editor → Run in order:**
 1. `supabase/migrations/20240101000000_initial_schema.sql`
-2. `server/db/schema.sql` (analytics tables)
+2. `functions/_middleware/db.ts` (analytics tables)
 3. `src/admin/seed-production.ts` content
 
 ---
@@ -109,8 +109,8 @@ curl -X POST https://YOUR-PROJECT.supabase.co/storage/v1/object/profile-media/te
 # 4. Test Realtime (in browser console)
 const channel = supabase.channel('test').on('postgres_changes', {event:'*', schema:'public'}, console.log).subscribe()
 
-# 5. Test Render API
-curl https://sealify-api.onrender.com/health
+# 5. Test API
+curl https://sealify.pages.dev/api/health
 ```
 
 ---
@@ -130,7 +130,7 @@ SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
 **Dashboard → Analytics → Workers/Pages → Enable**
 
 ### 4. Uptime Monitoring
-- UptimeRobot / BetterUptime: `https://sealify-api.onrender.com/health`
+- UptimeRobot / BetterUptime: `https://sealify.pages.dev/api/health`
 - Alert on: 5xx errors, latency > 2s
 
 ---

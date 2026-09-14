@@ -16,7 +16,7 @@
 | `supabase/migrations/20240127000001_rls_performance_fixes.sql` | Follow-up policy/index migration | Replaces selected policies on the active model |
 | `supabase/migrations/20240816000000_rls_least_privilege.sql` | Unapplied proposal from Phase 2B | Proposed least-privilege policy model; not evidence of deployed state |
 | `supabase/schema.sql` | Legacy/conflicting schema document | `users`, `listings`, `listing_images`, and related tables |
-| `server/db/schema.sql` | Server telemetry schema | `analytics_events`, `performance_metrics` |
+
 | `supabase/storage-policies.sql` | Storage policy script | `storage.objects` buckets |
 | `src/components/SqlSchemaViewer.tsx`, `src/admin/pages/SqlSchemaViewer.tsx` | UI-embedded legacy SQL/documentation | Mostly the `users`/`listings`/`listing_images` model; not a migration |
 

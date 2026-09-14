@@ -4,57 +4,43 @@
 
 | Service | Purpose | Status |
 |---------|---------|--------|
-| Cloudflare Pages | Frontend hosting | ACTIVE - Keep for now |
-| Cloudflare Pages Functions | Backend API | REPLACED by Express |
-| Cloudflare Hyperdrive | PostgreSQL connection pool | REPLACED by direct connection |
-| Cloudflare Wrangler | Deployment tool | NOT NEEDED for Render |
+| Cloudflare Pages | Frontend hosting | ACTIVE - Keep |
+| Cloudflare Pages Functions | Backend API | ACTIVE - Keep |
+| Cloudflare Hyperdrive | PostgreSQL connection pool | ACTIVE - Keep |
+| Cloudflare Wrangler | Deployment tool | ACTIVE - Keep |
 
-## What Render Replaces
+## Planned Rollout
 
-| Cloudflare Component | Render Replacement |
-|---------------------|-------------------|
-| Pages Functions `/api/*` | Express server `/api/*` |
-| Hyperdrive | `DATABASE_URL` direct connection |
-| `functions/` directory | `server/` directory |
-| `wrangler.toml` | `render.yaml` |
-| `NEXT_PUBLIC_SUPABASE_URL` | `SUPABASE_URL` |
-| `SUPABASE_ANON_KEY` | `SUPABASE_ANON_KEY` |
+This project uses a single Cloudflare Pages project (`sealify`) for both frontend and backend:
+
+- Frontend static assets are built by Vite into `dist/`.
+- Backend API routes are Pages Functions under `functions/api/`.
+- Deployment uses `wrangler pages deploy dist --project-name=sealify --functions-dir=functions`.
+- Local development uses `wrangler pages dev dist --functions-dir functions --port 8788`.
 
 ## Rollback Plan
 
-If Render deployment fails:
+If Pages Functions deployment fails:
 
-1. Frontend remains on Cloudflare Pages
-2. Set `VITE_API_URL` back to Cloudflare Pages URL
-3. Redeploy frontend to Cloudflare
-4. Cloudflare backend is still functional (not deleted)
+1. Frontend remains on Cloudflare Pages.
+2. Revert Pages Functions changes and redeploy `dist/` without `--functions-dir`.
+3. Existing Pages Functions are still functional (not deleted).
 
-## Retirement Steps (Future)
+## Future Considerations
 
-1. Verify Render is stable for 30 days
-2. Update DNS to point to Render (if moving frontend)
-3. Remove Cloudflare Pages project
-4. Remove Cloudflare environment variables
-5. Delete `functions/` directory
-6. Delete `wrangler.toml`
-7. Delete `public/_headers`
-8. Remove `@cloudflare/workers-types` from devDependencies
-9. Remove `wrangler` from devDependencies
+1. Monitor Pages Functions performance and limits.
+2. Verify Supabase Auth and Hyperdrive operations on Pages.
+3. Set up custom domain and DNS records for Pages.
+4. Review Cloudflare Pages pricing and limits.
 
-## DNS Changes Required (Future)
+## Verification Checklist Before Deployment
 
-- Update `sealify.ng` A/AAAA records to Render IP
-- Or use Render's custom domain feature
-- Update `www.sealify.ng` CNAME to Render
-
-## Verification Checklist Before Retirement
-
-- [ ] Render backend stable for 30 days
-- [ ] All API endpoints working on Render
+- [ ] Pages Functions build successfully with `--functions-dir=functions`
+- [ ] All API endpoints working on Pages Functions
 - [ ] Admin dashboard fully functional
-- [ ] No critical errors in Render logs
-- [ ] Frontend successfully connected to Render
+- [ ] No critical errors in Pages Functions logs
+- [ ] Frontend successfully connected to Pages Functions API URL
 - [ ] CORS correctly configured
 - [ ] Supabase Auth working
-- [ ] Database operations working
+- [ ] Database operations working via Hyperdrive
 - [ ] Performance acceptable

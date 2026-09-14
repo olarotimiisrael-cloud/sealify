@@ -103,7 +103,7 @@ CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USIN
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `VITE_API_URL` | `https://sealify-api.onrender.com` | Plain text |
+| `VITE_API_URL` | `https://sealify.pages.dev` | Plain text |
 | `NODE_VERSION` | `22.16.0` | Plain text |
 | `NODE_ENV` | `production` | Plain text |
 

@@ -32,7 +32,7 @@ Add in **Settings → Environment variables**:
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `VITE_API_URL` | `https://sealify-api.onrender.com` | Plain text |
+| `VITE_API_URL` | `https://sealify.pages.dev` | Plain text |
 | `NODE_VERSION` | `22.16.0` | Plain text |
 
 ### 4. Custom Domain (Optional)

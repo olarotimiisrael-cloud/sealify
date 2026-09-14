@@ -18,14 +18,11 @@ returned in API responses.
 
 ## Cloudflare API deployment
 
-The current Vite build emits static assets to `dist`. It does not emit a
-Cloudflare Pages `functions` directory or `_worker.js`, while API code exists
-under `src/entry-server.tsx` and `server/`. Phase 2 must establish and test
-one supported Pages Functions/Worker build path before production deployment.
+The current Vite build emits static assets to `dist`. API code now exists in
+the `functions/` directory as Cloudflare Pages Functions. Phase 2 must verify
+that the Pages Functions deployment works correctly before production deployment.
 
-The server code also references a Hyperdrive binding that is not declared in
-the current `wrangler.toml`; this must be resolved or removed from the chosen
-deployment architecture.
+The `wrangler.toml` declares a Hyperdrive binding (`HYPERDRIVE`); Pages Functions access it via the binding.
 
 ## Database authorization
 
