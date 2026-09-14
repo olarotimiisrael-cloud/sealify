@@ -36,7 +36,7 @@ A full-featured classifieds marketplace for Ogbomosoland, Oyo State, and across 
 | Routing | React Router v6 |
 | State | React Context + localStorage + Supabase |
 | Backend | Supabase (PostgreSQL, Auth, Storage, Realtime) |
-| Deployment | Cloudflare Pages / Vercel |
+| Deployment | Cloudflare Pages (frontend), Render (API), Supabase (auth/database) |
 | PWA | Service Worker, Web App Manifest |
 | Charts | Recharts |
 | Notifications | Sonner (toast) |
@@ -82,7 +82,7 @@ src/
 │   └── SealifyContext.tsx # Global state management
 ├── services/
 │   └── supabaseService.ts # Supabase CRUD operations
-├── api/                 # Hono API routes (Cloudflare Workers)
+├── api/                 # Hono API routes (Render backend)
 │   ├── auth.ts
 │   ├── listings.ts
 │   ├── messages.ts
@@ -115,10 +115,10 @@ src/
 ## 🔧 Setup Instructions
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22.16.0+
 - npm/pnpm/yarn
 - Supabase account
-- Cloudflare account (for Workers/Pages deployment)
+- Cloudflare account (for Pages deployment)
 
 ### 1. Clone & Install
 ```bash

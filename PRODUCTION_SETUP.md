@@ -55,7 +55,7 @@ Publication: `supabase_realtime`
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://YOUR-PROJECT.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `NODE_VERSION` | `20` | Plain |
+| `NODE_VERSION` | `22.16.0` | Plain |
 | `NODE_ENV` | `production` | Plain |
 | `VITE_SITE_URL` | `https://sealify.ng` | Plain |
 
@@ -79,7 +79,7 @@ Publication: `supabase_realtime`
 | "Push notifications don't work" | VAPID keys missing | Add to env vars |
 | "Search returns no results" | Missing indexes / RLS blocking | Run migration #5 |
 | "Can't post ad" | RLS policy too strict | Check `ads` table policies |
-| "Escrow/payment fails" | Edge functions not deployed | Deploy Cloudflare Workers |
+| "Escrow/payment fails" | Render API unavailable | Check Render service health and API logs |
 | "Notifications not showing" | RLS on notifications table | Enable realtime + fix policies |
 | "Saved items disappear" | Favorites RLS policy | Fix `favorites` table policy |
 | "Profile won't save" | Profiles RLS policy | Check `profiles` update policy |
@@ -109,8 +109,8 @@ curl -X POST https://YOUR-PROJECT.supabase.co/storage/v1/object/profile-media/te
 # 4. Test Realtime (in browser console)
 const channel = supabase.channel('test').on('postgres_changes', {event:'*', schema:'public'}, console.log).subscribe()
 
-# 5. Test Cloudflare Workers
-curl https://sealify.ng/api/health
+# 5. Test Render API
+curl https://sealify-api.onrender.com/health
 ```
 
 ---
@@ -130,7 +130,7 @@ SENTRY_DSN=https://xxxxx@sentry.io/xxxxx
 **Dashboard → Analytics → Workers/Pages → Enable**
 
 ### 4. Uptime Monitoring
-- UptimeRobot / BetterUptime: `https://sealify.ng/api/health`
+- UptimeRobot / BetterUptime: `https://sealify-api.onrender.com/health`
 - Alert on: 5xx errors, latency > 2s
 
 ---

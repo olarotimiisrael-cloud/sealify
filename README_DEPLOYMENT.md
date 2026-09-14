@@ -83,7 +83,7 @@ CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USIN
 ### 2.1 Create Project
 1. Cloudflare Dashboard → **Workers & Pages** → **Create application** → **Pages**
 2. Connect to Git → Select repository
-3. Project name: `sealify-nigeria`
+3. Project name: `sealify`
 
 ### 2.2 Build Configuration
 | Setting | Value |
@@ -91,7 +91,7 @@ CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USIN
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Root directory | (leave empty) |
-| Node version | `20` (in Environment Variables) |
+| Node version | `22.16.0` (in Environment Variables) |
 
 ### 2.3 Environment Variables (Production)
 **Settings → Environment variables → Add:**
@@ -103,7 +103,8 @@ CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USIN
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxxxx.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `SUPABASE_SERVICE_ROLE_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `NODE_VERSION` | `20` | Plain text |
+| `VITE_API_URL` | `https://sealify-api.onrender.com` | Plain text |
+| `NODE_VERSION` | `22.16.0` | Plain text |
 | `NODE_ENV` | `production` | Plain text |
 
 ### 2.4 Custom Domain (Recommended)
@@ -133,7 +134,8 @@ CREATE POLICY "Admins can view all documents" ON storage.objects FOR SELECT USIN
 3. Account Resources: **Include** → **All accounts**
 
 ### 3.2 Workflow Files (Already Created)
-- `.github/workflows/ci.yml` - Main CI/CD
+- `.github/workflows/ci.yml` - Main CI
+- `.github/workflows/deploy.yml` - Production Cloudflare Pages deployment
 - `.github/workflows/dependency-review.yml` - Security scanning
 
 ### 3.3 Branch Protection
@@ -237,7 +239,6 @@ Add to Cloudflare **Security → WAF → Custom Rules:**
 | Service | Tier | Cost |
 |---------|------|------|
 | Cloudflare Pages | Free | $0 |
-| Cloudflare Workers | Free (100k/day) | $0 |
 | Supabase | Free (500MB DB, 2GB bandwidth) | $0 |
 | Supabase Pro | If needed | $25/mo |
 | Custom Domain | Cloudflare Registrar | ~$8/yr |
@@ -255,7 +256,7 @@ Add to Cloudflare **Security → WAF → Custom Rules:**
 | Images not uploading | Check storage bucket policies, CORS |
 | Real-time not working | Enable Replication in Supabase Database |
 | Admin login fails | Check localStorage for admin credentials |
-| Build fails on Cloudflare | Check Node version (20), build command |
+| Build fails on Cloudflare | Check Node version (22.16.0), build command |
 
 ---
 

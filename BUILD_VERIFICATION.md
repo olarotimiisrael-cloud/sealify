@@ -42,8 +42,7 @@ dist/
 |-----|----------------|------------|
 | `lint-and-typecheck` | ✅ PASS | ESLint 0 errors, `tsc --noEmit` 0 errors |
 | `build` | ✅ PASS | `npm ci`, `npm run build` succeeds, artifacts uploaded |
-| `deploy-preview` | ✅ PASS | Preview URL generated for PR |
-| `deploy-production` | ✅ PASS | Deploys to `sealify.pages.dev` |
+| `deploy` | ✅ PASS | Build and deploy `dist` to `sealify.pages.dev` |
 
 ### GitHub Actions Logs to Verify
 
@@ -72,11 +71,11 @@ Run npm run build
 
 ### Dashboard Checks
 
-1. **Project:** `sealify-nigeria`
+1. **Project:** `sealify`
 2. **Production Branch:** `main`
 3. **Build Command:** `npm run build`
 4. **Output Directory:** `dist`
-5. **Node Version:** `20` (in Environment Variables)
+5. **Node Version:** `22.16.0` (in Environment Variables)
 
 ### Environment Variables (Production)
 
@@ -88,7 +87,7 @@ Run npm run build
 | `SUPABASE_ANON_KEY` | ✅ Set |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Set (Secret) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_PIN` | Not used; authenticate through Supabase Auth |
-| `NODE_VERSION` | `20` |
+| `NODE_VERSION` | `22.16.0` |
 | `NODE_ENV` | `production` |
 
 ### Custom Domain (if configured)
@@ -113,7 +112,7 @@ git push origin main
 # - deploy-production: ~2-3 min
 
 # 4. Check Cloudflare Pages dashboard
-# https://dash.cloudflare.com/<account>/pages/view/sealify-nigeria
+# https://dash.cloudflare.com/<account>/pages/view/sealify
 
 # 4. Verify production URL
 curl -I https://sealify.pages.dev

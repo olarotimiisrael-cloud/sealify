@@ -25,7 +25,7 @@
 ```
 Type: CNAME
 Name: www
-Target: sealify-ng.pages.dev
+Target: sealify.pages.dev
 Proxy: ✅ On
 
 Type: A
@@ -56,15 +56,15 @@ Proxy: ✅ On
 |----------|----------|-------------|
 | `VITE_SUPABASE_URL` | ✅ | Supabase project URL |
 | `VITE_SUPABASE_ANON_KEY` | ✅ | Supabase anon key |
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Same as above (for Workers) |
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Same as above (frontend compatibility) |
 | `SUPABASE_ANON_KEY` | ✅ | Same as above |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service role (SECRET!) |
-| `NODE_VERSION` | ✅ | `20` |
+| `NODE_VERSION` | ✅ | `22.16.0` |
 | `NODE_ENV` | ✅ | `production` |
 
 ---
 
-## API ENDPOINTS (Cloudflare Workers)
+## API ENDPOINTS (Render backend)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -130,7 +130,7 @@ npm run lint
 - `GET /api/health/db` - Database connectivity
 
 ### Logs
-- Cloudflare Workers: Dashboard → Workers → Logs
+- `Render API`: Dashboard → Render → Logs
 - Supabase: Dashboard → Logs → Database/Realtime/Auth
 
 ### Common Issues

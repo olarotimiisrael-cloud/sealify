@@ -13,7 +13,7 @@
 ### 1. Create Project
 - [ ] Go to Cloudflare Dashboard → Pages → Create a project
 - [ ] Connect Git repository (GitHub/GitLab)
-- [ ] Project name: `sealify-nigeria`
+- [ ] Project name: `sealify`
 
 ### 2. Build Configuration
 | Setting | Value |
@@ -21,7 +21,7 @@
 | Build command | `npm run build` |
 | Build output directory | `dist` |
 | Root directory | (empty) |
-| Node version | `18` or `20` (set in Environment Variables) |
+| Node version | `22.16.0` (set in Environment Variables) |
 
 ### 3. Environment Variables (Production)
 Add in **Settings → Environment variables**:
@@ -32,7 +32,8 @@ Add in **Settings → Environment variables**:
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://your-project.supabase.co` | Secret |
 | `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIs...` | Secret |
-| `NODE_VERSION` | `20` | Plain text |
+| `VITE_API_URL` | `https://sealify-api.onrender.com` | Plain text |
+| `NODE_VERSION` | `22.16.0` | Plain text |
 
 ### 4. Custom Domain (Optional)
 - [ ] Add custom domain: `sealify.ng` or `app.sealify.ng`
@@ -95,10 +96,10 @@ Should show 30+ tables.
 
 ## 🚀 Deploy
 
-### Option A: Automatic (Git Push)
+### Option A: Automatic (GitHub Actions)
 - [ ] Push to main branch
-- [ ] Cloudflare auto-builds and deploys
-- [ ] Check build logs for errors
+- [ ] `.github/workflows/deploy.yml` builds and deploys `dist`
+- [ ] Check workflow logs for errors
 
 ### Option B: Manual (Wrangler CLI)
 ```bash
