@@ -10,15 +10,11 @@ id = "4450cb10a9fb4977ba6a1d1cd2e6b110"
 [vars]
 SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7"
-SUPABASE_SERVICE_ROLE_KEY = "YOUR_SERVICE_ROLE_KEY_HERE"
+# Sensitive credentials are set in Cloudflare Pages > Settings > Variables and Secrets.
+# Do not add SUPABASE_SERVICE_ROLE_KEY or AI provider keys to this file.
 AI_PROVIDER = "sealify"
-OPENAI_API_KEY = ""
-GEMINI_API_KEY = ""
 AI_WEB_SEARCH_ENABLED = "true"
 AI_FALLBACK_ENABLED = "true"
-TERMII_API_KEY = ""
-ARKESEL_API_KEY = ""
-TWILIO_ACCOUNT_SID = ""
 APP_URL = "https://sealify.pages.dev"
 PUBLIC_SITE_URL = "https://sealify.pages.dev"
 NODE_ENV = "production"

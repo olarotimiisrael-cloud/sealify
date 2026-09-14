@@ -4,6 +4,7 @@ import { SealifyProvider } from "./context/SealifyContext";
 import SplashScreen from "./components/SplashScreen";
 import ToasterWrapper from "./components/ToasterWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
+import AdminRouteGuard from "./components/AdminRouteGuard";
 
 const Index = lazy(() => import("./pages/Index"));
 const ListingDetail = lazy(() => import("./pages/ListingDetail"));
@@ -56,9 +57,9 @@ const App = () => (
           <Route path="/faq" element={<FAQ />} />
           <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/contact" element={<Contact />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminRouteGuard><AdminDashboard /></AdminRouteGuard>} />
           <Route path="/admin/setup-mfa" element={<AdminSetupMfa />} />
-          <Route path="/admin/ai-settings" element={<AdminAiSettingsPage />} />
+          <Route path="/admin/ai-settings" element={<AdminRouteGuard><AdminAiSettingsPage /></AdminRouteGuard>} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/safety" element={<SafetyCenter />} />

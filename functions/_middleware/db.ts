@@ -4,7 +4,7 @@ import type { Env } from './types';
 let sqlInstance: ReturnType<typeof postgres> | null = null;
 
 export function getSql(env: Env) {
-  const connectionString = env.HYPERDRIVE.connect();
+  const connectionString = env.HYPERDRIVE.connectionString;
   if (!connectionString) {
     throw new Error('HYPERDRIVE connection string not available');
   }

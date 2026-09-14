@@ -17,7 +17,7 @@ export interface Env {
 }
 
 export interface Hyperdrive {
-  connect(): string;
+  connectionString: string;
 }
 
 export interface AuthUser {

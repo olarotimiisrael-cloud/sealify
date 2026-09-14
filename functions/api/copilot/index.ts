@@ -1,9 +1,7 @@
 import { Hono } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { getSql } from '../../_middleware/db';
-import { requireAuth } from '../../_middleware/auth';
 import type { AppContext } from '../../_middleware/types';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
@@ -54,6 +52,24 @@ interface AIProvider {
   webSearchEnabled: boolean;
   fallbackEnabled: boolean;
 }
+
+type ChatMessage = {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: Array<{ id: string; type: 'function'; function: ToolFunctionCall }>;
+  tool_call_id?: string;
+};
+
+type ToolFunctionCall = {
+  name: string;
+  arguments: string;
+};
+
+type ToolCall = {
+  id: string;
+  type: 'function';
+  function: ToolFunctionCall;
+};
 
 function getActiveProvider(env: Record<string, string | undefined>): AIProvider | null {
   const rawProviderName = (env.AI_PROVIDER || 'sealify').toLowerCase();
@@ -127,7 +143,7 @@ const FUNCTIONS = [
 ];
 
 async function callOpenAI(
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  messages: ChatMessage[],
   model: string,
   apiKey: string,
   useWebSearch: boolean,
@@ -143,10 +159,6 @@ async function callOpenAI(
   if (enableFunctions) {
     body.tools = FUNCTIONS.map(f => ({ type: 'function', function: f }));
     body.tool_choice = 'auto';
-  }
-
-  if (useWebSearch) {
-    body.tools = [...(body.tools || []), { type: 'web_search_preview' }];
   }
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -177,15 +189,17 @@ async function callOpenAI(
   return {
     text: content,
     citations: citations.length ? citations : undefined,
-    usedWebSearch: useWebSearch,
-    functionCall: message?.tool_calls?.[0]?.function,
+    // Chat Completions does not support the Responses API web-search tool.
+    // Keep this endpoint reliable; Gemini retains its native grounding support.
+    usedWebSearch: false,
+    toolCall: message?.tool_calls?.[0] as ToolCall | undefined,
     provider: 'openai' as const,
     model,
   };
 }
 
 async function callGemini(
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  messages: ChatMessage[],
   model: string,
   apiKey: string,
   useWebSearch: boolean,
@@ -237,7 +251,7 @@ async function callGemini(
 }
 
 async function callSealifyLocal(
-  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  messages: ChatMessage[],
   model: string,
   baseUrl: string,
 ) {
@@ -271,11 +285,11 @@ async function callSealifyLocal(
 }
 
 // Execute function calls
-async function executeFunctionCall(functionCall: any, env: Record<string, string | undefined>, userId?: string) {
+async function executeFunctionCall(functionCall: ToolFunctionCall, env: AppContext['Bindings'], userId?: string) {
   const { name, arguments: args } = functionCall;
-  const parsedArgs = typeof args === 'string' ? JSON.parse(args) : args;
 
   try {
+    const parsedArgs = JSON.parse(args || '{}') as Record<string, unknown>;
     switch (name) {
       case 'search_listings': {
         const sql = getSql(env);
@@ -283,47 +297,49 @@ async function executeFunctionCall(functionCall: any, env: Record<string, string
         const params: any[] = [];
         let paramIndex = 1;
 
-        if (parsedArgs.query) {
+        if (typeof parsedArgs.query === 'string' && parsedArgs.query) {
           whereClause += ` AND (a.title ILIKE $${paramIndex} OR a.description ILIKE $${paramIndex} OR a.category_id ILIKE $${paramIndex})`;
           params.push(`%${parsedArgs.query}%`);
           paramIndex++;
         }
-        if (parsedArgs.category) {
+        if (typeof parsedArgs.category === 'string' && parsedArgs.category) {
           whereClause += ` AND a.category_id = $${paramIndex}`;
           params.push(parsedArgs.category);
           paramIndex++;
         }
-        if (parsedArgs.minPrice) {
+        if (typeof parsedArgs.minPrice === 'number' && Number.isFinite(parsedArgs.minPrice)) {
           whereClause += ` AND a.price >= $${paramIndex}`;
           params.push(parsedArgs.minPrice);
           paramIndex++;
         }
-        if (parsedArgs.maxPrice) {
+        if (typeof parsedArgs.maxPrice === 'number' && Number.isFinite(parsedArgs.maxPrice)) {
           whereClause += ` AND a.price <= $${paramIndex}`;
           params.push(parsedArgs.maxPrice);
           paramIndex++;
         }
-        if (parsedArgs.location) {
+        if (typeof parsedArgs.location === 'string' && parsedArgs.location) {
           whereClause += ` AND a.location ILIKE $${paramIndex}`;
           params.push(`%${parsedArgs.location}%`);
           paramIndex++;
         }
-        if (parsedArgs.condition) {
+        if (typeof parsedArgs.condition === 'string' && parsedArgs.condition) {
           whereClause += ` AND a.condition = $${paramIndex}`;
           params.push(parsedArgs.condition);
           paramIndex++;
         }
 
-        const limit = Math.min(parsedArgs.limit || 5, 10);
-        const listings = await sql`
+        const requestedLimit = typeof parsedArgs.limit === 'number' ? parsedArgs.limit : 5;
+        const limit = Math.max(1, Math.min(Math.floor(requestedLimit), 10));
+        params.push(limit);
+        const listings = await sql.unsafe(`
           SELECT a.id, a.title, a.description, a.price, a.category_id, a.condition, a.location, a.images, a.created_at,
                  p.full_name as seller_name, p.verified as seller_verified
           FROM ads a
           LEFT JOIN profiles p ON a.seller_id = p.id
-          ${sql(whereClause)}
+          ${whereClause}
           ORDER BY a.created_at DESC
-          LIMIT ${limit}
-        `;
+          LIMIT $${paramIndex}
+        `, params);
         return { success: true, data: listings };
       }
       case 'get_categories': {
@@ -500,7 +516,7 @@ copilotRoutes.post('/', async (c) => {
       }
     }
 
-    const { message, conversation, stream } = parsed.data;
+    const { message, conversation } = parsed.data;
     const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
     if (conversationUsed > MAX_CONVERSATION_CHARS) {
       return c.json({ message: 'Conversation too long. Please start a new chat.', citations: [], provider: 'none' }, 400);
@@ -526,17 +542,24 @@ copilotRoutes.post('/', async (c) => {
       }
 
       // Handle function calls
-      if (response.functionCall) {
-        const functionResult = await executeFunctionCall(response.functionCall, c.env as Record<string, string | undefined>, userId);
-        
-        // Add function result to conversation and get final response
-        const functionMessage = {
-          role: 'function' as const,
-          name: response.functionCall.name,
-          content: JSON.stringify(functionResult),
-        };
-        
-        const followUpMessages = [...messages, { role: 'assistant' as const, content: response.text || '', tool_calls: [{ type: 'function', function: response.functionCall }] }, functionMessage];
+      if (response.toolCall) {
+        const functionResult = await executeFunctionCall(response.toolCall.function, c.env, userId);
+
+        // Follow the Chat Completions tool-call protocol: tool calls have an ID,
+        // and their results are returned with role "tool" and that same ID.
+        const followUpMessages: ChatMessage[] = [
+          ...messages,
+          {
+            role: 'assistant',
+            content: response.text || '',
+            tool_calls: [response.toolCall],
+          },
+          {
+            role: 'tool',
+            tool_call_id: response.toolCall.id,
+            content: JSON.stringify(functionResult),
+          },
+        ];
         
         let finalResponse;
         if (prov.provider === 'sealify') {
@@ -549,7 +572,7 @@ copilotRoutes.post('/', async (c) => {
         
         return {
           ...finalResponse,
-          functionCalled: response.functionCall.name,
+          functionCalled: response.toolCall.function.name,
           functionResult: functionResult.success ? functionResult.data : undefined,
         };
       }
