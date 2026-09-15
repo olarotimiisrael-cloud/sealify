@@ -33,7 +33,7 @@ Sealify uses a **single Cloudflare Pages project** with Pages Functions for the 
 | Component | Technology | Location |
 |-----------|-----------|----------|
 | Frontend | React + Vite | `src/` |
-| API Routes | Hono | `functions/api/*.ts` |
+| API Routes | Hono | `functions/_api/*.ts` |
 | API Entry | Pages Functions | `functions/api/[[path]].ts` |
 | Database | Hyperdrive + Supabase JS | `functions/_middleware/` |
 | Auth | Supabase Auth | `functions/_middleware/auth.ts` |

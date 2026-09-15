@@ -97,15 +97,15 @@ Representative files include:
 - `src/api/categories.ts`
 - `src/api/analytics.ts`
 - `src/api/copilot.ts`
-- `server/routes/api/ads.post.ts`
-- `server/routes/api/ads/[id].put.ts`
-- `server/routes/api/ads/[id].delete.ts`
-- `server/routes/api/conversations.post.ts`
-- `server/routes/api/notifications.patch.ts`
-- `server/routes/api/escrow.post.ts`
-- `server/routes/api/escrow/[id]/release.post.ts`
+- `server/routes/api/ads.post.ts` → `functions/_api/ads/` (Pages Functions)
+- `server/routes/api/ads/[id].put.ts` → `functions/_api/ads/[id].put.ts` (Pages Functions)
+- `server/routes/api/ads/[id].delete.ts` → `functions/_api/ads/[id].delete.ts` (Pages Functions)
+- `server/routes/api/conversations.post.ts` → `functions/_api/conversations/` (Pages Functions)
+- `server/routes/api/notifications.patch.ts` → `functions/_api/notifications/` (Pages Functions)
+- `server/routes/api/escrow.post.ts` → `functions/_api/escrow/` (Pages Functions)
+- `server/routes/api/escrow/[id]/release.post.ts` → `functions/_api/escrow/[id]/release.post.ts` (Pages Functions)
 
-The server-side Supabase clients in `src/db/supabase.ts`, `server/db/supabase.ts`, and `src/lib/supabase.ts` use the service-role environment variable and set `persistSession: false`. They must remain server-only.
+The server-side Supabase clients in `src/db/supabase.ts`, `functions/_middleware/supabase.ts`, and `src/lib/supabase.ts` use the service-role environment variable and set `persistSession: false`. They must remain server-only.
 
 ## E. Frontend authentication flow
 
@@ -135,7 +135,7 @@ There are two normal bearer-token construction paths:
 1. `src/lib/api-client.ts` obtains a token from its manually maintained in-memory/localStorage values and constructs `Authorization: Bearer ...` for generic API requests.
 2. `src/lib/admin-api.ts` calls the canonical Supabase client's `getSession()` and constructs an `Authorization: Bearer ...` header for admin requests. `src/components/AiShoppingAssistantModal.tsx` does the same for Copilot.
 
-The backend validates bearer tokens rather than trusting a client-provided user ID. However, `server/routes/api/offline/[type].post.ts` accepts `userId` in the request payload for offline actions; this is an authorization risk independent of token storage and requires a separate review. It must not be treated as proof of identity.
+The backend validates bearer tokens rather than trusting a client-provided user ID. However, `functions/_api/offline/[type].post.ts` accepts `userId` in the request payload for offline actions; this is an authorization risk independent of token storage and requires a separate review. It must not be treated as proof of identity.
 
 API routes also construct provider-specific Authorization headers for server-side AI calls, including OpenAI/Gemini provider requests. Those are not user-session storage mechanisms. Actual provider key values were not printed.
 
@@ -242,11 +242,11 @@ Do not change these as part of localStorage token removal:
 
 ### Static checks
 
-- `rg -n "sb-access-token|sb-refresh-token|sb-token-expiry" src server supabase`
-- `rg -n -i "localStorage|sessionStorage" src server`
-- `rg -n -i "Authorization|Bearer|access_token|refresh_token|supabase\.auth" src server`
+- `rg -n "sb-access-token|sb-refresh-token|sb-token-expiry" src functions supabase`
+- `rg -n -i "localStorage|sessionStorage" src functions`
+- `rg -n -i "Authorization|Bearer|access_token|refresh_token|supabase\.auth" src functions`
 - Verify there is no `localStorage` or `sessionStorage` key for access token, refresh token, JWT, user ID, role, or admin status.
-- Verify no browser bundle imports `src/lib/supabase.ts`, `src/db/supabase.ts`, or `server/db/supabase.ts`.
+- Verify no browser bundle imports `src/lib/supabase.ts`, `src/db/supabase.ts`, or `functions/_middleware/supabase.ts`.
 
 ### Browser tests
 
