@@ -4,49 +4,62 @@ import { corsMiddleware } from '../_middleware/cors';
 import { errorMiddleware } from '../_middleware/error';
 import type { Env } from '../_middleware/types';
 import { healthRoutes } from '../../src/api/health';
-import { authRoutes } from '../../src/api/auth';
-import { listingsRoutes } from '../../src/api/listings';
-import { categoriesRoutes } from '../../src/api/categories';
-import { searchRoutes } from '../../src/api/search';
-import { reviewsRoutes } from '../../src/api/reviews';
-import { buyerRequestsRoutes } from '../../src/api/buyer-requests';
-import { messagesRoutes } from '../../src/api/messages';
-import { notificationsRoutes } from '../../src/api/notifications';
-import { usersRoutes } from '../../src/api/users';
-import { analyticsRoutes } from '../../src/api/analytics';
-import { pushRoutes } from '../../src/api/push';
-import { copilotRoutes } from '../../src/api/copilot';
-import { adminRoutes } from '../../src/api/admin';
-import { marketInsightsRoutes } from '../../src/api/market-insights';
 
-const app = new Hono<{ Bindings: Env }>().basePath('/api');
+let cachedApp: Hono<{ Bindings: Env }> | null = null;
+let appPromise: Promise<Hono<{ Bindings: Env }>> | null = null;
 
-// Global middleware
-app.use('*', corsMiddleware);
-app.use('*', errorMiddleware);
+async function getApp(): Promise<Hono<{ Bindings: Env }>> {
+  if (cachedApp) return cachedApp;
+  if (appPromise) return appPromise;
 
-// Health check (no auth required)
-app.route('/health', healthRoutes);
+  appPromise = buildApp();
+  return appPromise;
+}
 
-// Auth routes (public)
-app.route('/auth', authRoutes);
+async function buildApp(): Promise<Hono<{ Bindings: Env }>> {
+  const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
-// Protected routes
-app.route('/listings', listingsRoutes);
-app.route('/categories', categoriesRoutes);
-app.route('/search', searchRoutes);
-app.route('/reviews', reviewsRoutes);
-app.route('/buyer-requests', buyerRequestsRoutes);
-app.route('/messages', messagesRoutes);
-app.route('/notifications', notificationsRoutes);
-app.route('/users', usersRoutes);
+  app.use('*', corsMiddleware);
+  app.use('*', errorMiddleware);
 
-// Admin-only routes
-app.route('/analytics', analyticsRoutes);
-app.route('/push', pushRoutes);
-app.route('/copilot', copilotRoutes);
-app.route('/admin', adminRoutes);
-app.route('/market-insights', marketInsightsRoutes);
+  app.route('/health', healthRoutes);
 
-export const onRequest = handle(app);
-export default app;
+  const routeMap = [
+    ['/auth', () => import('../../src/api/auth')],
+    ['/listings', () => import('../../src/api/listings')],
+    ['/categories', () => import('../../src/api/categories')],
+    ['/search', () => import('../../src/api/search')],
+    ['/reviews', () => import('../../src/api/reviews')],
+    ['/buyer-requests', () => import('../../src/api/buyer-requests')],
+    ['/messages', () => import('../../src/api/messages')],
+    ['/notifications', () => import('../../src/api/notifications')],
+    ['/users', () => import('../../src/api/users')],
+    ['/analytics', () => import('../../src/api/analytics')],
+    ['/push', () => import('../../src/api/push')],
+    ['/copilot', () => import('../../src/api/copilot')],
+    ['/admin', () => import('../../src/api/admin')],
+    ['/market-insights', () => import('../../src/api/market-insights')],
+  ] as const;
+
+  for (const [path, loader] of routeMap) {
+    try {
+      const mod = await loader();
+      const routeModule = mod.default || mod;
+      app.route(path, routeModule as any);
+    } catch (err) {
+      console.error(`[routes] Failed to load ${path}:`, err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  app.notFound((c) => {
+    return c.json({ error: 'Not found' }, 404);
+  });
+
+  cachedApp = app;
+  return app;
+}
+
+export const onRequest = async (context: any) => {
+  const app = await getApp();
+  return handle(app)(context);
+};
