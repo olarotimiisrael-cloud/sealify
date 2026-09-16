@@ -21,16 +21,14 @@ const AdminLogin: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [accessKey, setAccessKey] = useState('');
   const [showPass, setShowPass] = useState(false);
-  const [showAccessKey, setShowAccessKey] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email.trim() || !password.trim() || !accessKey.trim()) {
-      toast.error('Email, password, and access key are required.', { duration: 6000 });
+    if (!email.trim() || !password.trim()) {
+      toast.error('Email and password are required.', { duration: 6000 });
       return;
     }
 
@@ -39,7 +37,7 @@ const AdminLogin: React.FC = () => {
     // Security delay to prevent timing attacks
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = await adminLogin(email, password, accessKey);
+    const success = await adminLogin(email, password);
     setIsAuthenticating(false);
 
     if (success) {
@@ -123,30 +121,6 @@ const AdminLogin: React.FC = () => {
                     className="absolute right-3 top-3.5 text-slate-500 hover:text-white"
                   >
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 font-mono">
-                  Access Key *
-                </label>
-                <div className="relative">
-                  <Lock className="w-4 h-4 text-slate-500 absolute left-4 top-3.5" />
-                  <input
-                    type={showAccessKey ? 'text' : 'password'}
-                    required
-                    value={accessKey}
-                    onChange={(e) => setAccessKey(e.target.value)}
-                    placeholder="Enter Access Key"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-rose-500 rounded-xl pl-11 pr-10 py-3 text-xs text-white focus:outline-none font-mono transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowAccessKey(!showAccessKey)}
-                    className="absolute right-3 top-3.5 text-slate-500 hover:text-white"
-                  >
-                    {showAccessKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>

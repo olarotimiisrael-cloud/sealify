@@ -24,7 +24,7 @@ import {
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
 import AdminEditUserModal from '@/components/AdminEditUserModal';
-import AdminSettingsModal from '@/components/AdminSettingsModal';
+import AdminSettingsModal from '@/admin/pages/AdminSettingsModal';
 import DatabaseTest from '@/components/DatabaseTest';
 import SqlSchemaViewer from '@/components/SqlSchemaViewer';
 import DatabaseSchemaGenerator from '@/components/DatabaseSchemaGenerator';

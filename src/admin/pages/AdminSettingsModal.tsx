@@ -9,7 +9,7 @@ interface AdminSettingsModalProps {
 }
 
 export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, onClose }) => {
-  const { user, updateUser, updateAdminCredentials, adminEmail, adminAccessKey } = useSealify();
+  const { user, updateUser } = useSealify();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
 
@@ -22,11 +22,8 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
   const [businessAddress, setBusinessAddress] = useState('');
   const [avatarUrl, setAvatarUrl] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
-  const [newAdminEmail, setNewAdminEmail] = useState(adminEmail);
-  const [newAdminPass, setNewAdminPassword] = useState('');
-  const [newAdminAccessKey, setNewAdminAccessKey] = useState(adminAccessKey);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'credentials' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security'>('profile');
 
   useEffect(() => {
     if (user) {
@@ -41,11 +38,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
       setCoverUrl(user.storeBannerUrl || '');
     }
   }, [user]);
-
-  useEffect(() => {
-    setNewAdminEmail(adminEmail);
-    setNewAdminAccessKey(adminAccessKey);
-  }, [adminEmail, adminAccessKey]);
 
   if (!isOpen || !user) return null;
 
@@ -102,24 +94,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
     }
   };
 
-  const handleUpdateCredentials = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAdminEmail.trim() || !newAdminPass.trim() || !newAdminAccessKey.trim()) {
-      toast.error('Email, password, and access key are required');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      await updateAdminCredentials(newAdminEmail.trim(), newAdminPass.trim(), newAdminAccessKey.trim());
-      setIsSaving(false);
-      toast.success('Admin credentials updated successfully!');
-    } catch (err) {
-      setIsSaving(false);
-      toast.error(err instanceof Error ? err.message : 'Failed to update credentials');
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative text-slate-100 max-h-[90vh] overflow-y-auto">
@@ -130,7 +104,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
           <X className="w-5 h-5" />
         </button>
 
-        <div className="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-6">
+        <div className="grid grid-cols-2 gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800 mb-6">
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
@@ -139,15 +113,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
             }`}
           >
             <User className="w-3.5 h-3.5" /> Profile
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('credentials')}
-            className={`py-2.5 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${
-              activeTab === 'credentials' ? 'bg-rose-600 text-white shadow' : 'text-slate-400'
-            }`}
-          >
-            <KeyRound className="w-3.5 h-3.5" /> Credentials
           </button>
           <button
             type="button"
@@ -340,77 +305,7 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({ isOpen, 
           </form>
         )}
 
-        {activeTab === 'credentials' && (
-          <form onSubmit={handleUpdateCredentials} className="space-y-6">
-            <div className="text-center space-y-1 mb-4">
-              <div className="w-12 h-12 bg-rose-500/10 text-rose-400 rounded-2xl flex items-center justify-center mx-auto border border-rose-500/30">
-                <KeyRound className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl font-black text-white tracking-tight uppercase">Master Credentials</h2>
-              <p className="text-xs text-slate-400">Update root access credentials for the Admin Terminal</p>
-            </div>
-
-            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2">
-              <div className="flex items-center gap-2 text-rose-400 font-extrabold text-xs uppercase tracking-widest">
-                <Siren className="w-4 h-4" />
-                <span>SECURITY WARNING</span>
-              </div>
-              <p className="text-xs text-rose-200 leading-relaxed">
-                 Supabase Auth manages the administrator email and password. The access key is checked separately for the admin terminal and must match the live login policy.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Login Email *</label>
-                <input
-                  type="email"
-                  required
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  placeholder="admin@sealify.ng"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Access Password *</label>
-                <input
-                  type="password"
-                  required
-                  value={newAdminPass}
-                  onChange={(e) => setNewAdminPassword(e.target.value)}
-                  placeholder="Enter new master password"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono tracking-wider"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">Admin Access Key *</label>
-                <input
-                  type="password"
-                  required
-                  value={newAdminAccessKey}
-                  onChange={(e) => setNewAdminAccessKey(e.target.value)}
-                  placeholder="Enter admin access key"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-rose-500 font-mono tracking-wider"
-                />
-              </div>
-
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full py-4 bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow-lg shadow-rose-950/50 flex items-center justify-center gap-2 transition-transform active:scale-95"
-            >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>{isSaving ? 'Updating Credentials...' : 'Save Master Credentials'}</span>
-            </button>
-          </form>
-        )}
-
-        {activeTab === 'security' && (
+{activeTab === 'security' && (
           <div className="space-y-6">
             <div className="text-center space-y-1 mb-4">
               <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mx-auto border border-blue-500/30">

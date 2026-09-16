@@ -18,7 +18,6 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(1, "Password required"),
-  accessKey: z.string().trim().min(1, "Access key required").optional(),
 });
 
 const updateProfileSchema = z.object({
@@ -204,7 +203,7 @@ authRoutes.post("/admin-login", async (c) => {
   if (!isAdmin[0]?.is_admin) {
     await supabase.auth.signOut();
     await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
-    throw genericAdminLoginError();
+    throw new HTTPException(403, { message: "Administrator access required" });
   }
 
   // Step 6: Success - clear intrusion logs and record audit

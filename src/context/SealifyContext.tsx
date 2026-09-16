@@ -31,63 +31,6 @@ import * as intrusionService from '@/services/supabaseService';
 import * as recentDealsService from '@/services/supabaseService';
 import * as storageService from '@/services/supabaseService';
 
-const decodeTemporaryAdminSecret = (encoded: string): string => {
-  try {
-    if (typeof window !== 'undefined' && typeof window.atob === 'function') {
-      return window.atob(encoded);
-    }
-    return encoded;
-  } catch {
-    return encoded;
-  }
-};
-
-const TEMP_ADMIN_EMAIL_FALLBACK = 'admin@sealify.ng';
-const TEMP_ADMIN_PASSWORD_FALLBACK = 'sealify2027';
-const TEMP_ADMIN_MASTER_KEY_FALLBACK = decodeTemporaryAdminSecret('MzM2Njk5');
-const ADMIN_ACCESS_KEY_FALLBACK = '336699';
-const TEMP_ADMIN_EMAIL = TEMP_ADMIN_EMAIL_FALLBACK;
-const TEMP_ADMIN_PASSWORD = TEMP_ADMIN_PASSWORD_FALLBACK;
-const TEMP_ADMIN_ACCESS_KEY = ADMIN_ACCESS_KEY_FALLBACK;
-
-const getEnvAdminValue = (envKey: string, fallback: string): string => {
-  const envValue = (import.meta.env?.[envKey] ?? '').toString().trim();
-  return envValue || fallback;
-};
-
-const getStoredAdminValue = (storageKey: string, fallback: string) => {
-  if (typeof window === 'undefined') return fallback;
-
-  const storedValue = window.localStorage.getItem(storageKey);
-  if (storedValue !== null && storedValue.trim() !== '') return storedValue.trim();
-
-  return fallback;
-};
-
-const getTemporaryAdminLoginConfig = () => ({
-  email: getEnvAdminValue('VITE_ADMIN_EMAIL', getStoredAdminValue('sealify_admin_email', TEMP_ADMIN_EMAIL_FALLBACK)).trim().toLowerCase(),
-  password: getEnvAdminValue('VITE_ADMIN_PASSWORD', getStoredAdminValue('sealify_admin_password', TEMP_ADMIN_PASSWORD_FALLBACK)).trim(),
-  accessKey: getEnvAdminValue('VITE_ADMIN_ACCESS_KEY', getStoredAdminValue('sealify_admin_access_key', ADMIN_ACCESS_KEY_FALLBACK)).trim(),
-  masterKey: getEnvAdminValue('VITE_ADMIN_MASTER_KEY', getStoredAdminValue('sealify_admin_master_key', TEMP_ADMIN_MASTER_KEY_FALLBACK)).trim(),
-});
-
-const isTemporaryAdminLogin = (email: string, password: string, accessKey: string): boolean => {
-  const { email: expectedEmail, password: expectedPassword, accessKey: expectedAccessKey, masterKey: expectedMasterKey } = getTemporaryAdminLoginConfig();
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedPassword = password.trim();
-  const normalizedAccessKey = accessKey.trim();
-  const hasEmailMatch = normalizedEmail === expectedEmail;
-  const hasPasswordMatch = normalizedPassword === expectedPassword;
-  const hasAccessKeyMatch = normalizedAccessKey === expectedAccessKey;
-  if (!hasEmailMatch || !hasPasswordMatch || !hasAccessKeyMatch) return false;
-
-  const params = new URLSearchParams(window.location.search);
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  const requestMasterKey = params.get('master_key') || hashParams.get('master_key');
-
-  return requestMasterKey === null || requestMasterKey === expectedMasterKey;
-};
-
 const mapCategoryRow = (row: any): CategoryConfig => ({
   id: row.id,
   name: row.name as Category,
@@ -196,10 +139,7 @@ interface SealifyContextType {
   setUser: React.Dispatch<React.SetStateAction<UserProfile | null>>;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  adminEmail: string;
-  adminAccessKey: string;
-  updateAdminCredentials: (email: string, password: string, accessKey: string) => Promise<void>;
-  
+
   // System config
   systemConfig: Record<string, boolean | number>;
   updateSystemConfig: (updates: Record<string, boolean | number>) => void;
@@ -701,8 +641,6 @@ const TRANSLATIONS: Record<string, Record<string, string>> = {
 export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminEmail, setAdminEmail] = useState(() => getStoredAdminValue('sealify_admin_email', TEMP_ADMIN_EMAIL_FALLBACK));
-  const [adminAccessKey, setAdminAccessKey] = useState(() => getStoredAdminValue('sealify_admin_access_key', ADMIN_ACCESS_KEY_FALLBACK));
   const [systemConfig, setSystemConfig] = useState<Record<string, boolean | number>>(MOCK_SYSTEM_CONFIG);
   const [siteSettings, setSiteSettings] = useState(MOCK_SITE_SETTINGS);
   const [promotionPlans, setPromotionPlans] = useState(MOCK_PROMOTION_PLANS);
@@ -765,38 +703,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [error, setError] = useState<string | null>(null);
 
-  const updateAdminCredentials = async (email: string, password: string, accessKey: string) => {
-    const nextEmail = email.trim();
-    const nextPassword = password.trim();
-    const nextAccessKey = accessKey.trim();
-
-    if (!nextEmail || !nextPassword || !nextAccessKey) {
-      throw new Error('Email, password, and access key are required');
-    }
-
-    const { data: { user: authUser } } = await supabase.auth.getUser();
-
-    if (authUser) {
-      const updates: { email?: string; password?: string } = {};
-      if (nextEmail && nextEmail !== authUser.email) updates.email = nextEmail;
-      if (nextPassword) updates.password = nextPassword;
-
-      if (Object.keys(updates).length > 0) {
-        const { error: authError } = await supabase.auth.updateUser(updates);
-        if (authError) throw authError;
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('sealify_admin_email', nextEmail.toLowerCase());
-      window.localStorage.setItem('sealify_admin_password', nextPassword);
-      window.localStorage.setItem('sealify_admin_access_key', nextAccessKey);
-    }
-
-    setAdminEmail(nextEmail);
-    setAdminAccessKey(nextAccessKey);
-  };
-
   const t = (key: string) => TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || key;
 
   const loadProfileForAuthUser = async (authUser: any): Promise<UserProfile | null> => {
@@ -815,7 +721,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const applyAuthenticatedUser = (profile: UserProfile | null) => {
     setUser(profile);
     setIsAdmin(profile?.role === 'admin');
-    if (profile) setAdminEmail(profile.email);
   };
 
   const login = async (email: string, password: string) => {
@@ -838,36 +743,14 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const adminLogin = async (email: string, password: string, accessKey?: string) => {
+  const adminLogin = async (email: string, password: string) => {
     try {
-      if (!email.trim() || !password.trim() || !(accessKey || '').trim()) return false;
-
-      if (isTemporaryAdminLogin(email, password, accessKey || '')) {
-        const configuredAdmin = getTemporaryAdminLoginConfig();
-        const fallbackProfile: UserProfile = {
-          id: 'temporary-admin',
-          email: configuredAdmin.email || TEMP_ADMIN_EMAIL,
-          fullName: 'Temporary Admin',
-          phoneNumber: '+2340000000000',
-          avatarUrl: '',
-          role: 'admin',
-          verified: true,
-          memberSince: new Date().toISOString(),
-          location: 'Local fallback',
-          status: 'active',
-        };
-
-        applyAuthenticatedUser(fallbackProfile);
-        setAdminEmail(configuredAdmin.email || TEMP_ADMIN_EMAIL);
-        setAdminAccessKey(configuredAdmin.accessKey || TEMP_ADMIN_ACCESS_KEY);
-        toast.success('Temporary admin access granted for local validation. Supabase check is still recommended.', { duration: 4000 });
-        return true;
-      }
+      if (!email.trim() || !password.trim()) return false;
 
       const response = await fetch(apiUrl('/api/auth/admin-login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, accessKey }),
+        body: JSON.stringify({ email, password }),
       });
       if (!response.ok) return false;
 
@@ -1811,11 +1694,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     user,
     setUser,
     isAuthenticated: !!user,
-    isAdmin,
-    adminEmail,
-    adminAccessKey,
-    updateAdminCredentials,
-    systemConfig,
+     isAdmin,
+     systemConfig,
     updateSystemConfig,
     siteSettings,
     updateSiteSettings,
@@ -1921,8 +1801,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     syncDatabase,
     error
   }), [
-    user, isAdmin, adminEmail, adminAccessKey, systemConfig, siteSettings, promotionPlans, safeSpots,
-    language, categories, subcategories, analytics, marketStats, login, signup, adminLogin, logout,
+    user, isAdmin, systemConfig, siteSettings, promotionPlans, safeSpots,
     listings, allUsers, createUser, updateUser, addUser, deleteUser, savedListingIds, recentlyViewedIds, userInterests,
     addRecentlyViewed, toggleSaveListing, isSaved, filters, setFilters, resetFilters,
     activeCategory, setActiveCategory, compareListingIds, toggleCompareListing, isInCompare, clearCompare,
