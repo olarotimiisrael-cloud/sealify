@@ -21,7 +21,6 @@ const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminAiSettingsPage = lazy(() => import("./pages/AdminAiSettings"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
-const AdminSetupMfa = lazy(() => import("./pages/AdminSetupMfa"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SafetyCenter = lazy(() => import("./pages/SafetyCenter"));
 const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
@@ -58,7 +57,6 @@ const App = () => (
           <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<AdminRouteGuard><AdminDashboard /></AdminRouteGuard>} />
-          <Route path="/admin/setup-mfa" element={<AdminSetupMfa />} />
           <Route path="/admin/ai-settings" element={<AdminRouteGuard><AdminAiSettingsPage /></AdminRouteGuard>} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/notifications" element={<Notifications />} />

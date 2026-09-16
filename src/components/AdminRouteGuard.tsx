@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2, ShieldAlert } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useSealify } from '@/context/SealifyContext';
 
-type AdminGateState = 'checking' | 'anonymous' | 'not-admin' | 'needs-mfa' | 'allowed';
+type AdminGateState = 'checking' | 'anonymous' | 'not-admin' | 'allowed';
 
 const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin, loading, logout } = useSealify();
@@ -12,9 +11,7 @@ const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [state, setState] = useState<AdminGateState>('checking');
 
   useEffect(() => {
-    let cancelled = false;
-
-    const verifyAdminMfa = async () => {
+    const checkAdminStatus = async () => {
       if (loading) return;
       if (!user) {
         setState('anonymous');
@@ -24,23 +21,10 @@ const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) 
         setState('not-admin');
         return;
       }
-
-      const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-      if (cancelled) return;
-
-      if (error || data.currentLevel !== 'aal2') {
-        setState('needs-mfa');
-        return;
-      }
-
       setState('allowed');
     };
 
-    void verifyAdminMfa();
-
-    return () => {
-      cancelled = true;
-    };
+    void checkAdminStatus();
   }, [isAdmin, loading, user]);
 
   useEffect(() => {
@@ -74,7 +58,6 @@ const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   if (state === 'anonymous') return <Navigate to="/admin/login" replace state={{ from: location }} />;
   if (state === 'not-admin') return <Navigate to="/admin/login" replace />;
-  if (state === 'needs-mfa') return <Navigate to="/admin/setup-mfa" replace state={{ from: location }} />;
   if (state === 'allowed') return <>{children}</>;
 
   return (
@@ -92,7 +75,7 @@ export const AdminAccessDenied: React.FC = () => (
     <div className="max-w-md rounded-2xl border border-rose-500/30 bg-slate-900 p-6 text-center shadow-2xl">
       <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-rose-400" />
       <h1 className="text-xl font-black text-white">Admin access required</h1>
-      <p className="mt-2 text-sm text-slate-400">Sign in with an administrator account and complete MFA to continue.</p>
+      <p className="mt-2 text-sm text-slate-400">Sign in with an administrator account to continue.</p>
     </div>
   </div>
 );
