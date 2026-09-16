@@ -14,7 +14,7 @@ messagesRoutes.get("/conversations", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
@@ -61,7 +61,7 @@ messagesRoutes.get("/conversations/:id/messages", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
@@ -112,7 +112,7 @@ messagesRoutes.post("/conversations", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
     const { data: { user }, error } = await supabase.auth.getUser(token);
     
@@ -182,7 +182,7 @@ messagesRoutes.put("/conversations/:id/read", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     
     const { data: { user }, error } = await supabase.auth.getUser(token);
     

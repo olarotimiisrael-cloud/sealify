@@ -63,7 +63,7 @@ authRoutes.post("/register", authRateLimit, async (c) => {
     const validated = registerSchema.parse(body);
     const { email, password, fullName, phoneNumber } = validated;
 
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     const sql = getSql(env);
 
     // Check if user already exists
@@ -151,7 +151,7 @@ authRoutes.post("/admin-login", async (c) => {
   if (!parsed.success) throw genericAdminLoginError();
 
   const email = parsed.data.email.trim().toLowerCase();
-  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
   // Step 1: Authenticate with Supabase FIRST (no database dependency)
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -227,7 +227,7 @@ authRoutes.post("/login", authRateLimit, async (c) => {
     const validated = loginSchema.parse(body);
     const { email, password } = validated;
 
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
     const sql = getSql(c.env);
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -277,7 +277,7 @@ authRoutes.get("/me", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -309,7 +309,7 @@ authRoutes.put("/profile", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -372,7 +372,7 @@ authRoutes.post("/logout", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
     await supabase.auth.signOut();
 
@@ -395,7 +395,7 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
     }
 
     const sql = getSql(c.env);
-    const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
     const { data: profile } = await supabase
       .from("profiles")
