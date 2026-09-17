@@ -1399,10 +1399,20 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setAllUsers(prev => [newUser, ...prev]);
   };
 
-  const deleteUser = (id: string) => {
-    void userService.userService.delete(id).then(success => {
-      if (success) setAllUsers(prev => prev.filter(existingUser => existingUser.id !== id));
-    });
+  const deleteUser = async (id: string) => {
+    if (id === user?.id) {
+      toast.error('Cannot delete your own account');
+      return;
+    }
+    const response = await adminFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const details = await response.text();
+      console.error('[AdminDeleteUser] Failed:', details);
+      toast.error('Failed to restrict user');
+      return;
+    }
+    await reloadUsers();
+    toast.success('User restricted successfully');
   };
 
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
@@ -1421,21 +1431,72 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return mapped;
     }, {});
     if (isAdmin && updates.role !== undefined) databaseUpdates.role = updates.role;
-    const updated = await userService.userService.update(id, databaseUpdates as any);
+    databaseUpdates.updated_at = new Date().toISOString();
+
+    const response = await adminFetch(`/api/admin/users/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(databaseUpdates),
+    });
+    if (!response.ok) {
+      const details = await response.text();
+      console.error('[AdminUpdateUser] Failed:', details);
+      throw new Error('Failed to update user via admin API');
+    }
+    const result = await response.json();
+    const updated = result?.user ? mapProfileToUser(result.user) : null;
     if (!updated) return;
     setAllUsers(prev => prev.map(existingUser => existingUser.id === id ? updated : existingUser));
     if (user?.id === id) applyAuthenticatedUser(updated);
   };
 
-  const bulkUpdateUsers = (ids: string[], updates: Partial<UserProfile>) => {
-    void Promise.all(ids.map(id => updateUser(id, updates)));
+  const bulkUpdateUsers = async (ids: string[], updates: Partial<UserProfile>) => {
+    const fieldMap: Record<string, string> = {
+      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'cover_url',
+      bio: 'bio', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
+      businessCategory: 'business_category', businessAddress: 'business_address', cacNumber: 'cac_number', businessHours: 'business_hours',
+      bankName: 'bank_name', accountNumber: 'account_number', accountName: 'account_name', websiteUrl: 'website_url',
+      instagramHandle: 'instagram_handle', twitterHandle: 'twitter_handle', whatsappNumber: 'whatsapp_number',
+      emailNotifications: 'email_notifications', whatsappNotifications: 'whatsapp_notifications', hidePhonePublicly: 'hide_phone_publicly',
+      hideLocationPublicly: 'hide_location_publicly', location: 'location', status: 'status', restrictionReason: 'restriction_reason',
+      appealStatus: 'appeal_status', totalValueTraded: 'total_value_traded', completedDeals: 'completed_deals',
+    };
+    const databaseUpdates = Object.entries(updates).reduce((mapped: Record<string, any>, [key, value]) => {
+      if (fieldMap[key]) mapped[fieldMap[key]] = value;
+      return mapped;
+    }, {});
+    if (isAdmin && updates.role !== undefined) databaseUpdates.role = updates.role;
+    databaseUpdates.updated_at = new Date().toISOString();
+
+    const response = await adminFetch('/api/admin/users/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids, data: databaseUpdates }),
+    });
+    if (!response.ok) {
+      const details = await response.text();
+      console.error('[AdminBulkUpdateUsers] Failed:', details);
+      throw new Error('Failed to bulk update users via admin API');
+    }
+    await reloadUsers();
   };
 
-const bulkDeleteUsers = (ids: string[]) => {
-     void Promise.all(ids.map(id => userService.userService.delete(id))).then(() => {
-       setAllUsers(prev => prev.filter(existingUser => !ids.includes(existingUser.id)));
-     });
-   };
+const bulkDeleteUsers = async (ids: string[]) => {
+    const safeIds = ids.filter(id => id !== user?.id);
+    if (safeIds.length === 0) {
+      toast.error('Cannot perform this operation on the selected users');
+      return;
+    }
+    const response = await adminFetch('/api/admin/users/bulk', {
+      method: 'PATCH',
+      body: JSON.stringify({ ids: safeIds, data: { status: 'banned', updated_at: new Date().toISOString() } }),
+    });
+    if (!response.ok) {
+      const details = await response.text();
+      console.error('[AdminBulkDeleteUsers] Failed:', details);
+      throw new Error('Failed to bulk restrict users via admin API');
+    }
+    await reloadUsers();
+    toast.success(`Restricted ${safeIds.length} users`);
+  };
 
    const reloadUsers = async () => {
      if (user?.role === 'admin') {

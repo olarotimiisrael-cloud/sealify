@@ -240,8 +240,14 @@ adminRoutes.post("/users", async (c) => {
 
 adminRoutes.put("/users/:id", async (c) => {
   const sql = getSql(c.env);
-  const id = idSchema.parse(c.req.param("id"));
+  const id = c.req.param("id");
   const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(await c.req.json()) };
+
+  // Prevent non-admin from changing role
+  const user = c.get("user");
+  if (user && user.id !== id && updates.role !== undefined && !userIsAdmin(user.id, sql)) {
+    throw new HTTPException(403, { message: "Only administrators can change roles" });
+  }
 
   const result = await sql`
     UPDATE profiles SET ${sql(updates)} WHERE id = ${id} RETURNING *
@@ -256,20 +262,78 @@ adminRoutes.put("/users/:id", async (c) => {
   return c.json({ user: result[0] });
 });
 
+adminRoutes.patch("/users/bulk", async (c) => {
+  const sql = getSql(c.env);
+  const body = await c.req.json();
+  const { ids, data } = body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new HTTPException(400, { message: "No user IDs provided" });
+  }
+
+  // Verify requesting user is admin
+  const adminUser = c.get("user");
+  if (!adminUser || !userIsAdmin(adminUser.id, sql)) {
+    throw new HTTPException(403, { message: "Administrator access required" });
+  }
+
+  // Prevent self-deletion and removing the last admin
+  const adminCount = await sql`SELECT COUNT(*) as cnt FROM profiles WHERE role = 'admin'`.then(r => parseInt(r[0]?.cnt || "0"));
+
+  const updateIds = ids.filter(id => {
+    // Allow updating any ID except the current admin if it would remove the last admin
+    if (adminUser?.id === id && adminCount <= 1) {
+      return false;
+    }
+    return true;
+  });
+
+  if (updateIds.length === 0) {
+    throw new HTTPException(400, { message: "Cannot perform this operation on the selected users" });
+  }
+
+  const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(data || {}) };
+  const updateEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+  if (updateEntries.length === 0) throw new HTTPException(400, { message: "No updates provided" });
+
+  const placeholders = updateIds.map((_, i) => `$${i + 1}`).join(',');
+  const query = `UPDATE profiles SET ${updateEntries.map(([k], i) => `${k} = $${ids.length + i + 1}`).join(', ')}, updated_at = NOW() WHERE id IN (${placeholders})`;
+  const values = [...updateIds, ...updateEntries.map(([, value]) => value)];
+
+  await sql.unsafe(query, values);
+  await auditLog(sql, c.get("user").id, "Bulk User Update", `Updated ${updateIds.length} users`, "user");
+
+  return c.json({ success: true, updated: updateIds.length });
+});
+
 adminRoutes.delete("/users/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
+  const adminUser = c.get("user");
 
   // Prevent self-deletion
-  if (c.get("user").id === id) {
+  if (adminUser && adminUser.id === id) {
     throw new HTTPException(400, { message: "Cannot delete your own account" });
   }
 
-  await sql`DELETE FROM profiles WHERE id = ${id}`;
-  await auditLog(sql, c.get("user").id, "User Deleted", `Deleted user ${id}`, "user");
+  // Instead of deleting the Auth user, mark profile as restricted
+  // Auth user remains intact - prevents orphaned Auth accounts
+  const result = await sql`
+    UPDATE profiles SET status = 'restricted', updated_at = NOW() WHERE id = ${id} RETURNING *
+  `;
 
-  return c.json({ success: true });
+  if (result.length === 0) {
+    throw new HTTPException(404, { message: "User not found" });
+  }
+
+  await auditLog(sql, adminUser?.id || "unknown", "User Restricted", `Restricted user ${id}`, "user");
+
+  return c.json({ user: result[0], note: "Profile restricted; Auth account preserved to prevent orphaned authentication sessions." });
 });
+
+function userIsAdmin(userId: string, sql: any): Promise<boolean> {
+  return sql`SELECT private.is_admin(${userId}) AS is_admin`.then(r => Boolean(r[0]?.is_admin));
+}
 
 adminRoutes.post("/users/bulk", async (c) => {
   const sql = getSql(c.env);
