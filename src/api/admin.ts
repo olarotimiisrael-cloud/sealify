@@ -109,25 +109,25 @@ adminRoutes.get("/users", async (c) => {
   let paramIndex = 1;
 
   if (search) {
-    whereClause += ` AND (full_name ILIKE $${paramIndex} OR email ILIKE $${paramIndex} OR location ILIKE $${paramIndex})`;
+    whereClause += ` AND (p.full_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex} OR p.location ILIKE $${paramIndex})`;
     params.push(`%${search}%`);
     paramIndex++;
   }
 
   if (role) {
-    whereClause += ` AND role = $${paramIndex}`;
+    whereClause += ` AND p.role = $${paramIndex}`;
     params.push(role);
     paramIndex++;
   }
 
   if (status) {
-    whereClause += ` AND status = $${paramIndex}`;
+    whereClause += ` AND p.status = $${paramIndex}`;
     params.push(status);
     paramIndex++;
   }
 
   if (verified !== undefined) {
-    whereClause += ` AND verified = $${paramIndex}`;
+    whereClause += ` AND p.verified = $${paramIndex}`;
     params.push(verified === "true");
     paramIndex++;
   }
@@ -136,14 +136,55 @@ adminRoutes.get("/users", async (c) => {
   const offsetNum = parseInt(offset) || 0;
 
   const users = await sql`
-    SELECT * FROM profiles
+    SELECT
+      u.id AS auth_user_id,
+      u.email AS auth_email,
+      u.email_confirmed_at,
+      u.last_sign_in_at,
+      p.id,
+      p.full_name,
+      p.phone_number,
+      p.role,
+      p.verified,
+      p.verification_type,
+      p.avatar_url,
+      p.cover_url,
+      p.store_banner_url,
+      p.bio,
+      p.location,
+      p.member_since,
+      p.status,
+      p.created_at,
+      p.updated_at,
+      p.restriction_reason,
+      p.appeal_status,
+      p.total_value_traded,
+      p.completed_deals,
+      p.email_notifications,
+      p.whatsapp_notifications,
+      p.hide_phone_publicly,
+      p.hide_location_publicly,
+      p.business_name,
+      p.business_category,
+      p.business_address,
+      p.cac_number,
+      p.business_hours,
+      p.bank_name,
+      p.account_number,
+      p.account_name,
+      p.website_url,
+      p.instagram_handle,
+      p.twitter_handle,
+      p.whatsapp_number
+    FROM auth.users u
+    LEFT JOIN public.profiles p ON p.id = u.id
     ${sql(whereClause)}
-    ORDER BY created_at DESC
+    ORDER BY u.created_at DESC
     LIMIT ${limitNum} OFFSET ${offsetNum}
   `;
 
   const countResult = await sql`
-    SELECT COUNT(*) as total FROM profiles ${sql(whereClause)}
+    SELECT COUNT(*) as total FROM auth.users u LEFT JOIN public.profiles p ON p.id = u.id ${sql(whereClause)}
   `;
 
   return c.json({

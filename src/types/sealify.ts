@@ -92,6 +92,9 @@ export interface BuyerRequest {
 export interface UserProfile {
   id: string;
   email: string;
+  authEmail?: string;
+  emailConfirmedAt?: string;
+  lastSignInAt?: string;
   fullName: string;
   phoneNumber: string;
   avatarUrl: string;

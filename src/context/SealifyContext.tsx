@@ -191,10 +191,11 @@ interface SealifyContextType {
   updateUser: (id: string, updates: Partial<UserProfile>) => Promise<void>;
   addUser: (user: UserProfile) => void;
   deleteUser: (id: string) => void;
-  bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
-  bulkDeleteUsers: (ids: string[]) => void;
-  bulkUpdateListings: (ids: string[], updates: Partial<Listing>) => void;
-  bulkDeleteListings: (ids: string[]) => void;
+bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
+ bulkDeleteUsers: (ids: string[]) => void;
+ reloadUsers: () => Promise<void>;
+ bulkUpdateListings: (ids: string[], updates: Partial<Listing>) => void;
+ bulkDeleteListings: (ids: string[]) => void;
   
   // Favorites
   savedListingIds: string[];
@@ -1430,13 +1431,25 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     void Promise.all(ids.map(id => updateUser(id, updates)));
   };
 
-  const bulkDeleteUsers = (ids: string[]) => {
-    void Promise.all(ids.map(id => userService.userService.delete(id))).then(() => {
-      setAllUsers(prev => prev.filter(existingUser => !ids.includes(existingUser.id)));
-    });
-  };
+const bulkDeleteUsers = (ids: string[]) => {
+     void Promise.all(ids.map(id => userService.userService.delete(id))).then(() => {
+       setAllUsers(prev => prev.filter(existingUser => !ids.includes(existingUser.id)));
+     });
+   };
 
-  const bulkUpdateListings = (ids: string[], updates: Partial<Listing>) => {
+   const reloadUsers = async () => {
+     if (user?.role === 'admin') {
+       try {
+         const response = await adminFetch('/api/admin/users');
+         if (response.ok) {
+           const data = await response.json();
+           setAllUsers((data?.users || []).map(mapProfileToUser));
+         }
+       } catch { /* ignore */ }
+     }
+   };
+
+   const bulkUpdateListings = (ids: string[], updates: Partial<Listing>) => {
     void Promise.all(ids.map(id => updateListing(id, updates)));
   };
 
@@ -1635,9 +1648,13 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setSearchAlerts((searchAlertRows || []).map(mapSearchAlertRow));
     await refreshConversations(authUser.id);
 
-    if (authUser.role === 'admin') {
-      const [profiles, verificationRows, passwordRows, promotionRows, reportRows, disputeRows, auditRows, intrusionRows] = await Promise.all([
-        userService.userService.getAll(),
+     if (authUser.role === 'admin') {
+      const [adminUsers, verificationRows, passwordRows, promotionRows, reportRows, disputeRows, auditRows, intrusionRows] = await Promise.all([
+        adminFetch('/api/admin/users').then(async (response) => {
+          if (!response.ok) throw new Error('Unable to load users');
+          const data = await response.json();
+          return (data?.users || []).map(mapProfileToUser);
+        }),
         verificationService.verificationService.getAll(),
         passwordRequestService.passwordRequestService.getAll(),
         promotionService.promotionService.getAll(),
@@ -1646,7 +1663,6 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         auditService.auditService.getAll(),
         intrusionService.intrusionService.getAll(),
       ]);
-      setAllUsers(profiles);
       setVerificationRequests(verificationRows || []);
       setPasswordRequests(passwordRows || []);
       setPromotionPaymentRequests(promotionRows || []);
@@ -1728,9 +1744,10 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     addUser,
     deleteUser,
     bulkUpdateUsers,
-    bulkDeleteUsers,
-    bulkUpdateListings,
-    bulkDeleteListings,
+bulkDeleteUsers,
+     reloadUsers,
+     bulkUpdateListings,
+     bulkDeleteListings,
     savedListingIds,
     recentlyViewedIds,
     userInterests,
@@ -1802,7 +1819,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     error
   }), [
     user, isAdmin, systemConfig, siteSettings, promotionPlans, safeSpots,
-    listings, allUsers, createUser, updateUser, addUser, deleteUser, savedListingIds, recentlyViewedIds, userInterests,
+    listings, allUsers, createUser, updateUser, addUser, deleteUser, reloadUsers, savedListingIds, recentlyViewedIds, userInterests,
     addRecentlyViewed, toggleSaveListing, isSaved, filters, setFilters, resetFilters,
     activeCategory, setActiveCategory, compareListingIds, toggleCompareListing, isInCompare, clearCompare,
     createListing, updateListing, deleteListing, markAsSold, conversations, sendMessage,

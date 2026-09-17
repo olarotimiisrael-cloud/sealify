@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSealify } from '@/context/SealifyContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -73,9 +73,10 @@ const AdminDashboard: React.FC = () => {
     addUser,
     deleteUser,
     updateUser,
-    bulkUpdateUsers,
-    bulkDeleteUsers,
-    bulkUpdateListings,
+bulkUpdateUsers,
+     bulkDeleteUsers,
+     reloadUsers,
+     bulkUpdateListings,
     bulkDeleteListings,
     searchAlerts,
     reviews,
@@ -101,6 +102,10 @@ const AdminDashboard: React.FC = () => {
   const [showProjectDocs, setShowProjectDocs] = useState(false);
   const [showArchitecture, setShowArchitecture] = useState(false);
   const [showComponents, setShowComponents] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'users' && isAdmin) reloadUsers();
+  }, [activeTab]);
 
   const filteredUsers = useMemo(() => {
     return allUsers.filter(user => {
