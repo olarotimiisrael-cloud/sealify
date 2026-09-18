@@ -195,47 +195,10 @@ adminRoutes.get("/users", async (c) => {
   });
 });
 
+// POST /api/admin/users - Disabled due to lack of secure Supabase Auth Admin secret
+// Creating users requires Auth user creation which cannot be done securely without service role key
 adminRoutes.post("/users", async (c) => {
-  const sql = getSql(c.env);
-  const body = adminUserCreateSchema.parse(await c.req.json());
-  const now = new Date().toISOString();
-  const id = crypto.randomUUID();
-
-  const userRecord = {
-    id,
-    email: body.email,
-    full_name: body.full_name ?? body.email.split("@")[0],
-    phone_number: body.phone_number ?? null,
-    location: body.location ?? "Ogbomoso, Oyo State",
-    role: body.role ?? "buyer",
-    status: body.status ?? "active",
-    verified: Boolean(body.verified),
-    verification_type: body.verification_type ?? "none",
-    business_name: body.business_name ?? null,
-    cac_number: body.cac_number ?? null,
-    bio: body.bio ?? null,
-    avatar_url: body.avatar_url ?? null,
-    cover_url: body.cover_url ?? null,
-    bank_name: body.bank_name ?? null,
-    account_number: body.account_number ?? null,
-    account_name: body.account_name ?? null,
-    website_url: body.website_url ?? null,
-    instagram_handle: body.instagram_handle ?? null,
-    twitter_handle: body.twitter_handle ?? null,
-    whatsapp_number: body.whatsapp_number ?? null,
-    email_notifications: body.email_notifications ?? true,
-    whatsapp_notifications: body.whatsapp_notifications ?? true,
-    hide_phone_publicly: body.hide_phone_publicly ?? false,
-    hide_location_publicly: body.hide_location_publicly ?? false,
-    member_since: body.member_since ?? now,
-    created_at: body.created_at ?? now,
-    updated_at: body.updated_at ?? now,
-  };
-
-  const result = await sql`INSERT INTO profiles ${sql(userRecord)} RETURNING *`;
-  await auditLog(sql, c.get("user").id, "User Created", `Created user ${id}`, "user");
-
-  return c.json({ user: result[0] }, 201);
+  return c.json({ error: "User creation disabled: Secure Auth user creation not available" }, 501);
 });
 
 adminRoutes.put("/users/:id", async (c) => {

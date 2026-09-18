@@ -9,7 +9,6 @@ import { api } from '@/lib/api-client';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
-import * as userService from '@/services/supabaseService';
 import * as categoryService from '@/services/supabaseService';
 import * as subcategoryService from '@/services/supabaseService';
 import * as messageService from '@/services/supabaseService';
@@ -1327,64 +1326,15 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const createUser = async (newUser: Partial<UserProfile>): Promise<UserProfile | null> => {
-    const payload = {
-      email: (newUser.email || '').trim(),
-      fullName: (newUser.fullName || '').trim(),
-      full_name: (newUser.fullName || '').trim(),
-      phoneNumber: (newUser.phoneNumber || '').trim(),
-      phone_number: (newUser.phoneNumber || '').trim(),
-      location: (newUser.location || 'Ogbomoso, Oyo State').trim(),
-      role: newUser.role || 'buyer',
-      status: newUser.status || 'active',
-      verified: Boolean(newUser.verified),
-      verificationType: newUser.verificationType || 'none',
-      verification_type: newUser.verificationType || 'none',
-      businessName: newUser.businessName || null,
-      business_name: newUser.businessName || null,
-      cacNumber: newUser.cacNumber || null,
-      cac_number: newUser.cacNumber || null,
-      bio: newUser.bio || null,
-      avatarUrl: newUser.avatarUrl || null,
-      avatar_url: newUser.avatarUrl || null,
-      storeBannerUrl: newUser.storeBannerUrl || null,
-      cover_url: newUser.storeBannerUrl || null,
-      bankName: newUser.bankName || null,
-      bank_name: newUser.bankName || null,
-      accountNumber: newUser.accountNumber || null,
-      account_number: newUser.accountNumber || null,
-      accountName: newUser.accountName || null,
-      account_name: newUser.accountName || null,
-      websiteUrl: newUser.websiteUrl || null,
-      website_url: newUser.websiteUrl || null,
-      instagramHandle: newUser.instagramHandle || null,
-      instagram_handle: newUser.instagramHandle || null,
-      twitterHandle: newUser.twitterHandle || null,
-      twitter_handle: newUser.twitterHandle || null,
-      whatsappNumber: newUser.whatsappNumber || null,
-      whatsapp_number: newUser.whatsappNumber || null,
-      emailNotifications: newUser.emailNotifications ?? true,
-      email_notifications: newUser.emailNotifications ?? true,
-      whatsappNotifications: newUser.whatsappNotifications ?? true,
-      whatsapp_notifications: newUser.whatsappNotifications ?? true,
-      hidePhonePublicly: newUser.hidePhonePublicly ?? false,
-      hide_phone_publicly: newUser.hidePhonePublicly ?? false,
-      hideLocationPublicly: newUser.hideLocationPublicly ?? false,
-      hide_location_publicly: newUser.hideLocationPublicly ?? false,
-      memberSince: newUser.memberSince || new Date().toISOString(),
-      member_since: newUser.memberSince || new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
     const response = await adminFetch('/api/admin/users', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ email: newUser.email }),
     });
 
     if (!response.ok) {
       const details = await response.text();
       console.error('[AdminCreateUser] Failed:', details);
-      throw new Error('Failed to create user via admin API');
+      throw new Error('User creation is disabled: Secure Auth user creation not available');
     }
 
     const result = await response.json();
