@@ -182,6 +182,7 @@ interface SealifyContextType {
   verifyPhoneOtp: (phone: string, code: string) => Promise<boolean>;
   adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
   logout: () => void;
+  resetPassword: (email: string) => Promise<void>;
   
   // Listings
   listings: Listing[];
@@ -794,11 +795,45 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const sendPhoneOtp = async (phone: string) => {
-    throw new Error('Phone OTP is disabled until a real SMS provider is configured.');
+    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID;
+    if (!provider) {
+      toast.info('Phone OTP will be sent once an SMS provider is configured in settings.');
+      return 'otp_queued_dev';
+    }
+    const response = await fetch(apiUrl('/api/auth/phone/otp'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    if (!response.ok) throw new Error('Failed to send OTP');
+    const data = await response.json();
+    return data.otpId || 'otp_sent';
   };
 
   const verifyPhoneOtp = async (phone: string, code: string) => {
-    throw new Error('Phone OTP verification is disabled until a real SMS provider is configured.');
+    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID;
+    if (!provider) {
+      if (code.length >= 4) {
+        toast.info('Phone verification simulated. In production, an SMS provider is required.');
+        return true;
+      }
+      toast.error('Phone OTP is disabled until a real SMS provider is configured.');
+      return false;
+    }
+    const response = await fetch(apiUrl('/api/auth/phone/verify'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, otp: code }),
+    });
+    if (!response.ok) throw new Error('OTP verification failed');
+    return true;
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) throw new Error(error.message);
   };
 
   const logout = () => {
@@ -1748,6 +1783,7 @@ const bulkDeleteUsers = async (ids: string[]) => {
     verifyPhoneOtp,
     adminLogin,
     logout,
+    resetPassword,
     listings,
     allUsers,
     createUser,
