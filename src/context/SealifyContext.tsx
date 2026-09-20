@@ -729,64 +729,64 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (authError || !data.user) return false;
 
       const profile = await loadProfileForAuthUser(data.user);
-      if (!profile) {
-        await supabase.auth.signOut();
-        toast.error('Your account profile is not ready yet. Please try again shortly.');
-        return false;
-      }
-
-      applyAuthenticatedUser(profile);
-      return true;
-    } catch (authError: any) {
-      setError(authError?.message || 'Unable to sign in');
-      return false;
-    }
-  };
-
-  const adminLogin = async (email: string, password: string) => {
-    try {
-      if (!email.trim() || !password.trim()) return false;
-
-      const response = await fetch(apiUrl('/api/auth/admin-login'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-      if (!response.ok) return false;
-
-      const result = await response.json();
-      if (!result.session) return false;
-      const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
-      if (sessionError || !sessionData.user) return false;
-
-      const profile = await loadProfileForAuthUser(sessionData.user);
-      if (!profile) {
-        await supabase.auth.signOut();
-        return false;
-      }
-
-      applyAuthenticatedUser(profile);
-      return true;
-    } catch (authError: any) {
-      setError(authError?.message || 'Unable to authenticate administrator');
-      return false;
-    }
-  };
-
-  const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string }) => {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: { data: { full_name: data.fullName, phone: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
-    });
-
-    if (authError) throw authError;
-    if (!authData.user) throw new Error('Supabase did not create the account');
-
-    if (!authData.session) {
-      toast.success('Account created. Check your email to confirm your account before signing in.');
-      return;
-    }
+            if (!profile) {
+              await supabase.auth.signOut();
+              toast.error('Your account profile is not ready yet. Please try again shortly.');
+              return false;
+            }
+      
+            applyAuthenticatedUser(profile);
+            return true;
+          } catch (authError: any) {
+            setError(authError?.message || 'Unable to sign in');
+            return false;
+          }
+        };
+      
+        const adminLogin = async (email: string, password: string) => {
+          try {
+            if (!email.trim() || !password.trim()) return false;
+      
+            const response = await fetch(apiUrl('/api/auth/admin-login'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password }),
+            });
+            if (!response.ok) return false;
+      
+            const result = await response.json() as { session: any };
+            if (!result.session) return false;
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
+            if (sessionError || !sessionData.user) return false;
+      
+            const profile = await loadProfileForAuthUser(sessionData.user);
+            if (!profile) {
+              await supabase.auth.signOut();
+              return false;
+            }
+      
+            applyAuthenticatedUser(profile);
+            return true;
+          } catch (authError: any) {
+            setError(authError?.message || 'Unable to authenticate administrator');
+            return false;
+          }
+        };
+      
+        const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string }) => {
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: { data: { full_name: data.fullName, phone: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
+          });
+      
+          if (authError) throw authError;
+          if (!authData.user) throw new Error('Supabase did not create the account');
+      
+          if (!authData.session) {
+            toast.success('Account created. Check your email to confirm your account before signing in.');
+            return;
+          }
 
     const profile = await loadProfileForAuthUser(authData.user);
     if (!profile) throw new Error('Account created, but the profile is still provisioning. Please sign in again.');
@@ -1076,7 +1076,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         body: JSON.stringify(data),
       });
 
-      const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
       if (!response.ok) {
         throw new Error(result.error || result.message || 'Broadcast failed');
       }
@@ -1095,7 +1095,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
         body: JSON.stringify({ audience: 'all', includeTopListings: true }),
       });
 
-      const result = await response.json().catch(() => ({}));
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
       if (!response.ok) {
         throw new Error(result.error || result.message || 'Digest dispatch failed');
       }

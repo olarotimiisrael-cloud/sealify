@@ -28,22 +28,22 @@ const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) 
   }, [isAdmin, loading, user]);
 
   useEffect(() => {
-    if (state !== 'allowed') return;
-
-    let warningTimer: ReturnType<typeof window.setTimeout>;
-    let logoutTimer: ReturnType<typeof window.setTimeout>;
-
-    const resetTimers = () => {
-      window.clearTimeout(warningTimer);
-      window.clearTimeout(logoutTimer);
-      warningTimer = window.setTimeout(() => {
-        window.dispatchEvent(new CustomEvent('sealify:admin-session-warning'));
-      }, 28 * 60 * 1000);
-      logoutTimer = window.setTimeout(() => {
-        logout();
-        window.location.assign('/admin/login?reason=inactive');
-      }, 30 * 60 * 1000);
-    };
+      if (state !== 'allowed') return;
+  
+      let warningTimer = 0;
+      let logoutTimer = 0;
+  
+      const resetTimers = () => {
+        window.clearTimeout(warningTimer);
+        window.clearTimeout(logoutTimer);
+        warningTimer = window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('sealify:admin-session-warning'));
+        }, 28 * 60 * 1000);
+        logoutTimer = window.setTimeout(() => {
+          logout();
+          window.location.assign('/admin/login?reason=inactive');
+        }, 30 * 60 * 1000);
+      };
 
     const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
     activityEvents.forEach((eventName) => window.addEventListener(eventName, resetTimers, { passive: true }));

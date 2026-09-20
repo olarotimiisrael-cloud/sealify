@@ -123,7 +123,7 @@ const AdminAiSettingsPage: React.FC = () => {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as Partial<AiSettingsResponse> & { message?: string };
       if (!response.ok) {
         throw new Error(data.message || 'Unable to save AI settings');
       }
@@ -164,7 +164,7 @@ const AdminAiSettingsPage: React.FC = () => {
         }),
       });
 
-      const data = await response.json().catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as Partial<AiSettingsResponse> & { message?: string };
       if (!response.ok) {
         throw new Error(data.message || 'Connection test failed');
       }

@@ -69,14 +69,14 @@ export const DatabaseTest: React.FC = () => {
     setTests([...newTests]);
 
     // Test 4: RLS
-    try {
-      const response = await adminFetch('/api/admin/system-config');
-      if (!response.ok) throw new Error('Admin system configuration endpoint unavailable');
-      const payload = await response.json();
-      newTests[4] = { ...newTests[4], status: 'success', message: `Configs loaded: ${payload.configs?.length || 0}` };
-    } catch (e: any) {
-      newTests[4] = { ...newTests[4], status: 'error', message: e.message };
-    }
+        try {
+          const response = await adminFetch('/api/admin/system-config');
+          if (!response.ok) throw new Error('Admin system configuration endpoint unavailable');
+          const payload = await response.json() as { configs: any[] };
+          newTests[4] = { ...newTests[4], status: 'success', message: `Configs loaded: ${payload.configs?.length || 0}` };
+        } catch (e: any) {
+          newTests[4] = { ...newTests[4], status: 'error', message: e.message };
+        }
     setTests([...newTests]);
 
     setRunning(false);

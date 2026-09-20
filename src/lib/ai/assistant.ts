@@ -155,12 +155,12 @@ async function callLocalModel(
   const content = payload.message?.content || 'I could not generate a response.';
 
   return {
-    text: content,
-    citations: [],
-    usedWebSearch: false,
-    provider: 'local',
-    model,
-  };
+      text: content,
+      citations: [],
+      usedWebSearch: false,
+      provider: 'sealify',
+      model,
+    };
 }
 
 export async function askSealifyCopilot(
