@@ -239,6 +239,10 @@ bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
   broadcastMassNotification: (data: { target: string; title: string; message: string }) => void;
   dispatchPromotionalEmailDigest: () => void;
   
+  // Email broadcast & composer
+  broadcastEmail: (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; subject: string; html: string; text?: string; template?: string; userIds?: string[] }) => Promise<boolean>;
+  sendMultiChannelPasswordReset: (email: string, fullName?: string, phoneNumber?: string, whatsappNumber?: string) => Promise<boolean>;
+  
   // Admin moderation
   passwordRequests: any[];
   submitPasswordRequest: (request: any) => Promise<void>;
@@ -1141,6 +1145,66 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const broadcastEmail = async (data: {
+    target: 'all' | 'buyer' | 'seller' | 'individual';
+    subject: string;
+    html: string;
+    text?: string;
+    template?: string;
+    userIds?: string[];
+  }): Promise<boolean> => {
+    try {
+      const response = await adminFetch('/api/email/admin/send', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Email broadcast failed');
+      }
+
+      toast.success(`Email broadcast sent to ${result.target}: ${result.successful} successful, ${result.failed} failed`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Email broadcast failed');
+      return false;
+    }
+  };
+
+  const sendMultiChannelPasswordReset = async (
+    email: string,
+    fullName?: string,
+    phoneNumber?: string,
+    whatsappNumber?: string
+  ): Promise<boolean> => {
+    try {
+      const resetUrl = `${window.location.origin}/reset-password`;
+      const response = await adminFetch('/api/email/password-reset', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          fullName,
+          resetUrl,
+          phoneNumber,
+          whatsappNumber,
+          channels: ['email', 'sms', 'whatsapp'],
+        }),
+      });
+
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'Password reset dispatch failed');
+      }
+
+      toast.success(`Password reset sent via: ${result.channels?.join(', ') || 'email'}`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Password reset dispatch failed');
+      return false;
+    }
+  };
+
   const submitPasswordRequest = async (request: any) => {
     if (!user) return;
     const created = await passwordRequestService.passwordRequestService.create({
@@ -1825,6 +1889,8 @@ bulkDeleteUsers,
     addNotification,
     broadcastMassNotification,
     dispatchPromotionalEmailDigest,
+    broadcastEmail,
+    sendMultiChannelPasswordReset,
     passwordRequests,
     submitPasswordRequest,
     processPasswordRequest,
@@ -1871,7 +1937,7 @@ bulkDeleteUsers,
     activeCategory, setActiveCategory, compareListingIds, toggleCompareListing, isInCompare, clearCompare,
     createListing, updateListing, deleteListing, markAsSold, conversations, sendMessage,
     notifications, markNotificationRead, markAllNotificationsRead, clearNotification,
-    addNotification, broadcastMassNotification, dispatchPromotionalEmailDigest,
+    addNotification, broadcastMassNotification, dispatchPromotionalEmailDigest, broadcastEmail, sendMultiChannelPasswordReset,
     passwordRequests, submitPasswordRequest, processPasswordRequest, verificationRequests, submitVerificationRequest, processVerificationRequest,
     promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,

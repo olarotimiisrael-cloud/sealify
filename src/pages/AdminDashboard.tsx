@@ -19,7 +19,7 @@ import {
   Minimize2, Heart,
   Package, Clock,
   Cloud, Cpu, Download as DownloadIcon, FileText as FileTextIcon,
-  Navigation, Box
+  Navigation, Box, Megaphone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
@@ -91,7 +91,9 @@ const AdminDashboard: React.FC = () => {
     categories,
     addCategory,
     deleteCategory,
-    updateCategory
+    updateCategory,
+    broadcastEmail,
+    sendMultiChannelPasswordReset
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
@@ -108,6 +110,11 @@ const AdminDashboard: React.FC = () => {
     target: 'all',
     title: '',
     message: '',
+    subject: '',
+    html: '',
+    text: '',
+    template: '',
+    userIds: [],
   });
   const [isMigrationOpen, setIsMigrationOpen] = useState(false);
   const [isDatabaseTestOpen, setIsDatabaseTestOpen] = useState(false);
@@ -1246,10 +1253,127 @@ const AdminDashboard: React.FC = () => {
                   <p>• Tracks open rates via notification system</p>
                 </div>
               </div>
-            </div>
 
-            {/* Recent Broadcasts */}
-            <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl">
+              {/* Email Composer */}
+              <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-6">
+                <h3 className="font-bold text-white">Send Email to Users</h3>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
+                    <select
+                      value={broadcastForm.target}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, target: e.target.value as any }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Users</option>
+                      <option value="buyer">Buyers Only</option>
+                      <option value="seller">Sellers Only</option>
+                      <option value="individual">Individual Users (select below)</option>
+                    </select>
+                  </div>
+                  {broadcastForm.target === 'individual' && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Users (hold Ctrl/Cmd to select multiple)</label>
+                      <div className="max-h-32 overflow-y-auto border border-slate-800/50 rounded-xl p-2 bg-slate-950/50">
+                        {allUsers.map(user => (
+                          <label key={user.id} className="flex items-center gap-2 p-2 hover:bg-slate-900/30 rounded-lg cursor-pointer">
+                            <input
+                              type="checkbox"
+                              value={user.id}
+                              onChange={(e) => {
+                                const selected = broadcastForm.userIds || [];
+                                if (e.target.checked) {
+                                  setBroadcastForm(prev => ({ ...prev, userIds: [...selected, user.id] }));
+                                } else {
+                                  setBroadcastForm(prev => ({ ...prev, userIds: selected.filter(id => id !== user.id) }));
+                                }
+                              }}
+                              className="w-4 h-4 text-emerald-500 bg-slate-900 border-slate-700 rounded focus:ring-emerald-500"
+                            />
+                            <span className="text-xs text-white truncate max-w-xs">{user.fullName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono truncate max-w-[120px]">{user.email}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Subject</label>
+                    <input
+                      type="text"
+                      value={broadcastForm.subject}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, subject: e.target.value }))}
+                      placeholder="e.g. Welcome to Sealify Marketplace"
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Body (HTML)</label>
+                    <textarea
+                      rows={6}
+                      value={broadcastForm.html}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, html: e.target.value }))}
+                      placeholder="<p>Your email content here...</p>"
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Plain Text Version (Optional)</label>
+                    <textarea
+                      rows={3}
+                      value={broadcastForm.text}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, text: e.target.value }))}
+                      placeholder="Plain text version for email clients..."
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Template (Optional)</label>
+                    <select
+                      value={broadcastForm.template}
+                      onChange={(e) => setBroadcastForm(prev => ({ ...prev, template: e.target.value }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="">Default Template</option>
+                      <option value="welcome">Welcome Email Template</option>
+                      <option value="password-reset">Password Reset Template</option>
+                      <option value="promotion">Promotional Template</option>
+                    </select>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!broadcastForm.subject.trim()) {
+                        toast.error('Subject is required');
+                        return;
+                      }
+                      if (!broadcastForm.html.trim()) {
+                        toast.error('Email body is required');
+                        return;
+                      }
+                      if (broadcastForm.target === 'individual' && (!broadcastForm.userIds || broadcastForm.userIds.length === 0)) {
+                        toast.error('Please select at least one user');
+                        return;
+                      }
+                      void broadcastEmail({
+                        target: broadcastForm.target as any,
+                        subject: broadcastForm.subject.trim(),
+                        html: broadcastForm.html.trim(),
+                        text: broadcastForm.text.trim() || undefined,
+                        template: broadcastForm.template || undefined,
+                        userIds: broadcastForm.target === 'individual' ? broadcastForm.userIds : undefined,
+                      });
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Mail className="w-4 h-4" />
+                    <span>SEND EMAIL BROADCAST</span>
+                  </button>
+                </div>
+              </div>
+              </div>
+
+              {/* Recent Broadcasts */}
+              <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl">
               <h3 className="font-bold text-white mb-4">Recent Broadcast History</h3>
               <div className="space-y-3">
                 {auditLogs.filter(l => l.type === 'broadcast').slice(0, 10).map((log, i) => (

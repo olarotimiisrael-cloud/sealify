@@ -16,3 +16,49 @@ export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {
   const url = typeof input === 'string' && input.startsWith('/api/') ? apiUrl(input) : input;
   return fetch(url, { ...init, headers });
 }
+
+// Email API client functions
+export async function sendEmail(params: {
+  to: string | string[];
+  from: { email: string; name?: string };
+  subject: string;
+  html?: string;
+  text?: string;
+  template?: string;
+}): Promise<{ success: boolean; messageId: string; delivered: string[] }> {
+  const response = await adminFetch('/api/email/send', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
+
+export async function sendAdminEmail(params: {
+  target: 'all' | 'individual' | 'buyer' | 'seller';
+  subject: string;
+  html: string;
+  text?: string;
+  template?: string;
+  userIds?: string[];
+}): Promise<{ success: boolean; total: number; successful: number; failed: number; results: any[] }> {
+  const response = await adminFetch('/api/email/admin/send', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
+
+export async function sendMultiChannelPasswordReset(params: {
+  email: string;
+  fullName?: string;
+  resetUrl: string;
+  phoneNumber?: string;
+  whatsappNumber?: string;
+  channels?: ('email' | 'sms' | 'whatsapp')[];
+}): Promise<{ success: boolean; channels: string[]; attempted: string[]; errors?: Record<string, string> }> {
+  const response = await adminFetch('/api/email/password-reset', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}

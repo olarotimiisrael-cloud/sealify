@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+﻿import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
 import { corsMiddleware } from '../_middleware/cors';
 import { errorMiddleware } from '../_middleware/error';
@@ -39,6 +39,7 @@ async function buildApp(): Promise<Hono<{ Bindings: Env }>> {
     ['/copilot', () => import('../../src/api/copilot')],
     ['/admin', () => import('../../src/api/admin')],
     ['/market-insights', () => import('../../src/api/market-insights')],
+    ['/email', () => import('../../src/api/email')],
   ] as const;
 
   for (const [path, loader] of routeMap) {

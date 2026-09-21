@@ -413,7 +413,30 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
 
     try {
       const redirectBase = env.APP_URL || env.PUBLIC_SITE_URL || "https://sealify.ng";
-      await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${redirectBase}/reset-password` });
+      const resetUrl = `${redirectBase}/reset-password`;
+      await supabase.auth.resetPasswordForEmail(email, { redirectTo: resetUrl });
+
+      // Multi-channel dispatch: email + SMS + WhatsApp
+      try {
+        const baseUrl = c.req.url.replace(/\/api\/auth\/password\/reset-request$/, '');
+        const emailResponse = await fetch(`${baseUrl}/api/email/password-reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            fullName: profile.full_name,
+            resetUrl,
+            phoneNumber: profile.phone_number || null,
+            whatsappNumber: profile.whatsapp_number || null,
+            channels: ['email', 'sms', 'whatsapp'],
+          }),
+        });
+        if (!emailResponse.ok) {
+          console.warn("Multi-channel password reset dispatch failed:", await emailResponse.text().catch(() => ''));
+        }
+      } catch (channelError) {
+        console.warn("Multi-channel dispatch error:", channelError);
+      }
     } catch (resetError) {
       console.warn("Password reset email dispatch failed - request still recorded for admin review:", resetError);
     }
