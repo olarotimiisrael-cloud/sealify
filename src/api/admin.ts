@@ -295,7 +295,7 @@ adminRoutes.delete("/users/:id", async (c) => {
 });
 
 function userIsAdmin(userId: string, sql: any): Promise<boolean> {
-  return sql`SELECT private.is_admin(${userId}) AS is_admin`.then(r => Boolean(r[0]?.is_admin));
+  return sql`SELECT public.is_admin(${userId}) AS is_admin`.then(r => Boolean(r[0]?.is_admin));
 }
 
 adminRoutes.post("/users/bulk", async (c) => {

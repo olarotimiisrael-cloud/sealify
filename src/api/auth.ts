@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
-import { rateLimit, sanitizeInput, auditLog, logIntrusionAttempt } from "../middleware/security";
+import { rateLimit, sanitizeInput, auditLog, logIntrusionAttempt, verifyTurnstile } from "../middleware/security";
 import { z } from "zod";
 
 export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
@@ -18,6 +18,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email("Invalid email format"),
   password: z.string().min(1, "Password required"),
+  turnstileToken: z.string().min(1, "Security verification required").optional(),
 });
 
 const updateProfileSchema = z.object({
@@ -149,6 +150,20 @@ authRoutes.post("/admin-login", async (c) => {
   const parsed = loginSchema.safeParse(body);
   if (!parsed.success) throw genericAdminLoginError();
 
+  // Verify Turnstile token before proceeding with admin authentication
+  if (parsed.data.turnstileToken) {
+    const turnstileValid = await verifyTurnstile(parsed.data.turnstileToken, env.TURNSTILE_SECRET_KEY);
+    if (!turnstileValid) {
+      try {
+        const sql = getSql(env);
+        await logIntrusionAttempt(sql, parsed.data.email.trim().toLowerCase(), c.req.raw, { reason: "turnstile_verification_failed" });
+      } catch {
+        // Intentionally empty - DB unavailable should not block admin login
+      }
+      throw new HTTPException(403, { message: "Security verification failed. Please try again." });
+    }
+  }
+
   const email = parsed.data.email.trim().toLowerCase();
   const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
@@ -198,8 +213,8 @@ authRoutes.post("/admin-login", async (c) => {
     // Rate limit check failed - continue (admin check is mandatory)
   }
 
-  // Step 5: Verify admin role (MANDATORY - uses private.is_admin())
-  const isAdmin = await sql`SELECT private.is_admin(${data.user.id}) AS is_admin`;
+// Step 5: Verify admin role (MANDATORY - uses public.is_admin())
+   const isAdmin = await sql`SELECT public.is_admin(${data.user.id}) AS is_admin`;
   if (!isAdmin[0]?.is_admin) {
     await supabase.auth.signOut();
     await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);

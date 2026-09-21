@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -12,9 +12,23 @@ import {
   EyeOff,
   Eye,
   Radio,
-  Loader2
+  Loader2,
+  Cloud,
+  Apple,
+  Smartphone,
+  Chrome
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (element: HTMLElement | string, options: Record<string, any>) => string;
+      reset: (id?: string) => void;
+      remove?: (id?: string) => void;
+    };
+  }
+}
 
 const AdminLogin: React.FC = () => {
   const { adminLogin } = useSealify();
@@ -23,6 +37,37 @@ const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const [turnstileError, setTurnstileError] = useState(false);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const loadTurnstile = async () => {
+      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || 'bootloader';
+      const script = document.createElement('script');
+      script.src = `https://challenges.cloudflare.com/turnstile/v0/api?render=${siteKey}`;
+      script.async = true;
+      script.defer = true;
+      document.head.appendChild(script);
+
+      script.onload = () => {
+        if (window.turnstile && turnstileRef.current) {
+          window.turnstile.render(turnstileRef.current, {
+            sitekey: siteKey,
+            callback: (token: string) => setTurnstileToken(token),
+            'error-callback': () => setTurnstileError(true),
+            'expired-callback': () => setTurnstileError(false),
+          });
+        }
+      };
+    };
+    
+    loadTurnstile();
+
+    return () => {
+      document.querySelectorAll('script[src*="turnstile"]').forEach(s => s.remove());
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,18 +77,57 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
+    if (!turnstileToken) {
+      toast.error('Please complete the security verification.', { duration: 6000 });
+      setTurnstileError(true);
+      return;
+    }
+
     setIsAuthenticating(true);
 
     // Security delay to prevent timing attacks & high-speed automated brute-force bots
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = await adminLogin(email, password);
+    const success = await adminLogin(email, password, turnstileToken);
     setIsAuthenticating(false);
 
     if (success) {
       navigate('/admin');
     } else {
       toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
+      // Reset turnstile on failure
+      setTurnstileToken('');
+    }
+  };
+
+  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'phone') => {
+    setIsAuthenticating(true);
+    try {
+      const supabase = (await import('../integrations/supabase/client')).supabase;
+      const redirectTo = `${window.location.origin}/admin`;
+      
+      if (provider === 'phone') {
+        // Phone OTP flow would be implemented separately
+        toast.info('Phone login will be available once SMS provider is configured.', { duration: 6000 });
+        setIsAuthenticating(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo,
+          queryParams: provider === 'google' ? { prompt: 'select_account' } : {}
+        }
+      });
+
+      if (error) {
+        toast.error(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login failed: ${error.message}`, { duration: 6000 });
+        setIsAuthenticating(false);
+      }
+    } catch (err: any) {
+      toast.error(`Login failed: ${err.message}`, { duration: 6000 });
+      setIsAuthenticating(false);
     }
   };
 
@@ -125,6 +209,45 @@ const AdminLogin: React.FC = () => {
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Turnstile verification widget */}
+              <div className="flex justify-center py-2">
+                <div ref={turnstileRef} className="cf-turnstile" style={{ width: '300px', height: '65px' }} />
+              </div>
+              {turnstileError && (
+                <p className="text-rose-400 text-[10px] font-mono text-center">Security verification required</p>
+              )}
+
+              {/* OAuth Provider Buttons */}
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('google')}
+                  disabled={isAuthenticating}
+                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                >
+                  <Chrome className="w-3.5 h-3.5" />
+                  Google
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('apple')}
+                  disabled={isAuthenticating}
+                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                >
+                  <Apple className="w-3.5 h-3.5" />
+                  Apple
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleOAuthLogin('phone')}
+                  disabled={isAuthenticating}
+                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  Phone
+                </button>
               </div>
 
               <button

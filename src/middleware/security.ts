@@ -66,7 +66,7 @@ export async function requireAdmin(c: any, next: any) {
 
     // Authorization is evaluated by the production private-schema helper.
     // Do not trust a client-readable profile field as the authorization source.
-    const result = await sql`SELECT private.is_admin(${user.id}) AS is_admin`;
+    const result = await sql`SELECT public.is_admin(${user.id}) AS is_admin`;
 
     if (!result[0]?.is_admin) {
       throw new HTTPException(403, { message: "Admin access required" });
@@ -192,4 +192,23 @@ export async function logIntrusionAttempt(
     INSERT INTO intrusion_logs (attempted_email, device_info, media_captured, media_status, status, ip_address, user_agent, created_at)
     VALUES (${attemptedEmail}, ${JSON.stringify(deviceInfo)}, false, 'N/A', 'flagged', ${ip}, ${userAgent}, NOW())
   `;
+}
+
+// Turnstile verification
+export async function verifyTurnstile(token: string, secretKey: string): Promise<boolean> {
+  if (!token) return false;
+
+  try {
+    const response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `secret=${encodeURIComponent(secretKey)}&response=${encodeURIComponent(token)}`,
+    });
+
+    const data = await response.json();
+    return data.success === true;
+  } catch (error) {
+    console.error("Turnstile verification error:", error);
+    return false;
+  }
 }

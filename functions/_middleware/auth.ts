@@ -51,7 +51,7 @@ export async function requireAdmin(c: Context<AppContext>, next: Next): Promise<
     const sql = getSql(c.env);
 
     const result = await sql`
-      SELECT private.is_admin(${user.id}) AS is_admin
+      SELECT public.is_admin(${user.id}) AS is_admin
     `;
 
     if (!result[0]?.is_admin) {

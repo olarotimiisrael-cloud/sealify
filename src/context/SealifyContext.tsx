@@ -751,28 +751,28 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         };
       
-        const adminLogin = async (email: string, password: string) => {
+const adminLogin = async (email: string, password: string, accessKey?: string, turnstileToken?: string) => {
           try {
             if (!email.trim() || !password.trim()) return false;
-      
+
             const response = await fetch(apiUrl('/api/auth/admin-login'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password }),
+              body: JSON.stringify({ email, password, turnstileToken }),
             });
             if (!response.ok) return false;
-      
+
             const result = await response.json() as { session: any };
             if (!result.session) return false;
             const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
             if (sessionError || !sessionData.user) return false;
-      
+
             const profile = await loadProfileForAuthUser(sessionData.user);
             if (!profile) {
               await supabase.auth.signOut();
               return false;
             }
-      
+
             applyAuthenticatedUser(profile);
             return true;
           } catch (authError: any) {
