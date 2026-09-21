@@ -126,6 +126,40 @@ class ApiClient {
     await this.authClient.auth.signOut();
   }
 
+  async signInWithOAuth(provider: 'google' | 'apple' | 'samsung'): Promise<boolean> {
+    try {
+      const { data, error } = await this.authClient.auth.signInWithOAuth({
+        provider: provider === 'samsung' ? 'google' : provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async sendPhoneOtp(phone: string): Promise<string> {
+    const response = await fetch(`${API_BASE}/api/auth/phone/otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    if (!response.ok) throw new Error('Failed to send OTP');
+    const data = await response.json();
+    return data.otpId || 'otp_sent';
+  }
+
+  async verifyPhoneOtp(phone: string, code: string, otpId?: string): Promise<boolean> {
+    const response = await fetch(`${API_BASE}/api/auth/phone/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, otp: code, otpId }),
+    });
+    if (!response.ok) throw new Error('OTP verification failed');
+    return true;
+  }
+
   async resetPassword(email: string) {
     const { error } = await this.authClient.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,

@@ -178,8 +178,9 @@ interface SealifyContextType {
   // Auth functions
   login: (email: string, password: string) => Promise<boolean>;
   signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
+  signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
   sendPhoneOtp: (phone: string) => Promise<string>;
-  verifyPhoneOtp: (phone: string, code: string) => Promise<boolean>;
+  verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
   adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
   logout: () => void;
   resetPassword: (email: string) => Promise<void>;
@@ -817,7 +818,7 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
     return data.otpId || 'otp_sent';
   };
 
-  const verifyPhoneOtp = async (phone: string, code: string) => {
+  const verifyPhoneOtp = async (phone: string, code: string, otpId?: string) => {
     const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID;
     if (!provider) {
       if (code.length >= 4) {
@@ -830,10 +831,23 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
     const response = await fetch(apiUrl('/api/auth/phone/verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, otp: code }),
+      body: JSON.stringify({ phone, otp: code, otpId }),
     });
     if (!response.ok) throw new Error('OTP verification failed');
     return true;
+  };
+
+  const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider === 'samsung' ? 'google' : provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -1894,6 +1908,7 @@ const bulkDeleteUsers = async (ids: string[]) => {
     marketStats,
     login,
     signup,
+    signInWithOAuth,
     sendPhoneOtp,
     verifyPhoneOtp,
     adminLogin,
@@ -1997,7 +2012,7 @@ bulkDeleteUsers,
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,
     recentDeals, sealDeal, intrusionLogs, recordIntrusion, searchAlerts, saveSearchAlert, deleteSearchAlert,
     reviews, addReview, deleteReview, buyerRequests, createBuyerRequest, deleteBuyerRequest,
-    loading, isSyncing, lastSyncTime, syncDatabase, error
+    loading, isSyncing, lastSyncTime, syncDatabase, error, signInWithOAuth
   ]);
 
   return (

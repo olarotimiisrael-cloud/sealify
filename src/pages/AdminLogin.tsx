@@ -15,8 +15,8 @@ import {
   Loader2,
   Cloud,
   Apple,
-  Smartphone,
-  Chrome
+  Chrome,
+  Briefcase
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -100,21 +100,20 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'phone') => {
+  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'samsung' | 'phone') => {
     setIsAuthenticating(true);
     try {
       const supabase = (await import('../integrations/supabase/client')).supabase;
       const redirectTo = `${window.location.origin}/admin`;
       
       if (provider === 'phone') {
-        // Phone OTP flow would be implemented separately
         toast.info('Phone login will be available once SMS provider is configured.', { duration: 6000 });
         setIsAuthenticating(false);
         return;
       }
 
       const { error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: provider === 'samsung' ? 'google' : provider,
         options: {
           redirectTo,
           queryParams: provider === 'google' ? { prompt: 'select_account' } : {}
@@ -219,36 +218,36 @@ const AdminLogin: React.FC = () => {
                 <p className="text-rose-400 text-[10px] font-mono text-center">Security verification required</p>
               )}
 
-              {/* OAuth Provider Buttons */}
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('google')}
-                  disabled={isAuthenticating}
-                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                >
-                  <Chrome className="w-3.5 h-3.5" />
-                  Google
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('apple')}
-                  disabled={isAuthenticating}
-                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                >
-                  <Apple className="w-3.5 h-3.5" />
-                  Apple
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuthLogin('phone')}
-                  disabled={isAuthenticating}
-                  className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  Phone
-                </button>
-              </div>
+{/* OAuth Provider Buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('google')}
+                    disabled={isAuthenticating}
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                  >
+                    <Chrome className="w-3.5 h-3.5" />
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('apple')}
+                    disabled={isAuthenticating}
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                  >
+                    <Apple className="w-3.5 h-3.5" />
+                    Apple
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthLogin('samsung')}
+                    disabled={isAuthenticating}
+                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    Samsung
+                  </button>
+                </div>
 
               <button
                 type="submit"
