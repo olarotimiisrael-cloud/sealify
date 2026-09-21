@@ -350,8 +350,8 @@ emailRoutes.get("/status", requireAdmin, async (c) => {
   }
 });
 
-// Email service status
-emailRoutes.get("/status", requireAdmin, async (c) => {
+// Admin: Broadcast SMS to all or individual users
+emailRoutes.post("/admin/sms", requireAdmin, emailRateLimit, async (c) => {
   try {
     const env = c.env as any;
     const body = await c.req.json();
