@@ -1,413 +1,627 @@
 -- Sealify Complete Production PostgreSQL Database Schema & Security Policies
+-- Canonical schema matching the application model.
+-- Apply this file to a clean database, then apply:
+--   supabase/migrations/20240818000000_rls_reconciliation.sql
+--   supabase/seed.sql
+--   supabase/storage-policies.sql
 
--- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. Users / Profiles Table
-CREATE TABLE IF NOT EXISTS public.users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  full_name TEXT NOT NULL,
-  phone_number TEXT,
-  avatar_url TEXT,
-  store_banner_url TEXT,
-  role VARCHAR(20) DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
-  verified BOOLEAN DEFAULT false,
-  verification_type VARCHAR(20) DEFAULT 'none' CHECK (verification_type IN ('individual', 'business', 'premium', 'student', 'none')),
-  business_name TEXT,
-  cac_number TEXT,
-  business_hours TEXT,
-  bank_name TEXT,
-  account_number TEXT,
-  account_name TEXT,
-  website_url TEXT,
-  instagram_handle TEXT,
-  twitter_handle TEXT,
-  whatsapp_number TEXT,
-  bio TEXT,
-  member_since TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  location TEXT DEFAULT 'Ogbomoso, Oyo State',
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'banned', 'restricted')),
-  restriction_reason TEXT,
-  appeal_status VARCHAR(20) DEFAULT 'none' CHECK (appeal_status IN ('none', 'pending', 'resolved')),
-  password TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 1. USERS / PROFILES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  full_name text NOT NULL,
+  phone_number text,
+  avatar_url text,
+  cover_url text,
+  store_banner_url text,
+  role text NOT NULL DEFAULT 'buyer' CHECK (role IN ('buyer', 'seller', 'admin')),
+  verified boolean NOT NULL DEFAULT false,
+  verification_type text NOT NULL DEFAULT 'none',
+  business_name text,
+  business_category text,
+  business_address text,
+  cac_number text,
+  business_hours text,
+  bank_name text,
+  account_number text,
+  account_name text,
+  website_url text,
+  instagram_handle text,
+  twitter_handle text,
+  whatsapp_number text,
+  bio text,
+  member_since timestamptz NOT NULL DEFAULT now(),
+  location text DEFAULT 'Ogbomoso, Oyo State',
+  status text NOT NULL DEFAULT 'active',
+  restriction_reason text,
+  appeal_status text NOT NULL DEFAULT 'none',
+  total_value_traded numeric(14,2) NOT NULL DEFAULT 0,
+  completed_deals integer NOT NULL DEFAULT 0,
+  email_notifications boolean NOT NULL DEFAULT true,
+  whatsapp_notifications boolean NOT NULL DEFAULT true,
+  hide_phone_publicly boolean NOT NULL DEFAULT false,
+  hide_location_publicly boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 2. Listings Table
-CREATE TABLE IF NOT EXISTS public.listings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  seller_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  price NUMERIC(14, 2) NOT NULL,
-  original_price NUMERIC(14, 2),
-  category TEXT NOT NULL,
-  condition TEXT NOT NULL,
-  location TEXT NOT NULL DEFAULT 'Ogbomoso, Oyo State',
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'sold')),
-  views_count INTEGER DEFAULT 1,
-  featured BOOLEAN DEFAULT false,
-  promotion_plan_name TEXT,
-  promotion_duration_months INTEGER DEFAULT 0,
-  promotion_start_date TIMESTAMP WITH TIME ZONE,
-  promotion_end_date TIMESTAMP WITH TIME ZONE,
-  payment_status VARCHAR(20) DEFAULT 'pending' CHECK (payment_status IN ('pending', 'verified', 'failed')),
-  payment_proof_url TEXT,
-  amount_paid NUMERIC(14, 2),
-  specifications JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 2. CATEGORIES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.categories (
+  id text PRIMARY KEY,
+  name text NOT NULL,
+  icon_name text NOT NULL,
+  color text NOT NULL,
+  description text,
+  parent_id text REFERENCES public.categories(id),
+  sort_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 3. Listing Images Table
-CREATE TABLE IF NOT EXISTS public.listing_images (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  image_url TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 3. SUBCATEGORIES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.subcategories (
+  id text PRIMARY KEY,
+  category_id text NOT NULL REFERENCES public.categories(id),
+  name text NOT NULL,
+  description text,
+  icon_name text,
+  listing_type text NOT NULL DEFAULT 'product',
+  spec_fields jsonb NOT NULL DEFAULT '{}'::jsonb,
+  sort_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 4. Favorites Table
-CREATE TABLE IF NOT EXISTS public.favorites (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 4. LISTINGS / ADS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.ads (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id uuid NOT NULL REFERENCES public.profiles(id),
+  title text NOT NULL,
+  description text NOT NULL,
+  price numeric(14,2) NOT NULL,
+  original_price numeric(14,2),
+  category_id text NOT NULL REFERENCES public.categories(id),
+  subcategory_id text REFERENCES public.subcategories(id),
+  condition text NOT NULL,
+  location text NOT NULL DEFAULT 'Ogbomoso, Oyo State',
+  status text NOT NULL DEFAULT 'active',
+  views_count integer NOT NULL DEFAULT 0,
+  featured boolean NOT NULL DEFAULT false,
+  promotion_plan_name text,
+  promotion_duration_months integer,
+  promotion_start_date timestamptz,
+  promotion_end_date timestamptz,
+  payment_status text NOT NULL DEFAULT 'pending',
+  payment_proof_url text,
+  amount_paid numeric(14,2),
+  images text[] NOT NULL DEFAULT '{}',
+  video_url text,
+  specifications jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 5. Messages Table
-CREATE TABLE IF NOT EXISTS public.messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  sender_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  receiver_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  conversation_id UUID,
-  content TEXT NOT NULL,
-  read BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 5. LISTING IMAGES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.ad_images (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  image_url text NOT NULL,
+  storage_path text,
+  sort_order integer NOT NULL DEFAULT 0,
+  is_primary boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 6. Conversations Table
-CREATE TABLE IF NOT EXISTS public.conversations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  participant_1 UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  participant_2 UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  last_message TEXT,
-  last_message_time TIMESTAMP WITH TIME ZONE,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 7. Notifications Table
-CREATE TABLE IF NOT EXISTS public.notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  read BOOLEAN DEFAULT false,
-  link_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 8. Verification Requests Table
-CREATE TABLE IF NOT EXISTS public.verification_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  user_name TEXT NOT NULL,
-  user_email TEXT NOT NULL,
-  type VARCHAR(20) NOT NULL,
-  doc_type TEXT NOT NULL,
-  doc_number TEXT NOT NULL,
-  doc_url TEXT NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 9. Password Requests Table
-CREATE TABLE IF NOT EXISTS public.password_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  user_email TEXT NOT NULL,
-  user_name TEXT NOT NULL,
-  nin TEXT NOT NULL,
-  id_document_url TEXT NOT NULL,
-  new_password TEXT NOT NULL,
-  reason TEXT NOT NULL,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'declined')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 10. Promotion Payments Table
-CREATE TABLE IF NOT EXISTS public.promotion_payments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  amount NUMERIC(14, 2) NOT NULL,
-  payment_method VARCHAR(20) NOT NULL,
-  payment_proof_url TEXT,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  plan_name TEXT NOT NULL,
-  duration_months INTEGER NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 11. Disputes Table
-CREATE TABLE IF NOT EXISTS public.disputes (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  user_email TEXT NOT NULL,
-  receipt_ref TEXT,
-  item_title TEXT NOT NULL,
-  counterparty TEXT NOT NULL,
-  category TEXT NOT NULL,
-  reason TEXT NOT NULL,
-  details TEXT NOT NULL,
-  evidence_url TEXT,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_review', 'resolved')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 12. Reports Table
-CREATE TABLE IF NOT EXISTS public.reports (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
-  listing_title TEXT NOT NULL,
-  reporter_name TEXT,
-  reason TEXT NOT NULL,
-  details TEXT,
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'resolved', 'dismissed')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 13. Audit Logs Table
-CREATE TABLE IF NOT EXISTS public.audit_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  action TEXT NOT NULL,
-  details TEXT NOT NULL,
-  type VARCHAR(50) NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 14. Reviews Table
-CREATE TABLE IF NOT EXISTS public.reviews (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  seller_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  buyer_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  buyer_name TEXT NOT NULL,
-  buyer_avatar TEXT,
-  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 15. Buyer Requests Table
-CREATE TABLE IF NOT EXISTS public.buyer_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  user_name TEXT NOT NULL,
-  user_avatar TEXT,
-  title TEXT NOT NULL,
-  category TEXT NOT NULL,
-  max_budget NUMERIC(14, 2) NOT NULL,
-  location TEXT NOT NULL,
-  description TEXT NOT NULL,
-  responses_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 16. Search Alerts Table
-CREATE TABLE IF NOT EXISTS public.search_alerts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE NOT NULL,
-  query TEXT NOT NULL,
-  category TEXT NOT NULL,
-  max_price NUMERIC(14, 2),
-  location TEXT NOT NULL,
-  match_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- 17. Announcements Table
+-- ============================================================================
+-- 6. ANNOUNCEMENTS
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.announcements (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  type VARCHAR(20) NOT NULL CHECK (type IN ('info', 'warning', 'success', 'alert')),
-  active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  message text NOT NULL,
+  type text NOT NULL,
+  active boolean NOT NULL DEFAULT true,
+  target_roles text[] NOT NULL DEFAULT ARRAY['buyer','seller'],
+  created_by uuid REFERENCES public.profiles(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 18. System Configs Table
-CREATE TABLE IF NOT EXISTS public.system_configs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  key TEXT UNIQUE NOT NULL,
-  value BOOLEAN NOT NULL,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 7. REVIEWS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id uuid NOT NULL REFERENCES public.profiles(id),
+  buyer_id uuid NOT NULL REFERENCES public.profiles(id),
+  buyer_name text NOT NULL,
+  buyer_avatar text,
+  rating integer NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment text NOT NULL,
+  status text NOT NULL DEFAULT 'approved',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 18b. Site Settings Table
-CREATE TABLE IF NOT EXISTS public.site_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  logo_url TEXT,
-  site_name TEXT,
-  site_description TEXT,
-  og_image TEXT,
-  contact_email TEXT,
-  contact_phone TEXT,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 8. BUYER REQUESTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.buyer_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  user_name text NOT NULL,
+  user_avatar text,
+  title text NOT NULL,
+  category_id text NOT NULL REFERENCES public.categories(id),
+  max_budget numeric(14,2) NOT NULL,
+  location text NOT NULL,
+  description text NOT NULL,
+  responses_count integer NOT NULL DEFAULT 0,
+  status text NOT NULL DEFAULT 'open',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 19. Promotion Plans Table
-CREATE TABLE IF NOT EXISTS public.promotion_plans (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  months INTEGER NOT NULL,
-  label TEXT NOT NULL,
-  rate NUMERIC(14, 2) NOT NULL,
-  badge TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 9. BUYER REQUEST RESPONSES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.buyer_request_responses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  request_id uuid NOT NULL REFERENCES public.buyer_requests(id),
+  seller_id uuid NOT NULL REFERENCES public.profiles(id),
+  seller_name text NOT NULL,
+  seller_avatar text,
+  proposed_price numeric(14,2) NOT NULL,
+  message text,
+  status text NOT NULL DEFAULT 'pending',
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 20. Safe Spots Table
-CREATE TABLE IF NOT EXISTS public.safe_spots (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  zone TEXT NOT NULL,
-  category TEXT NOT NULL,
-  address TEXT NOT NULL,
-  distance TEXT NOT NULL,
-  hours TEXT NOT NULL,
-  cctv_verified BOOLEAN DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- ============================================================================
+-- 10. FAVORITES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.favorites (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, ad_id)
 );
 
--- 21. Intrusion Logs Table
+-- ============================================================================
+-- 11. SEARCH ALERTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.search_alerts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  query text NOT NULL,
+  category_id text REFERENCES public.categories(id),
+  max_price numeric(14,2),
+  location text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 12. USER SETTINGS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.user_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE REFERENCES public.profiles(id),
+  email_notifications boolean NOT NULL DEFAULT true,
+  whatsapp_notifications boolean NOT NULL DEFAULT true,
+  push_notifications boolean NOT NULL DEFAULT true,
+  price_drop_alerts boolean NOT NULL DEFAULT true,
+  new_message_alerts boolean NOT NULL DEFAULT true,
+  weekly_digest boolean NOT NULL DEFAULT true,
+  promotion_expiry_reminders boolean NOT NULL DEFAULT true,
+  language text NOT NULL DEFAULT 'en',
+  theme text NOT NULL DEFAULT 'dark',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 13. PUSH SUBSCRIPTIONS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  endpoint text NOT NULL,
+  p256dh text,
+  auth text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (user_id, endpoint)
+);
+
+-- ============================================================================
+-- 14. VERIFICATION REQUESTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.verification_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  user_name text NOT NULL,
+  user_email text NOT NULL,
+  type text NOT NULL,
+  doc_type text,
+  doc_number text,
+  doc_url text,
+  id_document_url text,
+  status text NOT NULL DEFAULT 'pending',
+  admin_notes text,
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 15. PASSWORD REQUESTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.password_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  user_email text NOT NULL,
+  user_name text NOT NULL,
+  nin text NOT NULL,
+  id_document_url text NOT NULL,
+  new_password_hash text,
+  reason text NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  admin_notes text,
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 16. CONVERSATIONS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.conversations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  participant_1 uuid NOT NULL REFERENCES public.profiles(id),
+  participant_2 uuid NOT NULL REFERENCES public.profiles(id),
+  last_message text,
+  last_message_time timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (ad_id, participant_1, participant_2)
+);
+
+-- ============================================================================
+-- 17. MESSAGES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL REFERENCES public.conversations(id),
+  sender_id uuid NOT NULL REFERENCES public.profiles(id),
+  receiver_id uuid NOT NULL REFERENCES public.profiles(id),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  content text NOT NULL,
+  status text NOT NULL DEFAULT 'sent',
+  read boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 18. NOTIFICATIONS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  type text NOT NULL,
+  title text NOT NULL,
+  description text NOT NULL,
+  read boolean NOT NULL DEFAULT false,
+  link_url text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 19. REPORTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.reports (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id uuid REFERENCES public.ads(id),
+  ad_title text,
+  reporter_id uuid NOT NULL REFERENCES public.profiles(id),
+  reporter_name text,
+  reason text NOT NULL,
+  details text,
+  status text NOT NULL DEFAULT 'pending',
+  admin_notes text,
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 20. AUDIT LOGS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  action text NOT NULL,
+  details text NOT NULL,
+  type text NOT NULL,
+  user_id uuid REFERENCES public.profiles(id),
+  ip_address inet,
+  user_agent text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 21. INTRUSION LOGS
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.intrusion_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-  attempted_email TEXT NOT NULL,
-  device_info JSONB,
-  media_captured BOOLEAN DEFAULT false,
-  media_status TEXT,
-  status VARCHAR(20) DEFAULT 'flagged' CHECK (status IN ('flagged', 'reported', 'dismissed'))
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp timestamptz NOT NULL DEFAULT now(),
+  attempted_email text NOT NULL,
+  device_info jsonb,
+  media_captured boolean NOT NULL DEFAULT false,
+  media_status text,
+  status text NOT NULL DEFAULT 'flagged',
+  ip_address inet,
+  user_agent text,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 22. Recent Deals Table
+-- ============================================================================
+-- 22. SYSTEM CONFIGS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.system_configs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  key text UNIQUE NOT NULL,
+  value jsonb NOT NULL,
+  description text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 23. SITE SETTINGS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.site_settings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  logo_url text,
+  site_name text,
+  site_description text,
+  og_image text,
+  contact_email text,
+  contact_phone text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 24. PROMOTION PLANS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.promotion_plans (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  months integer NOT NULL,
+  label text NOT NULL,
+  rate numeric(14,2) NOT NULL,
+  badge text,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 25. SAFE SPOTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.safe_spots (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  zone text NOT NULL,
+  category text NOT NULL,
+  address text NOT NULL,
+  distance text NOT NULL,
+  hours text NOT NULL,
+  cctv_verified boolean NOT NULL DEFAULT false,
+  latitude numeric,
+  longitude numeric,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 26. RECENT DEALS
+-- ============================================================================
 CREATE TABLE IF NOT EXISTS public.recent_deals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  item_title TEXT NOT NULL,
-  price NUMERIC(14, 2) NOT NULL,
-  location TEXT NOT NULL,
-  time TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  item_title text NOT NULL,
+  price numeric(14,2) NOT NULL,
+  location text NOT NULL,
+  time text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- Enable RLS for all tables
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.listings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.listing_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.password_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promotion_payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.disputes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.buyer_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.search_alerts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.announcements ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.system_configs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.site_settings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promotion_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.safe_spots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.intrusion_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.recent_deals ENABLE ROW LEVEL SECURITY;
+-- ============================================================================
+-- 27. WALLETS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.wallets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL UNIQUE REFERENCES public.profiles(id),
+  balance numeric(14,2) NOT NULL DEFAULT 0,
+  pending_balance numeric(14,2) NOT NULL DEFAULT 0,
+  total_withdrawn numeric(14,2) NOT NULL DEFAULT 0,
+  currency text NOT NULL DEFAULT 'NGN',
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
--- RLS Policies - Allow all operations for authenticated users (admin will manage via service role)
-CREATE POLICY "Public Users All" ON public.users FOR ALL USING (true);
-CREATE POLICY "Public Listings All" ON public.listings FOR ALL USING (true);
-CREATE POLICY "Public Listing Images All" ON public.listing_images FOR ALL USING (true);
-CREATE POLICY "Public Favorites All" ON public.favorites FOR ALL USING (true);
-CREATE POLICY "Public Messages All" ON public.messages FOR ALL USING (true);
-CREATE POLICY "Public Conversations All" ON public.conversations FOR ALL USING (true);
-CREATE POLICY "Public Notifications All" ON public.notifications FOR ALL USING (true);
-CREATE POLICY "Public Verification Requests All" ON public.verification_requests FOR ALL USING (true);
-CREATE POLICY "Public Password Requests All" ON public.password_requests FOR ALL USING (true);
-CREATE POLICY "Public Promotion Payments All" ON public.promotion_payments FOR ALL USING (true);
-CREATE POLICY "Public Disputes All" ON public.disputes FOR ALL USING (true);
-CREATE POLICY "Public Reports All" ON public.reports FOR ALL USING (true);
-CREATE POLICY "Public Audit Logs All" ON public.audit_logs FOR ALL USING (true);
-CREATE POLICY "Public Reviews All" ON public.reviews FOR ALL USING (true);
-CREATE POLICY "Public Buyer Requests All" ON public.buyer_requests FOR ALL USING (true);
-CREATE POLICY "Public Search Alerts All" ON public.search_alerts FOR ALL USING (true);
-CREATE POLICY "Public Announcements All" ON public.announcements FOR ALL USING (true);
-CREATE POLICY "Public System Configs All" ON public.system_configs FOR ALL USING (true);
-CREATE POLICY "Public Site Settings All" ON public.site_settings FOR ALL USING (true);
-CREATE POLICY "Public Promotion Plans All" ON public.promotion_plans FOR ALL USING (true);
-CREATE POLICY "Public Safe Spots All" ON public.safe_spots FOR ALL USING (true);
-CREATE POLICY "Public Intrusion Logs All" ON public.intrusion_logs FOR ALL USING (true);
-CREATE POLICY "Public Recent Deals All" ON public.recent_deals FOR ALL USING (true);
+-- ============================================================================
+-- 28. TRANSACTIONS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.transactions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  wallet_id uuid NOT NULL REFERENCES public.wallets(id),
+  type text NOT NULL,
+  amount numeric(14,2) NOT NULL,
+  status text NOT NULL DEFAULT 'pending',
+  description text NOT NULL,
+  reference text,
+  related_ad_id uuid REFERENCES public.ads(id),
+  related_listing_id uuid REFERENCES public.ads(id),
+  related_user_id uuid REFERENCES public.profiles(id),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
--- Indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_email ON public.users(email);
-CREATE INDEX IF NOT EXISTS idx_users_role ON public.users(role);
-CREATE INDEX IF NOT EXISTS idx_listings_seller_id ON public.listings(seller_id);
-CREATE INDEX IF NOT EXISTS idx_listings_category ON public.listings(category);
-CREATE INDEX IF NOT EXISTS idx_listings_status ON public.listings(status);
-CREATE INDEX IF NOT EXISTS idx_listings_featured ON public.listings(featured);
-CREATE INDEX IF NOT EXISTS idx_listings_created_at ON public.listings(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_messages_listing_id ON public.messages(listing_id);
-CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id);
-CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON public.messages(receiver_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
-CREATE INDEX IF NOT EXISTS idx_notifications_read ON public.notifications(read);
-CREATE INDEX IF NOT EXISTS idx_favorites_user_id ON public.favorites(user_id);
-CREATE INDEX IF NOT EXISTS idx_favorites_listing_id ON public.favorites(listing_id);
-CREATE INDEX IF NOT EXISTS idx_verification_requests_user_id ON public.verification_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_password_requests_user_id ON public.password_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_promotion_payments_user_id ON public.promotion_payments(user_id);
-CREATE INDEX IF NOT EXISTS idx_promotion_payments_listing_id ON public.promotion_payments(listing_id);
-CREATE INDEX IF NOT EXISTS idx_disputes_user_id ON public.disputes(user_id);
-CREATE INDEX IF NOT EXISTS idx_reports_listing_id ON public.reports(listing_id);
+-- ============================================================================
+-- 29. PROMOTION PAYMENTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.promotion_payments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  amount numeric(14,2) NOT NULL,
+  payment_method text,
+  payment_proof_url text,
+  status text NOT NULL DEFAULT 'pending',
+  plan_name text NOT NULL,
+  duration_months integer NOT NULL,
+  admin_notes text,
+  reviewed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 30. DISPUTES
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.disputes (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id),
+  user_email text NOT NULL,
+  receipt_ref text,
+  item_title text NOT NULL,
+  counterparty text NOT NULL,
+  category text NOT NULL,
+  reason text NOT NULL,
+  details text NOT NULL,
+  evidence_url text,
+  status text NOT NULL DEFAULT 'pending',
+  admin_notes text,
+  resolved_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 31. ESCROW ORDERS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.escrow_orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  ad_id uuid NOT NULL REFERENCES public.ads(id),
+  buyer_id uuid NOT NULL REFERENCES public.profiles(id),
+  seller_id uuid NOT NULL REFERENCES public.profiles(id),
+  amount numeric(14,2) NOT NULL,
+  status text NOT NULL DEFAULT 'created',
+  handover_code text UNIQUE NOT NULL,
+  qr_code_url text,
+  inspection_location text,
+  inspection_completed_at timestamptz,
+  released_at timestamptz,
+  disputed_at timestamptz,
+  refunded_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 32. ANALYTICS EVENTS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.analytics_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id text NOT NULL,
+  event_name text NOT NULL,
+  properties jsonb NOT NULL DEFAULT '{}'::jsonb,
+  url text,
+  referrer text,
+  user_agent text,
+  viewport text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- 33. PERFORMANCE METRICS
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS public.performance_metrics (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id text NOT NULL,
+  metric_name text NOT NULL,
+  value numeric(10,2) NOT NULL,
+  rating text NOT NULL CHECK (rating IN ('good', 'needs-improvement', 'poor')),
+  timestamp timestamptz NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
+CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
+CREATE INDEX IF NOT EXISTS idx_ads_seller_id ON public.ads(seller_id);
+CREATE INDEX IF NOT EXISTS idx_ads_category_id ON public.ads(category_id);
+CREATE INDEX IF NOT EXISTS idx_ads_status ON public.ads(status);
+CREATE INDEX IF NOT EXISTS idx_ads_created_at ON public.ads(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ad_images_ad_id ON public.ad_images(ad_id, sort_order);
 CREATE INDEX IF NOT EXISTS idx_reviews_seller_id ON public.reviews(seller_id);
 CREATE INDEX IF NOT EXISTS idx_buyer_requests_user_id ON public.buyer_requests(user_id);
-CREATE INDEX IF NOT EXISTS idx_search_alerts_user_id ON public.search_alerts(user_id);
-CREATE INDEX IF NOT EXISTS idx_intrusion_logs_timestamp ON public.intrusion_logs(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_participants ON public.conversations(participant_1, participant_2);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON public.transactions(wallet_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_escrow_orders_parties ON public.escrow_orders(buyer_id, seller_id);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON public.analytics_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_performance_metrics_created_at ON public.performance_metrics(created_at DESC);
 
--- Insert default promotion plans
-INSERT INTO public.promotion_plans (months, label, rate, badge) VALUES
-  (1, '1 Month', 15000, 'STARTER'),
-  (3, '3 Months', 13000, 'POPULAR'),
-  (6, '6 Months', 11000, 'BEST VALUE'),
-  (12, '1 Year', 9000, 'PREMIUM')
+-- ============================================================================
+-- DEFAULT SEED DATA
+-- ============================================================================
+INSERT INTO public.promotion_plans (months, label, rate, badge, is_active) VALUES
+  (1, '1 Month', 15000, 'STARTER', TRUE),
+  (3, '3 Months', 39000, 'POPULAR', TRUE),
+  (6, '6 Months', 66000, 'BEST VALUE', TRUE),
+  (12, '12 Months', 108000, 'ENTERPRISE', TRUE)
 ON CONFLICT DO NOTHING;
 
--- Insert default system configs
-INSERT INTO public.system_configs (key, value) VALUES
-  ('maintenanceMode', false),
-  ('autoApproveAds', true),
-  ('requireIdForPosting', false),
-  ('aiSpamFilter', true)
-ON CONFLICT (key) DO NOTHING;
+INSERT INTO public.system_configs (key, value, description) VALUES
+  ('maintenance_mode', FALSE, 'Enable maintenance mode to lock public marketplace'),
+  ('auto_approve_ads', TRUE, 'Automatically approve new classified ads without admin review'),
+  ('require_id_for_posting', FALSE, 'Require ID verification before allowing ad posting'),
+  ('ai_spam_filter', TRUE, 'Enable AI-powered spam and fraud detection'),
+  ('max_images_per_ad', 10, 'Maximum images per classified ad'),
+  ('max_file_size_mb', 20, 'Maximum file upload size in MB'),
+  ('platform_fee_percent', 0, 'Platform commission percentage on sales'),
+  ('min_payout_amount', 1000, 'Minimum withdrawal amount in NGN'),
+  ('payout_processing_hours', 4, 'Standard payout processing time in hours')
+ON CONFLICT (key) DO UPDATE SET
+    value = EXCLUDED.value,
+    description = EXCLUDED.description;
 
--- Insert default site settings
 INSERT INTO public.site_settings (logo_url, site_name, site_description, og_image, contact_email, contact_phone) VALUES
   ('/logo.png', 'Sealify Nigeria', 'Nigeria''s Trusted Local Marketplace for Ogbomosoland & Oyo State.', '/og-image.png', 'support@sealify.ng', '+234 813 120 8468')
 ON CONFLICT DO NOTHING;
 
--- Insert default safe spots for Ogbomoso
-INSERT INTO public.safe_spots (name, zone, category, address, distance, hours, cctv_verified) VALUES
-  ('Ogbomoso Divisional Police HQ', 'Police HQ', 'Police Safe Zone', 'Police HQ, Ogbomoso', 'Central Hub', '24/7', true),
-  ('LAUTECH Main Gate Security Post', 'LAUTECH Area', 'Police Safe Zone', 'LAUTECH Main Gate, Ogbomoso', '1 min walk', '24/7', true),
-  ('LAUTECH Library Gate', 'LAUTECH Area', 'Public Library', 'LAUTECH Library, Ogbomoso', '3 mins walk', '8:00 AM - 10:00 PM', true),
-  ('Takie Square Mall', 'Takie / Center', 'Shopping Mall', 'Takie Square, Ogbomoso', 'Central Hub', '9:00 AM - 9:00 PM', true),
-  ('Sabo Market Police Post', 'Sabo Market Zone', 'Police Safe Zone', 'Sabo Market, Ogbomoso', 'Central Hub', '8:00 AM - 8:00 PM', true),
-  ('Adenike Area Community Center', 'LAUTECH Area', 'Public Library', 'Adenike Area, Ogbomoso', '5 mins walk', '8:00 AM - 6:00 PM', true),
-  ('General Hospital Junction', 'General / Akala Way', 'Police Safe Zone', 'General Hospital Junction, Ogbomoso', 'Central Hub', '24/7', true)
+INSERT INTO public.safe_spots (name, zone, category, address, distance, hours, cctv_verified, latitude, longitude, is_active) VALUES
+  ('Ogbomoso Divisional Police HQ', 'Police HQ', 'Police Safe Zone', 'Police Headquarters, Ogbomoso, Oyo State', 'Central Hub', '24/7', TRUE, 8.1367, 4.2500, TRUE),
+  ('LAUTECH Main Gate Security Post', 'LAUTECH Area', 'Police Safe Zone', 'LAUTECH Main Gate, Ogbomoso, Oyo State', 'Campus Entry', '24/7', TRUE, 8.1450, 4.2480, TRUE),
+  ('Under G Shopping Complex', 'LAUTECH Area', 'Shopping Mall', 'Under G Market, Ogbomoso, Oyo State', 'Student Hub', '8:00 AM - 8:00 PM', TRUE, 8.1420, 4.2490, TRUE),
+  ('Takie Square Mall', 'Takie / Center', 'Shopping Mall', 'Takie Square, Ogbomoso, Oyo State', 'City Center', '9:00 AM - 7:00 PM', TRUE, 8.1380, 4.2520, TRUE),
+  ('Sabo Market Security Post', 'Sabo Market Zone', 'Police Safe Zone', 'Sabo Market, Ogbomoso, Oyo State', 'Market Center', '7:00 AM - 6:00 PM', TRUE, 8.1350, 4.2550, TRUE),
+  ('Ogbomoso Public Library', 'Takie / Center', 'Public Library', 'Public Library, Ogbomoso, Oyo State', 'Quiet Zone', '8:00 AM - 6:00 PM', TRUE, 8.1390, 4.2510, TRUE),
+  ('Adenike Area Café Hub', 'LAUTECH Area', 'Café', 'Adenike Junction, Ogbomoso, Oyo State', 'Student Area', '7:00 AM - 10:00 PM', TRUE, 8.1430, 4.2470, TRUE),
+  ('General Hospital Security Post', 'General Area', 'Police Safe Zone', 'LAUTECH Teaching Hospital, Ogbomoso', 'Hospital Zone', '24/7', TRUE, 8.1400, 4.2530, TRUE),
+  ('Oja Oba Market Security', 'Sabo Market Zone', 'Police Safe Zone', 'Oja Oba Market, Ogbomoso', 'Market Center', '7:00 AM - 6:00 PM', TRUE, 8.1340, 4.2540, TRUE),
+  ('Ilorin Garage Park Office', 'Takie / Center', 'Café', 'Ilorin Garage, Takie, Ogbomoso', 'Transport Hub', '6:00 AM - 8:00 PM', TRUE, 8.1370, 4.2515, TRUE)
 ON CONFLICT DO NOTHING;
