@@ -39,9 +39,22 @@ export const useAuth = () => {
     return data;
   };
 
+  const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider === 'samsung' ? 'google' : provider,
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
-  return { user, loading, signIn, signUp, signOut };
+  return { user, loading, signIn, signUp, signInWithOAuth, signOut };
 };

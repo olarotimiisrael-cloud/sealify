@@ -327,7 +327,11 @@ export function useAuth() {
     },
   });
 
-  return { session: session?.data?.session, user: user?.data?.user, signIn, signUp, signOut };
+  const signInWithOAuth = useMutation({
+    mutationFn: (provider: 'google' | 'apple' | 'samsung') => api.signInWithOAuth(provider),
+  });
+
+  return { session: session?.data?.session, user: user?.data?.user, signIn, signUp, signInWithOAuth, signOut };
 }
 
 export function useListings(filters?: Record<string, any>) {
