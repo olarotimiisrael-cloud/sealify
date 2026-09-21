@@ -242,6 +242,9 @@ bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
   // Email broadcast & composer
   broadcastEmail: (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; subject: string; html: string; text?: string; template?: string; userIds?: string[] }) => Promise<boolean>;
   sendMultiChannelPasswordReset: (email: string, fullName?: string, phoneNumber?: string, whatsappNumber?: string) => Promise<boolean>;
+  broadcastSMS: (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; message: string; userIds?: string[] }) => Promise<boolean>;
+  broadcastWhatsApp: (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; message: string; userIds?: string[] }) => Promise<boolean>;
+  uploadAttachment: (data: { filename: string; content: string; type?: string }) => Promise<{ success: boolean; attachment: { filename: string; content: string; type: string; size: number } }>;
   
   // Admin moderation
   passwordRequests: any[];
@@ -1205,6 +1208,54 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const broadcastSMS = async (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; message: string; userIds?: string[] }): Promise<boolean> => {
+    try {
+      const response = await adminFetch('/api/email/admin/sms', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'SMS broadcast failed');
+      }
+
+      toast.success(`SMS broadcast sent to ${result.target}: ${result.successful} successful, ${result.failed} failed`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'SMS broadcast failed');
+      return false;
+    }
+  };
+
+  const broadcastWhatsApp = async (data: { target: 'all' | 'buyer' | 'seller' | 'individual'; message: string; userIds?: string[] }): Promise<boolean> => {
+    try {
+      const response = await adminFetch('/api/email/admin/whatsapp', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json().catch(() => ({})) as Record<string, any>;
+      if (!response.ok) {
+        throw new Error(result.error || result.message || 'WhatsApp broadcast failed');
+      }
+
+      toast.success(`WhatsApp broadcast sent to ${result.target}: ${result.successful} successful, ${result.failed} failed`);
+      return true;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'WhatsApp broadcast failed');
+      return false;
+    }
+  };
+
+  const uploadAttachment = async (data: { filename: string; content: string; type?: string }): Promise<{ success: boolean; attachment: { filename: string; content: string; type: string; size: number } }> => {
+    const response = await adminFetch('/api/email/admin/upload-attachment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  };
+
   const submitPasswordRequest = async (request: any) => {
     if (!user) return;
     const created = await passwordRequestService.passwordRequestService.create({
@@ -1891,6 +1942,9 @@ bulkDeleteUsers,
     dispatchPromotionalEmailDigest,
     broadcastEmail,
     sendMultiChannelPasswordReset,
+    broadcastSMS,
+    broadcastWhatsApp,
+    uploadAttachment,
     passwordRequests,
     submitPasswordRequest,
     processPasswordRequest,
@@ -1937,7 +1991,7 @@ bulkDeleteUsers,
     activeCategory, setActiveCategory, compareListingIds, toggleCompareListing, isInCompare, clearCompare,
     createListing, updateListing, deleteListing, markAsSold, conversations, sendMessage,
     notifications, markNotificationRead, markAllNotificationsRead, clearNotification,
-    addNotification, broadcastMassNotification, dispatchPromotionalEmailDigest, broadcastEmail, sendMultiChannelPasswordReset,
+    addNotification, broadcastMassNotification, dispatchPromotionalEmailDigest, broadcastEmail, sendMultiChannelPasswordReset, broadcastSMS, broadcastWhatsApp, uploadAttachment,
     passwordRequests, submitPasswordRequest, processPasswordRequest, verificationRequests, submitVerificationRequest, processVerificationRequest,
     promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,

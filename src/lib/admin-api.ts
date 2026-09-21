@@ -62,3 +62,42 @@ export async function sendMultiChannelPasswordReset(params: {
   });
   return response.json();
 }
+
+// SMS broadcast client function
+export async function broadcastSMS(params: {
+  target: 'all' | 'individual' | 'buyer' | 'seller';
+  message: string;
+  userIds?: string[];
+}): Promise<{ success: boolean; total: number; successful: number; failed: number; results: any[] }> {
+  const response = await adminFetch('/api/email/admin/sms', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
+
+// WhatsApp broadcast client function
+export async function broadcastWhatsApp(params: {
+  target: 'all' | 'individual' | 'buyer' | 'seller';
+  message: string;
+  userIds?: string[];
+}): Promise<{ success: boolean; total: number; successful: number; failed: number; results: any[] }> {
+  const response = await adminFetch('/api/email/admin/whatsapp', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
+
+// File attachment upload client function
+export async function uploadAttachment(params: {
+  filename: string;
+  content: string;
+  type?: string;
+}): Promise<{ success: boolean; attachment: { filename: string; content: string; type: string; size: number } }> {
+  const response = await adminFetch('/api/email/admin/upload-attachment', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}

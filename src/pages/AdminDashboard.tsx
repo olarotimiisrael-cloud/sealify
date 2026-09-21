@@ -19,7 +19,9 @@ import {
   Minimize2, Heart,
   Package, Clock,
   Cloud, Cpu, Download as DownloadIcon, FileText as FileTextIcon,
-  Navigation, Box, Megaphone
+  Navigation, Box, Megaphone, Paperclip, Bold, Italic, Underline,
+  Heading1, Heading2, List as ListIcon, ListOrdered, AlignLeft, AlignCenter, AlignRight,
+  Type, Palette, PaintBucket
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
@@ -93,7 +95,10 @@ const AdminDashboard: React.FC = () => {
     deleteCategory,
     updateCategory,
     broadcastEmail,
-    sendMultiChannelPasswordReset
+    sendMultiChannelPasswordReset,
+    broadcastSMS,
+    broadcastWhatsApp,
+    uploadAttachment
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
@@ -115,7 +120,19 @@ const AdminDashboard: React.FC = () => {
     text: '',
     template: '',
     userIds: [],
+    attachments: [],
   });
+  const [smsForm, setSmsForm] = useState({
+    target: 'all',
+    message: '',
+    userIds: [],
+  });
+  const [whatsappForm, setWhatsappForm] = useState({
+    target: 'all',
+    message: '',
+    userIds: [],
+  });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isMigrationOpen, setIsMigrationOpen] = useState(false);
   const [isDatabaseTestOpen, setIsDatabaseTestOpen] = useState(false);
   const [showProjectDocs, setShowProjectDocs] = useState(false);
@@ -201,6 +218,63 @@ const AdminDashboard: React.FC = () => {
     }, 100);
     return () => clearTimeout(timer);
   }, []);
+
+  const insertFormat = (command: string, value?: string) => {
+    const html = broadcastForm.html;
+    const textarea = document.createElement('textarea');
+    textarea.value = html;
+    const cursorPos = html.length; // Append at end for simplicity
+    let replacement = '';
+
+    switch (command) {
+      case 'bold':
+        replacement = `<b>${html}</b>`;
+        break;
+      case 'italic':
+        replacement = `<i>${html}</i>`;
+        break;
+      case 'underline':
+        replacement = `<u>${html}</u>`;
+        break;
+      case 'heading1':
+        replacement = `<h1 style="font-size:24px;font-weight:bold;margin:12px 0;">${html}</h1>`;
+        break;
+      case 'heading2':
+        replacement = `<h2 style="font-size:18px;font-weight:bold;margin:10px 0;">${html}</h2>`;
+        break;
+      case 'ul':
+        replacement = `<ul><li>${html}</li></ul>`;
+        break;
+      case 'ol':
+        replacement = `<ol><li>${html}</li></ol>`;
+        break;
+      case 'align-left':
+        replacement = `<div style="text-align:left;">${html}</div>`;
+        break;
+      case 'align-center':
+        replacement = `<div style="text-align:center;">${html}</div>`;
+        break;
+      case 'align-right':
+        replacement = `<div style="text-align:right;">${html}</div>`;
+        break;
+      case 'color':
+        replacement = `<span style="color:${value};">${html}</span>`;
+        break;
+      case 'bgcolor':
+        replacement = `<span style="background-color:${value};">${html}</span>`;
+        break;
+      case 'fontsize':
+        replacement = `<span style="font-size:${value}em;">${html}</span>`;
+        break;
+      case 'fontname':
+        replacement = `<span style="font-family:${value};">${html}</span>`;
+        break;
+      default:
+        replacement = html;
+    }
+
+    setBroadcastForm(prev => ({ ...prev, html: replacement }));
+  };
 
   if (!isAdmin) {
     return (
@@ -1182,6 +1256,48 @@ const AdminDashboard: React.FC = () => {
           <div className="space-y-8">
             <h2 className="text-xl font-black text-white">Broadcast & Notification Center</h2>
             
+            {/* Rich Text Toolbar */}
+            <div className="flex flex-wrap gap-1 bg-slate-950/80 border border-slate-800/50 rounded-xl p-2">
+              <button onClick={() => insertFormat('bold')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Bold (Ctrl+B)"><Bold className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('italic')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Italic (Ctrl+I)"><Italic className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('underline')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Underline (Ctrl+U)"><Underline className="w-4 h-4" /></button>
+              <div className="w-px bg-slate-700 mx-1" />
+              <button onClick={() => insertFormat('heading1')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Heading 1"><Heading1 className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('heading2')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Heading 2"><Heading2 className="w-4 h-4" /></button>
+              <div className="w-px bg-slate-700 mx-1" />
+              <button onClick={() => insertFormat('ul')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Bullet List"><ListIcon className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('ol')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Numbered List"><ListOrdered className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('align-left')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Align Left"><AlignLeft className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('align-center')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Align Center"><AlignCenter className="w-4 h-4" /></button>
+              <button onClick={() => insertFormat('align-right')} className="px-2 py-1 hover:bg-slate-800 rounded text-xs" title="Align Right"><AlignRight className="w-4 h-4" /></button>
+              <div className="w-px bg-slate-700 mx-1" />
+              <input type="color" onChange={(e) => insertFormat('color', e.target.value)} className="w-6 h-6 bg-transparent cursor-pointer" title="Text Color" />
+              <input type="color" onChange={(e) => insertFormat('bgcolor', e.target.value)} className="w-6 h-6 bg-transparent cursor-pointer" title="Background Color" />
+              <select
+                onChange={(e) => { if (e.target.value) insertFormat('fontsize', e.target.value); e.target.value = ''; }}
+                className="w-12 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-xs text-white"
+                title="Font Size"
+                value=""
+              >
+                <option value="">Size</option>
+                <option value="1">Small</option>
+                <option value="3">Medium</option>
+                <option value="5">Large</option>
+              </select>
+              <select
+                onChange={(e) => insertFormat('fontname', e.target.value)}
+                className="w-20 bg-slate-900 border border-slate-700 rounded px-1 py-0.5 text-xs text-white"
+                title="Font Family"
+                value=""
+              >
+                <option value="">Font</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Mass Notification */}
               <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-6">
@@ -1256,7 +1372,7 @@ const AdminDashboard: React.FC = () => {
 
               {/* Email Composer */}
               <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-6">
-                <h3 className="font-bold text-white">Send Email to Users</h3>
+                <h3 className="font-bold text-white flex items-center gap-2"><Mail className="w-5 h-5" /> Send Email to Users</h3>
                 <div className="space-y-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
@@ -1308,7 +1424,7 @@ const AdminDashboard: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Body (HTML)</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Body — Rich Text Editor</label>
                     <textarea
                       rows={6}
                       value={broadcastForm.html}
@@ -1340,6 +1456,68 @@ const AdminDashboard: React.FC = () => {
                       <option value="promotion">Promotional Template</option>
                     </select>
                   </div>
+                  {/* File Attachments */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Attachments</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast.error('File exceeds 10MB limit');
+                              return;
+                            }
+                            setSelectedFile(file);
+                          }
+                        }}
+                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:bg-emerald-500/20 file:text-emerald-400 file:text-[10px]"
+                      />
+                      {selectedFile && (
+                        <button
+                          onClick={async () => {
+                            try {
+                              const reader = new FileReader();
+                              reader.onload = async () => {
+                                const base64 = reader.result as string;
+                                const uploadRes = await uploadAttachment({
+                                  filename: selectedFile.name,
+                                  content: base64.split(',')[1] || base64,
+                                  type: selectedFile.type,
+                                });
+                                if (uploadRes.success) {
+                                  setBroadcastForm(prev => ({
+                                    ...prev,
+                                    attachments: [...(prev.attachments || []), uploadRes.attachment],
+                                  }));
+                                  setSelectedFile(null);
+                                  toast.success(`Attached: ${selectedFile.name}`);
+                                }
+                              };
+                              reader.readAsDataURL(selectedFile);
+                            } catch (err) {
+                              toast.error('Failed to upload attachment');
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs rounded-xl border border-emerald-500/30 flex items-center gap-1"
+                        >
+                          <Paperclip className="w-3 h-3" />
+                          Attach
+                        </button>
+                      )}
+                    </div>
+                    {broadcastForm.attachments?.length > 0 && (
+                      <div className="space-y-1">
+                        {broadcastForm.attachments.map((att: any, i: number) => (
+                          <div key={i} className="flex items-center justify-between bg-slate-900/50 border border-slate-800/50 rounded-lg px-3 py-2">
+                            <span className="text-xs text-slate-300 flex items-center gap-1"><FileTextIcon className="w-3 h-3" /> {att.filename}</span>
+                            <button onClick={() => setBroadcastForm(prev => ({ ...prev, attachments: prev.attachments.filter((_: any, idx: number) => idx !== i) }))} className="text-rose-400 hover:text-rose-300 text-xs"><X className="w-3 h-3" /></button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={() => {
                       if (!broadcastForm.subject.trim()) {
@@ -1350,10 +1528,6 @@ const AdminDashboard: React.FC = () => {
                         toast.error('Email body is required');
                         return;
                       }
-                      if (broadcastForm.target === 'individual' && (!broadcastForm.userIds || broadcastForm.userIds.length === 0)) {
-                        toast.error('Please select at least one user');
-                        return;
-                      }
                       void broadcastEmail({
                         target: broadcastForm.target as any,
                         subject: broadcastForm.subject.trim(),
@@ -1361,6 +1535,7 @@ const AdminDashboard: React.FC = () => {
                         text: broadcastForm.text.trim() || undefined,
                         template: broadcastForm.template || undefined,
                         userIds: broadcastForm.target === 'individual' ? broadcastForm.userIds : undefined,
+                        attachments: broadcastForm.attachments,
                       });
                     }}
                     className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-400 hover:to-purple-400 text-white font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
@@ -1370,21 +1545,176 @@ const AdminDashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {/* SMS Broadcast */}
+              <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-6">
+                <h3 className="font-bold text-white flex items-center gap-2"><Smartphone className="w-5 h-5 text-green-400" /> Broadcast SMS</h3>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
+                    <select
+                      value={smsForm.target}
+                      onChange={(e) => setSmsForm(prev => ({ ...prev, target: e.target.value }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Users</option>
+                      <option value="buyer">Buyers Only</option>
+                      <option value="seller">Sellers Only</option>
+                      <option value="individual">Individual Users</option>
+                    </select>
+                  </div>
+                  {smsForm.target === 'individual' && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Users</label>
+                      <div className="max-h-24 overflow-y-auto border border-slate-800/50 rounded-xl p-2 bg-slate-950/50">
+                        {allUsers.map(user => (
+                          <label key={user.id} className="flex items-center gap-2 p-1.5 hover:bg-slate-900/30 rounded-lg cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={(smsForm.userIds || []).includes(user.id)}
+                              onChange={(e) => {
+                                const selected = smsForm.userIds || [];
+                                if (e.target.checked) {
+                                  setSmsForm(prev => ({ ...prev, userIds: [...selected, user.id] }));
+                                } else {
+                                  setSmsForm(prev => ({ ...prev, userIds: selected.filter(id => id !== user.id) }));
+                                }
+                              }}
+                              className="w-4 h-4 text-green-500 bg-slate-900 border-slate-700 rounded focus:ring-green-500"
+                            />
+                            <span className="text-xs text-white truncate max-w-xs">{user.fullName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{user.phone_number || 'No phone'}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">SMS Message</label>
+                    <textarea
+                      rows={4}
+                      value={smsForm.message}
+                      onChange={(e) => setSmsForm(prev => ({ ...prev, message: e.target.value }))}
+                      placeholder="Type your SMS message..."
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                    <p className="text-[10px] text-slate-500">{smsForm.message.length} chars · ~{Math.ceil(smsForm.message.length / 160)} SMS segments</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!smsForm.message.trim()) {
+                        toast.error('Message is required');
+                        return;
+                      }
+                      if (smsForm.target === 'individual' && (!smsForm.userIds || smsForm.userIds.length === 0)) {
+                        toast.error('Please select at least one user');
+                        return;
+                      }
+                      void broadcastSMS({
+                        target: smsForm.target as any,
+                        message: smsForm.message.trim(),
+                        userIds: smsForm.target === 'individual' ? smsForm.userIds : undefined,
+                      });
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-400 hover:to-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>SEND SMS BROADCAST</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* WhatsApp Broadcast */}
+              <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl space-y-6">
+                <h3 className="font-bold text-white flex items-center gap-2"><Smartphone className="w-5 h-5 text-blue-400" /> Broadcast WhatsApp</h3>
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Target Audience</label>
+                    <select
+                      value={whatsappForm.target}
+                      onChange={(e) => setWhatsappForm(prev => ({ ...prev, target: e.target.value }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    >
+                      <option value="all">All Users</option>
+                      <option value="buyer">Buyers Only</option>
+                      <option value="seller">Sellers Only</option>
+                      <option value="individual">Individual Users</option>
+                    </select>
+                  </div>
+                  {whatsappForm.target === 'individual' && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Users</label>
+                      <div className="max-h-24 overflow-y-auto border border-slate-800/50 rounded-xl p-2 bg-slate-950/50">
+                        {allUsers.map(user => (
+                          <label key={user.id} className="flex items-center gap-2 p-1.5 hover:bg-slate-900/30 rounded-lg cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={(whatsappForm.userIds || []).includes(user.id)}
+                              onChange={(e) => {
+                                const selected = whatsappForm.userIds || [];
+                                if (e.target.checked) {
+                                  setWhatsappForm(prev => ({ ...prev, userIds: [...selected, user.id] }));
+                                } else {
+                                  setWhatsappForm(prev => ({ ...prev, userIds: selected.filter(id => id !== user.id) }));
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-500 bg-slate-900 border-slate-700 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-white truncate max-w-xs">{user.fullName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">{user.whatsapp_number || user.phone_number || 'No WA'}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">WhatsApp Message</label>
+                    <textarea
+                      rows={4}
+                      value={whatsappForm.message}
+                      onChange={(e) => setWhatsappForm(prev => ({ ...prev, message: e.target.value }))}
+                      placeholder="Type your WhatsApp message..."
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (!whatsappForm.message.trim()) {
+                        toast.error('Message is required');
+                        return;
+                      }
+                      if (whatsappForm.target === 'individual' && (!whatsappForm.userIds || whatsappForm.userIds.length === 0)) {
+                        toast.error('Please select at least one user');
+                        return;
+                      }
+                      void broadcastWhatsApp({
+                        target: whatsappForm.target as any,
+                        message: whatsappForm.message.trim(),
+                        userIds: whatsappForm.target === 'individual' ? whatsappForm.userIds : undefined,
+                      });
+                    }}
+                    className="w-full py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-black rounded-xl text-xs shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>SEND WHATSAPP BROADCAST</span>
+                  </button>
+                </div>
               </div>
 
               {/* Recent Broadcasts */}
               <div className="bg-slate-950/50 border border-slate-800/50 p-6 rounded-2xl">
-              <h3 className="font-bold text-white mb-4">Recent Broadcast History</h3>
-              <div className="space-y-3">
-                {auditLogs.filter(l => l.type === 'broadcast').slice(0, 10).map((log, i) => (
-                  <div key={i} className="p-3 bg-slate-900/50 border border-slate-800/50 rounded-xl flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-xs text-white">{log.action}</p>
-                      <p className="text-[10px] text-slate-400">{log.details}</p>
+                <h3 className="font-bold text-white mb-4">Recent Broadcast History</h3>
+                <div className="space-y-3">
+                  {auditLogs.filter(l => l.type === 'broadcast').slice(0, 10).map((log, i) => (
+                    <div key={i} className="p-3 bg-slate-900/50 border border-slate-800/50 rounded-xl flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-xs text-white">{log.action}</p>
+                        <p className="text-[10px] text-slate-400">{log.details}</p>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono">{log.createdAt}</span>
                     </div>
-                    <span className="text-[10px] text-slate-500 font-mono">{log.createdAt}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           </div>

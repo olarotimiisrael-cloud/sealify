@@ -130,6 +130,7 @@ emailRoutes.post("/password-reset", emailRateLimit, async (c) => {
           text: generatePasswordResetText(userName, email, resetUrl, userPhone),
           template: 'password-reset',
           headers: { 'X-Password-Reset': 'true', 'X-Channel': 'email' },
+          attachments: [],
         });
         sentChannels.push('email');
       } catch (emailError: any) {
@@ -198,7 +199,7 @@ emailRoutes.post("/admin/send", requireAdmin, emailRateLimit, async (c) => {
   try {
     const env = c.env as any;
     const body = await c.req.json();
-    const { target, subject, html, text, template, userIds, audience } = body;
+    const { target, subject, html, text, template, userIds, audience, attachments } = body;
 
     if (!subject || !html) {
       throw new HTTPException(400, { message: "Subject and HTML content required" });
@@ -238,6 +239,7 @@ emailRoutes.post("/admin/send", requireAdmin, emailRateLimit, async (c) => {
           html,
           text,
           template,
+          attachments: attachments || [],
           headers: {
             'X-Admin-Sent': 'true',
             'X-Target-User': userRow.id,
@@ -291,6 +293,39 @@ emailRoutes.post("/admin/send", requireAdmin, emailRateLimit, async (c) => {
   }
 });
 
+// Admin: Upload file attachment (stored as base64 for Cloudflare Email Service)
+emailRoutes.post("/admin/upload-attachment", requireAdmin, emailRateLimit, async (c) => {
+  try {
+    const body = await c.req.json();
+    const { filename, content, type } = body;
+
+    if (!filename || !content) {
+      throw new HTTPException(400, { message: "Filename and base64 content required" });
+    }
+
+    const maxSize = parseInt(env.MAX_ATTACHMENT_SIZE || '10000000');
+    const decodedSize = Buffer.from(content, 'base64').length;
+    if (decodedSize > maxSize) {
+      throw new HTTPException(413, { message: `Attachment exceeds ${maxSize} bytes` });
+    }
+
+    return c.json({
+      success: true,
+      attachment: {
+        filename,
+        content,
+        type: type || 'application/octet-stream',
+        size: decodedSize,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Attachment upload error:", error);
+    throw new HTTPException(500, { message: "Failed to upload attachment" });
+  }
+});
+
 // Email service status
 emailRoutes.get("/status", requireAdmin, async (c) => {
   try {
@@ -312,6 +347,141 @@ emailRoutes.get("/status", requireAdmin, async (c) => {
   } catch (error) {
     console.error("Email status error:", error);
     throw new HTTPException(500, { message: "Failed to get email status" });
+  }
+});
+
+// Email service status
+emailRoutes.get("/status", requireAdmin, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { target, message, userIds, audience } = body;
+
+    if (!message || !message.trim()) {
+      throw new HTTPException(400, { message: "Message content required" });
+    }
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    let userList: any[] = [];
+    let description = '';
+
+    if (target === 'all') {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, phone_number');
+      userList = data || [];
+      description = `All users (${userList.length})`;
+    } else if (target === 'individual' && userIds?.length) {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, phone_number').in('id', userIds);
+      userList = data || [];
+      description = `Selected users (${userList.length})`;
+    } else if (audience && ['buyer', 'seller'].includes(audience)) {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, phone_number').eq('role', audience);
+      userList = data || [];
+      description = `${audience}s (${userList.length})`;
+    }
+
+    if (userList.length === 0) {
+      throw new HTTPException(404, { message: "No users found for the selected target" });
+    }
+
+    const results: any[] = [];
+    for (const userRow of userList) {
+      if (!userRow.phone_number) {
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: false, error: 'No phone number' });
+        continue;
+      }
+      try {
+        await sendSMSViaEnv(env, userRow.phone_number, message);
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: true });
+      } catch (sendError: any) {
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: false, error: sendError.message });
+      }
+    }
+
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    await auditLog(sql, c.get('user').id, "Admin SMS Broadcast", `
+      Target: ${description}
+      Sent: ${successful}
+      Failed: ${failed}
+      Message: ${message.substring(0, 100)}
+    `, "sms_broadcast" as any);
+
+    return c.json({ success: true, target: description, total: userList.length, successful, failed, results, timestamp: new Date().toISOString() });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Admin SMS broadcast error:", error);
+    throw new HTTPException(500, { message: "Failed to broadcast SMS" });
+  }
+});
+
+// Admin: Broadcast WhatsApp message to all or individual users
+emailRoutes.post("/admin/whatsapp", requireAdmin, emailRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { target, message, userIds, audience } = body;
+
+    if (!message || !message.trim()) {
+      throw new HTTPException(400, { message: "Message content required" });
+    }
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    let userList: any[] = [];
+    let description = '';
+
+    if (target === 'all') {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, whatsapp_number, phone_number');
+      userList = data || [];
+      description = `All users (${userList.length})`;
+    } else if (target === 'individual' && userIds?.length) {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, whatsapp_number, phone_number').in('id', userIds);
+      userList = data || [];
+      description = `Selected users (${userList.length})`;
+    } else if (audience && ['buyer', 'seller'].includes(audience)) {
+      const { data } = await supabase.from('profiles').select('id, email, full_name, whatsapp_number, phone_number').eq('role', audience);
+      userList = data || [];
+      description = `${audience}s (${userList.length})`;
+    }
+
+    if (userList.length === 0) {
+      throw new HTTPException(404, { message: "No users found for the selected target" });
+    }
+
+    const results: any[] = [];
+    for (const userRow of userList) {
+      const whatsappNumber = userRow.whatsapp_number || userRow.phone_number;
+      if (!whatsappNumber) {
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: false, error: 'No WhatsApp number' });
+        continue;
+      }
+      try {
+        await sendWhatsAppViaEnv(env, whatsappNumber, message);
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: true });
+      } catch (sendError: any) {
+        results.push({ userId: userRow.id, email: userRow.email, name: userRow.full_name, success: false, error: sendError.message });
+      }
+    }
+
+    const successful = results.filter(r => r.success).length;
+    const failed = results.filter(r => !r.success).length;
+
+    await auditLog(sql, c.get('user').id, "Admin WhatsApp Broadcast", `
+      Target: ${description}
+      Sent: ${successful}
+      Failed: ${failed}
+      Message: ${message.substring(0, 100)}
+    `, "whatsapp_broadcast" as any);
+
+    return c.json({ success: true, target: description, total: userList.length, successful, failed, results, timestamp: new Date().toISOString() });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Admin WhatsApp broadcast error:", error);
+    throw new HTTPException(500, { message: "Failed to broadcast WhatsApp message" });
   }
 });
 
