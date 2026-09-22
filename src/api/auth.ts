@@ -297,95 +297,80 @@ authRoutes.post("/admin-login", async (c) => {
 
   // Step 3: Authentication succeeded - now obtain database connection
   let sql;
-  let isHyperdriveAvailable = true;
   try {
     sql = getSql(env);
-  } catch {
-    // Hyperdrive not available - we'll use Supabase REST API for admin check
-    isHyperdriveAvailable = false;
+  } catch (dbError) {
+    // Hyperdrive not available - this is an infrastructure failure
+    console.error("[ADMIN LOGIN] HYPERDRIVE binding missing or connection creation failed:", dbError.message);
+    // Do not sign out the Supabase session as the credentials might be valid
+    throw new HTTPException(503, {
+      message: "Administrator authentication service temporarily unavailable"
+    });
   }
 
-  // Step 4: Check rate limiting (only if database is available)
-  if (isHyperdriveAvailable) {
-    try {
-      const recentFailures = await sql`
-        SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
-        FROM intrusion_logs
-        WHERE attempted_email = ${email}
-          AND status = 'flagged'
-          AND created_at >= NOW() - INTERVAL '15 minutes'
-      `;
-      const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
-      if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
-          && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
-        throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
-      }
-    } catch (rateLimitError) {
-      if (rateLimitError instanceof HTTPException) throw rateLimitError;
-      // Rate limit check failed - continue (admin check is mandatory)
+  // Step 4: Check rate limiting
+  try {
+    const recentFailures = await sql`
+      SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
+      FROM intrusion_logs
+      WHERE attempted_email = ${email}
+        AND status = 'flagged'
+        AND created_at >= NOW() - INTERVAL '15 minutes'
+    `;
+    const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
+    if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
+        && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
+      throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
     }
+  } catch (rateLimitError) {
+    if (rateLimitError instanceof HTTPException) throw rateLimitError;
+    // Rate limit check failed - this is an infrastructure issue
+    console.error("[ADMIN LOGIN] Rate limit check failed:", rateLimitError.message);
+    throw new HTTPException(503, {
+      message: "Administrator authentication service temporarily unavailable"
+    });
   }
 
-  // Step 5: Verify admin role (use database if available, otherwise Supabase REST API)
+  // Step 5: Verify admin role using parameterized query
   let isAdminResult = false;
-  if (isHyperdriveAvailable) {
-    // Use database connection for admin check
-    const isAdmin = await sql`SELECT public.is_admin(${data.user.id}) AS is_admin`;
-    isAdminResult = isAdmin[0]?.is_admin === true;
-  } else {
-    // Use Supabase REST API RPC for admin check
-    try {
-      const adminCheckResponse = await supabase
-        .rpc('is_admin', { user_id: data.user.id });
-      isAdminResult = adminCheckResponse.data;
-    } catch (adminCheckError) {
-      // If RPC fails, fall back to checking profile directly
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
-        
-        isAdminResult = !profileError && profileData?.role === 'admin';
-      } catch (profileError) {
-        // If all checks fail, deny access
-        isAdminResult = false;
-      }
-    }
+  try {
+    const rows = await sql`
+      SELECT public.is_admin(${data.user.id}) AS is_admin
+    `;
+    isAdminResult = Boolean(rows[0]?.is_admin);
+  } catch (dbError) {
+    // Admin authorization query failed - this is an infrastructure failure
+    console.error("[ADMIN LOGIN] public.is_admin() query failed:", dbError.message);
+    throw new HTTPException(503, {
+      message: "Administrator authentication service temporarily unavailable"
+    });
   }
 
+  // Step 6: Handle authorization result
   if (!isAdminResult) {
     await supabase.auth.signOut();
-    
-    // Log intrusion attempt if database is available
-    if (isHyperdriveAvailable) {
-      try {
-        const sql = getSql(env);
-        await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
-      } catch {
-        // Database unavailable - skip logging
-      }
+    try {
+      await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
+    } catch (dbError) {
+      // Log the database error for diagnostics but don't expose it to client
+      console.error("[ADMIN LOGIN] Database unavailable for authorization failure logging:", dbError.message);
     }
-    
     throw new HTTPException(403, { message: "Administrator access required" });
   }
 
-  // Step 6: Success - clear intrusion logs and record audit (only if database is available)
-  if (isHyperdriveAvailable) {
-    try {
-      const sql = getSql(env);
-      await sql`
-        UPDATE intrusion_logs
-        SET status = 'dismissed'
-        WHERE attempted_email = ${email}
-          AND status = 'flagged'
-          AND created_at >= NOW() - INTERVAL '15 minutes'
-      `;
-      await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
-    } catch {
-      // Database unavailable - skip logging
-    }
+  // Step 7: Success - clear intrusion logs and record audit
+  try {
+    await sql`
+      UPDATE intrusion_logs
+      SET status = 'dismissed'
+      WHERE attempted_email = ${email}
+        AND status = 'flagged'
+        AND created_at >= NOW() - INTERVAL '15 minutes'
+    `;
+    await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
+  } catch (dbError) {
+    // Log the database error for diagnostics but don't expose it to client
+    console.error("[ADMIN LOGIN] Database unavailable for success logging:", dbError.message);
   }
 
   return c.json({ session: data.session });
