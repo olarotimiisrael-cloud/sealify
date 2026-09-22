@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner';
 
 const AdminLogin: React.FC = () => {
-  const { adminLogin } = useSealify();
+  const { adminLogin, error, clearError } = useSealify();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,6 +34,9 @@ const AdminLogin: React.FC = () => {
 
     setIsAuthenticating(true);
 
+    // Clear previous error
+    clearError();
+
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const success = await adminLogin(email, password);
@@ -42,7 +45,12 @@ const AdminLogin: React.FC = () => {
     if (success) {
       navigate('/admin');
     } else {
-      toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
+      // Display the error from context if available
+      if (error) {
+        toast.error(error, { duration: 8000 });
+      } else {
+        toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
+      }
     }
   };
 
