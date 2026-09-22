@@ -22,6 +22,24 @@ export interface Env {
   APP_URL?: string;
   PUBLIC_SITE_URL?: string;
   NODE_ENV?: string;
+  // Self-hosted email service
+  SMTP_HOST?: string;
+  SMTP_PORT?: string;
+  SMTP_USER?: string;
+  SMTP_PASS?: string;
+  EMAIL_FROM?: string;
+  // Self-hosted SMS gateway
+  SMS_GATEWAY_URL?: string;
+  SMS_GATEWAY_USERNAME?: string;
+  SMS_GATEWAY_PASSWORD?: string;
+  // OTP configuration
+  OTP_LENGTH?: string;
+  OTP_EXPIRY_MS?: string;
+  BROADCAST_CONCURRENCY?: string;
+  // Admin messaging
+  ADMIN_EMAIL_FROM?: string;
+  PASSWORD_RESET_EMAIL_FROM?: string;
+  MAX_ATTACHMENT_SIZE?: string;
 }
 
 export interface Hyperdrive {

@@ -385,3 +385,76 @@ export interface SearchFilter {
 }
 
 export type StatusFilter = 'all' | 'active' | 'sold' | 'featured';
+
+// OTP (One-Time Password) record types for email and phone verification
+export interface EmailOtp {
+  id: string;
+  email: string;
+  otpHash: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  createdAt: string;
+  attempts: number;
+  deliveredVia: string;
+  sentToEmail: string;
+}
+
+export interface PhoneOtp {
+  id: string;
+  phoneNumber: string;
+  otpHash: string;
+  expiresAt: string;
+  usedAt?: string | null;
+  createdAt: string;
+  attempts: number;
+  deliveredVia: string;
+}
+
+export type OTP = EmailOtp | PhoneOtp;
+
+// Admin messaging types
+export interface AdminMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  title: string;
+  content: string;
+  contentType: string;
+  status: string;
+  channel: string;
+  deliveredAt?: string | null;
+  readAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  senderName?: string;
+  receiverName?: string;
+  receiverEmail?: string;
+  broadcastId?: string | null;
+}
+
+export interface AdminBroadcast {
+  id: string;
+  senderId: string;
+  target: string;
+  title: string;
+  content: string;
+  contentType: string;
+  channel: string;
+  userIds?: string[] | null;
+  audience?: string | null;
+  sentCount: number;
+  deliveredCount: number;
+  readCount: number;
+  failedCount: number;
+  createdAt: string;
+  sentAt?: string | null;
+  expiresAt?: string | null;
+  senderName?: string;
+  senderEmail?: string;
+}
+
+// Alias types for supabaseService.ts compatibility
+export type DbEmailOtp = EmailOtp;
+export type DbPhoneOtp = PhoneOtp;
+export type DbAdminMessage = AdminMessage;
+export type DbAdminBroadcast = AdminBroadcast;

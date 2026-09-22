@@ -1,199 +1,176 @@
-import React, { useState, useEffect } from 'react';
-import { X, Smartphone, CheckCircle2, RefreshCw, ShieldCheck, Loader2, Zap, Copy } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useOtp } from '@/hooks/useOtp';
+import { X, ShieldCheck, Smartphone, Mail, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { useSealify } from '../context/SealifyContext';
 
-interface OtpVerificationModalProps {
+interface OTPVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  phoneNumber: string;
-  onVerified: () => void;
+  identifier: string;
+  channel?: 'email' | 'phone';
+  onVerified?: (result: { userId: string | null }) => void;
 }
 
-const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
+export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   isOpen,
   onClose,
-  phoneNumber,
-  onVerified
+  identifier,
+  channel = 'email',
+  onVerified,
 }) => {
-  const { sendPhoneOtp, verifyPhoneOtp } = useSealify();
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(60);
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [isSending, setIsSending] = useState(false);
+  const { loading, requestOtp, verifyOtp, resendOtp } = useOtp();
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [otpId, setOtpId] = useState<string | null>(null);
-  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(60);
+  const [verifying, setVerifying] = useState(false);
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
-    let interval: any;
-    if (isOpen && timer > 0) {
-      interval = setInterval(() => setTimer(prev => prev - 1), 1000);
+    if (isOpen && !otpSent) {
+      const timer = setTimeout(async () => {
+        const result = await requestOtp(identifier, channel);
+        if (result?.success) {
+          setOtpSent(true);
+          setOtpId(result.otpId);
+          setCountdown(60);
+          intervalRef.current = setInterval(() => {
+            setCountdown((prev) => {
+              if (prev <= 1) {
+                if (intervalRef.current) clearInterval(intervalRef.current);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
-    return () => clearInterval(interval);
-  }, [isOpen, timer]);
+  }, [isOpen, identifier, channel, otpSent]);
 
-  // Send initial OTP on open
   useEffect(() => {
-    if (isOpen && !generatedOtp) {
-      handleResendOtp();
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  const handleOtpChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setOtp(value);
+    if (value.length === 6) {
+      setVerifying(true);
+      setTimeout(async () => {
+        const result = await verifyOtp(identifier, value, otpId || undefined, channel);
+        setVerifying(false);
+        if (result?.success) {
+          setResultMessage(result.message);
+          onVerified?.(result);
+          toast.success(result.message);
+        } else {
+          setResultMessage(result?.message || 'Invalid OTP');
+          toast.error(result?.message || 'Invalid OTP');
+        }
+      }, 300);
     }
-  }, [isOpen]);
+  }, [identifier, otpId, channel, verifyOtp, onVerified]);
+
+  const handleResend = useCallback(async () => {
+    setCountdown(60);
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    await resendOtp(identifier, channel);
+  }, [identifier, channel, resendOtp]);
 
   if (!isOpen) return null;
 
-  const handleChange = (index: number, value: string) => {
-    if (value.length > 1) return;
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-
-    // Auto-focus next input
-    if (value && index < 5) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
-  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prevInput = document.getElementById(`otp-${index - 1}`);
-      prevInput?.focus();
-    }
-  };
-
-const handleAutoFill = (codeToFill?: string) => {
-     const code = codeToFill || generatedOtp;
-     if (!code) return;
-     const digits = code.split('').slice(0, 6);
-     setOtp(digits);
-     toast.success('⚡ Verification code auto-filled!');
-   };
-
-  const handleVerify = async () => {
-    const enteredOtp = otp.join('');
-    if (enteredOtp.length < 6) {
-      toast.error('Please enter the full 6-digit code');
-      return;
-    }
-
-    setIsVerifying(true);
-    
-    // Check against generated code or context verification
-    const success = await verifyPhoneOtp(phoneNumber, enteredOtp);
-    
-    if (success || (generatedOtp && enteredOtp === generatedOtp) || enteredOtp.length === 6) {
-      toast.success('Phone number authenticated successfully!');
-      setIsVerifying(false);
-      onVerified();
-    } else {
-      toast.error('Invalid verification code. Please try again.');
-      setIsVerifying(false);
-    }
-  };
-
-const handleResendOtp = async () => {
-     setIsSending(true);
-     try {
-       const result = await sendPhoneOtp(phoneNumber);
-       setGeneratedOtp(result.otp || null);
-       setOtpId(result.otpId || null);
-       setTimer(60);
-       toast.info(`📱 Security Code Dispatched: ${result.otp || 'See your phone'}`, { duration: 8000 });
-     } catch {
-       toast.error('Failed to send OTP');
-     } finally {
-       setIsSending(false);
-     }
-   };
-
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 font-sans">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl relative text-slate-100">
-        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-white rounded-xl transition-colors">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative text-slate-100 font-sans overflow-hidden">
+        <button
+          onClick={onClose}
+          className="absolute top-5 right-5 p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors"
+        >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/30">
-            {isSending ? <Loader2 className="w-8 h-8 animate-spin" /> : <Smartphone className="w-8 h-8" />}
-          </div>
-          
-          <div className="space-y-1">
-            <h2 className="text-2xl font-black text-white">Phone Verification</h2>
-            <p className="text-xs text-slate-400">
-              Code dispatched for <strong className="text-emerald-400">{phoneNumber || 'your phone'}</strong>
-            </p>
-          </div>
-
-          {/* Code display banner for instant verification */}
-          {generatedOtp && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between gap-2 text-left">
-              <div>
-                <p className="text-[9px] font-black uppercase text-emerald-400 tracking-wider">Your Security OTP Code:</p>
-                <p className="font-mono text-xl font-black text-white tracking-widest">{generatedOtp}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleAutoFill(generatedOtp)}
-                className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow transition-all active:scale-95"
-              >
-                <Zap className="w-3.5 h-3.5 fill-slate-950" />
-                <span>Auto-Fill</span>
-              </button>
-            </div>
-          )}
-
-          {/* 6 Digit Input Boxes */}
-          <div className="flex justify-between gap-1.5 sm:gap-2 py-2">
-            {otp.map((digit, i) => (
-              <input
-                key={i}
-                id={`otp-${i}`}
-                type="number"
-                maxLength={1}
-                value={digit}
-                onChange={(e) => handleChange(i, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(i, e)}
-                className="w-10 h-12 sm:w-12 sm:h-14 bg-slate-950 border border-slate-800 rounded-xl text-center text-lg sm:text-xl font-black text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-              />
-            ))}
-          </div>
-
-          <div className="text-center">
-            {timer > 0 ? (
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                Resend code in <span className="text-emerald-400">{timer}s</span>
-              </p>
+        <div className="text-center space-y-2 mb-6">
+          <ShieldCheck className="mx-auto h-10 w-10 text-emerald-400" />
+          <h2 className="text-xl font-black text-white tracking-tight uppercase">Verify Your Identity</h2>
+          <p className="text-xs text-slate-400">
+            {channel === 'email' ? (
+              <>Enter the 6-digit code sent to <strong className="text-slate-300">{identifier}</strong></>
             ) : (
-              <button 
-                onClick={handleResendOtp} 
-                disabled={isSending}
-                className="text-[10px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-1 mx-auto hover:underline disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3 h-3 ${isSending ? 'animate-spin' : ''}`} /> Resend Security Code
-              </button>
+              <>Enter the 6-digit code sent to <strong className="text-slate-300">{identifier}</strong></>
+            )}
+          </p>
+        </div>
+
+        {otpSent && (
+          <div className="mb-4">
+            <div className="grid grid-cols-6 gap-2">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <input
+                  key={i}
+                  ref={(el) => { inputRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={otp[i] || ''}
+                  onChange={handleOtpChange}
+                  className="w-full aspect-square bg-slate-950 border border-slate-700 rounded-xl text-center text-lg font-black text-emerald-400 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 transition-all"
+                  autoComplete="one-time-code"
+                />
+              ))}
+            </div>
+            {resultMessage && (
+              <p className={`mt-2 text-xs text-center ${resultMessage.includes('Invalid') || resultMessage.includes('expired') ? 'text-red-400' : 'text-emerald-400'}`}>
+                {resultMessage}
+              </p>
             )}
           </div>
+        )}
 
+        <div className="flex items-center justify-center gap-3 mb-4">
           <button
-            onClick={handleVerify}
-            disabled={isVerifying}
-            className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:bg-slate-800 text-slate-950 font-black rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs uppercase tracking-wider"
+            onClick={handleResend}
+            disabled={countdown > 0 || loading}
+            className="flex items-center gap-2 text-xs text-emerald-400 hover:text-emerald-300 disabled:text-slate-600 disabled:cursor-not-allowed transition-colors"
           >
-            {isVerifying ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
-            <span>{isVerifying ? 'Authenticating...' : 'Confirm & Complete Registration'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${countdown > 0 ? 'animate-spin' : ''}`} />
+            {countdown > 0 ? `Resend in ${countdown}s` : 'Resend code'}
           </button>
-
-          <div className="pt-2 border-t border-slate-800">
-             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest flex items-center justify-center gap-1.5">
-               <ShieldCheck className="w-3 h-3 text-emerald-500" />
-               Forensic Identity Protection Enabled
-             </p>
-          </div>
         </div>
+
+        {!otpSent && (
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2">
+            {channel === 'email' ? (
+              <Mail className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+            )}
+            <p className="text-[10px] text-emerald-300 font-semibold leading-tight">
+              Sending verification code to {identifier}...
+            </p>
+            {loading && <span className="ml-auto text-xs text-slate-400 animate-pulse">Loading</span>}
+          </div>
+        )}
+
+        <p className="mt-4 text-[9px] text-slate-500 text-center leading-relaxed">
+          For security, this code expires in 10 minutes. Do not share it with anyone.
+        </p>
       </div>
     </div>
   );
 };
 
-export default OtpVerificationModal;
+export default OTPVerificationModal;
