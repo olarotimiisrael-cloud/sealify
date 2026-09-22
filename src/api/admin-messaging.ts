@@ -379,29 +379,23 @@ messagingRoutes.get('/messages', requireAdmin, async (c) => {
     const limitNum = Math.min(parseInt(limit) || 50, 200);
     const offsetNum = parseInt(offset) || 0;
 
-    let whereClause = 'WHERE 1=1';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
-      params.push(status);
-      paramIndex++;
-    }
+    const statusClause = status ? sql`AND m.status = ${status}` : sql``;
 
     const messages = await sql`
       SELECT m.*, p.full_name as receiver_name, p.email as receiver_email, s.full_name as sender_name
       FROM public.admin_messages m
       LEFT JOIN public.profiles p ON m.receiver_id = p.id
       LEFT JOIN public.profiles s ON m.sender_id = s.id
-      ${sql(whereClause)}
+      WHERE 1=1 ${statusClause}
       ORDER BY m.created_at DESC
       LIMIT ${limitNum} OFFSET ${offsetNum}
     `;
 
     const countResult = await sql`
-      SELECT COUNT(*) as total FROM public.admin_messages ${sql(whereClause)}
-    `, params;
+      SELECT COUNT(*) as total
+      FROM public.admin_messages m
+      WHERE 1=1 ${statusClause}
+    `;
 
     return c.json({ messages, total: parseInt(countResult[0]?.total || '0'), limit: limitNum, offset: offsetNum });
   } catch (error: any) {
