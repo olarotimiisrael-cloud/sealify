@@ -619,7 +619,7 @@ ON CONFLICT (key) DO UPDATE SET
     description = EXCLUDED.description;
 
 INSERT INTO public.site_settings (logo_url, site_name, site_description, og_image, contact_email, contact_phone) VALUES
-  ('/logo.png', 'Sealify Nigeria', 'Nigeria''s Trusted Local Marketplace for Ogbomosoland & Oyo State.', '/og-image.png', 'support@sealify.ng', '+234 813 120 8468')
+  ('/logo.png', 'Sealify Nigeria', 'Nigeria''s Trusted Local Marketplace for Ogbomosoland & Oyo State.', '/logo.png', 'support@sealify.ng', '+234 813 120 8468')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.safe_spots (name, zone, category, address, distance, hours, cctv_verified, latitude, longitude, is_active) VALUES

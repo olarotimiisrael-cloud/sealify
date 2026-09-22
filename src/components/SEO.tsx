@@ -24,7 +24,7 @@ export const SEO: React.FC<SEOProps> = ({
   // Use absolute URL for image previews (essential for WhatsApp/X crawlers)
   const finalImage = image?.startsWith('http') 
     ? image 
-    : `${window.location.origin}${image ?? siteSettings?.ogImage ?? '/og-image.png'}`;
+    : `${window.location.origin}${image ?? siteSettings?.ogImage ?? '/logo.png'}`;
 
   useEffect(() => {
     document.title = finalTitle;

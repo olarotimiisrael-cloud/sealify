@@ -44,7 +44,7 @@ INSERT INTO public.site_settings (
 ) VALUES (
   'Sealify Nigeria',
   'Nigeria''s Trusted Local Marketplace for Ogbomosoland & Oyo State.',
-  '/og-image.png',
+  '/logo.png',
   'support@sealify.ng',
   '+234 813 120 8468'
 ) ON CONFLICT DO NOTHING;

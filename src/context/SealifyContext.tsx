@@ -362,7 +362,7 @@ const MOCK_SITE_SETTINGS = {
   logoUrl: '/logo.svg',
   siteName: 'Sealify Nigeria',
   siteDescription: 'Nigeria\'s Trusted Local Marketplace for Ogbomosoland & Oyo State.',
-  ogImage: '/og-image.png',
+  ogImage: '/logo.png',
   contactEmail: 'support@sealify.ng',
   contactPhone: '+234 813 120 8468',
 };
