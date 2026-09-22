@@ -12,10 +12,7 @@ import {
   Eye,
   Radio,
   Loader2,
-  Cloud,
-  Apple,
-  Chrome,
-  Briefcase
+  Siren
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,7 +34,6 @@ const AdminLogin: React.FC = () => {
 
     setIsAuthenticating(true);
 
-    // Security delay to prevent timing attacks & high-speed automated brute-force bots
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     const success = await adminLogin(email, password);
@@ -50,39 +46,9 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  const handleOAuthLogin = async (provider: 'google' | 'apple' | 'samsung' | 'phone') => {
-    setIsAuthenticating(true);
-    try {
-      const supabase = (await import('../integrations/supabase/client')).supabase;
-      const redirectTo = `${window.location.origin}/admin`;
-      
-      if (provider === 'phone') {
-        toast.info('Phone login will be available once SMS provider is configured.', { duration: 6000 });
-        setIsAuthenticating(false);
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider === 'samsung' ? 'google' : provider,
-        options: {
-          redirectTo,
-          queryParams: provider === 'google' ? { prompt: 'select_account' } : {}
-        }
-      });
-
-      if (error) {
-        toast.error(`${provider.charAt(0).toUpperCase() + provider.slice(1)} login failed: ${error.message}`, { duration: 6000 });
-        setIsAuthenticating(false);
-      }
-    } catch (err: any) {
-      toast.error(`Login failed: ${err.message}`, { duration: 6000 });
-      setIsAuthenticating(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col font-mono selection:bg-rose-500 selection:text-white">
-      <SEO title="Sealify Official Terminal — Restricted Admin Gate" />
+      <SEO title="Sealify Admin Login" />
       <Navbar />
       
       <main className="max-w-xl mx-auto w-full px-4 flex-1 flex flex-col justify-center py-10">
@@ -157,39 +123,8 @@ const AdminLogin: React.FC = () => {
                   >
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-              </div>
-            </div>
-
-            {/* OAuth Provider Buttons */}
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthLogin('google')}
-                    disabled={isAuthenticating}
-                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                  >
-                    <Chrome className="w-3.5 h-3.5" />
-                    Google
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthLogin('apple')}
-                    disabled={isAuthenticating}
-                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                  >
-                    <Apple className="w-3.5 h-3.5" />
-                    Apple
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthLogin('samsung')}
-                    disabled={isAuthenticating}
-                    className="flex items-center justify-center gap-1.5 py-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 border border-slate-700 rounded-xl text-[10px] text-white font-mono transition-colors"
-                  >
-                    <Briefcase className="w-3.5 h-3.5" />
-                    Samsung
-                  </button>
                 </div>
+              </div>
 
               <button
                 type="submit"
