@@ -42,8 +42,8 @@
   ],
   "screenshots": [
     {
-    "src": "/logo.png",
-    "sizes": "1280x720",
+      "src": "/logo.png",
+      "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
       "label": "Marketplace Homepage"
