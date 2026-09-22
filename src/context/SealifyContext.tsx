@@ -179,7 +179,7 @@ interface SealifyContextType {
   login: (email: string, password: string) => Promise<boolean>;
   signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
   signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
-  sendPhoneOtp: (phone: string) => Promise<string>;
+  sendPhoneOtp: (phone: string, channel?: string) => Promise<string>;
   verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
   adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
   logout: () => void;
@@ -802,16 +802,16 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
     applyAuthenticatedUser(profile);
   };
 
-  const sendPhoneOtp = async (phone: string) => {
-    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID;
+  const sendPhoneOtp = async (phone: string, channel?: string) => {
+    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID || import.meta.env.VITE_WHATSAPP_API_TOKEN || import.meta.env.VITE_FCM_SERVER_KEY;
     if (!provider) {
-      toast.info('Phone OTP will be sent once an SMS provider is configured in settings.');
+      toast.info('Phone OTP will be sent once a provider is configured in settings.');
       return 'otp_queued_dev';
     }
     const response = await fetch(apiUrl('/api/auth/phone/otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, channel }),
     });
     if (!response.ok) throw new Error('Failed to send OTP');
     const data = await response.json();

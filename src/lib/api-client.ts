@@ -139,11 +139,11 @@ class ApiClient {
     }
   }
 
-  async sendPhoneOtp(phone: string): Promise<string> {
+  async sendPhoneOtp(phone: string, channel?: string): Promise<string> {
     const response = await fetch(`${API_BASE}/api/auth/phone/otp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, channel }),
     });
     if (!response.ok) throw new Error('Failed to send OTP');
     const data = await response.json();

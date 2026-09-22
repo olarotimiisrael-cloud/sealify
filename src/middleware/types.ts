@@ -9,8 +9,16 @@ export interface Env {
   AI_WEB_SEARCH_ENABLED?: string;
   AI_FALLBACK_ENABLED?: string;
   TERMII_API_KEY?: string;
+  TERMII_SENDER_ID?: string;
   ARKESEL_API_KEY?: string;
+  ARKESEL_SENDER_ID?: string;
   TWILIO_ACCOUNT_SID?: string;
+  TWILIO_AUTH_TOKEN?: string;
+  TWILIO_FROM?: string;
+  WHATSAPP_API_TOKEN?: string;
+  WHATSAPP_PHONE_NUMBER_ID?: string;
+  FCM_SERVER_KEY?: string;
+  FCM_SENDER_ID?: string;
   APP_URL?: string;
   PUBLIC_SITE_URL?: string;
   NODE_ENV?: string;
