@@ -31,6 +31,8 @@ const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Verify = lazy(() => import("./pages/Verify"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const ProfileComplete = lazy(() => import("./pages/ProfileComplete"));
 
 const routeFallback = (
   <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-300 text-sm font-medium">
@@ -69,6 +71,8 @@ const App = () => (
           <Route path="/community" element={<CommunityBoard />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify" element={<Verify />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/profile-complete" element={<ProfileComplete />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>

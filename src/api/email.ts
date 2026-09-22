@@ -580,10 +580,10 @@ async function sendWhatsAppViaEnv(env: any, phone: string, message: string) {
   }
 
   // Method 2: Meta WhatsApp Cloud API
-  if (env.WHATSAPP_API_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID) {
-    const response = await fetch(`https://graph.facebook.com/v18.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+  if (env.WHATSAPP_ACCESS_TOKEN && env.PHONE_NUMBER_ID) {
+    const response = await fetch(`https://graph.facebook.com/v18.0/${env.PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.WHATSAPP_API_TOKEN}` },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.WHATSAPP_ACCESS_TOKEN}` },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
         to: phone.replace(/\D/g, ''),

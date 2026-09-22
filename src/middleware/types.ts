@@ -15,8 +15,8 @@ export interface Env {
   TWILIO_ACCOUNT_SID?: string;
   TWILIO_AUTH_TOKEN?: string;
   TWILIO_FROM?: string;
-  WHATSAPP_API_TOKEN?: string;
-  WHATSAPP_PHONE_NUMBER_ID?: string;
+  WHATSAPP_ACCESS_TOKEN?: string;
+  PHONE_NUMBER_ID?: string;
   FCM_SERVER_KEY?: string;
   FCM_SENDER_ID?: string;
   APP_URL?: string;

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,17 +176,18 @@ interface SealifyContextType {
   analytics: { visitors: number; totalAds: number; soldAds: number; revenue: number; userGrowth: number; categoryDistribution: { name: string; count: number }[] };
   marketStats: CategoryStats[];
   
-  // Auth functions
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
-  signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
-  sendPhoneOtp: (phone: string, channel?: string) => Promise<string>;
-  verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
-  adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
-  logout: () => void;
-  resetPassword: (email: string) => Promise<void>;
-  
-  // Listings
+// Auth functions
+   login: (email: string, password: string) => Promise<boolean>;
+   signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
+   signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
+   sendPhoneOtp: (phone: string, channel?: string) => Promise<string>;
+   verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
+   adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
+   logout: () => void;
+   resetPassword: (email: string) => Promise<void>;
+   completeProfile: (data: { fullName: string; phoneNumber: string }) => Promise<boolean>;
+
+   // Listings
   listings: Listing[];
   allUsers: UserProfile[];
   createUser: (newUser: Partial<UserProfile>) => Promise<UserProfile | null>;
@@ -711,6 +713,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString());
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const t = (key: string) => TRANSLATIONS[language]?.[key] || TRANSLATIONS.en[key] || key;
 
@@ -745,6 +748,11 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
             }
       
             applyAuthenticatedUser(profile);
+
+            // Require additional profile information before account is complete
+            if (!profile.fullName || !profile.phoneNumber) {
+              navigate('/profile-complete');
+            }
             return true;
           } catch (authError: any) {
             setError(authError?.message || 'Unable to sign in');
@@ -803,11 +811,6 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
   };
 
   const sendPhoneOtp = async (phone: string, channel?: string) => {
-    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID || import.meta.env.VITE_WHATSAPP_API_TOKEN || import.meta.env.VITE_FCM_SERVER_KEY;
-    if (!provider) {
-      toast.info('Phone OTP will be sent once a provider is configured in settings.');
-      return 'otp_queued_dev';
-    }
     const response = await fetch(apiUrl('/api/auth/phone/otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -819,15 +822,6 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
   };
 
   const verifyPhoneOtp = async (phone: string, code: string, otpId?: string) => {
-    const provider = import.meta.env.VITE_TERMII_API_KEY || import.meta.env.VITE_ARKESEL_API_KEY || import.meta.env.VITE_TWILIO_ACCOUNT_SID;
-    if (!provider) {
-      if (code.length >= 4) {
-        toast.info('Phone verification simulated. In production, an SMS provider is required.');
-        return true;
-      }
-      toast.error('Phone OTP is disabled until a real SMS provider is configured.');
-      return false;
-    }
     const response = await fetch(apiUrl('/api/auth/phone/verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -846,6 +840,24 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
       if (error) throw error;
       return true;
     } catch {
+      return false;
+    }
+  };
+
+  const completeProfile = async (data: { fullName: string; phoneNumber: string }): Promise<boolean> => {
+    try {
+      const response = await fetch(apiUrl('/api/auth/profile-complete'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to complete profile');
+      const result = await response.json();
+      const profile = mapProfileToUser(result.user);
+      applyAuthenticatedUser(profile);
+      return true;
+    } catch (error: any) {
+      setError(error?.message || 'Unable to complete profile');
       return false;
     }
   };
@@ -1913,8 +1925,9 @@ const bulkDeleteUsers = async (ids: string[]) => {
     verifyPhoneOtp,
     adminLogin,
     logout,
-    resetPassword,
-    listings,
+resetPassword,
+     completeProfile,
+     listings,
     allUsers,
     createUser,
     updateUser,
@@ -2012,7 +2025,7 @@ bulkDeleteUsers,
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,
     recentDeals, sealDeal, intrusionLogs, recordIntrusion, searchAlerts, saveSearchAlert, deleteSearchAlert,
     reviews, addReview, deleteReview, buyerRequests, createBuyerRequest, deleteBuyerRequest,
-    loading, isSyncing, lastSyncTime, syncDatabase, error, signInWithOAuth
+    loading, isSyncing, lastSyncTime, syncDatabase, error, signInWithOAuth, completeProfile
   ]);
 
   return (

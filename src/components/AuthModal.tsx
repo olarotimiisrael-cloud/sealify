@@ -33,10 +33,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
   const handleOAuthLogin = async (provider: string) => {
     setIsSubmitting(true);
     try {
-      const result = await signInWithOAuth(provider);
-      if (result) {
-        onClose();
-      }
+      await signInWithOAuth(provider);
     } catch (e: any) {
       toast.error(e.message || `Failed to sign in with ${provider}`);
     } finally {

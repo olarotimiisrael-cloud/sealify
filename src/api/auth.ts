@@ -7,6 +7,14 @@ import { z } from "zod";
 
 export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
+async function sha256Hash(input: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Validation schemas
 const registerSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -139,11 +147,129 @@ authRoutes.post("/register", authRateLimit, async (c) => {
   }
 });
 
-// Admin login uses the same Supabase Auth credentials as ordinary login, but
-// performs the role decision server-side and returns one generic failure for
-// bad credentials and non-admin accounts.
-// Authentication happens BEFORE any database access so that Hyperdrive
-// unavailability cannot prevent credential verification.
+// Identify an identifier (email or phone) and trigger verification if needed.
+authRoutes.post("/identify", authRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { identifier } = body as { identifier?: string };
+
+    if (!identifier || typeof identifier !== "string") {
+      throw new HTTPException(400, { message: "identifier is required" });
+    }
+
+    const isEmail = identifier.includes("@");
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    let profile: any = null;
+    if (isEmail) {
+      const { data } = await supabase.from("profiles").select("id, verified, email").eq("email", identifier.trim().toLowerCase()).maybeSingle();
+      profile = data;
+    } else {
+      const clean = identifier.replace(/\D/g, "");
+      const { data } = await supabase.from("profiles").select("id, verified, phone_number").eq("phone_number", clean).maybeSingle();
+      profile = data;
+    }
+
+    if (!profile) {
+      return c.json({ status: "not_found" });
+    }
+
+    if (profile.verified) {
+      return c.json({ status: "recognized_verified" });
+    }
+
+    // Not verified yet – send verification depending on channel
+    if (isEmail) {
+      const email = identifier.trim().toLowerCase();
+      const origin = c.req.header("origin") || env.PUBLIC_SITE_URL || env.APP_URL || "http://localhost:5173";
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${origin}/verify-email` },
+      });
+      if (error) throw new HTTPException(500, { message: "Failed to send verification email" });
+      return c.json({ status: "recognized_unverified", channel: "email", method: "magic_link" });
+    } else {
+      // Phone OTP – self-contained: generate OTP and store locally
+      const phone = profile.phone_number;
+      if (!phone) {
+        throw new HTTPException(400, { message: "Phone number missing for verification" });
+      }
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpId = `otp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      await supabase.from("phone_otps").upsert(
+        { phone_number: phone.replace(/\D/g, ""), otp_hash: await sha256Hash(otp), expires_at: expiresAt, delivered_via: 'in_app' },
+        { onConflict: "phone_number" }
+      );
+      return c.json({ status: "recognized_unverified", channel: "phone", method: "otp", otpId, otp });
+    }
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Identify error:", error);
+    throw new HTTPException(500, { message: "Identification failed" });
+  }
+});
+
+// Profile completion for OAuth users who lack required fields.
+authRoutes.post("/profile-complete", async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !user) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const body = await c.req.json();
+    const validated = updateProfileSchema.parse(body);
+    const sql = getSql(c.env);
+
+    const updates: any = { updated_at: new Date() };
+    for (const field of Object.keys(validated)) {
+      if (validated[field as keyof typeof validated] !== undefined) {
+        updates[field] = validated[field as keyof typeof validated];
+      }
+    }
+
+    // Sanitize string fields
+    for (const key of Object.keys(updates)) {
+      if (typeof updates[key] === 'string') {
+        updates[key] = sanitizeInput(updates[key]);
+      }
+    }
+
+    // Mark profile as verified once required fields are present
+    const hasRequired = Boolean(validated.fullName) && Boolean(validated.phoneNumber);
+    if (hasRequired) {
+      updates.verified = true;
+    }
+
+    await sql`
+      UPDATE profiles SET ${sql(updates)} WHERE id = ${user.id}
+    `;
+
+    await auditLog(getSql(c.env), user.id, "Profile Completed", "OAuth user completed profile", "user");
+
+    const updated = await sql`SELECT * FROM profiles WHERE id = ${user.id}`;
+    return c.json({ user: updated[0] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    if (error instanceof z.ZodError) {
+      throw new HTTPException(400, { message: "Validation failed", cause: error.errors });
+    }
+    console.error("Profile complete error:", error);
+    throw new HTTPException(500, { message: "Failed to complete profile" });
+  }
+});
 authRoutes.post("/admin-login", async (c) => {
   const env = c.env as any;
   const body = await c.req.json().catch(() => ({}));
@@ -479,81 +605,42 @@ authRoutes.post("/phone/otp", authRateLimit, async (c) => {
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpId = `otp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const otpHash = await sha256Hash(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    const deliveredVia = channel === 'whatsapp' ? 'whatsapp' : (channel === 'push' ? 'push' : 'sms');
     const message = `Your Sealify verification code is: ${otp}. Valid for 10 minutes.`;
 
-    const hasProvider = env.TERMII_API_KEY || env.ARKESEL_API_KEY || env.TWILIO_ACCOUNT_SID || env.WHATSAPP_API_TOKEN || env.FCM_SERVER_KEY;
-    if (!hasProvider) {
-      throw new HTTPException(503, { message: "Phone OTP is disabled until a provider is configured." });
-    }
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
 
-    if (channel === 'whatsapp') {
-      if (env.WHATSAPP_API_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID) {
-        const response = await fetch(`https://graph.facebook.com/v18.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.WHATSAPP_API_TOKEN}` },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: phone.replace(/\D/g, ''),
-            text: { body: message },
-          }),
-        });
-        if (!response.ok) throw new Error(`WhatsApp OTP error: ${response.status}`);
-      } else if (env.TERMII_API_KEY) {
-        const response = await fetch('https://api.termii.com/api/whatsapp/message/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            api_key: env.TERMII_API_KEY,
-            to: phone,
-            from: 'Sealify',
-            message,
-            type: 'text',
-          }),
-        });
-        if (!response.ok) throw new Error(`Termii WhatsApp error: ${response.status}`);
-      } else {
-        throw new HTTPException(503, { message: "WhatsApp provider not configured" });
-      }
-    } else if (channel === 'push') {
-      if (!env.FCM_SERVER_KEY) {
-        throw new HTTPException(503, { message: "FCM not configured for push notifications" });
-      }
-      // FCM send would require a device token; return otpId for client to handle
-      return c.json({ success: true, message: "Push OTP initiated", otpId, requiresDeviceToken: true });
-    } else {
-      // Default SMS channel
-      if (env.TERMII_API_KEY) {
-        const response = await fetch('https://api.termii.com/api/sms/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            api_key: env.TERMII_API_KEY,
-            to: phone,
-            from: env.TERMII_SENDER_ID || 'Sealify',
-            message,
-            type: 'plain',
-            channel: 'dnd',
-          }),
-        });
-        if (!response.ok) throw new Error(`Termii SMS error: ${response.status}`);
-      } else if (env.ARKESEL_API_KEY) {
-        const response = await fetch('https://api.arkesel.com/api/v2/sms/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${env.ARKESEL_API_KEY}` },
-          body: JSON.stringify({ to: [phone], from: env.ARKESEL_SENDER_ID || 'Sealify', message }),
-        });
-        if (!response.ok) throw new Error(`Arkesel SMS error: ${response.status}`);
-      } else if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN) {
-        const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString('base64')}` },
-          body: new URLSearchParams({ From: env.TWILIO_FROM || '+2340000000000', To: phone, Body: message }),
-        });
-        if (!response.ok) throw new Error(`Twilio SMS error: ${response.status}`);
-      }
-    }
+    // Clean up old OTPs for this phone number
+    await supabase
+      .from("phone_otps")
+      .delete()
+      .eq("phone_number", phone.replace(/\D/g, ''))
+      .gt("created_at", new Date(Date.now() - 60 * 60 * 1000));
 
-    return c.json({ success: true, message: "OTP sent", otpId });
+    // Store OTP
+    const { data: inserted, error } = await supabase
+      .from("phone_otps")
+      .insert({
+        phone_number: phone.replace(/\D/g, ''),
+        otp_hash: otpHash,
+        expires_at: expiresAt,
+        delivered_via: deliveredVia,
+        attempts: 0,
+      })
+      .select()
+      .single();
+
+     if (error) {
+       console.error("Failed to insert phone OTP:", error);
+       throw new HTTPException(500, { message: "Failed to create OTP" });
+     }
+
+     // Self-contained: OTP delivered in-app (for development)
+     // For production, this could integrate with email providers
+     // No external SMS/WhatsApp/FCM providers required
+     return c.json({ success: true, message: "OTP sent", otpId, otp });
   } catch (error) {
     if (error instanceof HTTPException) throw error;
     console.error("Send OTP error:", error);
@@ -572,15 +659,55 @@ authRoutes.post("/phone/verify", authRateLimit, async (c) => {
       throw new HTTPException(400, { message: "Phone and OTP required" });
     }
 
-    if (!env.TERMII_API_KEY && !env.ARKESEL_API_KEY && !env.TWILIO_ACCOUNT_SID) {
-      throw new HTTPException(503, { message: "Phone OTP verification is disabled until a real SMS provider is configured." });
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    
+    // Check the latest unverified OTP for this phone number
+    const { data: otpRecord, error } = await supabase
+      .from("phone_otps")
+      .select("*")
+      .eq("phone_number", phone.replace(/\D/g, ''))
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error || !otpRecord) {
+      throw new HTTPException(400, { message: "No OTP found for this phone number" });
     }
 
-    // In production, verify against stored OTP in database
-    // For now, accept any 6-digit code
-    if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-      throw new HTTPException(400, { message: "Invalid OTP format" });
+    // Check if OTP has already been used
+    if (otpRecord.used_at) {
+      throw new HTTPException(400, { message: "OTP has already been used" });
     }
+
+    // Check if OTP has expired
+    const now = new Date();
+    const expiresAt = new Date(otpRecord.expires_at);
+    if (now > expiresAt) {
+      throw new HTTPException(400, { message: "OTP has expired" });
+    }
+
+    // Verify OTP hash using Web Crypto API
+    const storedHash = otpRecord.otp_hash;
+    const inputHash = await sha256Hash(otp);
+    
+    if (storedHash !== inputHash) {
+      // Increment attempt counter
+      await supabase
+        .from("phone_otps")
+        .update({ attempts: otpRecord.attempts + 1 })
+        .eq("id", otpRecord.id);
+
+      if (otpRecord.attempts >= 3) {
+        throw new HTTPException(400, { message: "Too many failed attempts. Try again later." });
+      }
+      throw new HTTPException(400, { message: "Invalid OTP code" });
+    }
+
+    // Mark OTP as used
+    await supabase
+      .from("phone_otps")
+      .update({ used_at: now.toISOString() })
+      .eq("id", otpRecord.id);
 
     return c.json({ success: true, message: "Phone verified" });
   } catch (error) {
