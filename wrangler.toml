@@ -1,11 +1,13 @@
 name = "sealify"
 compatibility_date = "2026-08-31"
 compatibility_flags = ["nodejs_compat"]
+observability = { enabled = true }
 pages_build_output_dir = "./dist"
 
 [[hyperdrive]]
 binding = "HYPERDRIVE"
 id = "4450cb10a9fb4977ba6a1d1cd2e6b110"
+localConnectionString = "<LOCAL_CONNECTION_STRING_FOR_LOCAL_DEVELOPMENT_HERE>"
 
 [vars]
 SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
