@@ -297,50 +297,97 @@ authRoutes.post("/admin-login", async (c) => {
 
   // Step 3: Authentication succeeded - now obtain database connection
   let sql;
+  let isHyperdriveAvailable = true;
   try {
     sql = getSql(env);
   } catch {
-    // Hyperdrive not available - cannot verify admin role, deny access
-    await supabase.auth.signOut();
-    throw genericAdminLoginError();
+    // Hyperdrive not available - we'll use Supabase REST API for admin check
+    isHyperdriveAvailable = false;
   }
 
   // Step 4: Check rate limiting (only if database is available)
-  try {
-    const recentFailures = await sql`
-      SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
-      FROM intrusion_logs
-      WHERE attempted_email = ${email}
-        AND status = 'flagged'
-        AND created_at >= NOW() - INTERVAL '15 minutes'
-    `;
-    const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
-    if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
-        && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
-      throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
+  if (isHyperdriveAvailable) {
+    try {
+      const recentFailures = await sql`
+        SELECT COUNT(*)::int AS count, MAX(created_at) AS latest
+        FROM intrusion_logs
+        WHERE attempted_email = ${email}
+          AND status = 'flagged'
+          AND created_at >= NOW() - INTERVAL '15 minutes'
+      `;
+      const latestFailure = recentFailures[0]?.latest ? new Date(recentFailures[0].latest).getTime() : 0;
+      if (Number(recentFailures[0]?.count || 0) >= ADMIN_LOGIN_MAX_FAILURES
+          && Date.now() - latestFailure < ADMIN_LOGIN_COOLDOWN_MS) {
+        throw new HTTPException(429, { message: "Too many authentication attempts. Please try again later." });
+      }
+    } catch (rateLimitError) {
+      if (rateLimitError instanceof HTTPException) throw rateLimitError;
+      // Rate limit check failed - continue (admin check is mandatory)
     }
-  } catch (rateLimitError) {
-    if (rateLimitError instanceof HTTPException) throw rateLimitError;
-    // Rate limit check failed - continue (admin check is mandatory)
   }
 
-// Step 5: Verify admin role (MANDATORY - uses public.is_admin())
-   const isAdmin = await sql`SELECT public.is_admin(${data.user.id}) AS is_admin`;
-  if (!isAdmin[0]?.is_admin) {
+  // Step 5: Verify admin role (use database if available, otherwise Supabase REST API)
+  let isAdminResult = false;
+  if (isHyperdriveAvailable) {
+    // Use database connection for admin check
+    const isAdmin = await sql`SELECT public.is_admin(${data.user.id}) AS is_admin`;
+    isAdminResult = isAdmin[0]?.is_admin === true;
+  } else {
+    // Use Supabase REST API RPC for admin check
+    try {
+      const adminCheckResponse = await supabase
+        .rpc('is_admin', { user_id: data.user.id });
+      isAdminResult = adminCheckResponse.data;
+    } catch (adminCheckError) {
+      // If RPC fails, fall back to checking profile directly
+      try {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+        
+        isAdminResult = !profileError && profileData?.role === 'admin';
+      } catch (profileError) {
+        // If all checks fail, deny access
+        isAdminResult = false;
+      }
+    }
+  }
+
+  if (!isAdminResult) {
     await supabase.auth.signOut();
-    await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
+    
+    // Log intrusion attempt if database is available
+    if (isHyperdriveAvailable) {
+      try {
+        const sql = getSql(env);
+        await logIntrusionAttempt(sql, email, c.req.raw, { reason: "admin_authorization_failed" }).catch(() => undefined);
+      } catch {
+        // Database unavailable - skip logging
+      }
+    }
+    
     throw new HTTPException(403, { message: "Administrator access required" });
   }
 
-  // Step 6: Success - clear intrusion logs and record audit
-  await sql`
-    UPDATE intrusion_logs
-    SET status = 'dismissed'
-    WHERE attempted_email = ${email}
-      AND status = 'flagged'
-      AND created_at >= NOW() - INTERVAL '15 minutes'
-  `;
-  await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
+  // Step 6: Success - clear intrusion logs and record audit (only if database is available)
+  if (isHyperdriveAvailable) {
+    try {
+      const sql = getSql(env);
+      await sql`
+        UPDATE intrusion_logs
+        SET status = 'dismissed'
+        WHERE attempted_email = ${email}
+          AND status = 'flagged'
+          AND created_at >= NOW() - INTERVAL '15 minutes'
+      `;
+      await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
+    } catch {
+      // Database unavailable - skip logging
+    }
+  }
+
   return c.json({ session: data.session });
 });
 

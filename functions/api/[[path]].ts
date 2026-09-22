@@ -32,6 +32,7 @@ const routeMap = [
     ['/reviews', () => import('../../src/api/reviews')],
     ['/buyer-requests', () => import('../../src/api/buyer-requests')],
     ['/messages', () => import('../../src/api/messages')],
+    ['/attachments', () => import('../../src/api/attachments')],
     ['/notifications', () => import('../../src/api/notifications')],
     ['/users', () => import('../../src/api/users')],
     ['/analytics', () => import('../../src/api/analytics')],
