@@ -43,9 +43,9 @@ const AdminLogin: React.FC = () => {
 
   useEffect(() => {
     const loadTurnstile = async () => {
-      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || 'bootloader';
+      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
       const script = document.createElement('script');
-      script.src = `https://challenges.cloudflare.com/turnstile/v0/api?render=${siteKey}`;
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -58,7 +58,13 @@ const AdminLogin: React.FC = () => {
             'error-callback': () => setTurnstileError(true),
             'expired-callback': () => setTurnstileError(false),
           });
+        } else {
+          setTurnstileError(true);
         }
+      };
+
+      script.onerror = () => {
+        setTurnstileError(true);
       };
     };
     
