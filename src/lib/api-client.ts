@@ -438,6 +438,15 @@ export function useMessages(conversationId: string) {
     queryFn: async () => {
       const { data, error } = await supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true });
       if (error) throw error;
+      const messageIds = (data || []).map((m: any) => m.id);
+      const { data: attachmentRows, error: attachmentError } = messageIds.length
+        ? await supabase.from("message_attachments").select("*").in("message_id", messageIds)
+        : { data: [], error: null };
+      if (attachmentError) throw attachmentError;
+      const attachmentsByMessage = (attachmentRows || []).reduce((acc: any, att: any) => {
+        (acc[att.message_id] ||= []).push(att);
+        return acc;
+      }, {} as Record<string, any>);
       return {
         messages: (data || []).map((message: any) => ({
           id: message.id,
@@ -447,6 +456,7 @@ export function useMessages(conversationId: string) {
           content: message.content,
           createdAt: message.created_at,
           isRead: Boolean(message.read),
+          attachments: attachmentsByMessage[message.id] || [],
         })),
       };
     },
@@ -458,7 +468,7 @@ export function useMessages(conversationId: string) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ conversationId, receiverId, content }: { conversationId: string; receiverId: string; content: string }) => {
+    mutationFn: async ({ conversationId, receiverId, content, attachments }: { conversationId: string; receiverId: string; content: string; attachments?: Array<{ filename: string; mime_type?: string; size: number; public_url?: string; storage_path?: string }> }) => {
       const senderId = await getCurrentUserId();
       const { data: conversation, error: conversationError } = await supabase.from("conversations").select("*").eq("id", conversationId).single();
       if (conversationError) throw conversationError;
@@ -472,6 +482,22 @@ export function useSendMessage() {
         read: false,
       }).select().single();
       if (messageError) throw messageError;
+      if (attachments && attachments.length > 0) {
+        const { error: attachmentError } = await supabase.from("message_attachments").insert(
+          attachments.map((a) => ({
+            message_id: message.id,
+            uploaded_by: senderId,
+            filename: a.filename,
+            mime_type: a.mime_type || null,
+            size: a.size,
+            storage_bucket: "messages",
+            storage_path: a.storage_path || a.public_url || null,
+            public_url: a.public_url || null,
+            created_at: new Date().toISOString(),
+          }))
+        );
+        if (attachmentError) throw attachmentError;
+      }
       const unreadUpdate = conversation.participant_1 === receiverId
         ? { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_1: Number(conversation.unread_count_1 || 0) + 1 }
         : { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_2: Number(conversation.unread_count_2 || 0) + 1 };

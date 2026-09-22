@@ -47,6 +47,8 @@ export default function Messages() {
   const [isSwapOpen, setIsSwapOpen] = useState(false);
   const [isInspectionOpen, setIsInspectionOpen] = useState(false);
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [pendingAttachments, setPendingAttachments] = useState<Array<{file: File; progress?: number; result?: any}>>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -57,14 +59,26 @@ export default function Messages() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !activeConv) return;
+    if (!text.trim() && pendingAttachments.length === 0) return;
+    if (!activeConv) return;
     try {
+      const attachments = pendingAttachments
+        .filter(a => a.result?.publicUrl)
+        .map(a => ({
+          filename: a.file.name,
+          mime_type: a.file.type,
+          size: a.file.size,
+          public_url: a.result.publicUrl,
+          storage_path: a.result.path,
+        }));
       await sendMessageMutation.mutateAsync({
         conversationId: activeConv.id,
         receiverId: activeConv.otherUser.id,
-        content: text,
+        content: text.trim() || `📎 Attached ${attachments.length} file(s)`,
+        attachments,
       });
       setText('');
+      setPendingAttachments([]);
       refetchMessages();
     } catch (error: any) {
       toast.error(error.message || 'Failed to send message');
@@ -80,17 +94,46 @@ export default function Messages() {
     });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && activeConv) {
-      // TODO: Upload to Supabase Storage
-      sendMessageMutation.mutate({
-        conversationId: activeConv.listingId,
-        receiverId: activeConv.otherUser.id,
-        content: `📷 Attached inspection photo for product verification.`,
-      });
-      toast.success('Inspection photo sent to seller!');
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !activeConv || !user) {
+      toast.error('User not authenticated');
+      return;
     }
+
+    const newAttachments: Array<{file: File; progress?: number; result?: any}> = [];
+    for (const file of files) {
+      // Determine bucket based on file type
+      let bucket: 'ad-images' | 'ad-videos' | 'documents' | 'messages' = 'messages';
+      if (file.type.startsWith('image/')) {
+        bucket = 'ad-images';
+      } else if (file.type.startsWith('video/')) {
+        bucket = 'ad-videos';
+      } else if (file.type.includes('pdf') || file.type.includes('text')) {
+        bucket = 'documents';
+      }
+
+      try {
+        const { uploadFile } = await import('../lib/storage');
+        const result = await uploadFile(user.id, {
+          bucket,
+          file,
+          folder: 'messages',
+          onProgress: (p) => setUploadProgress(prev => ({ ...prev, [file.name]: p })),
+        });
+        newAttachments.push({ file, progress: 100, result });
+        toast.success(`Uploaded: ${file.name}`);
+      } catch (err: any) {
+        toast.error(`Failed to upload ${file.name}: ${err.message}`);
+      }
+    }
+    setPendingAttachments(prev => [...prev, ...newAttachments]);
+    setUploadProgress(prev => {
+      const next = { ...prev };
+      newAttachments.forEach(a => delete next[a.file.name]);
+      return next;
+    });
+    if (e.target) e.target.value = '';
   };
 
   const handleVoiceNote = () => {
@@ -306,6 +349,20 @@ export default function Messages() {
                       >
                         <p className="whitespace-pre-wrap leading-relaxed">{m.content}</p>
 
+                        {m.attachments && m.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {m.attachments.map((att: any) => (
+                              att.mime_type?.startsWith('image/') ? (
+                                <img key={att.id} src={att.public_url} alt={att.filename} className="w-16 h-16 object-cover rounded border border-slate-700" />
+                              ) : (
+                                <a key={att.id} href={att.public_url} target="_blank" rel="noopener noreferrer" className="block bg-slate-900/60 rounded px-2 py-1 text-[10px] truncate max-w-[120px] hover:text-emerald-300">
+                                  {att.filename}
+                                </a>
+                              )
+                            ))}
+                          </div>
+                        )}
+
                         {!isMe && (isOfferMsg || isSwapMsg) && (
                           <div className="pt-2 border-t border-amber-500/30 flex gap-2">
                             <button
@@ -349,8 +406,52 @@ export default function Messages() {
               </div>
 
               {/* Chat Input Bar */}
+              {Object.entries(uploadProgress).length > 0 && (
+                <div className="px-3 pb-2 space-y-1">
+                  {Object.entries(uploadProgress).map(([name, pct]) => (
+                    <div key={name} className="flex items-center gap-2 text-[10px]">
+                      <span className="truncate w-28 text-slate-400">{name}</span>
+                      <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="text-slate-500">{Math.round(pct)}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pendingAttachments.length > 0 && (
+                <div className="px-3 pb-2 flex gap-2 overflow-x-auto">
+                  {pendingAttachments.map((att, idx) => (
+                    <div key={idx} className="relative group">
+                      {att.result?.publicUrl && att.file.type.startsWith('image/') ? (
+                        <img src={att.result.publicUrl} alt={att.file.name} className="w-16 h-16 object-cover rounded-lg border border-slate-700" />
+                      ) : (
+                        <div className="w-16 h-16 flex flex-col items-center justify-center bg-slate-800 rounded-lg border border-slate-700 text-[10px] text-center p-1">
+                          <Paperclip className="w-5 h-5 text-slate-500 mb-1" />
+                          <span className="truncate w-full">{att.file.name}</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
               <form onSubmit={handleSend} className="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 items-center">
-                <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden" />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  multiple
+                  className="hidden"
+                />
                 
                 <button
                   type="button"

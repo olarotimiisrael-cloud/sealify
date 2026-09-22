@@ -119,6 +119,38 @@ USING (
 );
 
 -- ============================================================
+-- MESSAGES BUCKET (conversation attachments)
+-- ============================================================
+-- Private bucket - only conversation participants can access
+CREATE POLICY "Users can upload their own message attachments"
+  ON storage.objects FOR INSERT
+  WITH CHECK (
+    bucket_id = 'messages'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can view their own message attachments"
+  ON storage.objects FOR SELECT
+  USING (
+    bucket_id = 'messages'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can update their own message attachments"
+  ON storage.objects FOR UPDATE
+  USING (
+    bucket_id = 'messages'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can delete their own message attachments"
+  ON storage.objects FOR DELETE
+  USING (
+    bucket_id = 'messages'
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+-- ============================================================
 -- HELPER FUNCTION: Check if user is admin
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.is_admin()

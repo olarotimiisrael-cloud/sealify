@@ -6,6 +6,7 @@ export const STORAGE_BUCKETS = {
   AD_IMAGES: 'ad-images',
   AD_VIDEOS: 'ad-videos',
   DOCUMENTS: 'documents',
+  MESSAGES: 'messages',
 } as const;
 
 export type BucketName = typeof STORAGE_BUCKETS[keyof typeof STORAGE_BUCKETS];
@@ -15,6 +16,7 @@ const MAX_SIZES = {
   adImage: 10 * 1024 * 1024,
   adVideo: 50 * 1024 * 1024,
   document: 10 * 1024 * 1024,
+  message: Infinity,
 };
 
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -38,19 +40,34 @@ interface UploadResult {
 /**
  * Validate file before upload
  */
-function validateFile(file: File, type: 'avatar' | 'adImage' | 'adVideo' | 'document'): { valid: boolean; error?: string } {
+function validateFile(
+  file: File,
+  type: 'avatar' | 'adImage' | 'adVideo' | 'document' | 'message'
+): { valid: boolean; error?: string } {
   const maxSize = MAX_SIZES[type];
-  
+
   if (file.size > maxSize) {
+    if (maxSize === Infinity) {
+      return { valid: true };
+    }
     return { valid: false, error: `File size exceeds ${maxSize / 1024 / 1024}MB limit` };
   }
 
-  const allowedTypes = {
+  const allowedTypes: Record<string, string[]> = {
     avatar: ALLOWED_IMAGE_TYPES,
     adImage: ALLOWED_IMAGE_TYPES,
     adVideo: ALLOWED_VIDEO_TYPES,
     document: ALLOWED_DOCUMENT_TYPES,
+    message: [],
   };
+
+  if (type === 'message') {
+    const DANGEROUS_TYPES = ['application/x-msdownload', 'application/javascript'];
+    if (DANGEROUS_TYPES.includes(file.type)) {
+      return { valid: false, error: `Dangerous file type rejected: ${file.type}` };
+    }
+    return { valid: true };
+  }
 
   if (!allowedTypes[type].includes(file.type)) {
     return { valid: false, error: `Invalid file type. Allowed: ${allowedTypes[type].join(', ')}` };
@@ -95,6 +112,9 @@ export async function uploadFile(
       break;
     case STORAGE_BUCKETS.DOCUMENTS:
       fileType = 'document';
+      break;
+    case STORAGE_BUCKETS.MESSAGES:
+      fileType = 'message';
       break;
     default:
       fileType = 'adImage';
@@ -304,6 +324,12 @@ export async function initializeBuckets(): Promise<void> {
       fileSizeLimit: 10485760, // 10MB
       allowedMimeTypes: ALLOWED_DOCUMENT_TYPES,
     },
+    {
+      name: STORAGE_BUCKETS.MESSAGES,
+      public: false,
+      fileSizeLimit: null,
+      allowedMimeTypes: null,
+    },
   ];
 
   for (const bucket of buckets) {
@@ -372,4 +398,8 @@ export function useAdVideoUpload() {
 
 export function useDocumentUpload() {
   return useFileUpload('documents', 'kyc');
+}
+
+export function useMessageUpload() {
+  return useFileUpload('messages', 'messages');
 }

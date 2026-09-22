@@ -350,6 +350,32 @@ emailRoutes.get("/status", requireAdmin, async (c) => {
   }
 });
 
+// Admin: Send MMS with attachment
+emailRoutes.post("/admin/send-mms", requireAdmin, emailRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { phone, mediaUrl, caption } = body;
+
+    if (!phone || !mediaUrl) {
+      throw new HTTPException(400, { message: "Phone number and media URL required" });
+    }
+
+    await sendMMSViaEnv(env, phone, mediaUrl, caption || '');
+
+    return c.json({
+      success: true,
+      provider: 'twilio',
+      messageId: `mms_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("MMS send error:", error);
+    throw new HTTPException(500, { message: "Failed to send MMS" });
+  }
+});
+
 // Admin: Broadcast SMS to all or individual users
 emailRoutes.post("/admin/sms", requireAdmin, emailRateLimit, async (c) => {
   try {
@@ -519,6 +545,44 @@ async function sendEmailViaEnv(env: any, params: any) {
     messageId: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     delivered: Array.isArray(params.to) ? params.to : [params.to],
   };
+}
+
+async function sendMMSViaEnv(env: any, phone: string, mediaUrl: string, caption: string) {
+  // Primary: Twilio MMS
+  if (env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN) {
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Authorization': `Basic ${Buffer.from(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`).toString('base64')}` },
+      body: new URLSearchParams({
+        From: env.TWILIO_FROM || '+2340000000000',
+        To: phone,
+        Body: caption,
+        MediaUrl: mediaUrl,
+      }),
+    });
+    if (!response.ok) throw new Error(`Twilio MMS error: ${response.status}`);
+    return await response.json();
+  }
+
+  // Fallback: Termii MMS
+  if (env.TERMII_API_KEY) {
+    const response = await fetch('https://api.termii.com/api/sms/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: env.TERMII_API_KEY,
+        to: phone,
+        from: env.TERMII_SENDER_ID || 'Sealify',
+        message: caption ? `${caption}\n${mediaUrl}` : mediaUrl,
+        type: 'media',
+        channel: 'dnd',
+      }),
+    });
+    if (!response.ok) throw new Error(`Termii MMS error: ${response.status}`);
+    return await response.json();
+  }
+
+  throw new Error("No SMS provider configured for MMS");
 }
 
 async function sendSMSViaEnv(env: any, phone: string, message: string) {
