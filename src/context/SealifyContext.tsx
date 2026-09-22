@@ -180,7 +180,7 @@ interface SealifyContextType {
    login: (email: string, password: string) => Promise<boolean>;
    signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
    signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
-   sendPhoneOtp: (phone: string, channel?: string) => Promise<string>;
+   sendPhoneOtp: (phone: string, channel?: string) => Promise<{ otpId: string; otp: string | null }>;
    verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
    adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
    logout: () => void;
@@ -810,16 +810,17 @@ const adminLogin = async (email: string, password: string, accessKey?: string, t
     applyAuthenticatedUser(profile);
   };
 
-  const sendPhoneOtp = async (phone: string, channel?: string) => {
-    const response = await fetch(apiUrl('/api/auth/phone/otp'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, channel }),
-    });
-    if (!response.ok) throw new Error('Failed to send OTP');
-    const data = await response.json();
-    return data.otpId || 'otp_sent';
-  };
+const sendPhoneOtp = async (phone: string, channel?: string) => {
+     const response = await fetch(apiUrl('/api/auth/phone/otp'), {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ phone, channel }),
+     });
+     if (!response.ok) throw new Error('Failed to send OTP');
+     const data = await response.json();
+     // Return both the OTP ID and the OTP code (for in-app display in development)
+     return { otpId: data.otpId || 'otp_sent', otp: data.otp || null };
+   };
 
   const verifyPhoneOtp = async (phone: string, code: string, otpId?: string) => {
     const response = await fetch(apiUrl('/api/auth/phone/verify'), {

@@ -102,4 +102,3 @@ REVOKE ALL ON public.phone_otps FROM anon;
 
 -- Grant explicit privileges
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.phone_otps TO authenticated;
-GRANT USAGE, SELECT ON SEQUENCE public.phone_otps_id_seq TO authenticated;

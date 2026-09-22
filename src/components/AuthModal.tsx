@@ -27,6 +27,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpId, setOtpId] = useState<string | null>(null);
+  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -74,26 +75,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
     }
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone.trim()) {
-      toast.error('Please enter your phone number');
-      return;
-    }
-    setIsSubmitting(true);
-    try {
-      const result = await sendPhoneOtp(phone.trim());
-      if (result) {
-        setOtpSent(true);
-        setOtpId(result);
-        toast.success('OTP sent to your phone number');
-      }
-    } catch (e: any) {
-      toast.error(e.message || 'Failed to send OTP');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+const handleSendOtp = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!phone.trim()) {
+       toast.error('Please enter your phone number');
+       return;
+     }
+     setIsSubmitting(true);
+     try {
+       const result = await sendPhoneOtp(phone.trim());
+       if (result) {
+         setOtpSent(true);
+         setOtpId(result.otpId);
+         setGeneratedOtp(result.otp || null);
+         // Show the OTP code in development - in production this might be emailed
+         toast.success(result.otp ? `OTP code: ${result.otp}` : 'OTP sent to your phone number');
+       }
+     } catch (e: any) {
+       toast.error(e.message || 'Failed to send OTP');
+     } finally {
+       setIsSubmitting(false);
+     }
+   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -351,8 +354,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <p className="text-[10px] text-emerald-300 font-semibold leading-tight">
-                Enter the 6-digit code sent to {phone}.
+                Enter the 6-digit code. {generatedOtp ? `Code shown below for in-app verification.` : 'Code sent to your phone.'}
               </p>
+              {generatedOtp && (
+                <div className="mt-2 bg-slate-950 border border-emerald-500/40 rounded-xl px-4 py-2 text-center">
+                  <span className="text-lg font-black tracking-[0.5em] text-emerald-300">{generatedOtp}</span>
+                </div>
+              )}
             </div>
             <div className="space-y-1">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">OTP Code *</label>
@@ -371,7 +379,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
             </div>
             <button
               type="button"
-              onClick={() => { setOtpSent(false); setOtp(''); setOtpId(null); }}
+              onClick={() => { setOtpSent(false); setOtp(''); setOtpId(null); setGeneratedOtp(null); }}
               className="w-full text-left text-xs text-slate-400 hover:underline font-medium"
             >
               Use different number
@@ -379,7 +387,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg mt-2 transition-all active:scale-95 disabled:opacity-50"
+              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-all active:scale-95 disabled:opacity-50"
             >
               {isSubmitting ? 'Verifying...' : 'Verify & Log In'}
             </button>

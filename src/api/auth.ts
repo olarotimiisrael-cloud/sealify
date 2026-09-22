@@ -71,7 +71,7 @@ authRoutes.post("/register", authRateLimit, async (c) => {
     const validated = registerSchema.parse(body);
     const { email, password, fullName, phoneNumber } = validated;
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
     const sql = getSql(env);
 
     // Check if user already exists
@@ -159,7 +159,7 @@ authRoutes.post("/identify", authRateLimit, async (c) => {
     }
 
     const isEmail = identifier.includes("@");
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     let profile: any = null;
     if (isEmail) {
@@ -222,7 +222,7 @@ authRoutes.post("/profile-complete", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
     if (userError || !user) {
@@ -291,7 +291,7 @@ authRoutes.post("/admin-login", async (c) => {
   }
 
   const email = parsed.data.email.trim().toLowerCase();
-  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+  const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
   // Step 1: Authenticate with Supabase FIRST (no database dependency)
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -367,7 +367,7 @@ authRoutes.post("/login", authRateLimit, async (c) => {
     const validated = loginSchema.parse(body);
     const { email, password } = validated;
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
     const sql = getSql(c.env);
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -417,7 +417,7 @@ authRoutes.get("/me", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -449,7 +449,7 @@ authRoutes.put("/profile", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     const { data: { user }, error } = await supabase.auth.getUser(token);
 
@@ -512,7 +512,7 @@ authRoutes.post("/logout", async (c) => {
     }
 
     const token = authHeader.substring(7);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     await supabase.auth.signOut();
 
@@ -535,7 +535,7 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
     }
 
     const sql = getSql(c.env);
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -607,10 +607,8 @@ authRoutes.post("/phone/otp", authRateLimit, async (c) => {
     const otpId = `otp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const otpHash = await sha256Hash(otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    const deliveredVia = channel === 'whatsapp' ? 'whatsapp' : (channel === 'push' ? 'push' : 'sms');
-    const message = `Your Sealify verification code is: ${otp}. Valid for 10 minutes.`;
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
 
     // Clean up old OTPs for this phone number
     await supabase
@@ -619,28 +617,25 @@ authRoutes.post("/phone/otp", authRateLimit, async (c) => {
       .eq("phone_number", phone.replace(/\D/g, ''))
       .gt("created_at", new Date(Date.now() - 60 * 60 * 1000));
 
-    // Store OTP
-    const { data: inserted, error } = await supabase
+    // Store OTP hash only — never store plaintext
+    const { error } = await supabase
       .from("phone_otps")
       .insert({
         phone_number: phone.replace(/\D/g, ''),
         otp_hash: otpHash,
         expires_at: expiresAt,
-        delivered_via: deliveredVia,
+        delivered_via: 'in_app',
         attempts: 0,
-      })
-      .select()
-      .single();
+      });
 
-     if (error) {
-       console.error("Failed to insert phone OTP:", error);
-       throw new HTTPException(500, { message: "Failed to create OTP" });
-     }
+    if (error) {
+      console.error("Failed to insert phone OTP:", error);
+      throw new HTTPException(500, { message: "Failed to create OTP" });
+    }
 
-     // Self-contained: OTP delivered in-app (for development)
-     // For production, this could integrate with email providers
-     // No external SMS/WhatsApp/FCM providers required
-     return c.json({ success: true, message: "OTP sent", otpId, otp });
+    // Self-contained: OTP is returned for in-app display (development)
+    // Production deployments can extend this to send via email
+    return c.json({ success: true, message: "OTP sent", otpId, otp });
   } catch (error) {
     if (error instanceof HTTPException) throw error;
     console.error("Send OTP error:", error);
@@ -659,7 +654,7 @@ authRoutes.post("/phone/verify", authRateLimit, async (c) => {
       throw new HTTPException(400, { message: "Phone and OTP required" });
     }
 
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
     
     // Check the latest unverified OTP for this phone number
     const { data: otpRecord, error } = await supabase

@@ -21,7 +21,8 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
   const [timer, setTimer] = useState(60);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isSending, setIsSending] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+  const [otpId, setOtpId] = useState<string | null>(null);
+  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
 
   useEffect(() => {
     let interval: any;
@@ -33,7 +34,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
 
   // Send initial OTP on open
   useEffect(() => {
-    if (isOpen && !generatedCode) {
+    if (isOpen && !generatedOtp) {
       handleResendOtp();
     }
   }, [isOpen]);
@@ -60,13 +61,13 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
   };
 
-  const handleAutoFill = (codeToFill?: string) => {
-    const code = codeToFill || generatedCode;
-    if (!code) return;
-    const digits = code.split('').slice(0, 6);
-    setOtp(digits);
-    toast.success('⚡ Verification code auto-filled!');
-  };
+const handleAutoFill = (codeToFill?: string) => {
+     const code = codeToFill || generatedOtp;
+     if (!code) return;
+     const digits = code.split('').slice(0, 6);
+     setOtp(digits);
+     toast.success('⚡ Verification code auto-filled!');
+   };
 
   const handleVerify = async () => {
     const enteredOtp = otp.join('');
@@ -80,7 +81,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     // Check against generated code or context verification
     const success = await verifyPhoneOtp(phoneNumber, enteredOtp);
     
-    if (success || (generatedCode && enteredOtp === generatedCode) || enteredOtp.length === 6) {
+    if (success || (generatedOtp && enteredOtp === generatedOtp) || enteredOtp.length === 6) {
       toast.success('Phone number authenticated successfully!');
       setIsVerifying(false);
       onVerified();
@@ -90,15 +91,20 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
     }
   };
 
-  const handleResendOtp = async () => {
-    setIsSending(true);
-    const token = await sendPhoneOtp(phoneNumber);
-    const finalCode = token || Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedCode(finalCode);
-    setTimer(60);
-    setIsSending(false);
-    toast.info(`📱 Security Code Dispatched: ${finalCode}`, { duration: 8000 });
-  };
+const handleResendOtp = async () => {
+     setIsSending(true);
+     try {
+       const result = await sendPhoneOtp(phoneNumber);
+       setGeneratedOtp(result.otp || null);
+       setOtpId(result.otpId || null);
+       setTimer(60);
+       toast.info(`📱 Security Code Dispatched: ${result.otp || 'See your phone'}`, { duration: 8000 });
+     } catch {
+       toast.error('Failed to send OTP');
+     } finally {
+       setIsSending(false);
+     }
+   };
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 font-sans">
@@ -120,15 +126,15 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({
           </div>
 
           {/* Code display banner for instant verification */}
-          {generatedCode && (
+          {generatedOtp && (
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center justify-between gap-2 text-left">
               <div>
                 <p className="text-[9px] font-black uppercase text-emerald-400 tracking-wider">Your Security OTP Code:</p>
-                <p className="font-mono text-xl font-black text-white tracking-widest">{generatedCode}</p>
+                <p className="font-mono text-xl font-black text-white tracking-widest">{generatedOtp}</p>
               </div>
               <button
                 type="button"
-                onClick={() => handleAutoFill(generatedCode)}
+                onClick={() => handleAutoFill(generatedOtp)}
                 className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-1 shadow transition-all active:scale-95"
               >
                 <Zap className="w-3.5 h-3.5 fill-slate-950" />

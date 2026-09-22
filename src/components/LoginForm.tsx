@@ -16,6 +16,7 @@ const LoginForm = () => {
   const [otp, setOtp] = useState('');
   const [otpId, setOtpId] = useState<string | null>(null);
   const [otpSent, setOtpSent] = useState(false);
+  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
   const { login, signInWithOAuth, sendPhoneOtp, verifyPhoneOtp } = useSealify();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -43,20 +44,21 @@ const LoginForm = () => {
     }
   };
 
-  const handleSendOtp = async () => {
-    if (!phone) {
-      toast.error('Please enter a phone number');
-      return;
-    }
-    try {
-      const id = await sendPhoneOtp(phone.trim());
-      setOtpId(id);
-      setOtpSent(true);
-      toast.success('OTP sent to your phone');
-    } catch {
-      toast.error('Failed to send OTP');
-    }
-  };
+const handleSendOtp = async () => {
+     if (!phone) {
+       toast.error('Please enter a phone number');
+       return;
+     }
+     try {
+       const result = await sendPhoneOtp(phone.trim());
+       setOtpId(result.otpId);
+       setGeneratedOtp(result.otp || null);
+       setOtpSent(true);
+       toast.success(result.otp ? `OTP: ${result.otp}` : 'OTP sent to your phone');
+     } catch {
+       toast.error('Failed to send OTP');
+     }
+   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,8 +169,14 @@ const LoginForm = () => {
               Send OTP
             </Button>
           </>
-        ) : (
+         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
+            {generatedOtp && (
+              <div className="bg-slate-950 border border-emerald-500/40 rounded-xl p-4 text-center mb-2">
+                <span className="text-xl font-black tracking-[0.5em] text-emerald-300">{generatedOtp}</span>
+                <p className="text-[10px] text-slate-500 mt-1">In-App Verification Code</p>
+              </div>
+            )}
             <div>
               <Label htmlFor="login-otp">Verification Code</Label>
               <Input
@@ -194,6 +202,7 @@ const LoginForm = () => {
               onClick={() => {
                 setOtpSent(false);
                 setOtpId(null);
+                setGeneratedOtp(null);
                 setOtp('');
               }}
             >
