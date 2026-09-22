@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import { createClient } from '@supabase/supabase-js';
 import { getSql } from '../db/hyperdrive';
 import type { AppContext } from '../middleware/types';
 
@@ -24,37 +23,29 @@ healthRoutes.get('/live', (c) => {
 });
 
 healthRoutes.get('/admin-auth', async (c) => {
-	const env = c.env as any;
-	const authHeader = c.req.header('Authorization');
+	const env = c.env as Record<string, unknown>;
 
-	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		return c.json({ ok: false, error: 'Unauthorized' }, 401);
-	}
+	const supabaseUrl = typeof env.SUPABASE_URL === 'string' ? env.SUPABASE_URL : '';
+	const supabaseAnonKey = typeof env.SUPABASE_ANON_KEY === 'string' ? env.SUPABASE_ANON_KEY : '';
+	const hyperdrive = (env.HYPERDRIVE as { connectionString?: string } | undefined) ?? undefined;
 
-	const token = authHeader.substring(7);
-	const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+	const supabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+	const hyperdriveConfigured = Boolean(hyperdrive?.connectionString);
 
-	const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-
-	if (userError || !user) {
-		return c.json({ ok: false, error: 'Unauthorized' }, 401);
-	}
-
-	let hyperdriveConfigured = true;
 	let databaseCheck = false;
-
-	try {
-		const sql = getSql(env);
-		const result = await sql`SELECT public.is_admin(${user.id}) AS is_admin`;
-		databaseCheck = Boolean(result[0]?.is_admin);
-	} catch (dbError) {
-		hyperdriveConfigured = false;
-		console.error('[HEALTH] Database check failed:', dbError.message);
+	if (hyperdriveConfigured) {
+		try {
+			const sql = getSql(env);
+			const result = await sql`SELECT 1 as connected`;
+			databaseCheck = Array.isArray(result) && result.length > 0;
+		} catch (dbError) {
+			console.error('[HEALTH] Database connectivity check failed:', dbError instanceof Error ? dbError.message : String(dbError));
+		}
 	}
 
 	return c.json({
-		ok: hyperdriveConfigured && databaseCheck,
-		supabaseConfigured: true,
+		ok: supabaseConfigured && hyperdriveConfigured && databaseCheck,
+		supabaseConfigured,
 		hyperdriveConfigured,
 		databaseCheck,
 	});
@@ -62,7 +53,7 @@ healthRoutes.get('/admin-auth', async (c) => {
 
 healthRoutes.get('/db', async (c) => {
 	const env = c.env as any;
-	
+
 	try {
 		const sql = getSql(env);
 		// Simple query to check database connectivity
@@ -73,11 +64,10 @@ healthRoutes.get('/db', async (c) => {
 			timestamp: new Date().toISOString()
 		});
 	} catch (dbError) {
-		console.error('[HEALTH] Database check failed:', dbError.message);
+		console.error('[HEALTH] Database check failed:', dbError instanceof Error ? dbError.message : String(dbError));
 		return c.json({
 			ok: false,
-			error: 'Database connection failed',
-			message: dbError.message
+			error: 'Database connection failed'
 		}, 503);
 	}
 });
