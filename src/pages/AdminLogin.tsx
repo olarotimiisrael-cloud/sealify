@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
 import Navbar from '../components/Navbar';
@@ -7,8 +7,7 @@ import {
   Lock, 
   Mail, 
   Terminal, 
-  ShieldCheck, 
-  Siren,
+  ShieldCheck,
   EyeOff,
   Eye,
   Radio,
@@ -20,16 +19,6 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (element: HTMLElement | string, options: Record<string, any>) => string;
-      reset: (id?: string) => void;
-      remove?: (id?: string) => void;
-    };
-  }
-}
-
 const AdminLogin: React.FC = () => {
   const { adminLogin } = useSealify();
   const navigate = useNavigate();
@@ -37,43 +26,6 @@ const AdminLogin: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
-  const [turnstileError, setTurnstileError] = useState(false);
-  const turnstileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const loadTurnstile = async () => {
-      const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
-      const script = document.createElement('script');
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        if (window.turnstile && turnstileRef.current) {
-          window.turnstile.render(turnstileRef.current, {
-            sitekey: siteKey,
-            callback: (token: string) => setTurnstileToken(token),
-            'error-callback': () => setTurnstileError(true),
-            'expired-callback': () => setTurnstileError(false),
-          });
-        } else {
-          setTurnstileError(true);
-        }
-      };
-
-      script.onerror = () => {
-        setTurnstileError(true);
-      };
-    };
-    
-    loadTurnstile();
-
-    return () => {
-      document.querySelectorAll('script[src*="turnstile"]').forEach(s => s.remove());
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,26 +35,18 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
-    if (!turnstileToken) {
-      toast.error('Please complete the security verification.', { duration: 6000 });
-      setTurnstileError(true);
-      return;
-    }
-
     setIsAuthenticating(true);
 
     // Security delay to prevent timing attacks & high-speed automated brute-force bots
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = await adminLogin(email, password, turnstileToken);
+    const success = await adminLogin(email, password);
     setIsAuthenticating(false);
 
     if (success) {
       navigate('/admin');
     } else {
       toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
-      // Reset turnstile on failure
-      setTurnstileToken('');
     }
   };
 
@@ -213,18 +157,10 @@ const AdminLogin: React.FC = () => {
                   >
                     {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
-                </div>
               </div>
+            </div>
 
-              {/* Turnstile verification widget */}
-              <div className="flex justify-center py-2">
-                <div ref={turnstileRef} className="cf-turnstile" style={{ width: '300px', height: '65px' }} />
-              </div>
-              {turnstileError && (
-                <p className="text-rose-400 text-[10px] font-mono text-center">Security verification required</p>
-              )}
-
-{/* OAuth Provider Buttons */}
+            {/* OAuth Provider Buttons */}
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
