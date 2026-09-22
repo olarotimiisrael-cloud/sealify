@@ -182,8 +182,9 @@ interface SealifyContextType {
    signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
    sendPhoneOtp: (phone: string, channel?: string) => Promise<{ otpId: string; otp: string | null }>;
    verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
-   adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
-   logout: () => void;
+    adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
+    clearError: () => void;
+    logout: () => void;
    resetPassword: (email: string) => Promise<void>;
    completeProfile: (data: { fullName: string; phoneNumber: string }) => Promise<boolean>;
 
@@ -760,7 +761,7 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         };
       
-const adminLogin = async (email: string, password: string, accessKey?: string) => {
+        const adminLogin = async (email: string, password: string, accessKey?: string) => {
            try {
              if (!email.trim() || !password.trim()) return false;
 
@@ -769,25 +770,44 @@ const adminLogin = async (email: string, password: string, accessKey?: string) =
                headers: { 'Content-Type': 'application/json' },
                body: JSON.stringify({ email, password }),
              });
-            if (!response.ok) return false;
 
-            const result = await response.json() as { session: any };
-            if (!result.session) return false;
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
-            if (sessionError || !sessionData.user) return false;
+             if (!response.ok) {
+               const payload = await response.json().catch(() => ({}));
 
-            const profile = await loadProfileForAuthUser(sessionData.user);
-            if (!profile) {
-              await supabase.auth.signOut();
-              return false;
-            }
+               if (response.status === 503) {
+                 setError('Administrator authentication service is temporarily unavailable. Please try again shortly.');
+               } else if (response.status === 403) {
+                 setError('Administrator access is not enabled for this account.');
+               } else if (response.status === 401) {
+                 setError('Unable to authenticate administrator. Please verify your credentials and try again.');
+               } else {
+                 setError(payload?.error || 'Unable to authenticate administrator. Please try again.');
+               }
 
-            applyAuthenticatedUser(profile);
-            return true;
-          } catch (authError: any) {
-            setError(authError?.message || 'Unable to authenticate administrator');
-            return false;
-          }
+               return false;
+             }
+
+             const result = await response.json() as { session: any };
+             if (!result.session) return false;
+             const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
+             if (sessionError || !sessionData.user) return false;
+
+             const profile = await loadProfileForAuthUser(sessionData.user);
+             if (!profile) {
+               await supabase.auth.signOut();
+               return false;
+             }
+
+             applyAuthenticatedUser(profile);
+             return true;
+           } catch (authError: any) {
+             setError(authError?.message || 'Unable to authenticate administrator');
+             return false;
+           }
+         };
+
+        const clearError = () => {
+          setError(null);
         };
       
         const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string }) => {
@@ -2012,7 +2032,8 @@ bulkDeleteUsers,
     isSyncing,
     lastSyncTime,
     syncDatabase,
-    error
+    error,
+    clearError
   }), [
     user, isAdmin, systemConfig, siteSettings, promotionPlans, safeSpots,
     listings, allUsers, createUser, updateUser, addUser, deleteUser, reloadUsers, savedListingIds, recentlyViewedIds, userInterests,
