@@ -1,5 +1,6 @@
 ﻿import { Hono } from 'hono';
 import { handle } from 'hono/cloudflare-pages';
+import { HTTPException } from 'hono/http-exception';
 import { corsMiddleware } from '../_middleware/cors';
 import { errorMiddleware } from '../_middleware/error';
 import type { Env } from '../_middleware/types';
@@ -21,6 +22,19 @@ async function buildApp(): Promise<Hono<{ Bindings: Env }>> {
 
   app.use('*', corsMiddleware);
   app.use('*', errorMiddleware);
+
+  // Global JSON error serializer: Hono's default HTTPException handler
+  // responds with text/plain, which breaks client-side response.json()
+  // parsing on every route that throws (401/403/429 from requireAdmin,
+  // rate limiting, validation, etc.). Keep the entire /api surface on a
+  // predictable { error } JSON contract.
+  app.onError((err, c) => {
+    if (err instanceof HTTPException) {
+      return c.json({ error: err.message }, err.status as any);
+    }
+    console.error('[api] Unhandled error:', err instanceof Error ? err.message : String(err));
+    return c.json({ error: 'Internal server error' }, 500);
+  });
 
   app.route('/health', healthRoutes);
 
