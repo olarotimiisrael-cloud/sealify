@@ -1,1 +1,11 @@
-/*     /index.html  200
+# Cloudflare Pages SPA fallback for the React Router app.
+# Note: when a _routes.json exists (it does, in this project), Functions
+# matching "include" patterns (e.g. /api/*) are ALWAYS handled by Pages
+# Functions before these rules apply, so this rule cannot shadow the API.
+# The previous bare `/* /index.html 200` line was rejected by Cloudflare's
+# redirect parser ("Infinite loop detected ... Parsed 0 valid redirect
+# rules"), which left deep links like /admin/login with no SPA fallback and
+# caused blank pages. The explicit !/assets exclusion below parses cleanly.
+/assets/*  /assets/:splat  200
+!/*.html   /*              200
+/*         /index.html     200
