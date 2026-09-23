@@ -789,7 +789,18 @@ const adminLogin = async (email: string, password: string, accessKey?: string) =
                return false;
              }
 
-             const result = await response.json() as { session: any };
+             // Defensive parse: if anything (stale cache, proxy, service
+             // worker, mis-routed request) returns a non-JSON body with a
+             // 200 status, surface a clean error instead of throwing a raw
+             // "Unexpected token '<'" JSON.parse SyntaxError.
+             const rawBody = await response.text();
+             let result: { session?: any };
+             try {
+               result = JSON.parse(rawBody) as { session?: any };
+             } catch {
+               setError('Received an invalid response from the authentication server. Please check your connection and try again.');
+               return false;
+             }
              if (!result.session) return false;
              const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
              if (sessionError || !sessionData.user) return false;
