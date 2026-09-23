@@ -26,7 +26,10 @@ export function rateLimit(options: {
     }
 
     if (record.count >= maxRequests) {
-      throw new HTTPException(429, { message: "Too many requests, please try again later" });
+      throw new HTTPException(429, {
+        message: "Too many requests, please try again later",
+        headers: { "Retry-After": String(Math.max(1, Math.ceil((record.resetAt - now) / 1000))) },
+      });
     }
 
     record.count++;
@@ -58,21 +61,79 @@ export async function requireAuth(c: any, next: any) {
   return next();
 }
 
+// Server-side admin authorization helper.
+// Primary path: Supabase PostgREST RPC -> public.is_admin() (SECURITY DEFINER,
+// pinned search_path, decision tied to auth.uid()). This keeps administrator
+// authorization independent of the Cloudflare HYPERDRIVE binding.
+// Fallback path: direct SQL via Hyperdrive (still parameterized).
+// Both paths evaluate the SAME database function; nothing client-supplied
+// (email, role flags, localStorage) is ever trusted as proof of admin status.
+export async function checkIsAdmin(
+  env: any,
+  accessToken: string,
+  userId: string
+): Promise<boolean | null> {
+  const anonKey = env.SUPABASE_ANON_KEY;
+  if (env.SUPABASE_URL && anonKey) {
+    try {
+      const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/is_admin`, {
+        method: "POST",
+        headers: {
+          apikey: anonKey,
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: "{}",
+      });
+      if (res.ok) {
+        const json = await res.json();
+        return typeof json === "boolean" ? json : Boolean(json?.is_admin);
+      }
+      // A missing function/schema error means this path cannot decide - fall through.
+      console.error(`[auth] is_admin RPC via PostgREST returned HTTP ${res.status}`);
+    } catch (err: any) {
+      console.error("[auth] is_admin RPC call failed:", err?.message ?? err);
+    }
+  }
+
+  try {
+    const sql = getSql(env);
+    // private.is_admin_for() is the server-side helper (Hyperdrive /
+    // service-role connections only; not callable over PostgREST).
+    // public.is_admin(uuid) is deprecated and being dropped by migration
+    // 20260923000000_secure_is_admin_hardening.sql.
+    const rows = await sql`SELECT private.is_admin_for(${userId}) AS is_admin`;
+    return Boolean(rows[0]?.is_admin);
+  } catch (err: any) {
+    console.error("[auth] is_admin Hyperdrive fallback failed:", err?.message ?? err);
+    return null;
+  }
+}
+
 // Admin role check middleware
 export async function requireAdmin(c: any, next: any) {
   await requireAuth(c, async () => {
     const user = c.get("user");
-    const sql = getSql(c.env);
+    const token = c.req.header("Authorization").substring(7);
 
-    // Authorization is evaluated by the production private-schema helper.
+    // Authorization is decided by the database function only.
     // Do not trust a client-readable profile field as the authorization source.
-    const result = await sql`SELECT public.is_admin(${user.id}) AS is_admin`;
+    const admin = await checkIsAdmin(c.env, token, user.id);
 
-    if (!result[0]?.is_admin) {
+    if (admin === null) {
+      throw new HTTPException(503, { message: "Administrator authorization service temporarily unavailable" });
+    }
+    if (!admin) {
       throw new HTTPException(403, { message: "Admin access required" });
     }
 
-    c.set("sql", sql);
+    // Optional: expose a Hyperdrive client for handlers that need raw SQL.
+    // Its absence must not block authorization above.
+    try {
+      c.set("sql", getSql(c.env));
+    } catch {
+      /* Hyperdrive unavailable - routes requiring it will fail individually */
+    }
     c.set("profile", { role: "admin" });
     return next();
   });
