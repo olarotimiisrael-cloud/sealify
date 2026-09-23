@@ -4,7 +4,7 @@ import type { Env } from './types';
 export function corsMiddleware(c: Context<{ Bindings: Env }>, next: Next): Promise<void> {
   const isProduction = c.env.NODE_ENV === 'production';
   const allowedOrigins = (isProduction
-    ? 'https://sealify.ng,https://www.sealify.ng,https://sealify.pages.dev'
+    ? 'https://sealify.ng,https://www.sealify.ng,https://sealify.pages.dev,https://sealify.thesealconsult.com.ng,https://www.sealify.thesealconsult.com.ng'
     : 'http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173'
   ).split(',').map(o => o.trim()).filter(Boolean);
 

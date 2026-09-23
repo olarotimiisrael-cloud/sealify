@@ -20,7 +20,13 @@ export const getSupabaseConfig = () => {
 
 export function apiUrl(path: string): string {
   const base = appEnv.apiBase.replace(/\/$/, '');
-  const cleanPath = path.replace(/^\//, '');
+  let cleanPath = path.replace(/^\//, '');
+
+  // If base already ends with /api, strip the duplicate /api/ prefix from path
+  if (base.endsWith('/api') && cleanPath.startsWith('api/')) {
+    cleanPath = cleanPath.slice(4);
+  }
+
   if (base.startsWith('http')) {
     return `${base}/${cleanPath}`;
   }

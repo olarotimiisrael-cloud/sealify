@@ -761,15 +761,17 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         };
       
-        const adminLogin = async (email: string, password: string, accessKey?: string) => {
-           try {
-             if (!email.trim() || !password.trim()) return false;
+const adminLogin = async (email: string, password: string, accessKey?: string) => {
+     try {
+       if (!email.trim() || !password.trim()) return false;
 
-             const response = await fetch(apiUrl('/api/auth/admin-login'), {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ email, password }),
-             });
+       const response = await adminFetch('/api/auth/admin-login', {
+         method: 'POST',
+         headers: {
+           'Content-Type': 'application/json'
+         },
+         body: JSON.stringify({ email, password }),
+       });
 
              if (!response.ok) {
                const payload = await response.json().catch(() => ({}));

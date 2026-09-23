@@ -140,7 +140,7 @@ class ApiClient {
   }
 
   async sendPhoneOtp(phone: string, channel?: string): Promise<string> {
-    const response = await fetch(`${API_BASE}/api/auth/phone/otp`, {
+    const response = await fetch(apiUrl('/api/auth/phone/otp'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, channel }),
@@ -151,7 +151,7 @@ class ApiClient {
   }
 
   async verifyPhoneOtp(phone: string, code: string, otpId?: string): Promise<boolean> {
-    const response = await fetch(`${API_BASE}/api/auth/phone/verify`, {
+    const response = await fetch(apiUrl('/api/auth/phone/verify'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, otp: code, otpId }),
