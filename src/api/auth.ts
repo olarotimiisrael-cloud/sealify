@@ -7,6 +7,18 @@ import { z } from "zod";
 
 export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
+// SECURITY / API-CONTRACT GUARD: every error thrown anywhere in this route tree
+// (including HTTPException raised by shared middleware such as rate limiting)
+// MUST be serialized as JSON. Hono's default exception handler responds with
+// text/plain, which breaks clients that parse the response body as JSON.
+authRoutes.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return c.json({ error: err.message }, err.status as 400);
+  }
+  console.error("[auth] Unhandled error:", err instanceof Error ? err.message : String(err));
+  return c.json({ error: "Internal server error" }, 500);
+});
+
 async function sha256Hash(input: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(input);
