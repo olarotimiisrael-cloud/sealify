@@ -98,7 +98,12 @@ export async function checkIsAdmin(
 
   try {
     const sql = getSql(env);
-    // private.is_admin_for() is the server-side helper (Hyperdrive /
+    // NOTE: use public.is_admin() here. The canonical zero-arg function that
+    // checkIsAdmin() validates through PostgREST RPC lives in the public
+    // schema (SECURITY DEFINER, pinned search_path, bound to auth.uid()).
+    // private.is_admin() does not check status='active', so it must NOT be
+    // used as the authorization source of truth on this path.
+    // private.is_admin_for() remains the server-side helper (Hyperdrive /
     // service-role connections only; not callable over PostgREST).
     // public.is_admin(uuid) is deprecated and being dropped by migration
     // 20260923000000_secure_is_admin_hardening.sql.
