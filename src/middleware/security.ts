@@ -89,8 +89,13 @@ export async function checkIsAdmin(
         const json = await res.json();
         return typeof json === "boolean" ? json : Boolean(json?.is_admin);
       }
-      // A missing function/schema error means this path cannot decide - fall through.
-      console.error(`[auth] is_admin RPC via PostgREST returned HTTP ${res.status}`);
+      // Non-OK response: log the body type to diagnose HTML-vs-JSON issues.
+      const contentType = res.headers.get("content-type") || "";
+      const bodyPreview = await res.text().catch(() => "");
+      console.error(
+        `[auth] is_admin RPC via PostgREST returned HTTP ${res.status} ` +
+        `content-type="${contentType}" body="${bodyPreview.slice(0, 200)}"`
+      );
     } catch (err: any) {
       console.error("[auth] is_admin RPC call failed:", err?.message ?? err);
     }
