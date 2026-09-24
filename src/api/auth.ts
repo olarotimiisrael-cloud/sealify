@@ -298,13 +298,14 @@ authRoutes.post("/admin-login", async (c) => {
     throw new HTTPException(503, { message: "Authentication service is not configured" });
   }
 
-  // Validate service role key prefix: Supabase service role keys must start
-  // with "sb_service_role_". A key with the wrong prefix (e.g. "sb_secret_")
-  // silently authenticates as an unprivileged role, causing signInWithPassword
-  // to fail in ways that surface as HTML error pages from PostgREST.
+  // Validate service role key format. Supabase service role keys
+  // use the newer "sb_secret_" prefix; older keys may use "sb_service_role_".
+  // Accept both formats — the actual validity is confirmed by the service
+  // responding correctly to authentication requests, not by prefix inspection.
   const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
-  if (serviceKey && !serviceKey.startsWith("sb_service_role_")) {
-    console.error(`[ADMIN LOGIN] SUPABASE_SERVICE_ROLE_KEY has invalid prefix; expected "sb_service_role_" but got "${serviceKey.slice(0, 16)}..."`);
+  const validKeyPrefixes = ["sb_service_role_", "sb_secret_"];
+  if (serviceKey && !validKeyPrefixes.some(p => serviceKey.startsWith(p))) {
+    console.error(`[ADMIN LOGIN] SUPABASE_SERVICE_ROLE_KEY has unrecognized prefix`);
     throw new HTTPException(503, { message: "Authentication service is not configured" });
   }
 
