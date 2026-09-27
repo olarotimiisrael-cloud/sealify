@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { apiUrl } from '@/lib/env';
 
 export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
   const { data: { session } } = await supabase.auth.getSession();
@@ -13,8 +12,7 @@ export async function adminFetch(input: RequestInfo | URL, init: RequestInit = {
     headers.set('Authorization', `Bearer ${session.access_token}`);
   }
 
-  const url = typeof input === 'string' && input.startsWith('/api/') ? apiUrl(input) : input;
-  return fetch(url, { ...init, headers });
+  return fetch(input, { ...init, headers });
 }
 
 // Email API client functions
