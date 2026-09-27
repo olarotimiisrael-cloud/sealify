@@ -3,9 +3,9 @@ import type { Env } from './types';
 
 export async function isAdmin(userId: string, env: Env): Promise<boolean> {
   const sql = getSql(env);
-  const result = await sql`
-    SELECT public.is_admin(${userId}) AS is_admin
-  `;
+const result = await sql`
+      SELECT private.is_admin_for(${userId}) AS is_admin
+    `;
   return Boolean(result[0]?.is_admin);
 }
 
