@@ -1,7 +1,7 @@
 export const appEnv = {
   supabaseUrl: import.meta.env.VITE_SUPABASE_URL ?? '',
   supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY ?? '',
-  apiBase: import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE || '/api',
+  apiBase: import.meta.env.VITE_API_BASE || '/api',
   isProduction: import.meta.env.PROD || import.meta.env.MODE === 'production',
 };
 
