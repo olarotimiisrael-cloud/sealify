@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sealify-pwa-v3';
+const CACHE_NAME = 'sealify-pwa-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -50,19 +50,33 @@ self.addEventListener('fetch', (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // Offline fallback
+        // Offline fallback. event.respondWith() MUST always settle with a
+        // Response - returning undefined here produced
+        // "TypeError: Failed to convert value to 'Response'" and left the
+        // request permanently pending.
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
           }
           // Fallback to index.html for navigation requests
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches
+              .match('/index.html')
+              .then((shell) => shell || offlineResponse());
           }
+          return offlineResponse();
         });
       })
   );
 });
+
+// A real Response so respondWith() always receives one.
+function offlineResponse() {
+  return new Response(
+    JSON.stringify({ error: 'You appear to be offline. Please check your connection and try again.' }),
+    { status: 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'application/json' } }
+  );
+}
 
 // Background sync for offline actions
 self.addEventListener('sync', (event) => {

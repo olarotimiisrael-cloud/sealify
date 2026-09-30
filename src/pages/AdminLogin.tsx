@@ -17,7 +17,7 @@ import {
 import { toast } from 'sonner';
 
 const AdminLogin: React.FC = () => {
-  const { adminLogin, error, clearError } = useSealify();
+  const { adminLogin, clearError } = useSealify();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,18 +39,16 @@ const AdminLogin: React.FC = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 800));
 
-    const success = await adminLogin(email, password);
+    const outcome = await adminLogin(email, password);
     setIsAuthenticating(false);
 
-    if (success) {
+    if (outcome.success) {
       navigate('/admin');
     } else {
-      // Display the error from context if available
-      if (error) {
-        toast.error(error, { duration: 8000 });
-      } else {
-        toast.error('Unable to authenticate administrator. Please verify your credentials and try again.', { duration: 6000 });
-      }
+      // Use the message returned by adminLogin() directly. Reading `error`
+      // here would return a stale value from a previous render, because
+      // setError() has not re-rendered this closure yet.
+      toast.error(outcome.message || 'Unable to authenticate administrator. Please try again.', { duration: 8000 });
     }
   };
 

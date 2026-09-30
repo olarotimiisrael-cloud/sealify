@@ -133,6 +133,18 @@ const mapBuyerRequestRow = (row: any): BuyerRequest => ({
   responsesCount: Number(row.responses_count || 0),
 });
 
+// Result of an admin login attempt. `stage` identifies which part of the flow
+// failed so the UI can report the real cause instead of a single generic error.
+// Messages are pre-sanitized: no backend detail, credentials or tokens are exposed.
+export type AdminLoginStage = 'validation' | 'api' | 'session' | 'profile';
+
+export interface AdminLoginResult {
+  success: boolean;
+  stage?: AdminLoginStage;
+  status?: number;
+  message?: string;
+}
+
 interface SealifyContextType {
   // Auth
   user: UserProfile | null;
@@ -182,7 +194,7 @@ interface SealifyContextType {
    signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
    sendPhoneOtp: (phone: string, channel?: string) => Promise<{ otpId: string; otp: string | null }>;
    verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
-    adminLogin: (email: string, password: string, accessKey?: string) => Promise<boolean>;
+    adminLogin: (email: string, password: string, accessKey?: string) => Promise<AdminLoginResult>;
     clearError: () => void;
     logout: () => void;
    resetPassword: (email: string) => Promise<void>;
@@ -761,63 +773,89 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
           }
         };
       
-const adminLogin = async (email: string, password: string, accessKey?: string) => {
+const adminLogin = async (email: string, password: string, accessKey?: string): Promise<AdminLoginResult> => {
+     // Sanitized, user-safe messages only. Deliberately never surfaces raw
+     // backend/Supabase error text, which could enable account enumeration.
+     const MSG_UNREACHABLE = 'Unable to reach the authentication service. Please check your connection and try again.';
+     const MSG_INVALID_RESPONSE = 'Received an invalid response from the authentication server. Please check your connection and try again.';
+     const MSG_SESSION = 'Authentication succeeded, but the browser session could not be started. Please try again or check your connection.';
+     const MSG_PROFILE = 'Authentication succeeded, but your administrator profile could not be loaded. Please try again.';
+
+     // Diagnostics only: stage + HTTP status + sanitized message. Never logs
+     // the password, tokens, session object, cookies or Authorization headers.
+     const report = (stage: AdminLoginStage, status: number | undefined, message: string): AdminLoginResult => {
+       console.warn(`[AdminLogin] stage=${stage} status=${status ?? 'n/a'} reason="${message}"`);
+       setError(message);
+       return { success: false, stage, status, message };
+     };
+
      try {
-       if (!email.trim() || !password.trim()) return false;
+       if (!email.trim() || !password.trim()) return { success: false, stage: 'validation' };
 
-       const response = await adminFetch('/api/auth/admin-login', {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json'
-         },
-         body: JSON.stringify({ email, password }),
-       });
+       let response: Response;
+       try {
+         // Stage 1 - our own API. Relative path => same-origin.
+         response = await adminFetch('/api/auth/admin-login', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json'
+           },
+           body: JSON.stringify({ email, password }),
+         });
+       } catch {
+         return report('api', undefined, MSG_UNREACHABLE);
+       }
 
-             if (!response.ok) {
-               const payload = await response.json().catch(() => ({}));
+            if (!response.ok) {
+              const payload = await response.json().catch(() => ({}));
 
-               if (response.status === 503) {
-                 setError('Administrator authentication service is temporarily unavailable. Please try again shortly.');
-               } else if (response.status === 403) {
-                 setError('Administrator access is not enabled for this account.');
-               } else if (response.status === 401) {
-                 setError('Unable to authenticate administrator. Please verify your credentials and try again.');
-               } else {
-                 setError(payload?.error || 'Unable to authenticate administrator. Please try again.');
-               }
+              if (response.status === 503) {
+                return report('api', response.status, 'Administrator authentication service is temporarily unavailable. Please try again shortly.');
+              } else if (response.status === 403) {
+                return report('api', response.status, 'Administrator access is not enabled for this account.');
+              } else if (response.status === 401) {
+                return report('api', response.status, 'Unable to authenticate administrator. Please verify your credentials and try again.');
+              } else {
+                return report('api', response.status, payload?.error || 'Unable to authenticate administrator. Please try again.');
+              }
+            }
 
-               return false;
-             }
+            // Defensive parse: if anything (stale cache, proxy, service
+            // worker, mis-routed request) returns a non-JSON body with a
+            // 200 status, surface a clean error instead of throwing a raw
+            // "Unexpected token '<'" JSON.parse SyntaxError.
+            const rawBody = await response.text();
+            let result: { session?: any };
+            try {
+              result = JSON.parse(rawBody) as { session?: any };
+            } catch {
+              return report('api', response.status, MSG_INVALID_RESPONSE);
+            }
+            if (!result.session) return report('api', response.status, MSG_INVALID_RESPONSE);
 
-             // Defensive parse: if anything (stale cache, proxy, service
-             // worker, mis-routed request) returns a non-JSON body with a
-             // 200 status, surface a clean error instead of throwing a raw
-             // "Unexpected token '<'" JSON.parse SyntaxError.
-             const rawBody = await response.text();
-             let result: { session?: any };
-             try {
-               result = JSON.parse(rawBody) as { session?: any };
-             } catch {
-               setError('Received an invalid response from the authentication server. Please check your connection and try again.');
-               return false;
-             }
-             if (!result.session) return false;
-             const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
-             if (sessionError || !sessionData.user) return false;
+            // Stage 2 - direct browser -> Supabase session establishment.
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
+            if (sessionError || !sessionData.user) return report('session', response.status, MSG_SESSION);
 
-             const profile = await loadProfileForAuthUser(sessionData.user);
-             if (!profile) {
-               await supabase.auth.signOut();
-               return false;
-             }
+            // Stage 3 - direct browser -> Supabase profile read (RLS applies).
+            let profile: UserProfile | null = null;
+            try {
+              profile = await loadProfileForAuthUser(sessionData.user);
+            } catch {
+              return report('profile', response.status, MSG_PROFILE);
+            }
+            if (!profile) {
+              await supabase.auth.signOut();
+              return report('profile', response.status, MSG_PROFILE);
+            }
 
-             applyAuthenticatedUser(profile);
-             return true;
-           } catch (authError: any) {
-             setError(authError?.message || 'Unable to authenticate administrator');
-             return false;
-           }
-         };
+            // Stage 4 - apply authenticated state.
+            applyAuthenticatedUser(profile);
+            return { success: true };
+          } catch (authError: any) {
+            return report('api', undefined, MSG_UNREACHABLE);
+          }
+        };
 
         const clearError = () => {
           setError(null);
