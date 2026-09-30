@@ -135,7 +135,11 @@ adminRoutes.get("/users", async (c) => {
   const limitNum = Math.min(parseInt(limit) || 50, 200);
   const offsetNum = parseInt(offset) || 0;
 
-  const users = await sql`
+  const limitParam = paramIndex;
+  const offsetParam = paramIndex + 1;
+  const allParams = [...params, limitNum, offsetNum];
+
+  const users = await sql.unsafe(`
     SELECT
       u.id AS auth_user_id,
       u.email AS auth_email,
@@ -178,14 +182,14 @@ adminRoutes.get("/users", async (c) => {
       p.whatsapp_number
     FROM auth.users u
     LEFT JOIN public.profiles p ON p.id = u.id
-    ${sql(whereClause)}
+    ${whereClause}
     ORDER BY u.created_at DESC
-    LIMIT ${limitNum} OFFSET ${offsetNum}
-  `;
+    LIMIT $${limitParam} OFFSET $${offsetParam}
+  `, allParams);
 
-  const countResult = await sql`
-    SELECT COUNT(*) as total FROM auth.users u LEFT JOIN public.profiles p ON p.id = u.id ${sql(whereClause)}
-  `;
+  const countResult = await sql.unsafe(`
+    SELECT COUNT(*) as total FROM auth.users u LEFT JOIN public.profiles p ON p.id = u.id ${whereClause}
+  `, params);
 
   return c.json({
     users,
@@ -212,9 +216,13 @@ adminRoutes.put("/users/:id", async (c) => {
     throw new HTTPException(403, { message: "Only administrators can change roles" });
   }
 
-  const result = await sql`
-    UPDATE profiles SET ${sql(updates)} WHERE id = ${id} RETURNING *
-  `;
+  const setEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+  const setClause = setEntries.map(([key], i) => `${key} = $${i + 1}`).join(", ");
+  const values = setEntries.map(([, value]) => value);
+
+  const result = await sql.unsafe(`
+    UPDATE profiles SET ${setClause}, updated_at = NOW() WHERE id = $${values.length + 1} RETURNING *
+  `, [...values, id]);
 
   if (result.length === 0) {
     throw new HTTPException(404, { message: "User not found" });
@@ -547,14 +555,18 @@ adminRoutes.get("/audit-logs", async (c) => {
     paramIndex++;
   }
 
-  const logs = await sql`
+  const limitParam = paramIndex;
+  const offsetParam = paramIndex + 1;
+  const allParams = [...params, parseInt(limit), parseInt(offset)];
+
+  const logs = await sql.unsafe(`
     SELECT al.*, p.full_name as user_name
     FROM audit_logs al
     LEFT JOIN profiles p ON al.user_id = p.id
-    ${sql(whereClause)}
+    ${whereClause}
     ORDER BY al.created_at DESC
-    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
-  `;
+    LIMIT $${limitParam} OFFSET $${offsetParam}
+  `, allParams);
 
   return c.json({ logs });
 });
@@ -780,9 +792,9 @@ adminRoutes.post("/broadcast", async (c) => {
   else if (target === "seller") whereClause = "WHERE role = 'seller'";
    else if (target !== "all") throw new HTTPException(400, { message: "Invalid target" });
 
-  const users = await sql`
-    SELECT id FROM profiles ${sql(whereClause)}
-  `;
+  const users = await sql.unsafe(`
+    SELECT id FROM profiles ${whereClause}
+  `);
 
   // Batch insert notifications
   for (const user of users) {
@@ -810,9 +822,9 @@ adminRoutes.post("/email-digest", async (c) => {
   if (audience === "buyers") whereClause = "WHERE role = 'buyer'";
   else if (audience === "sellers") whereClause = "WHERE role = 'seller'";
 
-  const users = await sql`
-    SELECT id, full_name FROM profiles ${sql(whereClause)}
-  `;
+  const users = await sql.unsafe(`
+    SELECT id, full_name FROM profiles ${whereClause}
+  `);
 
   const digestTitle = "Sealify Weekly Digest";
   const digestMessage = "Fresh marketplace updates, verified opportunities, and platform news are now available on Sealify.";

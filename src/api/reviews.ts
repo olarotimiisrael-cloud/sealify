@@ -204,15 +204,19 @@ reviewsRoutes.get("/admin/all", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 50, 200);
     const offsetNum = parseInt(offset) || 0;
 
-    const reviews = await sql`
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
+
+    const reviews = await sql.unsafe(`
       SELECT r.*, u1.full_name as seller_name, u2.full_name as buyer_name
       FROM reviews r
       LEFT JOIN profiles u1 ON r.seller_id = u1.id
       LEFT JOIN profiles u2 ON r.buyer_id = u2.id
-      ${sql(whereClause)}
+      ${whereClause}
       ORDER BY r.created_at DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
 
     return c.json({ reviews });
   } catch (error) {
@@ -287,3 +291,5 @@ reviewsRoutes.delete("/admin/:id", async (c) => {
     return c.json({ error: "Failed to delete review" }, 500);
   }
 });
+
+export default reviewsRoutes;

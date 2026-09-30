@@ -158,12 +158,16 @@ analyticsRoutes.get("/events", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 100, 500);
     const offsetNum = parseInt(offset) || 0;
 
-    const events = await sql`
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
+
+    const events = await sql.unsafe(`
       SELECT * FROM analytics_events
-      ${sql(whereClause)}
+      ${whereClause}
       ORDER BY created_at DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
 
     return c.json({ events });
   } catch (error) {
@@ -179,15 +183,19 @@ analyticsRoutes.get("/performance", async (c) => {
 
     let whereClause = "";
     const params: any[] = [];
+    let paramIndex = 1;
 
     if (metric) {
       whereClause = "WHERE metric_name = $1";
       params.push(metric);
+      paramIndex++;
     }
 
     const limitNum = Math.min(parseInt(limit) || 100, 500);
+    const limitParam = paramIndex;
+    const allParams = [...params, limitNum];
 
-    const metrics = await sql`
+    const metrics = await sql.unsafe(`
       SELECT 
         metric_name,
         AVG(value) as avg_value,
@@ -196,11 +204,11 @@ analyticsRoutes.get("/performance", async (c) => {
         COUNT(*) FILTER (WHERE rating = 'needs-improvement') as needs_improvement_count,
         COUNT(*) FILTER (WHERE rating = 'poor') as poor_count
       FROM performance_metrics
-      ${sql(whereClause)}
+      ${whereClause}
       GROUP BY metric_name
       ORDER BY avg_value DESC
-      LIMIT ${limitNum}
-    `;
+      LIMIT $${limitParam}
+    `, allParams);
 
     return c.json({ metrics });
   } catch (error) {
@@ -208,3 +216,5 @@ analyticsRoutes.get("/performance", async (c) => {
     return c.json({ error: "Failed to fetch performance" }, 500);
   }
 });
+
+export default analyticsRoutes;

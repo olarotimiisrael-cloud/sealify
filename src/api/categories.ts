@@ -173,3 +173,5 @@ categoriesRoutes.get("/:id/subcategories", async (c) => {
     return c.json({ error: "Failed to fetch subcategories" }, 500);
   }
 });
+
+export default categoriesRoutes;

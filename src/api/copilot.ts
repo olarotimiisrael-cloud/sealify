@@ -147,3 +147,5 @@ copilotRoutes.post('/', async (c) => {
     }, 200);
   }
 });
+
+export default copilotRoutes;

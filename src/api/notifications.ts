@@ -35,12 +35,12 @@ notificationsRoutes.get("/", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 50, 200);
     const offsetNum = parseInt(offset) || 0;
 
-    const notifications = await sql`
+    const notifications = await sql.unsafe(`
       SELECT * FROM notifications
-      ${sql(whereClause)}
+      ${whereClause}
       ORDER BY created_at DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      LIMIT $2 OFFSET $3
+    `, [user.id, limitNum, offsetNum]);
 
     const unreadCount = await sql`
       SELECT COUNT(*) as count FROM notifications WHERE user_id = ${user.id} AND read = false
@@ -156,3 +156,5 @@ notificationsRoutes.delete("/:id", async (c) => {
     return c.json({ error: "Failed to delete notification" }, 500);
   }
 });
+
+export default notificationsRoutes;

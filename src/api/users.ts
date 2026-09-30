@@ -70,16 +70,20 @@ usersRoutes.get("/", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 50, 200);
     const offsetNum = parseInt(offset) || 0;
 
-    const users = await sql`
-      SELECT * FROM profiles
-      ${sql(whereClause)}
-      ORDER BY created_at DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
 
-    const countResult = await sql`
-      SELECT COUNT(*) as total FROM profiles ${sql(whereClause)}
-    `;
+    const users = await sql.unsafe(`
+      SELECT * FROM profiles
+      ${whereClause}
+      ORDER BY created_at DESC
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
+
+    const countResult = await sql.unsafe(`
+      SELECT COUNT(*) as total FROM profiles ${whereClause}
+    `, params);
 
     return c.json({
       users,
@@ -173,12 +177,16 @@ usersRoutes.put("/:id", async (c) => {
       }
     }
 
-    const result = await sql`
+    const setEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+    const setClause = setEntries.map(([key], i) => `${key} = $${i + 1}`).join(", ");
+    const values = setEntries.map(([, value]) => value);
+
+    const result = await sql.unsafe(`
       UPDATE profiles SET 
-        ${sql(updates)}
-      WHERE id = ${id}
+        ${setClause}
+      WHERE id = $${values.length + 1}
       RETURNING *
-    `;
+    `, [...values, id]);
 
     if (result.length === 0) {
       return c.json({ error: "User not found" }, 404);
@@ -276,3 +284,5 @@ usersRoutes.get("/:id/reviews", async (c) => {
     return c.json({ error: "Failed to fetch reviews" }, 500);
   }
 });
+
+export default usersRoutes;

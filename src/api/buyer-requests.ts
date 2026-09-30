@@ -23,12 +23,16 @@ buyerRequestsRoutes.get("/", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 20, 100);
     const offsetNum = parseInt(offset) || 0;
 
-    const requests = await sql`
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
+
+    const requests = await sql.unsafe(`
       SELECT * FROM buyer_requests
-      ${sql(whereClause)}
+      ${whereClause}
       ORDER BY created_at DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
 
     return c.json({ requests });
   } catch (error) {
@@ -211,3 +215,5 @@ buyerRequestsRoutes.delete("/:id", async (c) => {
     return c.json({ error: "Failed to delete request" }, 500);
   }
 });
+
+export default buyerRequestsRoutes;

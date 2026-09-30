@@ -58,7 +58,11 @@ searchRoutes.get("/", async (c) => {
     const limitNum = Math.min(parseInt(limit) || 20, 100);
     const offsetNum = parseInt(offset) || 0;
 
-    const listings = await sql`
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
+
+    const listings = await sql.unsafe(`
       SELECT 
         a.*,
         p.full_name as seller_name,
@@ -68,15 +72,15 @@ searchRoutes.get("/", async (c) => {
         p.verification_type as seller_verification_type
       FROM ads a
       LEFT JOIN profiles p ON a.seller_id = p.id
-      ${sql(whereClause)}
-      ${sql(orderClause)}
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      ${whereClause}
+      ${orderClause}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
 
-    const countResult = await sql`
+    const countResult = await sql.unsafe(`
       SELECT COUNT(*) as total FROM ads a
-      ${sql(whereClause)}
-    `;
+      ${whereClause}
+    `, params);
 
     return c.json({
       listings,
@@ -253,3 +257,5 @@ searchRoutes.delete("/alerts/:id", async (c) => {
     return c.json({ error: "Failed to delete alert" }, 500);
   }
 });
+
+export default searchRoutes;

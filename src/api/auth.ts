@@ -264,9 +264,13 @@ authRoutes.post("/profile-complete", async (c) => {
       updates.verified = true;
     }
 
-    await sql`
-      UPDATE profiles SET ${sql(updates)} WHERE id = ${user.id}
-    `;
+    const setEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+    const setClause = setEntries.map(([key], i) => `${key} = $${i + 1}`).join(", ");
+    const values = setEntries.map(([, value]) => value);
+
+    await sql.unsafe(`
+      UPDATE profiles SET ${setClause}, updated_at = NOW() WHERE id = $${values.length + 1}
+    `, [...values, user.id]);
 
     await auditLog(getSql(c.env), user.id, "Profile Completed", "OAuth user completed profile", "user");
 
@@ -526,9 +530,13 @@ authRoutes.put("/profile", async (c) => {
       }
     }
 
-    await sql`
-      UPDATE profiles SET ${sql(updates)} WHERE id = ${user.id}
-    `;
+    const setEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+    const setClause = setEntries.map(([key], i) => `${key} = $${i + 1}`).join(", ");
+    const values = setEntries.map(([, value]) => value);
+
+    await sql.unsafe(`
+      UPDATE profiles SET ${setClause}, updated_at = NOW() WHERE id = $${values.length + 1}
+    `, [...values, user.id]);
 
     await auditLog(getSql(c.env), user.id, "Profile Updated", "User updated their profile", "user");
 

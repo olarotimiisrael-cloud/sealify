@@ -107,7 +107,11 @@ listingsRoutes.get("/", listingsRateLimit, async (c) => {
     const limitNum = Math.min(parseInt(String(limit)) || 20, 100);
     const offsetNum = parseInt(String(offset)) || 0;
 
-    const listings = await sql`
+    const limitParam = paramIndex;
+    const offsetParam = paramIndex + 1;
+    const allParams = [...params, limitNum, offsetNum];
+
+    const listings = await sql.unsafe(`
       SELECT
         a.*,
         p.full_name as seller_name,
@@ -117,15 +121,15 @@ listingsRoutes.get("/", listingsRateLimit, async (c) => {
         p.verification_type as seller_verification_type
       FROM ads a
       LEFT JOIN profiles p ON a.seller_id = p.id
-      ${sql(whereClause)}
-      ${sql(orderClause)}
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `;
+      ${whereClause}
+      ${orderClause}
+      LIMIT $${limitParam} OFFSET $${offsetParam}
+    `, allParams);
 
-    const countResult = await sql`
+    const countResult = await sql.unsafe(`
       SELECT COUNT(*) as total FROM ads a
-      ${sql(whereClause)}
-    `;
+      ${whereClause}
+    `, params);
 
     return c.json({
       listings,
@@ -270,9 +274,13 @@ listingsRoutes.put("/:id", requireAuth, async (c) => {
       }
     }
 
-    const result = await sql`
-      UPDATE ads SET ${sql(updates)} WHERE id = ${id} RETURNING *
-    `;
+    const setEntries = Object.entries(updates).filter(([key]) => key !== "updated_at");
+    const setClause = setEntries.map(([key], i) => `${key} = $${i + 1}`).join(", ");
+    const values = setEntries.map(([, value]) => value);
+
+    const result = await sql.unsafe(`
+      UPDATE ads SET ${setClause}, updated_at = NOW() WHERE id = $${values.length + 1} RETURNING *
+    `, [...values, id]);
 
     if (result.length === 0) {
       throw new HTTPException(404, { message: "Listing not found" });

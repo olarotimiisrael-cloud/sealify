@@ -72,3 +72,5 @@ marketInsightsRoutes.get('/stats', async (c) => {
 		throw new HTTPException(500, { message: 'Failed to fetch market insights' });
 	}
 });
+
+export default marketInsightsRoutes;

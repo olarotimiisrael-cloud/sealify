@@ -204,3 +204,5 @@ messagesRoutes.put("/conversations/:id/read", async (c) => {
     return c.json({ error: "Failed to mark as read" }, 500);
   }
 });
+
+export default messagesRoutes;

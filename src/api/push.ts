@@ -136,3 +136,5 @@ pushRoutes.post("/admin/broadcast", async (c) => {
     return c.json({ error: "Failed to broadcast" }, 500);
   }
 });
+
+export default pushRoutes;
