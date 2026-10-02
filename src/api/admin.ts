@@ -4,6 +4,22 @@ import { getSql } from "../db/hyperdrive";
 import { maskSecret, resolveAiConfig, setRuntimeAiConfig, isModelSupported, type SupportedAIProvider } from "../lib/ai/providers";
 import { requireAdmin, auditLog, rateLimit } from "../middleware/security";
 import { z } from "zod";
+import {
+  DEFAULT_SITE_METADATA,
+  EDITABLE_PAGE_DEFINITIONS,
+  buildHeadHtml,
+  cleanText,
+  mergeSiteMetadata,
+  resolveMetadata,
+  siteMetadataUpdateSchema,
+  type SiteMetadata,
+} from "../lib/siteMetadata";
+import {
+  getSiteOrigin,
+  invalidateSiteMetadataCacheFor,
+  loadSiteMetadata,
+  saveSiteMetadata,
+} from "../server/siteMetadataStore";
 
 export const adminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql>; user: any; supabase: any; profile: any } }>();
 
@@ -609,7 +625,230 @@ adminRoutes.put("/system-config", async (c) => {
   return c.json({ success: true });
 });
 
-// Site settings
+/**
+ * Legacy site-settings endpoint.
+ *
+ * Kept for existing admin clients, but now routed through the shared metadata
+ * store so branding, link previews and legacy identity fields are written
+ * through a single validated code path.
+ */
+adminRoutes.put("/site-settings", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const current = await loadSiteMetadata(c.env);
+
+  const pick = (...candidates: unknown[]) => {
+    for (const candidate of candidates) {
+      const value = cleanText(candidate);
+      if (value) return value;
+    }
+    return undefined;
+  };
+
+  const patch: Partial<SiteMetadata> = {
+    logoUrl: pick(body.logoUrl, body.logo_url),
+    siteName: pick(body.siteName, body.site_name),
+    siteDescription: pick(body.siteDescription, body.site_description),
+    ogImage: pick(body.ogImage, body.og_image),
+    contactEmail: pick(body.contactEmail, body.contact_email),
+    contactPhone: pick(body.contactPhone, body.contact_phone),
+  };
+
+  const merged = mergeSiteMetadata(current, patch);
+  const { metadata, storage } = await saveSiteMetadata(c.env, merged);
+
+  await writeAuditLog(c.env, c, "Site Settings Updated", "Modified global site settings");
+
+  return c.json({ success: true, storage, settings: metadata });
+});
+
+/* -------------------------------------------------------------------------- */
+/* Site metadata & branding                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * GET /api/admin/site-metadata
+ *
+ * Full editable record plus the derived values the admin UI needs to preview
+ * link previews for every managed route.
+ */
+adminRoutes.get("/site-metadata", async (c) => {
+  const metadata = await loadSiteMetadata(c.env);
+  const origin = getSiteOrigin(c.env, c.req.url);
+
+  return c.json({
+    settings: metadata,
+    origin,
+    defaults: DEFAULT_SITE_METADATA,
+    pages: EDITABLE_PAGE_DEFINITIONS.map((definition) => ({
+      path: definition.path,
+      label: definition.label,
+      defaultTitle: definition.defaultTitle,
+      defaultDescription: definition.defaultDescription,
+      override: metadata.pageMetadata?.[definition.path] || {},
+      resolved: resolveMetadata(metadata, { origin, path: definition.path }),
+    })),
+  });
+});
+
+/**
+ * PUT /api/admin/site-metadata
+ *
+ * Validates the complete settings payload with zod, persists it, records an
+ * audit entry and invalidates the edge cache so the change is visible on the
+ * next request.
+ */
+adminRoutes.put("/site-metadata", async (c) => {
+  const body = await c.req.json().catch(() => null);
+
+  if (!body || typeof body !== "object") {
+    throw new HTTPException(400, { message: "A settings payload is required" });
+  }
+
+  const parsed = siteMetadataUpdateSchema.safeParse(body);
+  if (!parsed.success) {
+    const fields = parsed.error.issues.reduce<Record<string, string>>((acc, issue) => {
+      const key = issue.path.join(".") || "settings";
+      if (!acc[key]) acc[key] = issue.message;
+      return acc;
+    }, {});
+
+    // Returned directly (rather than thrown) so the field-level detail reaches
+    // the admin form instead of being flattened by the global error handler.
+    return c.json({ error: "Validation failed", fields }, 400);
+  }
+
+  const current = await loadSiteMetadata(c.env);
+  const merged = mergeSiteMetadata(current, parsed.data as Partial<SiteMetadata>);
+
+  try {
+    const { metadata, storage } = await saveSiteMetadata(c.env, merged);
+    await invalidateSiteMetadataCacheFor(c.env);
+
+    const changed = describeChanges(current, metadata);
+
+    await writeAuditLog(
+      c.env,
+      c,
+      "Site Metadata Updated",
+      changed.length > 0 ? `Changed: ${changed.join(", ")}` : "Saved without field changes",
+    );
+
+    const origin = getSiteOrigin(c.env, c.req.url);
+
+    return c.json({
+      success: true,
+      storage,
+      settings: metadata,
+      changedFields: changed,
+      resolved: resolveMetadata(metadata, { origin, path: "/" }),
+    });
+  } catch (error) {
+    console.error("[admin] site metadata save failed:", error);
+    throw new HTTPException(500, {
+      message: "Site metadata could not be saved. The database may not have the latest migration applied.",
+    });
+  }
+});
+
+/** POST /api/admin/site-metadata/reset — restore compiled defaults. */
+adminRoutes.post("/site-metadata/reset", async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const scope = z.enum(["all", "branding", "seo"]).catch("all").parse(body?.scope ?? "all");
+
+  const current = await loadSiteMetadata(c.env);
+  const next: SiteMetadata = { ...current };
+
+  if (scope === "all") {
+    Object.assign(next, DEFAULT_SITE_METADATA, { pageMetadata: {} });
+  } else if (scope === "branding") {
+    next.logoUrl = DEFAULT_SITE_METADATA.logoUrl;
+    next.faviconUrl = DEFAULT_SITE_METADATA.faviconUrl;
+    next.appleTouchIconUrl = DEFAULT_SITE_METADATA.appleTouchIconUrl;
+    next.themeColor = DEFAULT_SITE_METADATA.themeColor;
+    next.manifestName = DEFAULT_SITE_METADATA.manifestName;
+    next.manifestShortName = DEFAULT_SITE_METADATA.manifestShortName;
+  } else {
+    next.ogTitle = DEFAULT_SITE_METADATA.ogTitle;
+    next.ogDescription = DEFAULT_SITE_METADATA.ogDescription;
+    next.ogType = DEFAULT_SITE_METADATA.ogType;
+    next.ogImage = DEFAULT_SITE_METADATA.ogImage;
+    next.ogImageAlt = DEFAULT_SITE_METADATA.ogImageAlt;
+    next.ogLocale = DEFAULT_SITE_METADATA.ogLocale;
+    next.twitterCard = DEFAULT_SITE_METADATA.twitterCard;
+    next.twitterSiteHandle = "";
+    next.twitterCreatorHandle = "";
+    next.twitterTitle = DEFAULT_SITE_METADATA.twitterTitle;
+    next.twitterDescription = DEFAULT_SITE_METADATA.twitterDescription;
+    next.twitterImage = DEFAULT_SITE_METADATA.twitterImage;
+    next.pageTitleHome = DEFAULT_SITE_METADATA.pageTitleHome;
+    next.metaDescriptionHome = DEFAULT_SITE_METADATA.metaDescriptionHome;
+    next.canonicalUrl = "";
+    next.robotsIndexing = true;
+    next.pageMetadata = {};
+  }
+
+  const { metadata, storage } = await saveSiteMetadata(c.env, next);
+  await invalidateSiteMetadataCacheFor(c.env);
+
+  await writeAuditLog(c.env, c, "Site Metadata Reset", `Reset scope: ${scope}`);
+
+  return c.json({ success: true, storage, settings: metadata, scope });
+});
+
+/**
+ * GET /api/admin/site-metadata/preview?path=/faq&title=...
+ *
+ * Returns the exact `<head>` block the edge will serve for a route, so an
+ * administrator can verify link previews without opening a crawler tool.
+ */
+adminRoutes.get("/site-metadata/preview", async (c) => {
+  const metadata = await loadSiteMetadata(c.env);
+  const origin = getSiteOrigin(c.env, c.req.url);
+
+  const resolved = resolveMetadata(metadata, {
+    origin,
+    path: c.req.query("path") || "/",
+    title: c.req.query("title") || undefined,
+    description: c.req.query("description") || undefined,
+    image: c.req.query("image") || undefined,
+  });
+
+  return c.json({ resolved, head: buildHeadHtml(resolved) });
+});
+
+/** Field-level diff for the audit trail. */
+function describeChanges(before: SiteMetadata, after: SiteMetadata): string[] {
+  const changed: string[] = [];
+
+  for (const key of Object.keys(after) as (keyof SiteMetadata)[]) {
+    if (key === "id" || key === "updatedAt") continue;
+
+    const previous = JSON.stringify(before[key] ?? null);
+    const next = JSON.stringify(after[key] ?? null);
+    if (previous !== next) changed.push(key);
+  }
+
+  return changed;
+}
+
+/**
+ * Audit helper that degrades gracefully when Hyperdrive is unavailable, so a
+ * successful metadata write is never reported as a failure because the audit
+ * connection could not be opened.
+ */
+async function writeAuditLog(env: any, c: any, action: string, details: string): Promise<void> {
+  try {
+    const sql = getSql(env);
+    await auditLog(sql, c.get("user").id, action, details, "security");
+  } catch (error) {
+    console.error("[admin] audit log unavailable:", error);
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* AI / Copilot configuration                                                  */
+/* -------------------------------------------------------------------------- */
+
 const normalizeAiConfigResponse = (env: any) => {
   const config = resolveAiConfig(env as Record<string, string | undefined>);
   const safeProvider = (config.provider || "sealify") as SupportedAIProvider;
@@ -733,48 +972,8 @@ adminRoutes.post("/ai-settings/test", async (c) => {
 });
 
 adminRoutes.get("/site-settings", async (c) => {
-  const sql = getSql(c.env);
-  const settings = await sql`SELECT * FROM site_settings ORDER BY updated_at DESC LIMIT 1`;
-  return c.json({ settings: settings[0] || null });
-});
-
-adminRoutes.put("/site-settings", async (c) => {
-  const sql = getSql(c.env);
-  const body = await c.req.json();
-
-  const existing = await sql`SELECT id FROM site_settings ORDER BY updated_at DESC LIMIT 1`;
-  const payload = {
-    logo_url: body.logoUrl ?? body.logo_url ?? null,
-    site_name: body.siteName ?? body.site_name ?? null,
-    site_description: body.siteDescription ?? body.site_description ?? null,
-    og_image: body.ogImage ?? body.og_image ?? null,
-    contact_email: body.contactEmail ?? body.contact_email ?? null,
-    contact_phone: body.contactPhone ?? body.contact_phone ?? null,
-    updated_at: new Date().toISOString(),
-  };
-
-  if (existing[0]?.id) {
-    await sql`
-      UPDATE site_settings
-      SET logo_url = ${payload.logo_url},
-          site_name = ${payload.site_name},
-          site_description = ${payload.site_description},
-          og_image = ${payload.og_image},
-          contact_email = ${payload.contact_email},
-          contact_phone = ${payload.contact_phone},
-          updated_at = NOW()
-      WHERE id = ${existing[0].id}
-    `;
-  } else {
-    await sql`
-      INSERT INTO site_settings (logo_url, site_name, site_description, og_image, contact_email, contact_phone, updated_at)
-      VALUES (${payload.logo_url}, ${payload.site_name}, ${payload.site_description}, ${payload.og_image}, ${payload.contact_email}, ${payload.contact_phone}, NOW())
-    `;
-  }
-
-  await auditLog(sql, c.get("user").id, "Site Settings Updated", "Modified global site settings", "security");
-
-  return c.json({ success: true, settings: payload });
+  const settings = await loadSiteMetadata(c.env);
+  return c.json({ settings });
 });
 
 // Broadcast

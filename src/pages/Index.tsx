@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
+import { useSiteMetadata } from '../context/SiteMetadataContext';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav';
 import Footer from '../components/Footer';
@@ -43,6 +44,7 @@ import {
 
 export default function Index() {
   const [searchParams] = useSearchParams();
+  const { resolved: liveMetadata, error: metadataError } = useSiteMetadata();
   const {
     filters,
     setFilters,
@@ -173,12 +175,29 @@ export default function Index() {
 
   const totalMarketViews = listings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
 
+  // Administrator-managed hero copy. Falls back to the designed markup below
+  // whenever the metadata service is unreachable, so the landing page never
+  // renders empty headings.
+  const managedHeadings = useMemo(() => {
+    const managed = metadataError === null;
+    const rawTitle = managed ? liveMetadata.headingTitle : '';
+
+    // A "|" in the configured heading highlights everything after it.
+    const [headline, accent] = rawTitle.includes('|')
+      ? [rawTitle.slice(0, rawTitle.indexOf('|')), rawTitle.slice(rawTitle.indexOf('|') + 1)]
+      : [rawTitle, ''];
+
+    return {
+      title: headline.trim(),
+      titleAccent: accent.trim(),
+      subtitle: managed ? liveMetadata.headingSubtitle : '',
+      badge: managed ? liveMetadata.headingBadge : '',
+    };
+  }, [liveMetadata, metadataError]);
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-100 flex flex-col pb-20 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
-      <SEO 
-        title="Sealify — Nigeria's Trusted Local Marketplace"
-        description="Buy, sell, and connect safely with verified sellers in Ogbomoso, Oyo State, and across Nigeria."
-      />
+      <SEO />
       <Navbar />
       <CategoryBar />
 
@@ -190,14 +209,26 @@ export default function Index() {
           <div className="space-y-4 relative z-10">
             <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-emerald-500/5">
               <Sparkles className="w-4 h-4 animate-pulse" />
-              <span>{t('trusted_marketplace')}</span>
+              <span>{managedHeadings.badge || t('trusted_marketplace')}</span>
             </div>
             <h1 className="text-4xl sm:text-7xl font-black text-white tracking-tighter leading-none">
-              Trade Securely in <br/>
-              <span className="text-emerald-500">Ogbomosoland.</span>
+              {managedHeadings.title ? (
+                <>
+                  {managedHeadings.title}
+                  {managedHeadings.titleAccent && (
+                    <span className="text-emerald-500"> {managedHeadings.titleAccent}</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Trade Securely in <br/>
+                  <span className="text-emerald-500">Ogbomosoland.</span>
+                </>
+              )}
             </h1>
             <p className="text-slate-400 text-xs sm:text-base max-w-xl mx-auto font-medium">
-              Verified local items, safe meetup locations, and AI-powered pricing. Connect with thousands of buyers in Under G, Takie, and LAUTECH.
+              {managedHeadings.subtitle ||
+                'Verified local items, safe meetup locations, and AI-powered pricing. Connect with thousands of buyers in Under G, Takie, and LAUTECH.'}
             </p>
           </div>
 

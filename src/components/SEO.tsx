@@ -1,61 +1,41 @@
 import React, { useEffect } from 'react';
 import { useSealify } from '../context/SealifyContext';
+import { useSiteMetadata } from '../context/SiteMetadataContext';
 
-interface SEOProps {
+/**
+ * Per-page document metadata.
+ *
+ * Values come from the administrator-managed settings (favicon, page titles,
+ * meta descriptions, Open Graph and Twitter cards), so editing them in the admin
+ * panel updates every page without a redeploy. Explicit props still win, which
+ * keeps per-entity overrides for listings and seller profiles.
+ *
+ * The component deliberately does not touch `document.head` itself: it publishes
+ * its overrides to `SiteMetadataProvider`, which owns the document head and
+ * keeps server-rendered and client-rendered tags identical.
+ */
+export const SEO: React.FC<{
   title?: string;
   description?: string;
   image?: string;
-  url?: string;
-  type?: string;
-}
-
-export const SEO: React.FC<SEOProps> = ({
-  title,
-  description,
-  image,
-  url = window.location.href,
-  type = "website",
-}) => {
+  type?: 'website' | 'article' | 'profile' | 'product';
+}> = ({ title, description, image, type = 'website' }) => {
+  const { setPageOverrides } = useSiteMetadata();
   const { siteSettings } = useSealify();
 
-  const finalTitle = title ? `${title} | ${siteSettings?.siteName ?? 'Sealify Nigeria'}` : (siteSettings?.siteName ?? 'Sealify Nigeria');
-  const finalDescription = (description ?? siteSettings?.siteDescription ?? 'Nigeria\'s Trusted Local Marketplace.').substring(0, 160);
-  
-  // Use absolute URL for image previews (essential for WhatsApp/X crawlers)
-  const finalImage = image?.startsWith('http') 
-    ? image 
-    : `${window.location.origin}${image ?? siteSettings?.ogImage ?? '/logo.png'}`;
+  const descriptionOverride =
+    description ||
+    (title ? undefined : siteSettings?.siteDescription || undefined);
 
   useEffect(() => {
-    document.title = finalTitle;
+    if (!title && !descriptionOverride && !image) {
+      setPageOverrides(null);
+      return;
+    }
 
-    const setMetaTag = (attrName: string, attrValue: string, content: string) => {
-      let element = document.querySelector(`meta[${attrName}="${attrValue}"]`);
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute(attrName, attrValue);
-        document.head.appendChild(element);
-      }
-      element.setAttribute('content', content);
-    };
-
-    setMetaTag('name', 'description', finalDescription);
-    setMetaTag('property', 'og:type', type);
-    setMetaTag('property', 'og:title', finalTitle);
-    setMetaTag('property', 'og:description', finalDescription);
-    setMetaTag('property', 'og:image', finalImage);
-    setMetaTag('property', 'og:url', url);
-    setMetaTag('property', 'og:site_name', siteSettings?.siteName ?? 'Sealify Nigeria');
-    setMetaTag('property', 'og:locale', 'en_NG');
-    
-    setMetaTag('name', 'twitter:card', 'summary_large_image');
-    setMetaTag('name', 'twitter:title', finalTitle);
-    setMetaTag('name', 'twitter:description', finalDescription);
-    setMetaTag('name', 'twitter:image', finalImage);
-    setMetaTag('name', 'twitter:url', url);
-    
-    setMetaTag('name', 'theme-color', '#10b981');
-  }, [finalTitle, finalDescription, finalImage, url, type, siteSettings?.siteName]);
+    setPageOverrides({ title, description: descriptionOverride, image, type });
+    return () => setPageOverrides(null);
+  }, [setPageOverrides, title, descriptionOverride, image, type]);
 
   return null;
 };

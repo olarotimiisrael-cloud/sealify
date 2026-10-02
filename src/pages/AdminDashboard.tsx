@@ -373,6 +373,10 @@ const AdminDashboard: React.FC = () => {
               <Settings className="w-4 h-4" />
               <span>Root Config</span>
             </button>
+            <button onClick={() => window.location.href = '/admin/site-metadata'} className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-rose-600/20 hover:from-pink-500/30 hover:to-rose-600/30 text-pink-300 font-bold rounded-xl text-xs border border-pink-500/30 transition-all flex items-center gap-2">
+              <Palette className="w-4 h-4" />
+              <span>Branding &amp; SEO</span>
+            </button>
             <button onClick={() => window.location.href = '/admin/ai-settings'} className="px-4 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 font-bold rounded-xl text-xs border border-emerald-500/30 transition-all flex items-center gap-2">
               <Sparkles className="w-4 h-4" />
               <span>AI & Copilot</span>
@@ -608,6 +612,7 @@ const AdminDashboard: React.FC = () => {
                      { label: 'Promotion Revenue', desc: 'Review paid promotion requests and revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500', action: () => setActiveTab('finance') },
                     { label: 'Security Audit', desc: 'Intrusion logs, audit trail, 2FA', icon: ShieldCheck, color: 'from-rose-500 to-pink-500', action: () => setActiveTab('security') },
                     { label: 'Database Tools', desc: 'Schema, migrations, backups, SQL', icon: Database, color: 'from-purple-500 to-indigo-500', action: () => setActiveTab('database') },
+                    { label: 'Branding & SEO', desc: 'Favicon, logo, titles, link previews', icon: Palette, color: 'from-pink-500 to-rose-500', action: () => { window.location.href = '/admin/site-metadata'; } },
                     { label: 'Broadcast Center', desc: 'Mass notifications, email digests', icon: Megaphone, color: 'from-teal-500 to-green-500', action: () => setActiveTab('broadcast') },
                   ].map((action, i) => (
                     <button 

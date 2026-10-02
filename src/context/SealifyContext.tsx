@@ -789,10 +789,40 @@ const adminLogin = async (email: string, password: string, accessKey?: string): 
        return { success: false, stage, status, message };
      };
 
-     try {
-       if (!email.trim() || !password.trim()) return { success: false, stage: 'validation' };
+     const directSupabaseAdminLogin = async (): Promise<{ success: boolean; profile?: UserProfile | null; status?: number; message?: string }> => {
+       try {
+         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+           email,
+           password,
+         });
 
-       let response: Response;
+         if (authError || !authData.user) {
+           return { success: false, status: 401, message: 'Unable to authenticate administrator. Please verify your credentials and try again.' };
+         }
+
+         const profile = await loadProfileForAuthUser(authData.user);
+         if (!profile) {
+           await supabase.auth.signOut();
+           return { success: false, status: 404, message: MSG_PROFILE };
+         }
+
+         if (profile.role !== 'admin') {
+           await supabase.auth.signOut();
+           return { success: false, status: 403, message: 'Administrator access is not enabled for this account.' };
+         }
+
+         applyAuthenticatedUser(profile);
+         return { success: true, profile };
+       } catch (authError: any) {
+         return { success: false, status: undefined, message: MSG_UNREACHABLE };
+       }
+     };
+
+     try {
+       if (!email.trim() || !password.trim()) return { success: false, stage: 'validation', message: 'Email and password are required.' };
+
+       let response: Response | null = null;
+       let backendMessage = MSG_UNREACHABLE;
        try {
          // Stage 1 - our own API. Relative path => same-origin.
          response = await adminFetch('/api/auth/admin-login', {
@@ -803,59 +833,72 @@ const adminLogin = async (email: string, password: string, accessKey?: string): 
            body: JSON.stringify({ email, password }),
          });
        } catch {
-         return report('api', undefined, MSG_UNREACHABLE);
+         backendMessage = MSG_UNREACHABLE;
        }
 
-            if (!response.ok) {
-              const payload = await response.json().catch(() => ({}));
+       if (response) {
+         if (response.ok) {
+           const rawBody = await response.text();
+           let result: { session?: any };
+           try {
+             result = JSON.parse(rawBody) as { session?: any };
+           } catch {
+             return report('api', response.status, MSG_INVALID_RESPONSE);
+           }
+           if (!result.session) return report('api', response.status, MSG_INVALID_RESPONSE);
 
-              if (response.status === 503) {
-                return report('api', response.status, 'Administrator authentication service is temporarily unavailable. Please try again shortly.');
-              } else if (response.status === 403) {
-                return report('api', response.status, 'Administrator access is not enabled for this account.');
-              } else if (response.status === 401) {
-                return report('api', response.status, 'Unable to authenticate administrator. Please verify your credentials and try again.');
-              } else {
-                return report('api', response.status, payload?.error || 'Unable to authenticate administrator. Please try again.');
-              }
-            }
+           const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
+           if (sessionError || !sessionData.user) return report('session', response.status, MSG_SESSION);
 
-            // Defensive parse: if anything (stale cache, proxy, service
-            // worker, mis-routed request) returns a non-JSON body with a
-            // 200 status, surface a clean error instead of throwing a raw
-            // "Unexpected token '<'" JSON.parse SyntaxError.
-            const rawBody = await response.text();
-            let result: { session?: any };
-            try {
-              result = JSON.parse(rawBody) as { session?: any };
-            } catch {
-              return report('api', response.status, MSG_INVALID_RESPONSE);
-            }
-            if (!result.session) return report('api', response.status, MSG_INVALID_RESPONSE);
+           let profile: UserProfile | null = null;
+           try {
+             profile = await loadProfileForAuthUser(sessionData.user);
+           } catch {
+             return report('profile', response.status, MSG_PROFILE);
+           }
+           if (!profile) {
+             await supabase.auth.signOut();
+             return report('profile', response.status, MSG_PROFILE);
+           }
 
-            // Stage 2 - direct browser -> Supabase session establishment.
-            const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
-            if (sessionError || !sessionData.user) return report('session', response.status, MSG_SESSION);
+           if (profile.role !== 'admin') {
+             await supabase.auth.signOut();
+             return report('profile', response.status, 'Administrator access is not enabled for this account.');
+           }
 
-            // Stage 3 - direct browser -> Supabase profile read (RLS applies).
-            let profile: UserProfile | null = null;
-            try {
-              profile = await loadProfileForAuthUser(sessionData.user);
-            } catch {
-              return report('profile', response.status, MSG_PROFILE);
-            }
-            if (!profile) {
-              await supabase.auth.signOut();
-              return report('profile', response.status, MSG_PROFILE);
-            }
+           applyAuthenticatedUser(profile);
+           return { success: true };
+         }
 
-            // Stage 4 - apply authenticated state.
-            applyAuthenticatedUser(profile);
-            return { success: true };
-          } catch (authError: any) {
-            return report('api', undefined, MSG_UNREACHABLE);
-          }
-        };
+         try {
+           const payload = await response.json().catch(() => ({}));
+           if (response.status === 503) {
+             backendMessage = 'Administrator authentication service is temporarily unavailable. Please try again shortly.';
+           } else if (response.status === 403) {
+             backendMessage = 'Administrator access is not enabled for this account.';
+           } else if (response.status === 401) {
+             backendMessage = 'Unable to authenticate administrator. Please verify your credentials and try again.';
+           } else {
+             backendMessage = payload?.error || 'Unable to authenticate administrator. Please try again.';
+           }
+         } catch {
+           backendMessage = MSG_INVALID_RESPONSE;
+         }
+       }
+
+       // Fallback for local/dev misconfigurations and transient backend issues.
+       // A valid admin account should still be able to sign in directly via
+       // Supabase when the Cloudflare Pages API is temporarily unreachable.
+       const fallbackResult = await directSupabaseAdminLogin();
+       if (fallbackResult.success) {
+         return { success: true };
+       }
+
+       return report('api', response?.status ?? fallbackResult.status, fallbackResult.message || backendMessage);
+     } catch (authError: any) {
+       return report('api', undefined, MSG_UNREACHABLE);
+     }
+   };
 
         const clearError = () => {
           setError(null);

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { SealifyProvider } from "./context/SealifyContext";
+import { SiteMetadataProvider } from "./context/SiteMetadataContext";
 import SplashScreen from "./components/SplashScreen";
 import ToasterWrapper from "./components/ToasterWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -20,6 +21,7 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminAiSettingsPage = lazy(() => import("./pages/AdminAiSettings"));
+const AdminSiteMetadataPage = lazy(() => import("./pages/AdminSiteMetadata"));
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SafetyCenter = lazy(() => import("./pages/SafetyCenter"));
@@ -43,6 +45,7 @@ const routeFallback = (
 const App = () => (
   <ErrorBoundary>
     <SealifyProvider>
+      <SiteMetadataProvider>
       <SplashScreen />
       <ToasterWrapper />
       <Suspense fallback={routeFallback}>
@@ -61,6 +64,7 @@ const App = () => (
           <Route path="/contact" element={<Contact />} />
           <Route path="/admin" element={<AdminRouteGuard><AdminDashboard /></AdminRouteGuard>} />
           <Route path="/admin/ai-settings" element={<AdminRouteGuard><AdminAiSettingsPage /></AdminRouteGuard>} />
+          <Route path="/admin/site-metadata" element={<AdminRouteGuard><AdminSiteMetadataPage /></AdminRouteGuard>} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/safety" element={<SafetyCenter />} />
@@ -76,6 +80,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      </SiteMetadataProvider>
     </SealifyProvider>
   </ErrorBoundary>
 );

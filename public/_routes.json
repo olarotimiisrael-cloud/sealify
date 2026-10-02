@@ -1,5 +1,19 @@
 {
   "version": 1,
-  "include": ["/api", "/api/*"],
-  "exclude": []
+  "include": ["/api", "/api/*", "/*"],
+  "exclude": [
+    "/assets/*",
+    "/logo.png",
+    "/favicon.ico",
+    "/og-image.png",
+    "/placeholder.svg",
+    "/manifest.json",
+    "/robots.txt",
+    "/sitemap.xml",
+    "/ads.txt",
+    "/sw.js",
+    "/_headers",
+    "/_redirects",
+    "/_routes.json"
+  ]
 }

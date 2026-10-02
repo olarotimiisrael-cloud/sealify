@@ -62,6 +62,15 @@ export interface SiteSettings {
   ogImage: string;
   contactEmail: string;
   contactPhone: string;
+  /**
+   * Additional administrator-managed metadata. The full record, its defaults
+   * and the head renderer live in `src/lib/siteMetadata.ts`.
+   */
+  faviconUrl?: string;
+  appleTouchIconUrl?: string;
+  pageTitleHome?: string;
+  themeColor?: string;
+  updatedAt?: string | null;
 }
 
 export interface Review {

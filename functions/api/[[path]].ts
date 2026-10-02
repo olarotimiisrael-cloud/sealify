@@ -53,6 +53,7 @@ const routeMap = [
     ['/push', () => import('../../src/api/push')],
     ['/copilot', () => import('../../src/api/copilot')],
     ['/admin', () => import('../../src/api/admin')],
+    ['/site-metadata', () => import('../../src/api/site-metadata')],
     ['/market-insights', () => import('../../src/api/market-insights')],
     ['/email', () => import('../../src/api/email')],
     ['/otp', () => import('../../src/api/otp')],

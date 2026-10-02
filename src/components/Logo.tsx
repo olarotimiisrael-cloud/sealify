@@ -1,20 +1,26 @@
 "use client";
 
 import React from 'react';
+import { useSiteMetadata } from '@/context/SiteMetadataContext';
 
 interface LogoProps {
   className?: string;
   withText?: boolean;
   textColor?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  /** Overrides the site name from administrator-managed settings. */
+  name?: string;
 }
 
-const Logo: React.FC<LogoProps> = ({ 
-  className = "", 
-  withText = true, 
+const Logo: React.FC<LogoProps> = ({
+  className = "",
+  withText = true,
   textColor = "text-white",
-  size = 'md'
+  size = 'md',
+  name,
 }) => {
+  const { resolved, error } = useSiteMetadata();
+
   const sizeClasses = {
     sm: "h-6",
     md: "h-9",
@@ -22,9 +28,27 @@ const Logo: React.FC<LogoProps> = ({
     xl: "h-16"
   };
 
+  // Only honour the uploaded logo once the metadata service has answered, so
+  // the built-in mark is used during load and on any metadata outage.
+  const logoUrl = error === null ? resolved.logoUrl : '';
+  const siteName = name || (error === null ? resolved.siteName : '') || 'Sealify';
+
+  // Administrators may brand as "Marketplace Name"; the final word keeps the
+  // two-tone treatment when the name is a single word such as "Sealify".
+  const words = siteName.trim().split(/\s+/).filter(Boolean);
+  const head = words.length > 1 ? words.slice(0, -1).join(' ') : '';
+  const tail = words.length > 1 ? words[words.length - 1] : siteName;
+
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`${sizeClasses[size]} aspect-square relative`}>
+      <div className={`${sizeClasses[size]} aspect-square relative shrink-0`}>
+        {logoUrl ? (
+          <img
+            src={logoUrl}
+            alt={siteName}
+            className="w-full h-full object-contain drop-shadow-lg"
+          />
+        ) : (
         <svg 
           viewBox="0 0 100 100" 
           fill="none" 
@@ -73,11 +97,13 @@ const Logo: React.FC<LogoProps> = ({
             strokeLinecap="round" 
           />
         </svg>
+        )}
       </div>
-      
+
       {withText && (
         <span className={`font-black tracking-tighter ${size === 'sm' ? 'text-lg' : size === 'md' ? 'text-2xl' : 'text-3xl'} ${textColor}`}>
-          Seal<span className="text-emerald-500">ify</span>
+          {head && <>{head} </>}
+          <span className="text-emerald-500">{tail}</span>
         </span>
       )}
     </div>
