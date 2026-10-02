@@ -1,13 +1,16 @@
 import { readFileSync } from 'node:fs';
 import {
   DEFAULT_SITE_METADATA,
+  METADATA_COLUMN_NAMES,
   buildHeadHtml,
   injectHeadIntoHtml,
+  metadataToRow,
   resolveMetadata,
   rowToMetadata,
   siteMetadataUpdateSchema,
   toUpdatePayload,
 } from '../src/lib/siteMetadata';
+import { buildSiteMetadataUpsert } from '../src/server/siteMetadataStore';
 
 let failures = 0;
 const check = (name: string, condition: boolean, detail?: unknown) => {
@@ -168,6 +171,82 @@ const trimmed = siteMetadataUpdateSchema.safeParse({
   siteName: `  ${DEFAULT_SITE_METADATA.siteName}  `,
 });
 check('handles normalise without the @', trimmed.success && trimmed.data?.twitterSiteHandle === 'SealifyNG', trimmed.success ? trimmed.data?.twitterSiteHandle : trimmed.error.issues);
+
+console.log('\n7. Generated upsert SQL');
+const upsert = buildSiteMetadataUpsert(admin);
+const placeholderCount = (upsert.text.match(/\$\d+/g) || []).length;
+const insertedColumns = upsert.text
+  .slice(upsert.text.indexOf('(') + 1, upsert.text.indexOf(')'))
+  .split(',')
+  .map((column) => column.trim());
+
+check('inserts into public.site_settings', upsert.text.startsWith('INSERT INTO public.site_settings ('));
+check('targets the partial unique index', upsert.text.includes('ON CONFLICT (is_active) WHERE is_active DO UPDATE'));
+check('refreshes updated_at on conflict', upsert.text.includes('updated_at = NOW()'));
+check('does not overwrite is_active', !upsert.text.includes('is_active = EXCLUDED'));
+check(
+  'placeholder count matches the value count',
+  placeholderCount === upsert.values.length,
+  { placeholders: placeholderCount, values: upsert.values.length },
+);
+check('returns the saved row', upsert.text.trim().endsWith('RETURNING *'));
+check(
+  'no duplicate insert columns',
+  new Set(insertedColumns).size === insertedColumns.length,
+);
+check('is_active included so the conflict target resolves', insertedColumns.includes('is_active'));
+check(
+  'jsonb column is serialised',
+  typeof upsert.values[insertedColumns.indexOf('page_metadata')] === 'string',
+);
+
+console.log('\n8. TypeScript columns <-> migration DDL');
+const migration = readFileSync(
+  new URL('../supabase/migrations/20261001000000_site_metadata_and_branding.sql', import.meta.url),
+  'utf8',
+);
+
+// Columns that already exist in the base schema and are therefore not added by
+// this migration.
+const LEGACY_COLUMNS = [
+  'site_name',
+  'site_description',
+  'contact_email',
+  'contact_phone',
+  'logo_url',
+  'og_image',
+];
+
+const newlyAddedColumns = METADATA_COLUMN_NAMES.filter(
+  (column) => !LEGACY_COLUMNS.includes(column),
+);
+const missingInMigration = newlyAddedColumns.filter(
+  (column) => !new RegExp(`ADD COLUMN IF NOT EXISTS ${column}\\b`).test(migration),
+);
+check(
+  'every column added by this feature is created by the migration',
+  missingInMigration.length === 0,
+  missingInMigration,
+);
+check(
+  'legacy columns are left to the pre-existing schema',
+  LEGACY_COLUMNS.every((column) => !new RegExp(`ADD COLUMN IF NOT EXISTS ${column}\\b`).test(migration)),
+);
+check('spot-checked columns are all mapped in TypeScript',
+  ['page_title_home', 'favicon_url', 'twitter_card', 'heading_home_title', 'robots_indexing', 'page_metadata'].every(
+    (column) => METADATA_COLUMN_NAMES.includes(column as never),
+  ),
+);
+check(
+  'the singleton column is written but not editable',
+  insertedColumns.includes('is_active') && !METADATA_COLUMN_NAMES.includes('is_active' as never),
+);
+
+check('migration creates the partial unique index', /CREATE UNIQUE INDEX IF NOT EXISTS site_settings_single_active[\s\S]*WHERE is_active;/.test(migration));
+check('migration seeds a row when the table is empty', /WHERE NOT EXISTS \(SELECT 1 FROM public\.site_settings\);/.test(migration));
+check('migration provisions the public bucket', migration.includes("'site-assets'"));
+check('migration restricts writes to admins', migration.includes("bucket_id = 'site-assets' AND public.is_admin()"));
+check('migration is idempotent', !/CREATE TABLE(?! IF NOT EXISTS)/.test(migration));
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);

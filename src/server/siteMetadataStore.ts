@@ -233,8 +233,18 @@ export interface SaveResult {
   storage: 'hyperdrive' | 'rest';
 }
 
-function buildUpsertSql(metadata: SiteMetadata) {
-  const row = metadataToRow(metadata);
+/**
+ * Builds the singleton upsert. Exported so the generated SQL can be asserted in
+ * tests without a database connection.
+ */
+export function buildSiteMetadataUpsert(metadata: SiteMetadata): {
+  text: string;
+  values: unknown[];
+} {
+  // `is_active` is server-managed rather than part of the editable record, but
+  // it must be written explicitly so the upsert always targets the singleton
+  // row through the partial unique index.
+  const row: Record<string, unknown> = { ...metadataToRow(metadata), is_active: true };
   const columns = Object.keys(row);
   const updates = columns
     .filter((column) => column !== 'is_active')
@@ -257,7 +267,7 @@ function buildUpsertSql(metadata: SiteMetadata) {
 
 async function saveViaHyperdrive(env: MetadataEnv, metadata: SiteMetadata): Promise<SiteMetadata> {
   const sql = getSql(env);
-  const { text, values } = buildUpsertSql(metadata);
+  const { text, values } = buildSiteMetadataUpsert(metadata);
   const rows = await sql.unsafe(text, values as never[]);
 
   if (rows.length === 0) {
