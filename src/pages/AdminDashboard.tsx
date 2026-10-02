@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
+import { adminFetch } from '@/lib/admin-api';
 import AdminEditUserModal from '@/components/AdminEditUserModal';
 import AdminSettingsModal from '@/admin/pages/AdminSettingsModal';
 import DatabaseTest from '@/components/DatabaseTest';
@@ -102,6 +103,17 @@ const AdminDashboard: React.FC = () => {
   } = useSealify();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
+  const [adsenseForm, setAdsenseForm] = useState({
+    enabled: false,
+    clientId: 'ca-pub-1826576243729056',
+    autoAdsEnabled: false,
+    homeSlot: '',
+    listingsSlot: '',
+    listingsSidebarSlot: '',
+    listingDetailSlot: '',
+  });
+  const [adsenseSaving, setAdsenseSaving] = useState(false);
+  const [adsenseLoaded, setAdsenseLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('all');
   const [filterRole, setFilterRole] = useState<'buyer' | 'seller' | 'admin' | 'all'>('all');
@@ -274,6 +286,52 @@ const AdminDashboard: React.FC = () => {
     }
 
     setBroadcastForm(prev => ({ ...prev, html: replacement }));
+  };
+
+  useEffect(() => {
+    const loadAdSenseConfig = async () => {
+      try {
+        const response = await adminFetch('/api/admin/adsense-config');
+        if (!response.ok) throw new Error('Unable to load AdSense configuration');
+        const payload = await response.json();
+        if (payload?.config) {
+          setAdsenseForm({
+            enabled: Boolean(payload.config.enabled),
+            clientId: payload.config.clientId || 'ca-pub-1826576243729056',
+            autoAdsEnabled: Boolean(payload.config.autoAdsEnabled),
+            homeSlot: payload.config.homeSlot || '',
+            listingsSlot: payload.config.listingsSlot || '',
+            listingsSidebarSlot: payload.config.listingsSidebarSlot || '',
+            listingDetailSlot: payload.config.listingDetailSlot || '',
+          });
+        }
+      } catch (error) {
+        console.error('AdSense config load failed:', error);
+      } finally {
+        setAdsenseLoaded(true);
+      }
+    };
+
+    if (isAdmin) void loadAdSenseConfig();
+  }, [isAdmin]);
+
+  const saveAdsenseConfig = async () => {
+    setAdsenseSaving(true);
+    try {
+      const response = await adminFetch('/api/admin/adsense-config', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(adsenseForm),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error || 'Unable to save AdSense configuration');
+      setAdsenseForm({ ...payload.config });
+      toast.success('AdSense configuration saved successfully');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to save AdSense configuration');
+    } finally {
+      setAdsenseSaving(false);
+    }
   };
 
   if (!isAdmin) {
@@ -1133,6 +1191,75 @@ const AdminDashboard: React.FC = () => {
                       >
                         <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${systemConfig[item.key as keyof typeof systemConfig] ? 'translate-x-5' : 'translate-x-0'}`}></div>
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="font-bold text-white mb-4">AdSense Configuration</h3>
+                  <button
+                    onClick={saveAdsenseConfig}
+                    disabled={adsenseSaving || !adsenseLoaded}
+                    className="px-4 py-2 bg-emerald-500 text-slate-950 font-black rounded-xl text-[10px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {adsenseSaving ? 'Saving…' : 'Save AdSense'}
+                  </button>
+                </div>
+
+                <div className="space-y-4 p-4 bg-slate-950/50 border border-slate-800/50 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Enable AdSense</p>
+                      <p className="text-xs text-slate-400">Turn ad placements on or off without a redeploy.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAdsenseForm((prev) => ({ ...prev, enabled: !prev.enabled }))}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${adsenseForm.enabled ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${adsenseForm.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block">Client ID</label>
+                    <input
+                      value={adsenseForm.clientId}
+                      onChange={(e) => setAdsenseForm((prev) => ({ ...prev, clientId: e.target.value }))}
+                      className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-bold text-white">Auto Ads</p>
+                      <p className="text-xs text-slate-400">Use responsive auto-ads across selected pages.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAdsenseForm((prev) => ({ ...prev, autoAdsEnabled: !prev.autoAdsEnabled }))}
+                      className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${adsenseForm.autoAdsEnabled ? 'bg-emerald-500' : 'bg-slate-800'}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full bg-slate-950 transition-transform ${adsenseForm.autoAdsEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+
+                  {[
+                    ['homeSlot', 'Home slot'],
+                    ['listingsSlot', 'Listings slot'],
+                    ['listingsSidebarSlot', 'Sidebar slot'],
+                    ['listingDetailSlot', 'Listing detail slot'],
+                  ].map(([field, label]) => (
+                    <div key={field} className="space-y-2">
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 block">{label}</label>
+                      <input
+                        value={adsenseForm[field as keyof typeof adsenseForm] as string}
+                        onChange={(e) => setAdsenseForm((prev) => ({ ...prev, [field]: e.target.value }))}
+                        placeholder="Enter AdSense slot ID"
+                        className="w-full bg-slate-900/50 border border-slate-700/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
                     </div>
                   ))}
                 </div>

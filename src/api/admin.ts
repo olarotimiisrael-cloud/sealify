@@ -77,6 +77,49 @@ const adminUserCreateSchema = z.object({
   updated_at: z.string().datetime().optional(),
 }).strict();
 
+const DEFAULT_ADSENSE_CONFIG = {
+  enabled: false,
+  clientId: "ca-pub-1826576243729056",
+  autoAdsEnabled: false,
+  homeSlot: "",
+  listingsSlot: "",
+  listingsSidebarSlot: "",
+  listingDetailSlot: "",
+};
+
+const adsenseConfigSchema = z.object({
+  enabled: z.boolean().default(false),
+  clientId: z.string().trim().max(200).default("ca-pub-1826576243729056"),
+  autoAdsEnabled: z.boolean().default(false),
+  homeSlot: z.string().trim().max(200).default(""),
+  listingsSlot: z.string().trim().max(200).default(""),
+  listingsSidebarSlot: z.string().trim().max(200).default(""),
+  listingDetailSlot: z.string().trim().max(200).default(""),
+}).strict();
+
+const loadAdSenseConfig = async (sql: ReturnType<typeof getSql>) => {
+  const rows = await sql`SELECT value FROM system_configs WHERE key = 'adsense_config' LIMIT 1`;
+  const stored = rows[0]?.value;
+  if (!stored || typeof stored !== "object") return { ...DEFAULT_ADSENSE_CONFIG };
+  const parsed = adsenseConfigSchema.safeParse(stored);
+  return parsed.success ? parsed.data : { ...DEFAULT_ADSENSE_CONFIG };
+};
+
+const persistAdSenseConfig = async (sql: ReturnType<typeof getSql>, input: Record<string, unknown>) => {
+  const config = adsenseConfigSchema.parse({
+    ...DEFAULT_ADSENSE_CONFIG,
+    ...(typeof input === "object" && input ? input : {}),
+  });
+
+  await sql`
+    INSERT INTO system_configs (key, value, description)
+    VALUES ('adsense_config', ${config}::jsonb, 'Google AdSense placement configuration')
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()
+  `;
+
+  return config;
+};
+
 // Get admin stats
 adminRoutes.get("/stats", async (c) => {
   const sql = getSql(c.env);
@@ -623,6 +666,31 @@ adminRoutes.put("/system-config", async (c) => {
   await auditLog(sql, c.get("user").id, "System Config Updated", `Updated config: ${Object.keys(body).join(", ")}`, "security");
 
   return c.json({ success: true });
+});
+
+adminRoutes.get("/adsense-config", async (c) => {
+  const sql = getSql(c.env);
+  const config = await loadAdSenseConfig(sql);
+  return c.json({ success: true, config });
+});
+
+adminRoutes.put("/adsense-config", async (c) => {
+  const sql = getSql(c.env);
+  const body = await c.req.json().catch(() => ({}));
+  const parsed = adsenseConfigSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return c.json({
+      success: false,
+      error: "Invalid AdSense settings payload",
+      fields: parsed.error.flatten().fieldErrors,
+    }, 400);
+  }
+
+  const config = await persistAdSenseConfig(sql, parsed.data);
+  await auditLog(sql, c.get("user").id, "AdSense Config Updated", "Updated Google AdSense configuration", "security");
+
+  return c.json({ success: true, config });
 });
 
 /**

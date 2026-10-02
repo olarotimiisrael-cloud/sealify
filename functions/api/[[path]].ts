@@ -57,6 +57,7 @@ const routeMap = [
     ['/market-insights', () => import('../../src/api/market-insights')],
     ['/email', () => import('../../src/api/email')],
     ['/otp', () => import('../../src/api/otp')],
+    ['/adsense', () => import('../../src/api/adsense')],
     ['/admin-messaging', () => import('../../src/api/admin-messaging')],
   ] as const;
 
