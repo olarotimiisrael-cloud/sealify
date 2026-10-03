@@ -114,6 +114,19 @@ const AdminDashboard: React.FC = () => {
   });
   const [adsenseSaving, setAdsenseSaving] = useState(false);
   const [adsenseLoaded, setAdsenseLoaded] = useState(false);
+  const [seoSettings, setSeoSettings] = useState({
+    siteName: '',
+    siteDescription: '',
+    metaDescriptionHome: '',
+    canonicalUrl: '',
+    robotsIndexing: true,
+    ogTitle: '',
+    ogDescription: '',
+    twitterSiteHandle: '',
+    twitterCreatorHandle: '',
+  });
+  const [seoSaving, setSeoSaving] = useState(false);
+  const [seoLoaded, setSeoLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('all');
   const [filterRole, setFilterRole] = useState<'buyer' | 'seller' | 'admin' | 'all'>('all');
