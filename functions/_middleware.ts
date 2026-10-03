@@ -17,6 +17,8 @@
 
 import type { EventContext } from 'hono/cloudflare-pages';
 import {
+  buildRobotsTxt,
+  buildSitemapXml,
   injectHeadIntoHtml,
   resolveMetadata,
 } from '../src/lib/siteMetadata';
@@ -29,6 +31,7 @@ import {
 const EXCLUDED_PREFIXES = ['/api', '/admin', '/auth'];
 
 const DOCUMENT_CACHE_CONTROL = 'public, max-age=0, s-maxage=60, stale-while-revalidate=600';
+const CRAWLER_CACHE_CONTROL = 'public, max-age=0, s-maxage=300, stale-while-revalidate=3600';
 
 function isDocumentRequest(pathname: string): boolean {
   const lastSegment = pathname.split('/').pop() || '';
@@ -42,6 +45,42 @@ function isExcluded(pathname: string): boolean {
   );
 }
 
+/**
+ * Serves robots.txt and sitemap.xml generated from the admin-managed settings so
+ * hiding a page in the SEO panel also removes it from the crawl directives. Any
+ * failure falls through to the static file checked into public/.
+ */
+async function serveGeneratedCrawlerFile(
+  context: EventContext<any, any, any>,
+): Promise<Response | null> {
+  const { request, env, next } = context;
+  const url = new URL(request.url);
+
+  const kind = url.pathname === '/robots.txt' ? 'robots' : url.pathname === '/sitemap.xml' ? 'sitemap' : null;
+  if (!kind) return null;
+
+  try {
+    const origin = getSiteOrigin(env, request.url);
+    const metadata = await loadSiteMetadata(env);
+
+    const body =
+      kind === 'robots'
+        ? buildRobotsTxt(metadata, origin)
+        : buildSitemapXml(metadata, origin);
+
+    return new Response(body, {
+      status: 200,
+      headers: {
+        'Content-Type': kind === 'robots' ? 'text/plain; charset=utf-8' : 'application/xml; charset=utf-8',
+        'Cache-Control': CRAWLER_CACHE_CONTROL,
+      },
+    });
+  } catch (error) {
+    console.error(`[site-metadata] generated ${url.pathname} failed:`, error);
+    return next();
+  }
+}
+
 export const onRequest = async (context: EventContext<any, any, any>) => {
   const { request, env, next } = context;
 
@@ -51,7 +90,14 @@ export const onRequest = async (context: EventContext<any, any, any>) => {
 
   const url = new URL(request.url);
 
-  if (isExcluded(url.pathname) || !isDocumentRequest(url.pathname)) {
+  if (isExcluded(url.pathname)) {
+    return next();
+  }
+
+  const crawlerFile = await serveGeneratedCrawlerFile(context);
+  if (crawlerFile) return crawlerFile;
+
+  if (!isDocumentRequest(url.pathname)) {
     return next();
   }
 
