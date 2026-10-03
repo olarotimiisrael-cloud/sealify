@@ -1,8 +1,15 @@
 import { readFileSync } from 'node:fs';
 import {
   DEFAULT_SITE_METADATA,
+  EDITABLE_PAGE_DEFINITIONS,
   METADATA_COLUMN_NAMES,
+  auditResolvedMetadata,
+  auditSiteMetadata,
   buildHeadHtml,
+  buildRobotsTxt,
+  buildSitemapXml,
+  exportSiteMetadata,
+  importSiteMetadata,
   injectHeadIntoHtml,
   metadataToRow,
   resolveMetadata,
@@ -247,6 +254,160 @@ check('migration seeds a row when the table is empty', /WHERE NOT EXISTS \(SELEC
 check('migration provisions the public bucket', migration.includes("'site-assets'"));
 check('migration restricts writes to admins', migration.includes("bucket_id = 'site-assets' AND public.is_admin()"));
 check('migration is idempotent', !/CREATE TABLE(?! IF NOT EXISTS)/.test(migration));
+
+console.log('\n9. SEO audit');
+const good = auditSiteMetadata(admin, origin);
+const homeAudit = good.find((audit) => audit.path === '/');
+const faqAudit = good.find((audit) => audit.path === '/faq');
+check('audits every editable route', good.length === EDITABLE_PAGE_DEFINITIONS.length, good.length);
+check('home audit produced', Boolean(homeAudit));
+check('faq audit produced', Boolean(faqAudit));
+check('scores stay within 0-100', good.every((audit) => audit.score >= 0 && audit.score <= 100));
+check(
+  'issues carry a field for jump-to',
+  good.every((audit) => audit.issues.every((issue) => issue.field.length > 0)),
+);
+
+// A resolved page with everything blank: the resolution layer deliberately
+// substitutes compiled defaults, so the audit must be exercised directly.
+const blank = auditResolvedMetadata(
+  {
+    siteName: '',
+    path: '/',
+    title: '',
+    description: '',
+    canonicalUrl: '',
+    image: '',
+    faviconUrl: '',
+    appleTouchIconUrl: '',
+    logoUrl: '',
+    ogType: 'website',
+    ogImageAlt: '',
+    ogLocale: '',
+    ogSiteUrl: '',
+    ogTitle: '',
+    ogDescription: '',
+    twitterCard: '' as never,
+    twitterSiteHandle: '',
+    twitterCreatorHandle: '',
+    twitterTitle: '',
+    twitterDescription: '',
+    twitterImage: '',
+    robotsIndexing: true,
+    themeColor: '',
+    manifestName: '',
+    manifestShortName: '',
+    headingTitle: '',
+    headingSubtitle: '',
+    headingCta: '',
+    headingCtaUrl: '',
+    headingBadge: '',
+  },
+  'Home',
+);
+check('blank page scores badly', blank.score < 60, blank.score);
+check(
+  'blank page errors on the missing share image',
+  blank.issues.some((issue) => issue.field === 'ogImage' && issue.level === 'error'),
+);
+check(
+  'blank page warns about the missing favicon',
+  blank.issues.some((issue) => issue.field === 'faviconUrl'),
+);
+check(
+  'blank page errors on the missing title and description',
+  blank.issues.filter((issue) => issue.field === 'title' || issue.field === 'description').length >= 2,
+);
+const wellConfigured = auditResolvedMetadata(resolveMetadata(admin, { origin, path: '/' }));
+check(
+  'a well-configured page has no errors or warnings',
+  wellConfigured.issues.every((issue) => issue.level === 'info'),
+  wellConfigured.issues,
+);
+check('and scores in the top band', wellConfigured.score >= 95, wellConfigured.score);
+
+const longTitle = auditResolvedMetadata(
+  resolveMetadata(
+    { ...DEFAULT_SITE_METADATA, pageTitleHome: 'x'.repeat(140) },
+    { origin, path: '/' },
+  ),
+  'Home',
+);
+check(
+  'over-long title is flagged as a warning',
+  longTitle.issues.some((issue) => issue.field === 'title' && issue.level === 'warning'),
+  longTitle.issues.map((issue) => issue.field),
+);
+
+console.log('\n10. robots.txt generation');
+const robots = buildRobotsTxt(admin, origin);
+check('allows crawling', robots.includes('User-agent: *') && robots.includes('Allow: /'));
+check('advertises the sitemap', robots.includes(`Sitemap: ${origin}/sitemap.xml`), robots);
+check('disallows private routes', robots.includes('Disallow: /settings'));
+check('disallows messages', robots.includes('Disallow: /messages'));
+// Compare line-by-line: 'Disallow: /saved'.includes('Disallow: /') would
+// produce a false positive.
+const disallowLines = robots.split('\n').filter((line) => line.trim().startsWith('Disallow:'));
+check('home is never disallowed', !disallowLines.includes('Disallow: /'), disallowLines);
+check('every disallow targets a real route', disallowLines.every((line) => line.startsWith('Disallow: /')));
+check(
+  'per-page noindex override is honoured',
+  buildRobotsTxt(
+    { ...admin, pageMetadata: { '/faq': { noIndex: true } } },
+    origin,
+  ).includes('Disallow: /faq'),
+);
+check(
+  'site-wide noindex still allows crawling',
+  buildRobotsTxt({ ...admin, robotsIndexing: false }, origin).includes('Allow: /'),
+);
+check('canonical base is respected', buildRobotsTxt({ ...admin, canonicalUrl: 'https://sealify.ng' }, origin).includes('https://sealify.ng/sitemap.xml'));
+
+console.log('\n11. sitemap.xml generation');
+const sitemap = buildSitemapXml(admin, origin);
+check('declares the urlset namespace', sitemap.includes('xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"'));
+check('starts with the xml declaration', sitemap.startsWith('<?xml version="1.0"'));
+check('includes the homepage', sitemap.includes(`<loc>${origin}/</loc>`));
+check('includes public pages', sitemap.includes(`<loc>${origin}/faq</loc>`));
+check('excludes private pages', !sitemap.includes('/settings</loc>') && !sitemap.includes('/messages</loc>'));
+check('every url block is closed', (sitemap.match(/<url>/g) || []).length === (sitemap.match(/<\/url>/g) || []).length);
+check('entries carry a priority', (sitemap.match(/<priority>/g) || []).length > 5);
+check('lastmod uses the updated date when known', !buildSitemapXml({ ...admin, updatedAt: '2026-10-03T10:00:00Z' }, origin).includes('<lastmod>') === false);
+
+console.log('\n12. Export / import round-trip');
+const exported = exportSiteMetadata(admin);
+const parsedExport = JSON.parse(exported);
+check('export is versioned', parsedExport.version === 1);
+check('export carries the settings row', Boolean(parsedExport.settings?.site_name));
+const imported = importSiteMetadata(exported);
+check('import returns a saveable payload', siteMetadataUpdateSchema.safeParse(imported).success);
+check(
+  'imported values match what was exported',
+  imported.siteName === admin.siteName && imported.ogTitle === admin.ogTitle,
+  { siteName: imported.siteName, ogTitle: imported.ogTitle },
+);
+check('round-trip preserves page overrides', Boolean((imported.pageMetadata as Record<string, unknown>)['/faq']));
+
+let threw = '';
+try {
+  importSiteMetadata('not json at all');
+} catch (error) {
+  threw = (error as Error).message;
+}
+check('rejects invalid JSON with a readable message', threw.includes('not valid JSON'), threw);
+
+threw = '';
+try {
+  importSiteMetadata(JSON.stringify({ hello: 'world' }));
+} catch (error) {
+  threw = (error as Error).message;
+}
+check('rejects an unrelated object', threw.includes('does not look like'), threw);
+
+check(
+  'accepts a bare camelCase payload',
+  Boolean(importSiteMetadata(JSON.stringify({ siteName: 'Plain Payload Co', siteDescription: 'A description that is long enough to pass.' }))),
+);
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : `${failures} CHECK(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);
