@@ -1062,3 +1062,303 @@ export function resolveMetadataForBrowser(
     type: overrides.type,
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* SEO audit                                                                   */
+/* -------------------------------------------------------------------------- */
+
+export type SeoIssueLevel = 'error' | 'warning' | 'info';
+
+export interface SeoIssue {
+  level: SeoIssueLevel;
+  /** Field or concept the issue relates to, used for jump-to-field links. */
+  field: string;
+  message: string;
+  hint?: string;
+}
+
+export interface SeoAudit {
+  path: string;
+  label: string;
+  /** 0-100, penalties weighted by severity. */
+  score: number;
+  issues: SeoIssue[];
+}
+
+const TITLE_IDEAL_MIN = 30;
+const TITLE_IDEAL_MAX = 60;
+const DESCRIPTION_IDEAL_MIN = 70;
+const DESCRIPTION_IDEAL_MAX = 160;
+
+/** Penalty weights used to turn issues into a 0-100 score. */
+const PENALTY: Record<SeoIssueLevel, number> = { error: 12, warning: 5, info: 1 };
+
+/**
+ * Audits one resolved page. Pure function so the admin UI, tests and (later)
+ * CI checks all agree on what "good" means.
+ */
+export function auditResolvedMetadata(
+  resolved: ResolvedMetadata,
+  label?: string,
+): SeoAudit {
+  const issues: SeoIssue[] = [];
+
+  const titleLength = resolved.title.length;
+  if (!resolved.title) {
+    issues.push({ level: 'error', field: 'title', message: 'Page has no title', hint: 'Search engines will invent one' });
+  } else if (titleLength > TITLE_IDEAL_MAX) {
+    issues.push({
+      level: 'warning',
+      field: 'title',
+      message: `Title is ${titleLength} characters (Google truncates near ${TITLE_IDEAL_MAX})`,
+      hint: 'Lead with the most important words',
+    });
+  } else if (titleLength < TITLE_IDEAL_MIN) {
+    issues.push({
+      level: 'info',
+      field: 'title',
+      message: `Title is only ${titleLength} characters`,
+      hint: `Aim for ${TITLE_IDEAL_MIN}-${TITLE_IDEAL_MAX}`,
+    });
+  }
+
+  const descriptionLength = resolved.description.length;
+  if (!resolved.description) {
+    issues.push({ level: 'error', field: 'description', message: 'No meta description', hint: 'This becomes your Google snippet' });
+  } else if (descriptionLength > DESCRIPTION_IDEAL_MAX) {
+    issues.push({
+      level: 'warning',
+      field: 'description',
+      message: `Description is ${descriptionLength} characters (truncated near ${DESCRIPTION_IDEAL_MAX})`,
+    });
+  } else if (descriptionLength < DESCRIPTION_IDEAL_MIN) {
+    issues.push({
+      level: 'info',
+      field: 'description',
+      message: `Description is only ${descriptionLength} characters`,
+      hint: `Aim for ${DESCRIPTION_IDEAL_MIN}-${DESCRIPTION_IDEAL_MAX}`,
+    });
+  }
+
+  if (!resolved.image) {
+    issues.push({ level: 'error', field: 'ogImage', message: 'No share image', hint: 'Links shared on WhatsApp and X will look bare' });
+  }
+
+  if (!resolved.canonicalUrl) {
+    issues.push({ level: 'warning', field: 'canonicalUrl', message: 'No canonical URL set' });
+  }
+
+  if (!resolved.ogTitle) {
+    issues.push({ level: 'warning', field: 'ogTitle', message: 'No Open Graph title', hint: 'WhatsApp and Facebook show this' });
+  }
+
+  if (!resolved.ogDescription) {
+    issues.push({ level: 'warning', field: 'ogDescription', message: 'No Open Graph description' });
+  }
+
+  if (!resolved.twitterCard) {
+    issues.push({ level: 'warning', field: 'twitterCard', message: 'No Twitter card type set' });
+  }
+
+  if (!resolved.faviconUrl) {
+    issues.push({ level: 'warning', field: 'faviconUrl', message: 'No favicon set', hint: 'Browsers show a default globe icon' });
+  }
+
+  if (!resolved.siteName) {
+    issues.push({ level: 'error', field: 'siteName', message: 'Site name is empty' });
+  }
+
+  if (!resolved.robotsIndexing) {
+    issues.push({
+      level: 'info',
+      field: 'robotsIndexing',
+      message: 'This page is intentionally hidden from search engines',
+    });
+  }
+
+  const score = Math.max(
+    0,
+    100 - issues.reduce((total, issue) => total + PENALTY[issue.level], 0),
+  );
+
+  return {
+    path: resolved.path,
+    label: label || resolved.path,
+    score,
+    issues,
+  };
+}
+
+/** Audits the home page plus every editable route. */
+export function auditSiteMetadata(metadata: SiteMetadata, origin: string): SeoAudit[] {
+  const paths = [HOME_PATH, ...EDITABLE_PAGE_DEFINITIONS.map((d) => d.path).filter((p) => p !== HOME_PATH)];
+
+  return paths.map((path) => {
+    const definition = resolvePageDefinition(path);
+    return auditResolvedMetadata(
+      resolveMetadata(metadata, { origin, path }),
+      definition.label,
+    );
+  });
+}
+
+/* -------------------------------------------------------------------------- */
+/* Crawler files                                                               */
+/* -------------------------------------------------------------------------- */
+
+/** Routes that should never appear in robots.txt or the sitemap. */
+const ALWAYS_EXCLUDED_PATHS = new Set(['/', ...PAGE_DEFINITIONS.filter((d) => d.noIndex).map((d) => d.path)]);
+
+/**
+ * robots.txt generated from the same settings the admin edits, so hiding a page
+ * in the admin UI also hides it from crawlers.
+ */
+export function buildRobotsTxt(metadata: SiteMetadata, origin: string): string {
+  const base = (cleanText(metadata.canonicalUrl) || origin).replace(/\/$/, '');
+  const lines: string[] = ['User-agent: *', 'Allow: /'];
+
+  if (metadata.robotsIndexing === false) {
+    // A site-wide noindex still needs the crawl allowed to see the directive.
+    lines.push('', '# Site-wide indexing is disabled in the admin panel');
+  } else {
+    for (const definition of PAGE_DEFINITIONS) {
+      if (definition.noIndex) {
+        lines.push(`Disallow: ${definition.path}`);
+      }
+    }
+
+    const perPage = Object.entries(metadata.pageMetadata || {});
+    for (const [path, override] of perPage) {
+      if (override?.noIndex === true && path !== HOME_PATH) {
+        lines.push(`Disallow: ${path}`);
+      }
+    }
+  }
+
+  lines.push('', `Sitemap: ${base}/sitemap.xml`, '');
+  return lines.join('\n');
+}
+
+export interface SitemapEntry {
+  loc: string;
+  lastmod?: string;
+  changefreq: 'daily' | 'weekly' | 'monthly';
+  priority: string;
+}
+
+/** Indexable routes for the sitemap, most important first. */
+export function buildSitemapEntries(metadata: SiteMetadata, origin: string): SitemapEntry[] {
+  const base = (cleanText(metadata.canonicalUrl) || origin).replace(/\/$/, '');
+  const lastmod = metadata.updatedAt ? metadata.updatedAt.slice(0, 10) : undefined;
+
+  const paths: { path: string; priority: string; changefreq: SitemapEntry['changefreq'] }[] = [
+    { path: '/', priority: '1.0', changefreq: 'daily' },
+    { path: '/vendors', priority: '0.9', changefreq: 'daily' },
+    { path: '/post-ad', priority: '0.9', changefreq: 'weekly' },
+    { path: '/market-insights', priority: '0.8', changefreq: 'daily' },
+    { path: '/requests', priority: '0.8', changefreq: 'daily' },
+    { path: '/community', priority: '0.7', changefreq: 'daily' },
+    { path: '/how-it-works', priority: '0.7', changefreq: 'monthly' },
+    { path: '/safety', priority: '0.7', changefreq: 'monthly' },
+    { path: '/faq', priority: '0.6', changefreq: 'monthly' },
+    { path: '/help-center', priority: '0.6', changefreq: 'monthly' },
+    { path: '/contact', priority: '0.5', changefreq: 'monthly' },
+    { path: '/dispute', priority: '0.3', changefreq: 'monthly' },
+  ];
+
+  return paths
+    .filter(({ path }) => !ALWAYS_EXCLUDED_PATHS.has(path) || path === '/')
+    .map(({ path, priority, changefreq }) => ({
+      loc: `${base}${path === '/' ? '/' : path}`,
+      lastmod,
+      changefreq,
+      priority,
+    }));
+}
+
+/** sitemap.xml generated from the admin-managed settings. */
+export function buildSitemapXml(metadata: SiteMetadata, origin: string): string {
+  const entries = buildSitemapEntries(metadata, origin);
+
+  const body = entries
+    .map((entry) =>
+      [
+        '  <url>',
+        `    <loc>${escapeHtml(entry.loc)}</loc>`,
+        entry.lastmod ? `    <lastmod>${entry.lastmod}</lastmod>` : '',
+        `    <changefreq>${entry.changefreq}</changefreq>`,
+        `    <priority>${entry.priority}</priority>`,
+        '  </url>',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    )
+    .join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Portable configuration                                                      */
+/* -------------------------------------------------------------------------- */
+
+/** Serialises the editable settings for backup / environment promotion. */
+export function exportSiteMetadata(metadata: SiteMetadata): string {
+  return JSON.stringify(
+    { version: 1, exportedAt: new Date().toISOString(), settings: metadataToRow(metadata) },
+    null,
+    2,
+  );
+}
+
+/** Keys that identify a file as a Sealify settings export. */
+const IMPORT_SIGNATURE_KEYS = [
+  'site_name',
+  'siteName',
+  'page_title_home',
+  'pageTitleHome',
+  'og_title',
+  'ogTitle',
+  'favicon_url',
+  'faviconUrl',
+  'page_metadata',
+  'pageMetadata',
+  'theme_color',
+  'themeColor',
+];
+
+/**
+ * Parses an exported configuration file and returns a settings payload that is
+ * safe to validate/save. Throws a readable error when the file is not a
+ * recognised export.
+ */
+export function importSiteMetadata(raw: string): Record<string, unknown> {
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error('That file is not valid JSON');
+  }
+
+  const candidate =
+    parsed && typeof parsed === 'object' && 'settings' in (parsed as Record<string, unknown>)
+      ? (parsed as Record<string, unknown>).settings
+      : parsed;
+
+  if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+    throw new Error('No settings object found in that file');
+  }
+
+  // Detect the signature BEFORE mapping, because rowToMetadata fills in
+  // defaults and would make an unrelated object look like valid settings.
+  const record = candidate as Record<string, unknown>;
+  const recognised = IMPORT_SIGNATURE_KEYS.some((key) => key in record);
+
+  if (!recognised) {
+    throw new Error('That file does not look like a Sealify settings export');
+  }
+
+  // Accept both the export format (snake_case rows) and a camelCase payload.
+  return toUpdatePayload(rowToMetadata(record));
+}
