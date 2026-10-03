@@ -26,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
 import { adminFetch } from '@/lib/admin-api';
+import SeoBrandingEditor from '@/components/admin/SeoBrandingEditor';
 import AdminEditUserModal from '@/components/AdminEditUserModal';
 import AdminSettingsModal from '@/admin/pages/AdminSettingsModal';
 import DatabaseTest from '@/components/DatabaseTest';
@@ -102,7 +103,7 @@ const AdminDashboard: React.FC = () => {
     uploadAttachment
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'seo' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
   const [adsenseForm, setAdsenseForm] = useState({
     enabled: false,
     clientId: 'ca-pub-1826576243729056',
@@ -114,19 +115,6 @@ const AdminDashboard: React.FC = () => {
   });
   const [adsenseSaving, setAdsenseSaving] = useState(false);
   const [adsenseLoaded, setAdsenseLoaded] = useState(false);
-  const [seoSettings, setSeoSettings] = useState({
-    siteName: '',
-    siteDescription: '',
-    metaDescriptionHome: '',
-    canonicalUrl: '',
-    robotsIndexing: true,
-    ogTitle: '',
-    ogDescription: '',
-    twitterSiteHandle: '',
-    twitterCreatorHandle: '',
-  });
-  const [seoSaving, setSeoSaving] = useState(false);
-  const [seoLoaded, setSeoLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<UserStatus | 'all'>('all');
   const [filterRole, setFilterRole] = useState<'buyer' | 'seller' | 'admin' | 'all'>('all');
@@ -369,6 +357,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'users', label: 'Users', icon: Users, desc: 'Manage all accounts' },
     { id: 'content', label: 'Content', icon: Shield, desc: 'Moderation queue' },
     { id: 'finance', label: 'Promotion Revenue', icon: DollarSign, desc: 'Paid promotion revenue' },
+    { id: 'seo', label: 'SEO & Branding', icon: Palette, desc: 'Titles, logo, favicon, link previews' },
     { id: 'security', label: 'Security', icon: ShieldCheck, desc: 'Audit & intrusion' },
     { id: 'system', label: 'System', icon: Settings, desc: 'Platform controls' },
     { id: 'database', label: 'Database', icon: Database, desc: 'SQL & migrations' },
@@ -444,7 +433,7 @@ const AdminDashboard: React.FC = () => {
               <Settings className="w-4 h-4" />
               <span>Root Config</span>
             </button>
-            <button onClick={() => window.location.href = '/admin/site-metadata'} className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-rose-600/20 hover:from-pink-500/30 hover:to-rose-600/30 text-pink-300 font-bold rounded-xl text-xs border border-pink-500/30 transition-all flex items-center gap-2">
+            <button onClick={() => setActiveTab('seo')} className="px-4 py-2 bg-gradient-to-r from-pink-500/20 to-rose-600/20 hover:from-pink-500/30 hover:to-rose-600/30 text-pink-300 font-bold rounded-xl text-xs border border-pink-500/30 transition-all flex items-center gap-2">
               <Palette className="w-4 h-4" />
               <span>Branding &amp; SEO</span>
             </button>
@@ -683,7 +672,7 @@ const AdminDashboard: React.FC = () => {
                      { label: 'Promotion Revenue', desc: 'Review paid promotion requests and revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500', action: () => setActiveTab('finance') },
                     { label: 'Security Audit', desc: 'Intrusion logs, audit trail, 2FA', icon: ShieldCheck, color: 'from-rose-500 to-pink-500', action: () => setActiveTab('security') },
                     { label: 'Database Tools', desc: 'Schema, migrations, backups, SQL', icon: Database, color: 'from-purple-500 to-indigo-500', action: () => setActiveTab('database') },
-                    { label: 'Branding & SEO', desc: 'Favicon, logo, titles, link previews', icon: Palette, color: 'from-pink-500 to-rose-500', action: () => { window.location.href = '/admin/site-metadata'; } },
+                    { label: 'Branding & SEO', desc: 'Favicon, logo, titles, link previews', icon: Palette, color: 'from-pink-500 to-rose-500', action: () => setActiveTab('seo') },
                     { label: 'Broadcast Center', desc: 'Mass notifications, email digests', icon: Megaphone, color: 'from-teal-500 to-green-500', action: () => setActiveTab('broadcast') },
                   ].map((action, i) => (
                     <button 
@@ -1004,6 +993,21 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        );
+
+      case 'seo':
+        return (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-black text-white">SEO &amp; Branding</h2>
+              <p className="mt-1 text-xs text-slate-400">
+                Control the favicon, logo, page titles, meta descriptions and link previews that
+                Google, WhatsApp and X see. Changes are written to the database and served by the
+                edge immediately — no redeploy.
+              </p>
+            </div>
+            <SeoBrandingEditor embedded />
           </div>
         );
 
