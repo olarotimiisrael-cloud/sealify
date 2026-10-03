@@ -41,18 +41,22 @@ AS $$
   SELECT role::text FROM public.profiles WHERE id = auth.uid() LIMIT 1;
 $$;
 
-CREATE OR REPLACE FUNCTION public.is_admin(user_id uuid DEFAULT auth.uid())
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles
-    WHERE id = $1 AND role = 'admin'
-  );
+-- public.is_admin() is intentionally NOT redefined here.
+--
+-- This file previously installed `public.is_admin(user_id uuid DEFAULT
+-- auth.uid())`, an argument-taking variant that ignored `status` and could be
+-- called by any client with an arbitrary user id. Migration
+-- 20260923000000_secure_is_admin_hardening.sql later replaced it with the
+-- zero-argument, auth.uid()-bound definition and dropped the uuid overload.
+-- Re-running this file must not resurrect that weaker function, so the
+-- canonical definition is asserted to exist instead of being overwritten.
+DO $$
+BEGIN
+  IF to_regprocedure('public.is_admin()') IS NULL THEN
+    RAISE EXCEPTION
+      'public.is_admin() is missing: apply 20260923000000_secure_is_admin_hardening.sql before this migration';
+  END IF;
+END
 $$;
 
 CREATE OR REPLACE FUNCTION public.conversation_participants_unchanged(
