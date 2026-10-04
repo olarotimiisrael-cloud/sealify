@@ -1,0 +1,18 @@
+{
+  "_comment": [
+    "Client-public build values for the browser bundle.",
+    "These are inlined into JavaScript by definition (VITE_*), so nothing here",
+    "is secret: the publishable Supabase key and the site URL already ship to",
+    "every visitor in the built assets.",
+    "They live in the repository so a build always produces a working client.",
+    "The Cloudflare Pages project had no environment variables at all, so every",
+    "git-triggered build inlined an empty Supabase URL and the browser app",
+    "failed to start with 'supabaseUrl is required'.",
+    "Real environment variables still win: anything set in the build",
+    "environment or in .env / .env.production overrides these defaults."
+  ],
+  "VITE_SUPABASE_URL": "https://eliwjdafimaugnwvadlr.supabase.co",
+  "VITE_SUPABASE_ANON_KEY": "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7",
+  "VITE_SITE_URL": "https://sealify.thesealconsult.com.ng",
+  "VITE_TURNSTILE_SITE_KEY": "1x00000000000000000000AA"
+}
