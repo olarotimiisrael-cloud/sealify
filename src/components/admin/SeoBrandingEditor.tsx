@@ -416,7 +416,9 @@ export const SeoBrandingEditor: React.FC<SeoBrandingEditorProps> = ({ embedded =
   const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(baseline), [form, baseline]);
 
   const origin = useMemo(() => {
-    if (typeof window === 'undefined') return 'https://sealify.ng';
+    // No fixed domain here: a hardcoded fallback produced previews and
+    // absolute asset URLs for a host that does not serve this deployment.
+    if (typeof window === 'undefined') return '';
     return form.canonicalUrl || window.location.origin;
   }, [form.canonicalUrl]);
 

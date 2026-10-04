@@ -183,16 +183,29 @@ export function securityHeaders() {
   };
 }
 
+/** Operator-configured origins, split from a comma-separated variable. */
+function envAllowedOrigins(env: any): string[] {
+  const configured = env?.ALLOWED_ORIGINS || env?.PUBLIC_SITE_URL || env?.APP_URL;
+  if (!configured || typeof configured !== "string") return [];
+  return configured.split(",").map((value) => value.trim().replace(/\/$/, "")).filter(Boolean);
+}
+
 // CORS configuration
 export function corsConfig() {
   return async (c: any, next: any) => {
     const origin = c.req.header("Origin");
+    // The live deployment is served from a custom domain and from the
+    // project's own Pages hostname. Restricting the allowlist to a domain the
+    // deployment is not served from blocks browser calls to these APIs.
     const allowedOrigins = [
+      envAllowedOrigins(c.env),
+      "https://sealify.thesealconsult.com.ng",
+      "https://sealify.pages.dev",
       "https://sealify.ng",
       "https://www.sealify.ng",
       "http://localhost:5173",
       "http://127.0.0.1:5173",
-    ];
+    ].flat().filter(Boolean);
 
     if (origin && allowedOrigins.includes(origin)) {
       c.header("Access-Control-Allow-Origin", origin);

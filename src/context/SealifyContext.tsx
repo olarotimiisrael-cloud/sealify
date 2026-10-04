@@ -1742,11 +1742,15 @@ const bulkDeleteUsers = async (ids: string[]) => {
    const reloadUsers = async () => {
      if (user?.role === 'admin') {
        try {
-         const response = await adminFetch('/api/admin/users');
-         if (response.ok) {
-           const data = await response.json();
-           setAllUsers((data?.users || []).map(mapProfileToUser));
-         }
+const response = await adminFetch('/api/admin/users');
+          if (response.ok) {
+            const data = await response.json();
+            setAllUsers((data?.users || []).map(mapProfileToUser));
+          } else {
+            // Previously silent: the dashboard showed zeros with no clue that
+            // the admin API had refused the request.
+            console.warn(`[AdminUsers] /api/admin/users returned ${response.status}; user lists and counters are unavailable`);
+          }
        } catch { /* ignore */ }
      }
    };
@@ -1986,6 +1990,12 @@ const bulkDeleteUsers = async (ids: string[]) => {
         const profile = session?.user ? await loadProfileForAuthUser(session.user) : null;
         if (profile) applyAuthenticatedUser(profile);
         await loadDatabaseState(profile ? { ...session.user, role: profile.role } : null);
+        // The administrator dashboard derives its user, verification and
+        // admin counters from `allUsers`. Without this the panel rendered
+        // zeros on every load and only filled in after a user was edited.
+        if (mounted && profile?.role === 'admin') {
+          await reloadUsers();
+        }
       } catch (loadError: any) {
         console.error('Supabase hydration failed:', loadError);
         if (mounted) setError(loadError?.message || 'Unable to load marketplace data');

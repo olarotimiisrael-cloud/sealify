@@ -604,7 +604,11 @@ authRoutes.post("/password/reset-request", authRateLimit, async (c) => {
     `;
 
     try {
-      const redirectBase = env.APP_URL || env.PUBLIC_SITE_URL || "https://sealify.ng";
+      // Fall back to the host this request actually arrived on. A hardcoded
+      // domain silently sends password-reset links to a site the user does not
+      // use, and the link then fails with no visible error.
+      const requestOrigin = new URL(c.req.url).origin;
+      const redirectBase = env.APP_URL || env.PUBLIC_SITE_URL || requestOrigin;
       const resetUrl = `${redirectBase}/reset-password`;
       await supabase.auth.resetPasswordForEmail(email, { redirectTo: resetUrl });
 

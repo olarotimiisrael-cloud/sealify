@@ -37,15 +37,22 @@ const DB_TIMEOUT_MS = 2000;
 const METADATA_SELECT = 'SELECT * FROM public.site_settings WHERE is_active = true LIMIT 1';
 
 export function getSiteOrigin(env: MetadataEnv, requestUrl?: string): string {
-  if (requestUrl) {
-    try {
-      return new URL(requestUrl).origin;
-    } catch {
-      /* fall through to configuration */
-    }
-  }
+  // Prefer the host the request arrived on. Falling back to a fixed domain
+  // produced absolute asset URLs (favicon, logo, share image) pointing at a
+  // host that does not serve this deployment, which surfaced in the browser as
+  // a 503 on /logo.png.
+  const requestOrigin = requestUrl ? safeOrigin(requestUrl) : '';
+  if (requestOrigin) return requestOrigin;
 
-  return (env.PUBLIC_SITE_URL || env.APP_URL || 'https://sealify.ng').replace(/\/$/, '');
+  return (env.PUBLIC_SITE_URL || env.APP_URL || '').replace(/\/$/, '');
+}
+
+function safeOrigin(requestUrl: string): string {
+  try {
+    return new URL(requestUrl).origin;
+  } catch {
+    return '';
+  }
 }
 
 /* -------------------------------------------------------------------------- */
