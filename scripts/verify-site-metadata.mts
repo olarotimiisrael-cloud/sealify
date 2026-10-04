@@ -374,6 +374,22 @@ check('every url block is closed', (sitemap.match(/<url>/g) || []).length === (s
 check('entries carry a priority', (sitemap.match(/<priority>/g) || []).length > 5);
 check('lastmod uses the updated date when known', !buildSitemapXml({ ...admin, updatedAt: '2026-10-03T10:00:00Z' }, origin).includes('<lastmod>') === false);
 
+console.log('\n11b. Timestamp normalisation (postgres.js returns Date objects)');
+const fromDate = rowToMetadata({ updated_at: new Date('2026-09-25T13:12:20.677Z') });
+check('Date object becomes an ISO string', fromDate.updatedAt === '2026-09-25T13:12:20.677Z', fromDate.updatedAt);
+check('ISO string is preserved', rowToMetadata({ updated_at: '2026-10-03T10:00:00Z' }).updatedAt === '2026-10-03T10:00:00.000Z');
+check('null stays null', rowToMetadata({ updated_at: null }).updatedAt === null);
+check('unparseable value is kept as-is', rowToMetadata({ updated_at: 'not-a-date' }).updatedAt === 'not-a-date');
+check(
+  'sitemap lastmod from a Date object is a W3C date',
+  buildSitemapXml({ ...admin, updatedAt: '2026-09-25T13:12:20.677Z' }, origin).includes('<lastmod>2026-09-25</lastmod>'),
+);
+check(
+  'sitemap never emits a locale-style lastmod',
+  !/<lastmod>[^<]*[A-Za-z]{3}/.test(buildSitemapXml({ ...admin, updatedAt: 'Fri Sep 25 2026 13:12:20 GMT+0000' }, origin)),
+);
+check('garbage timestamps are omitted, not guessed', !buildSitemapXml({ ...admin, updatedAt: 'nonsense' }, origin).includes('<lastmod>'));
+
 console.log('\n12. Export / import round-trip');
 const exported = exportSiteMetadata(admin);
 const parsedExport = JSON.parse(exported);

@@ -660,9 +660,29 @@ export function rowToMetadata(row: Record<string, unknown> | null | undefined): 
   }
 
   result.pageMetadata = result.pageMetadata && typeof result.pageMetadata === 'object' ? result.pageMetadata : {};
-  result.updatedAt = row.updated_at ? String(row.updated_at) : null;
+  result.updatedAt = normaliseTimestamp(row.updated_at);
 
   return result;
+}
+
+/**
+ * postgres.js parses timestamptz columns into Date objects. Normalise every
+ * shape (Date, ISO string, epoch) to an ISO string so downstream consumers —
+ * the sitemap `<lastmod>`, the admin UI and the API payload — always receive a
+ * machine-readable value.
+ */
+function normaliseTimestamp(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+
+  const asDate =
+    value instanceof Date ? value : new Date(typeof value === 'number' ? value : String(value));
+
+  if (Number.isNaN(asDate.getTime())) {
+    // Unparseable: keep the raw value rather than inventing a date.
+    return String(value);
+  }
+
+  return asDate.toISOString();
 }
 
 function safeParseJson(value: string): unknown {
@@ -1249,7 +1269,12 @@ export interface SitemapEntry {
 /** Indexable routes for the sitemap, most important first. */
 export function buildSitemapEntries(metadata: SiteMetadata, origin: string): SitemapEntry[] {
   const base = (cleanText(metadata.canonicalUrl) || origin).replace(/\/$/, '');
-  const lastmod = metadata.updatedAt ? metadata.updatedAt.slice(0, 10) : undefined;
+
+  // Only emit a W3C-compatible date. Anything else (an unparsed legacy value, a
+  // locale string) is dropped rather than shipped to crawlers.
+  const lastmodValue = normaliseTimestamp(metadata.updatedAt);
+  const lastmod =
+    lastmodValue && /^\d{4}-\d{2}-\d{2}/.test(lastmodValue) ? lastmodValue.slice(0, 10) : undefined;
 
   const paths: { path: string; priority: string; changefreq: SitemapEntry['changefreq'] }[] = [
     { path: '/', priority: '1.0', changefreq: 'daily' },
