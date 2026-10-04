@@ -1,7 +1,12 @@
-const CACHE_NAME = 'sealify-pwa-v4';
+const CACHE_NAME = 'sealify-pwa-v5';
+
+// Only immutable, content-hashed build output is cached. The app shell
+// (index.html) is deliberately NOT cached: a cached shell outlives the build
+// that produced it, so after a deployment it points at chunk filenames that
+// no longer exist. Cloudflare's SPA fallback answers those requests with
+// text/html, the browser rejects them as module scripts, and the app dies
+// with "Something went wrong" instead of loading the new release.
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/logo.png',
   '/og-image.png'
@@ -27,6 +32,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Lets the page activate a waiting worker immediately after a deployment.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Fetch Event with Network First & Cache Fallback
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
@@ -37,11 +49,25 @@ self.addEventListener('fetch', (event) => {
   // Skip Supabase realtime WebSocket connections
   if (event.request.url.includes('supabase.co/realtime')) return;
 
+  // Never serve a document from cache: see the note above CACHE_NAME.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => offlinePage())
+    );
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // Cache successful GET requests
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        // Cache successful GET requests, except HTML documents.
+        const contentType = networkResponse.headers.get('Content-Type') || '';
+        if (
+          networkResponse &&
+          networkResponse.status === 200 &&
+          networkResponse.type === 'basic' &&
+          !contentType.includes('text/html')
+        ) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -58,12 +84,6 @@ self.addEventListener('fetch', (event) => {
           if (cachedResponse) {
             return cachedResponse;
           }
-          // Fallback to index.html for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches
-              .match('/index.html')
-              .then((shell) => shell || offlineResponse());
-          }
           return offlineResponse();
         });
       })
@@ -75,6 +95,25 @@ function offlineResponse() {
   return new Response(
     JSON.stringify({ error: 'You appear to be offline. Please check your connection and try again.' }),
     { status: 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'application/json' } }
+  );
+}
+
+// Offline stand-in for a document request. It must not reference build
+// output, because none of it can be loaded while offline.
+function offlinePage() {
+  return new Response(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<title>Sealify — offline</title></head>` +
+      `<body style="font-family:system-ui,sans-serif;background:#0b1220;color:#e5e7eb;` +
+      `display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0">` +
+      `<div style="text-align:center;max-width:32rem;padding:2rem">` +
+      `<h1 style="font-size:1.25rem">You are offline</h1>` +
+      `<p style="line-height:1.6">Sealify could not reach the network. ` +
+      `Reconnect and reload to continue &mdash; this page deliberately does not serve a ` +
+      `cached copy of the app, because that copy would point at files from an older build.</p>` +
+      `</div></body></html>`,
+    { status: 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'text/html; charset=utf-8' } }
   );
 }
 
