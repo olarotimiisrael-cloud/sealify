@@ -1,164 +1,90 @@
 -- =====================================================================
--- SEALIFY ADMIN USER SETUP SCRIPT
--- Run this in your Supabase SQL Editor (https://supabase.com/dashboard)
--- After running, use the email from line 5 below in Admin Login
+-- SEALIFY ADMIN USER SETUP
+-- Run in the Supabase SQL Editor (https://supabase.com/dashboard).
+--
+-- This script PROMOTES AN EXISTING ACCOUNT to administrator. It never
+-- creates an auth user and never creates a profiles row from scratch,
+-- because a profile whose id is not an auth.users id can never be loaded:
+-- loadProfileForAuthUser() looks up `profiles.id = auth.users.id`, and
+-- public.is_admin() does the same lookup.
+--
+-- Sealify operates with a single administrator. Do not run this script to
+-- add more.
+--
+-- Usage: set the email below, then run the whole file.
 -- =====================================================================
 
 -- =====================================================================
--- CONFIGURATION: Set your desired admin credentials here
+-- CONFIGURATION: the one account allowed to administer Sealify.
+-- Must already exist under Authentication > Users.
 -- =====================================================================
-\set admin_email 'admin@sealify.ng'
-\set admin_password 'SealifyAdmin@2024!'
-\set admin_full_name 'Sealify Admin'
-\set admin_phone '+2348131208468'
+\set admin_email 'thesealconsult@gmail.com'
 
 -- =====================================================================
--- 1. UPSERT the admin profile into the profiles table
---    (If the auth user doesn't exist yet, this creates the profile row
---     which will be linked via a database trigger after auth sign-up)
+-- 1. Guard: the account must exist in auth.users.
+--    Failing here is correct. Creating the auth user from SQL is not
+--    supported by Supabase, and inventing a profiles row with a random
+--    uuid produces a profile that no login can ever load.
 -- =====================================================================
-
--- First, create the auth user through Supabase's built-in function
--- (This requires the service_role key, OR you can do it via the dashboard)
--- If you're running this with anon key, you may need to create the auth user
--- manually via Authentication > Users in the Supabase Dashboard first,
--- THEN run this script.
-
--- Upsert admin profile directly (for when user already exists in auth)
-INSERT INTO profiles (
-  id,
-  email,
-  full_name,
-  phone_number,
-  role,
-  status,
-  location,
-  verified,
-  verification_type,
-  avatar_url,
-  store_banner_url,
-  created_at,
-  updated_at
-)
-VALUES (
-  gen_random_uuid(),
-  :admin_email::text,
-  :admin_full_name::text,
-  :admin_phone::text,
-  'admin'::text,
-  'active'::text,
-  'Ogbomoso, Oyo State'::text,
-  true,
-  'premium',
-  'https://sealify.ng/logo.png',
-  'https://images.unsplash.com/photo-1557804506-669a67965ba0?w=1200&auto=format&fit=crop',
-  NOW(),
-  NOW()
-)
-ON CONFLICT (email) DO UPDATE SET
-  full_name = EXCLUDED.full_name,
-  phone_number = EXCLUDED.phone_number,
-  role = 'admin',
-  status = 'active',
-  verified = true,
-  verification_type = 'premium',
-  updated_at = NOW();
-
--- =====================================================================
--- 2. Create auth user for the admin (requires service_role key)
---    Run this from the SQL editor using the service_role key
---    OR create the user manually via the Supabase Dashboard:
---    Authentication > Users > Add User
--- =====================================================================
-
--- IMPORTANT: You must run this with the service_role key (in the SQL editor
--- using your supabase functions key or via service_role).
--- If you can't use this, skip to step 3.
-
-BEGIN;
-
--- Check if auth user exists, create if not
 DO $$
 DECLARE
+  v_admin_email TEXT := :'admin_email';
   v_user_id UUID;
-  v_existing_email TEXT;
+  v_profile_id UUID;
 BEGIN
-  -- Check if user exists in auth
-  SELECT id INTO v_user_id
-  FROM auth.users
-  WHERE email = :admin_email::text
+  SELECT u.id INTO v_user_id
+  FROM auth.users u
+  WHERE lower(u.email) = lower(v_admin_email)
   LIMIT 1;
 
   IF v_user_id IS NULL THEN
-    -- Create the auth user using the internal function
-    -- You may need to set this password via the Supabase Dashboard instead
-    INSERT INTO auth.users (
-      instance_id,
-      id,
-      email,
-      encrypted_password,
-      created_at,
-      updated_at,
-      role,
-      email_confirmed_at
-    ) VALUES (
-      1, -- instance_id (usually 1 for single tenant)
-      gen_random_uuid(),
-      :admin_email::text,
-      crypt(:admin_password::text, gen_salt('bf')),
-      NOW(),
-      NOW(),
-      'authenticated',
-      NOW()
-    );
+    RAISE EXCEPTION
+      'No auth user exists for %. Create the account under Authentication > Users first, then re-run this script.',
+      v_admin_email;
+  END IF;
+
+  -- A profile row keyed to a different id is the exact condition that makes
+  -- administrator login fail with "your administrator profile could not be
+  -- loaded". Re-key it when the profile is clearly the orphaned one.
+  SELECT p.id INTO v_profile_id
+  FROM public.profiles p
+  WHERE lower(p.email) = lower(v_admin_email)
+    AND p.id <> v_user_id
+  LIMIT 1;
+
+  IF v_profile_id IS NOT NULL THEN
+    RAISE EXCEPTION
+      'The profile row for % is keyed to % but the auth user id is %. Reconcile it deliberately before granting admin: re-key the profile, or create the correct profile row and delete the orphan.',
+      v_admin_email, v_profile_id, v_user_id;
   END IF;
 END $$;
 
-COMMIT;
+-- =====================================================================
+-- 2. Promote the account's own profile row to administrator.
+--    Profiles are created by the sign-up trigger, so the row should
+--    already exist with the correct id.
+-- =====================================================================
+UPDATE public.profiles
+SET role        = 'admin',
+    status      = 'active',
+    verified    = true,
+    updated_at  = NOW()
+WHERE id = (SELECT u.id FROM auth.users u WHERE lower(u.email) = lower(:'admin_email') LIMIT 1);
 
 -- =====================================================================
--- 3. Link auth user to the existing profile (if needed)
+-- 3. Guarantee exactly one administrator.
+--    Anything else carrying role = 'admin' is demoted to buyer.
 -- =====================================================================
-
--- This ensures the profile's id matches the auth user's id
--- The profile email should match the auth email
-
-UPDATE profiles
-SET id = auth.users.id,
+UPDATE public.profiles p
+SET role       = 'buyer',
     updated_at = NOW()
-FROM auth.users
-WHERE auth.users.email = :admin_email::text
-  AND profiles.email = :admin_email::text
-  AND profiles.id != auth.users.id;
+WHERE p.role = 'admin'
+  AND lower(p.email) <> lower(:'admin_email');
 
 -- =====================================================================
--- 4. Ensure the is_admin() function recognizes this user
+-- 4. user_settings (required by the app)
 -- =====================================================================
-
--- Check if the helper function exists
--- The admin login endpoint calls public.is_admin(${user.id})
--- which should check the profiles table for role = 'admin'
-
--- Verify the admin user is recognized
-SELECT
-  p.id,
-  p.email,
-  p.full_name,
-  p.role,
-  p.verified,
-  p.status,
-  CASE
-    WHEN p.role = 'admin' THEN true
-    ELSE false
-  END AS is_admin_flag
-FROM profiles p
-WHERE p.email = :admin_email::text;
-
--- =====================================================================
--- 5. Create user_settings for the admin (required by the app)
--- =====================================================================
-
-INSERT INTO user_settings (
+INSERT INTO public.user_settings (
   user_id,
   email_notifications,
   whatsapp_notifications,
@@ -173,46 +99,55 @@ INSERT INTO user_settings (
   updated_at
 )
 SELECT
-  p.id,
+  u.id,
   true, true, true, true, true, true, true,
   'en', 'dark', NOW(), NOW()
-FROM profiles p
-WHERE p.email = :admin_email::text
-  AND p.role = 'admin'
-ON CONFLICT (user_id) DO UPDATE SET
-  language = 'en',
-  theme = 'dark';
+FROM auth.users u
+WHERE lower(u.email) = lower(:'admin_email')
+ON CONFLICT (user_id) DO UPDATE
+SET language = 'en',
+    theme    = 'dark';
 
 -- =====================================================================
--- 6. Test the admin authentication setup
+-- 5. Verification. Each row must report OK.
 -- =====================================================================
 
--- Verify the admin user exists and has correct role
-SELECT
-  'Admin User Verification' AS check_name,
-  email,
-  full_name,
-  role,
-  verified,
-  status
-FROM profiles
-WHERE email = :admin_email::text
-  AND role = 'admin'
-ORDER BY created_at DESC
-LIMIT 1;
+-- 5.1 Exactly one administrator, and it is the configured account.
+SELECT 'single_admin' AS check_name,
+       count(*) AS found,
+       1 AS expected,
+       CASE WHEN count(*) = 1 THEN 'OK' ELSE 'INVALID' END AS result
+FROM public.profiles
+WHERE role = 'admin';
+
+-- 5.2 The administrator's profile id is its auth user id, so
+--     loadProfileForAuthUser() can find it.
+SELECT 'admin_profile_linked' AS check_name,
+       count(*) AS found,
+       1 AS expected,
+       CASE WHEN count(*) = 1 THEN 'OK' ELSE 'MISSING' END AS result
+FROM public.profiles p
+JOIN auth.users u ON u.id = p.id
+WHERE p.role = 'admin'
+  AND lower(u.email) = lower(:'admin_email');
+
+-- 5.3 The policy administrator login depends on is installed.
+--     Without it, RLS hides every row and login reports that the
+--     administrator profile could not be loaded.
+--     Full check: scripts/verify-rls-coverage.sql
+SELECT 'admin_select_policy' AS check_name,
+       count(*) AS found,
+       1 AS expected,
+       CASE WHEN count(*) = 1 THEN 'OK' ELSE 'MISSING' END AS result
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename = 'profiles'
+  AND policyname = 'profiles_select_self_or_admin'
+  AND cmd = 'SELECT';
 
 -- =====================================================================
--- INSTRUCTIONS:
--- 1. Save the values from CONFIGURATION section above
--- 2. After running this script, go to Supabase Dashboard > Authentication > Users
--- 3. If the admin auth user was not created automatically (service_role issue),
---    create it manually via the UI:
---    - Email: 'admin@sealify.ng'
---    - Password: 'SealifyAdmin@2024!'
---    - Check "Autorespond to email" (optional)
--- 4. Go to your Sealify admin login page
---    URL: https://your-domain.pages.dev/admin/login
---    Email: admin@sealify.ng
---    Password: SealifyAdmin@2024!
--- 5. You should now be logged in as admin
+-- AFTER RUNNING
+--   Admin login: https://sealify.thesealconsult.com.ng/admin/login
+--   Sign in as the configured email. The dashboard reads its data from the
+--   database through RLS-filtered PostgREST queries.
 -- =====================================================================
