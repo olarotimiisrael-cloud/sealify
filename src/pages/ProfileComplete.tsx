@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSealify } from '@/context/SealifyContext';
 import { supabase } from '@/integrations/supabase/client';
-import { User, Smartphone, Loader2, ShieldCheck } from 'lucide-react';
+import { User, Smartphone, Loader2, ShieldCheck, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import SEO from '@/components/SEO';
 
@@ -13,12 +13,22 @@ const ProfileComplete: React.FC = () => {
 
   const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
+  const [businessName, setBusinessName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
+      return;
     }
+    setFullName(user.fullName || '');
+    setPhoneNumber(user.phoneNumber || '');
+    setAvatarUrl(user.avatarUrl || '');
+    setCoverUrl(user.storeBannerUrl || '');
+    setBusinessName(user.businessName || '');
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,7 +39,7 @@ const ProfileComplete: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session} } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error('No active session');
 
@@ -42,6 +52,9 @@ const ProfileComplete: React.FC = () => {
         body: JSON.stringify({
           fullName: fullName.trim(),
           phoneNumber: phoneNumber.trim(),
+          avatarUrl: avatarUrl.trim() || undefined,
+          coverUrl: coverUrl.trim() || undefined,
+          businessName: businessName.trim() || undefined,
         }),
       });
 
@@ -105,6 +118,78 @@ const ProfileComplete: React.FC = () => {
                 placeholder="+234 812 345 6789"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
               />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Profile Photo
+            </label>
+            <div className="flex items-center gap-3">
+              {avatarUrl ? (
+                <img src={avatarUrl} className="w-16 h-16 rounded-xl object-cover border border-slate-700" alt="Profile" />
+              ) : (
+                <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-800 flex items-center justify-center text-slate-600">
+                  <Camera className="w-6 h-6" />
+                </div>
+              )}
+              <div className="flex-1">
+                <input
+                  type="file"
+                  ref={avatarInputRef}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        if (event.target?.result) setAvatarUrl(event.target.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition-colors"
+                >
+                  Upload Photo
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Cover Photo
+            </label>
+            <div className="relative">
+              <input
+                type="url"
+                value={coverUrl}
+                onChange={(e) => setCoverUrl(e.target.value)}
+                placeholder="https://example.com/cover.jpg"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-4 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              />
+              <p className="text-[9px] text-slate-500 mt-1">Enter a direct image URL (JPG, PNG, WebP)</p>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+              Business / Shop Name
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={businessName}
+                onChange={(e) => setBusinessName(e.target.value)}
+                placeholder="e.g. Adebayo's Electronics"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+              />
+              <User className="w-4 h-4 text-slate-600 absolute left-3.5 top-3" />
             </div>
           </div>
 

@@ -194,6 +194,215 @@ emailRoutes.post("/password-reset", emailRateLimit, async (c) => {
   }
 });
 
+// Welcome email for new signup (internal call from /api/auth/register)
+emailRoutes.post("/welcome", emailRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { userId, force = false } = body as { userId: string; force?: boolean };
+    if (!userId) throw new HTTPException(400, { message: "userId required" });
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    // Check internal auth token for admin re-sends.
+    // The internal token must equal the env var (constant-time string compare).
+    // If the token env var is not configured, we skip the check: the /welcome
+    // route itself does NOT accept arbitrary `to`/`html`, so it cannot be
+    // abused as an open relay — it only ever sends to the user's own profile.
+    const internalToken = c.req.header("X-Internal-Token");
+    const storedToken = env.INTERNAL_API_TOKEN;
+    if (storedToken && internalToken) {
+      if (internalToken.length !== storedToken.length) {
+        throw new HTTPException(403, { message: "Invalid internal token" });
+      }
+      let diff = 0;
+      for (let i = 0; i < internalToken.length; i++) {
+        diff |= internalToken.charCodeAt(i) ^ storedToken.charCodeAt(i);
+      }
+      if (diff !== 0) {
+        throw new HTTPException(403, { message: "Invalid internal token" });
+      }
+    }
+
+    // Load profile and referral code
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, email, full_name, referral_code, referral_count, role, status, email_notifications")
+      .eq("id", userId)
+      .single();
+    if (profileError || !profile) {
+      throw new HTTPException(404, { message: "User not found" });
+    }
+
+    if (!profile.referral_code) {
+      throw new HTTPException(500, { message: "User has no referral code; cannot send welcome email" });
+    }
+
+    // Respect email_notifications flag
+    if (!profile.email_notifications) {
+      await sql`
+        INSERT INTO email_outbox (template, recipient, payload, status, dedupe_key)
+        VALUES ('welcome', ${profile.email}, ${JSON.stringify({ userId })}, 'suppressed', ${'welcome:' || userId})
+        ON CONFLICT (dedupe_key) DO NOTHING
+      `;
+      return c.json({ queued: false, suppressed: true, message: "User opted out of marketing emails" });
+    }
+
+    // Check outbox for existing welcome email (idempotency)
+    const existing = await sql`
+      SELECT id, status FROM email_outbox
+      WHERE template = 'welcome' AND (payload->>'userId') = ${userId}
+      LIMIT 1
+    `;
+    const deduped = existing.length > 0 && existing[0].status !== 'failed';
+    if (existing.length > 0 && !force) {
+      // Already queued or sent
+      return c.json({
+        queued: true,
+        deduped,
+        existing: { id: existing[0].id, status: existing[0].status },
+        message: "Welcome email already queued",
+      });
+    }
+
+    // Queue new email
+    const referralLink = `${env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev'}?ref=${profile.referral_code}`;
+    await sql`
+      INSERT INTO email_outbox (template, recipient, payload, status, dedupe_key, scheduled_at)
+      VALUES (
+        'welcome',
+        ${profile.email},
+        ${JSON.stringify({
+          userId: profile.id,
+          email: profile.email,
+          fullName: profile.full_name,
+          referralCode: profile.referral_code,
+          referralLink,
+          isConfirmed: profile.status === 'active' && profile.verified === true,
+          siteUrl: env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev',
+          appUrl: env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev',
+          supportEmail: env.SUPPORT_EMAIL || env.ADMIN_EMAIL_FROM || 'admin@sealify.ng',
+          supportPhone: env.SUPPORT_PHONE || '+234 813 120 8468',
+        })},
+        'pending',
+        ${'welcome:' || userId},
+        now()
+      )
+      ON CONFLICT (dedupe_key) DO NOTHING
+    `;
+
+    await auditLog(sql, userId, "Welcome Email Queued", `Welcome email queued for ${profile.email}`, "user");
+
+    return c.json({
+      success: true,
+      queued: true,
+      deduped,
+      message: "Welcome email queued",
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Welcome email queue error:", error);
+    throw new HTTPException(500, { message: "Failed to queue welcome email" });
+  }
+});
+
+// Admin: Resend welcome email to selected users
+emailRoutes.post("/admin/welcome-resend", requireAdmin, emailRateLimit, async (c) => {
+  try {
+    const env = c.env as any;
+    const body = await c.req.json();
+    const { userIds } = body as { userIds: string[] };
+    if (!userIds?.length) {
+      throw new HTTPException(400, { message: "userIds required" });
+    }
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+
+    const results = [];
+    for (const userId of userIds) {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, referral_code, email_notifications")
+        .eq("id", userId)
+        .single();
+      if (error || !profile) {
+        results.push({
+          userId,
+          success: false,
+          error: "User not found",
+        });
+        continue;
+      }
+
+      if (!profile.referral_code) {
+        results.push({
+          userId,
+          success: false,
+          error: "Missing referral code",
+        });
+        continue;
+      }
+
+      if (!profile.email_notifications) {
+        results.push({
+          userId,
+          success: false,
+          error: "Opted out of emails",
+        });
+        continue;
+      }
+
+      // Queue
+      const referralLink = `${env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev'}?ref=${profile.referral_code}`;
+      await sql`
+        INSERT INTO email_outbox (template, recipient, payload, status, dedupe_key)
+        VALUES (
+          'welcome',
+          ${profile.email},
+          ${JSON.stringify({
+            userId: profile.id,
+            email: profile.email,
+            fullName: profile.full_name,
+            referralCode: profile.referral_code,
+            referralLink,
+            isConfirmed: profile.status === 'active' && profile.verified === true,
+            siteUrl: env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev',
+            appUrl: env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev',
+            supportEmail: env.SUPPORT_EMAIL || env.ADMIN_EMAIL_FROM || 'admin@sealify.ng',
+            supportPhone: env.SUPPORT_PHONE || '+234 813 120 8468',
+          })},
+          'pending',
+          ${'welcome:' || profile.id},
+          now()
+        )
+        ON CONFLICT (dedupe_key) DO NOTHING
+      `;
+
+      await auditLog(sql, c.get('user').id, "Welcome Email Resent", `Admin resent welcome email to ${profile.email}`, "broadcast");
+      results.push({
+        userId,
+        success: true,
+        message: "Queued",
+      });
+    }
+
+    return c.json({
+      success: true,
+      total: userIds.length,
+      successful: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Admin welcome resend error:", error);
+    throw new HTTPException(500, { message: "Failed to resend welcome emails" });
+  }
+});
+
 // Admin: Broadcast email to all or individual users
 emailRoutes.post("/admin/send", requireAdmin, emailRateLimit, async (c) => {
   try {

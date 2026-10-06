@@ -241,7 +241,16 @@ export async function auditLog(
   userId: string,
   action: string,
   details: string,
-  type: "security" | "user" | "listing" | "broadcast" | "verification" | "intrusion" | "dispute" | "finance" = "user",
+  type:
+    | "security"
+    | "user"
+    | "listing"
+    | "broadcast"
+    | "verification"
+    | "intrusion"
+    | "dispute"
+    | "finance"
+    | "referral" = "user",
   ipAddress?: string,
   userAgent?: string
 ) {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { mapProfileToUser } from '@/services/supabaseService';
 
 interface AuthContextType {
   user: any | null;
@@ -61,13 +62,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, phone: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
+      options: { data: { full_name: fullName, phone_number: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
     });
     if (error) throw new Error(error.message);
-    if (data.session) {
+    if (data.session && data.user) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+          phone_number: phoneNumber,
+          role: 'buyer',
+          status: 'active',
+          location: 'Ogbomoso, Oyo State',
+          verified: false,
+          verification_type: 'none',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+      if (profileError) throw new Error('Failed to create profile');
+      if (!profileData) throw new Error('Failed to create profile');
       setSession(data.session);
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
+      setUser(mapProfileToUser(profileData));
     }
   };
 

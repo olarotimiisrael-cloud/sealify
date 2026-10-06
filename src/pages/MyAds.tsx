@@ -31,6 +31,7 @@ import {
   Clock,
   XCircle,
   ShieldCheck,
+  ArrowRight,
 } from 'lucide-react';
 
 export default function MyAds() {
@@ -131,6 +132,9 @@ export default function MyAds() {
     }).format(amount);
   };
 
+  // Profile completion check for new users
+  const hasIncompleteProfile = !user.avatarUrl || !user.storeBannerUrl || !user.businessName;
+
   if (!user) return null;
 
   return (
@@ -139,7 +143,35 @@ export default function MyAds() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
-        
+        {hasIncompleteProfile && (
+          <div className="p-4 bg-emerald-500/10 border-l-4 border-emerald-500 rounded-t-xl rounded-b-xl mb-6 text-slate-100">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-emerald-400 tracking-wider mb-1">Welcome to Sealify! 🎉</h3>
+                <p className="text-sm text-slate-300">
+                  Your account has been created successfully. To get started, please complete your profile setup:
+                </p>
+                <ul className="list-disc list-inside text-slate-300 space-y-1">
+                  <li>Add a profile photo</li>
+                  <li>Add a cover photo</li>
+                  <li>Set your business/shop name</li>
+                </ul>
+                <div className="mt-3">
+                  <button
+                    onClick={() => navigate('/profile-complete')}
+                    className="inline-flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm transition-colors"
+                  >
+                    Complete Profile
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Sync Status Banner */}
         <div className="p-3 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">

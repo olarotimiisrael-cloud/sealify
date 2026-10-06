@@ -908,21 +908,42 @@ const adminLogin = async (email: string, password: string, accessKey?: string): 
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: data.email,
             password: data.password,
-            options: { data: { full_name: data.fullName, phone: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
+            options: { data: { full_name: data.fullName, phone_number: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
           });
-      
+
           if (authError) throw authError;
           if (!authData.user) throw new Error('Supabase did not create the account');
-      
+
           if (!authData.session) {
             toast.success('Account created. Check your email to confirm your account before signing in.');
             return;
           }
 
-    const profile = await loadProfileForAuthUser(authData.user);
-    if (!profile) throw new Error('Account created, but the profile is still provisioning. Please sign in again.');
-    applyAuthenticatedUser(profile);
-  };
+          // Create profile for the newly authenticated user
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: authData.user.id,
+              email: data.email,
+              full_name: data.fullName,
+              phone_number: data.phoneNumber,
+              role: 'buyer',
+              status: 'active',
+              location: 'Ogbomoso, Oyo State',
+              verified: false,
+              verification_type: 'none',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (profileError) throw profileError;
+          if (!profileData) throw new Error('Failed to create profile');
+
+          const profile = mapProfileToUser(profileData);
+          applyAuthenticatedUser(profile);
+        };
 
 const sendPhoneOtp = async (phone: string, channel?: string) => {
      const response = await fetch(apiUrl('/api/auth/phone/otp'), {
