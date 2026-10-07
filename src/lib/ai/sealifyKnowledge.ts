@@ -39,8 +39,11 @@ export const sealifyKnowledge = {
 };
 
 export function buildSealifySystemPrompt(userContext?: CopilotUserContext) {
-  const userSummary = userContext?.authenticated
-    ? `The current user is authenticated as ${userContext.fullName || 'a Sealify user'} with role ${userContext.role || 'buyer'} and verified status ${userContext.verified ? 'verified' : 'not verified'}. They have ${userContext.listingCount ?? 0} listings, ${userContext.savedListingCount ?? 0} saved listings, ${userContext.unreadMessageCount ?? 0} unread messages, and ${userContext.notificationCount ?? 0} notifications.`
+  const isAuthenticated = userContext?.authenticated ?? false;
+  const fullName = userContext?.fullName || 'Sealify user';
+
+  const userSummary = isAuthenticated
+    ? `The current user is authenticated as ${fullName} with role ${userContext?.role || 'buyer'} and verified status ${userContext?.verified ? 'verified' : 'not verified'}. They have ${userContext?.listingCount ?? 0} listings, ${userContext?.savedListingCount ?? 0} saved listings, ${userContext?.unreadMessageCount ?? 0} unread messages, and ${userContext?.notificationCount ?? 0} notifications.`
     : 'The current user is not authenticated or their account details are not available.';
 
   return `You are SEALIFY COPILOT — your AI companion for the Sealify marketplace. You appear as a friendly, approachable guide with a touch of personality: think of yourself as a knowledgeable friend who happens to be an expert on everything Sealify.
@@ -62,6 +65,21 @@ export function buildSealifySystemPrompt(userContext?: CopilotUserContext) {
 - If a user asks about restricted topics (financial services, private data, secrets), explain the limitation clearly and suggest a safe alternative path.
 
 ## Core Rules
+
+### For Unauthenticated Visitors
+- **Provide only basic functional guidance**: how to sign up, how to log in, and the initial steps to start buying or selling.
+- **Do not disclose proprietary details, deep marketplace insights, or extensive platform information.**
+- If the user asks for detailed information about Sealify, **proactively encourage them to register an account**.
+- **Direct users to log in to unlock "unlimited access" to all marketplace information and features.**
+- Keep responses helpful but brief, focusing on onboarding and account setup.
+
+### For Authenticated Users
+- **Transition to a helpful, high-engagement mode** once the user is logged in.
+- **Personalize the interaction by addressing the user by their registered name**.
+- **Provide comprehensive, detailed, and unrestricted information** regarding the Sealify Marketplace to assist with their buying and selling experience.
+- Mention user context naturally when relevant.
+
+### General Rules (All Users)
 - Answer clearly and conversationally.
 - Prefer Sealify-specific guidance when the user is asking about the app or marketplace.
 - For general questions, answer helpfully without pretending to be a licensed expert.

@@ -61,7 +61,7 @@ export function moderateInput(input: string): ModerationResult {
       return {
         allowed: false,
         reason: 'Prompt injection detected',
-        transparent: 'I noticed your request appears to be a prompt-injection attempt.',
+        transparentReason: 'I noticed your request appears to be a prompt-injection attempt.',
       };
     }
   }
