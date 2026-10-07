@@ -24,7 +24,6 @@ import {
   Store,
   ChevronDown,
   Shield,
-  TrendingUp,
   HelpCircle,
   Users,
   PlayCircle,
@@ -149,11 +148,6 @@ const Navbar: React.FC = () => {
             <Link to="/requests" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 transition-colors mr-1 bg-amber-500/10 rounded-xl border border-amber-500/20">
               <HelpCircle className="w-3.5 h-3.5" />
               <span>{t('requests')}</span>
-            </Link>
-
-            <Link to="/market-insights" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors mr-1 bg-emerald-500/5 rounded-xl border border-emerald-500/10">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>{t('insights')}</span>
             </Link>
 
             <div className="relative group">

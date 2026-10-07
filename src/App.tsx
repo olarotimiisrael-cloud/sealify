@@ -26,7 +26,6 @@ const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const SafetyCenter = lazy(() => import("./pages/SafetyCenter"));
 const DisputeResolution = lazy(() => import("./pages/DisputeResolution"));
-const MarketInsights = lazy(() => import("./pages/MarketInsights"));
 const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
@@ -69,7 +68,6 @@ const App = () => (
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/safety" element={<SafetyCenter />} />
           <Route path="/dispute" element={<DisputeResolution />} />
-          <Route path="/market-insights" element={<MarketInsights />} />
           <Route path="/requests" element={<BuyerRequests />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/community" element={<CommunityBoard />} />
