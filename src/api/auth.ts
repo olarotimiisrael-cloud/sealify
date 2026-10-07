@@ -4,6 +4,7 @@ import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 import { rateLimit, sanitizeInput, auditLog, logIntrusionAttempt, checkIsAdmin } from "../middleware/security";
 import { z } from "zod";
+import { parseUserAgent } from "../utils/userAgent";
 
 export const authRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql> } }>();
 
@@ -33,6 +34,7 @@ const registerSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters").max(128),
   fullName: z.string().min(2, "Name too short").max(100).regex(/^[a-zA-Z\s'-]+$/, "Invalid name format"),
   phoneNumber: z.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid phone number format").optional(),
+  referralCode: z.string().max(12).optional(),
 });
 
 const loginSchema = z.object({
@@ -59,10 +61,100 @@ const updateProfileSchema = z.object({
   whatsappNotifications: z.boolean().optional(),
   hidePhonePublicly: z.boolean().optional(),
   hideLocationPublicly: z.boolean().optional(),
+  referralCode: z.string().max(12).optional(),
 });
 
 // Rate limiting for auth endpoints
 const authRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, maxRequests: 10 }); // 10 req/15min
+
+/**
+ * Record a new-user signup alert so administrators are notified in a timely
+ * manner and can make follow-up calls. Best-effort: a database failure must
+ * never turn a successful registration into an error response.
+ */
+async function recordSignupAlert(sql: any, c: any, profile: { id: string; email: string; full_name?: string | null; phone_number?: string | null; location?: string | null; role?: string | null }, channel: string) {
+  try {
+    const ip = c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For") || "unknown";
+    const ua = c.req.header("User-Agent") || "unknown";
+    await sql`
+      INSERT INTO admin_signup_alerts (user_id, email, full_name, phone_number, location, role, signup_channel, ip_address, user_agent, follow_up_status, created_at)
+      VALUES (${profile.id}, ${profile.email}, ${profile.full_name || null}, ${profile.phone_number || null}, ${profile.location || null}, ${profile.role || 'buyer'}, ${channel}, ${ip}, ${ua}, 'pending', NOW())
+    `;
+  } catch (error) {
+    console.error("[AUTH] Signup alert recording skipped (database unavailable):", (error as Error).message);
+  }
+}
+
+/**
+ * Record a successful administrator login session for the audit log. Best-effort:
+ * must never block returning the session to the client.
+ */
+async function recordAdminLoginSession(sql: any, c: any, user: { id: string; email: string }, accessMethod: string, sessionId?: string | null) {
+  try {
+    const ip = c.req.header("CF-Connecting-IP") || c.req.header("X-Forwarded-For") || "unknown";
+    const ua = c.req.header("User-Agent") || "unknown";
+    const parsed = parseUserAgent(ua);
+
+    // Cloudflare provides best-effort geo headers; they are absent on some
+    // requests (localhost, certain proxies), so every field is nullable.
+    const country = c.req.header("CF-IPCountry") || null;
+    const region = c.req.header("CF-Region") || null;
+    const city = c.req.header("CF-City") || null;
+    const latHeader = c.req.header("CF-Latitude");
+    const lonHeader = c.req.header("CF-Longitude");
+    const latitude = latHeader ? Number(latHeader) : null;
+    const longitude = lonHeader ? Number(lonHeader) : null;
+
+    const result = await sql`
+      INSERT INTO admin_login_sessions
+        (admin_id, email, ip_address, country, region, city, latitude, longitude,
+         browser_name, browser_version, os_name, os_version, device_type, device_brand,
+         device_model, access_method, session_token_id, user_agent, status, created_at, updated_at)
+      VALUES (${user.id}, ${user.email}, ${ip}, ${country}, ${region}, ${city}, ${latitude}, ${longitude},
+              ${parsed.browserName}, ${parsed.browserVersion}, ${parsed.osName}, ${parsed.osVersion},
+              ${parsed.deviceType}, ${parsed.deviceBrand}, ${parsed.deviceModel}, ${accessMethod},
+              ${sessionId || null}, ${ua}, 'logged_in', NOW(), NOW())
+      RETURNING id
+    `;
+
+    // Best-effort denormalized pointer on the profile for quick "last login" reads.
+    await sql`
+      UPDATE profiles SET last_login_at = NOW(), last_login_ip = ${ip} WHERE id = ${user.id}
+    `;
+
+    return result[0]?.id || null;
+  } catch (error) {
+    console.error("[AUTH] Admin login session recording skipped (database unavailable):", (error as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Mark an existing admin login session as logged out and compute its
+ * duration. Best-effort: must never block a logout response.
+ */
+async function recordAdminLogout(sql: any, user: { id: string; email: string }) {
+  try {
+    const session = await sql`
+      SELECT id, login_at FROM admin_login_sessions
+      WHERE admin_id = ${user.id} AND status = 'logged_in'
+      ORDER BY login_at DESC LIMIT 1
+    `;
+    if (!session.length) return;
+
+    const loginAt = new Date(session[0].login_at).getTime();
+    const duration = Math.max(0, Math.round((Date.now() - loginAt) / 1000));
+
+    await sql`
+      UPDATE admin_login_sessions
+      SET status = 'logged_out', logout_at = NOW(), session_duration_seconds = ${duration},
+          last_activity_at = NOW(), updated_at = NOW()
+      WHERE id = ${session[0].id}
+    `;
+  } catch (error) {
+    console.error("[AUTH] Admin logout recording skipped (database unavailable):", (error as Error).message);
+  }
+}
 
 // This is deliberately keyed by normalized email, not browser state or IP.
 // Supabase Auth remains the credential authority; intrusion_logs makes the
@@ -72,6 +164,77 @@ const ADMIN_LOGIN_MAX_FAILURES = 5;
 
 const genericAdminLoginError = () => new HTTPException(401, { message: "Unable to authenticate administrator" });
 
+/**
+ * Referral helpers. Every user gets a permanent referral code on signup so
+ * they can refer others, and a referral is credited to the referrer via the
+ * database function credit_referral() (atomic: referral row + cached counter
+ * in one transaction). The referral code is minted server-side, never
+ * client-controlled, so a client cannot forge or guess another user's code.
+ */
+const REFERRAL_CODE_ALPHABET = "23456789ABCDEFGHJKMNPQRSTUVWXYZ";
+
+function mintReferralCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(6));
+  let out = "";
+  for (const b of bytes) out += REFERRAL_CODE_ALPHABET[b % REFERRAL_CODE_ALPHABET.length];
+  return `SEALIFY-${out}`;
+}
+
+async function ensureReferralCode(sql: ReturnType<typeof getSql>, userId: string): Promise<string> {
+  const rows = await sql`SELECT referral_code FROM profiles WHERE id = ${userId}`;
+  if (rows.length && rows[0].referral_code) return rows[0].referral_code;
+
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const code = mintReferralCode();
+    try {
+      const result = await sql`
+        UPDATE profiles SET referral_code = ${code}, referral_count = 0, referral_cycle = 1
+        WHERE id = ${userId} AND referral_code IS NULL
+        RETURNING referral_code
+      `;
+      if (result.length) return result[0].referral_code;
+    } catch (err: any) {
+      // unique violation on the code -> retry with a fresh code
+      if (err?.code !== "23505") throw err;
+    }
+  }
+  throw new HTTPException(500, { message: "Failed to generate referral code" });
+}
+
+async function creditReferral(sql: ReturnType<typeof getSql>, refereeId: string, referralCode?: string, ip?: string | null, userAgent?: string | null): Promise<string | null> {
+  if (!referralCode) return null;
+  try {
+    const result = await sql`
+      SELECT public.credit_referral(
+        ${refereeId},
+        ${referralCode},
+        ${ip || null},
+        ${userAgent || null}
+      ) AS referral_id
+    `;
+    return result[0]?.referral_id || null;
+  } catch (err: any) {
+    console.error("[AUTH] credit_referral failed:", err?.message ?? err);
+    return null;
+  }
+}
+
+async function dispatchWelcomeEmail(env: any, c: any, userId: string) {
+  try {
+    const baseUrl = c.req.url.replace(/\/api\/auth\/register$/, "");
+    const res = await fetch(`${baseUrl}/api/email/welcome`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+    if (!res.ok) {
+      console.warn("[AUTH] Welcome email dispatch failed:", await res.text().catch(() => ""));
+    }
+  } catch (err: any) {
+    console.warn("[AUTH] Welcome email dispatch error:", err?.message ?? err);
+  }
+}
+
 // Register
 authRoutes.post("/register", authRateLimit, async (c) => {
   try {
@@ -80,7 +243,7 @@ authRoutes.post("/register", authRateLimit, async (c) => {
 
     // Validate input
     const validated = registerSchema.parse(body);
-    const { email, password, fullName, phoneNumber } = validated;
+    const { email, password, fullName, phoneNumber, referralCode } = validated;
 
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
     const sql = getSql(env);
@@ -137,6 +300,27 @@ authRoutes.post("/register", authRateLimit, async (c) => {
 
     await auditLog(getSql(c.env), userId, "User Registered", `New user registered: ${email}`, "user");
 
+    // Ensure the new user has their own referral code (they can refer others).
+    const ownReferralCode = await ensureReferralCode(getSql(c.env), userId);
+
+    // Credit the referrer if this signup was referred. Best-effort: a referral
+    // failure must never turn a successful registration into an error.
+    await creditReferral(getSql(c.env), userId, referralCode, c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"));
+
+    // Dispatch the welcome email (best-effort, never blocks the 201 response).
+    await dispatchWelcomeEmail(env, c, userId);
+
+    // Notify administrators of the new signup so they can make a timely
+    // follow-up call. Best-effort: never blocks the registration response.
+    await recordSignupAlert(getSql(c.env), c, {
+      id: userId,
+      email,
+      full_name: sanitizeInput(fullName),
+      phone_number: phoneNumber || null,
+      location: 'Ogbomoso, Oyo State',
+      role: 'buyer',
+    }, 'email');
+
     return c.json({
       user: {
         id: userId,
@@ -145,6 +329,7 @@ authRoutes.post("/register", authRateLimit, async (c) => {
         phoneNumber,
         role: "buyer",
         verified: false,
+        referralCode: ownReferralCode,
       },
       session: authData.session
     }, 201);
@@ -274,8 +459,14 @@ authRoutes.post("/profile-complete", async (c) => {
 
     await auditLog(getSql(c.env), user.id, "Profile Completed", "OAuth user completed profile", "user");
 
+    // Ensure the user has their own referral code (they can refer others).
+    const ownReferralCode = await ensureReferralCode(getSql(c.env), user.id);
+
+    // Credit the referrer if this signup was referred. Best-effort.
+    await creditReferral(getSql(c.env), user.id, validated.referralCode, c.req.header("CF-Connecting-IP"), c.req.header("User-Agent"));
+
     const updated = await sql`SELECT * FROM profiles WHERE id = ${user.id}`;
-    return c.json({ user: updated[0] });
+    return c.json({ user: { ...updated[0], referralCode: ownReferralCode } });
   } catch (error) {
     if (error instanceof HTTPException) throw error;
     if (error instanceof z.ZodError) {
@@ -399,6 +590,8 @@ authRoutes.post("/admin-login", async (c) => {
         AND created_at >= NOW() - INTERVAL '15 minutes'
     `;
     await auditLog(sql, data.user.id, "Admin Login", "Successful administrator authentication", "security");
+    // Record the detailed login session for the audit log (best-effort).
+    await recordAdminLoginSession(sql, c, { id: data.user.id, email: data.user.email || email }, 'password', data.session?.access_token ? null : null);
   } catch (dbError) {
     console.error("[ADMIN LOGIN] Optional success logging skipped (database unavailable):", (dbError as Error).message);
   }
@@ -564,8 +757,18 @@ authRoutes.post("/logout", async (c) => {
 
     const token = authHeader.substring(7);
     const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
-
+    const { data: { user } } = await supabase.auth.getUser(token);
     await supabase.auth.signOut();
+
+    // Record the logout + computed session duration in the audit log.
+    // Best-effort: must never block the logout response.
+    if (user) {
+      try {
+        await recordAdminLogout(getSql(c.env), c, { id: user.id, email: user.email || '' });
+      } catch {
+        // Database unavailable - logout still succeeds.
+      }
+    }
 
     return c.json({ success: true });
   } catch (error) {

@@ -9,6 +9,15 @@ binding = "HYPERDRIVE"
 id = "4450cb10a9fb4977ba6a1d1cd2e6b110"
 localConnectionString = "<LOCAL_CONNECTION_STRING_FOR_LOCAL_DEVELOPMENT_HERE>"
 
+# Cloudflare Email Sending binding. This is the primary provider for the
+# welcome email, password reset and admin broadcast flows (src/api/email.ts).
+# send_email is a built-in binding — no ID is required. The sender domain and
+# the recipient domain must be verified in the Cloudflare Email Service, and
+# SPF/DKIM/DMARC must be published, or mail will land in spam.
+send_email = [
+  { name = "EMAIL" }
+]
+
 [vars]
 SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7"
@@ -21,3 +30,13 @@ APP_URL = "https://sealify.pages.dev"
 PUBLIC_SITE_URL = "https://sealify.pages.dev"
 NODE_ENV = "production"
 NPM_CONFIG_PRODUCTION = "false"
+# Transactional email configuration
+EMAIL_SERVICE_PROVIDER = "cloudflare"
+EMAIL_DAILY_LIMIT = "10000"
+WELCOME_EMAIL_FROM = "noreply@sealify.ng"
+WELCOME_EMAIL_FROM_NAME = "Sealify"
+SUPPORT_EMAIL = "support@sealify.ng"
+SUPPORT_PHONE = "+234 813 120 8468"
+# Secret used by internal route-to-route calls (e.g. /api/auth/register ->
+# /api/email/welcome). Set as a Pages Secret, never in [vars].
+INTERNAL_API_TOKEN = ""

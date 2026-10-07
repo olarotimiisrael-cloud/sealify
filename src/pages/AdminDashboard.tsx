@@ -21,7 +21,7 @@ import {
   Cloud, Cpu, Download as DownloadIcon, FileText as FileTextIcon,
   Navigation, Box, Megaphone, Paperclip, Bold, Italic, Underline,
   Heading1, Heading2, List as ListIcon, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Type, Palette, PaintBucket
+  Type, Palette, PaintBucket, Gift,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';
@@ -37,6 +37,7 @@ import ProjectDocumentation from '@/components/ProjectDocumentation';
 import DatabaseDiagramViewer from '@/components/DatabaseDiagramViewer';
 import ArchitectureDiagram from '@/components/ArchitectureDiagram';
 import UIComponentLibrary from '@/components/UIComponentLibrary';
+import AdminReferralsPanel from '@/components/admin/AdminReferralsPanel';
 
 const AdminDashboard: React.FC = () => {
   const { 
@@ -100,10 +101,16 @@ const AdminDashboard: React.FC = () => {
     sendMultiChannelPasswordReset,
     broadcastSMS,
     broadcastWhatsApp,
-    uploadAttachment
+    uploadAttachment,
+    signupAlerts,
+    loadSignupAlerts,
+    updateSignupAlert,
+    loginSessions,
+    loadLoginSessions,
+    updateLoginSession
   } = useSealify();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'seo' | 'security' | 'system' | 'database' | 'broadcast' | 'docs' | 'architecture' | 'components'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'content' | 'finance' | 'seo' | 'security' | 'system' | 'database' | 'broadcast' | 'referrals' | 'docs' | 'architecture' | 'components'>('overview');
   const [adsenseForm, setAdsenseForm] = useState({
     enabled: false,
     clientId: 'ca-pub-1826576243729056',
@@ -224,13 +231,19 @@ const AdminDashboard: React.FC = () => {
     }).format(amount);
   };
 
-  // Trigger entrance animations
+  // Trigger entrance animations and load new feature data
   useEffect(() => {
     const timer = setTimeout(() => {
       setAnimationStates(prev => ({ ...prev, entrance: true }));
     }, 100);
+
+    if (isAdmin) {
+      void loadSignupAlerts();
+      void loadLoginSessions();
+    }
+
     return () => clearTimeout(timer);
-  }, []);
+  }, [isAdmin]);
 
   const insertFormat = (command: string, value?: string) => {
     const html = broadcastForm.html;
@@ -352,7 +365,7 @@ const AdminDashboard: React.FC = () => {
     );
   }
 
-  const tabs = [
+    const tabs = [
     { id: 'overview', label: 'Overview', icon: Layout, desc: 'System health & quick actions' },
     { id: 'users', label: 'Users', icon: Users, desc: 'Manage all accounts' },
     { id: 'content', label: 'Content', icon: Shield, desc: 'Moderation queue' },
@@ -362,18 +375,21 @@ const AdminDashboard: React.FC = () => {
     { id: 'system', label: 'System', icon: Settings, desc: 'Platform controls' },
     { id: 'database', label: 'Database', icon: Database, desc: 'SQL & migrations' },
     { id: 'broadcast', label: 'Broadcast', icon: Megaphone, desc: 'Mass notifications' },
+    { id: 'referrals', label: 'Referrals', icon: Gift, desc: 'Referral program & rewards' },
+    { id: 'notifications', label: 'New User Notifications', icon: Bell, desc: 'Signup alerts & follow-up calls' },
+    { id: 'login-sessions', label: 'Login Audit', icon: Clock, desc: 'Admin login session tracking' },
     { id: 'docs', label: 'Docs', icon: BookOpen, desc: 'Project documentation' },
     { id: 'architecture', label: 'Architecture', icon: Layers, desc: 'System design' },
     { id: 'components', label: 'Components', icon: Box, desc: 'UI library' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
-      {/* Animated Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-pulse-slow"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-purple-500/3 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
+    <div className="min-h-screen admin-panel text-slate-100 flex flex-col font-sans relative overflow-x-hidden">
+       {/* Animated Background */}
+       <div className="fixed inset-0 pointer-events-none overflow-hidden">
+         <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-pulse-slow"></div>
+         <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+         <div className="absolute top-1/2 left-1/2 w-72 h-72 bg-primary/3 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '4s' }}></div>
         {/* Floating particles */}
         {[...Array(20)].map((_, i) => (
           <div key={i} className="absolute w-1 h-1 bg-emerald-400/20 rounded-full animate-float" 
@@ -416,11 +432,23 @@ const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => setShowProjectDocs(true)} className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-purple-600/20 hover:from-purple-500/30 hover:to-purple-600/30 text-purple-400 font-bold rounded-xl text-xs border border-purple-500/30 transition-all flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              <span>Project Docs</span>
-            </button>
+           <div className="flex items-center gap-3 flex-wrap">
+             <button 
+               onClick={() => setActiveTab('notifications')}
+               className="relative p-3 bg-slate-900/50 border border-slate-800/50 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 rounded-xl transition-all duration-300"
+               title="New User Notifications"
+             >
+               <Bell className="w-5 h-5" />
+               {signupAlerts.filter(a => a.status === 'pending').length > 0 && (
+                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 rounded-full flex items-center justify-center text-[8px] font-black text-white animate-pulse-ring">
+                   {signupAlerts.filter(a => a.status === 'pending').length > 9 ? '9+' : signupAlerts.filter(a => a.status === 'pending').length}
+                 </span>
+               )}
+             </button>
+             <button onClick={() => setShowProjectDocs(true)} className="px-4 py-2 bg-gradient-to-r from-purple-500/20 to-purple-600/20 hover:from-purple-500/30 hover:to-purple-600/30 text-purple-400 font-bold rounded-xl text-xs border border-purple-500/30 transition-all flex items-center gap-2">
+               <BookOpen className="w-4 h-4" />
+               <span>Project Docs</span>
+             </button>
             <button onClick={() => setShowArchitecture(true)} className="px-4 py-2 bg-gradient-to-r from-blue-500/20 to-blue-600/20 hover:from-blue-500/30 hover:to-blue-600/30 text-blue-400 font-bold rounded-xl text-xs border border-blue-500/30 transition-all flex items-center gap-2">
               <Layers className="w-4 h-4" />
               <span>Architecture</span>
@@ -525,7 +553,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Navigation - Beautiful Glassmorphism */}
-        <div className="bg-slate-900/50 backdrop-blur-2xl border border-slate-800/50 rounded-2xl p-1 flex flex-wrap gap-1 animate-slide-up" style={{ animationDelay: '200ms' }}>
+         <div className="admin-panel flex flex-wrap gap-1 animate-slide-up" style={{ animationDelay: '200ms' }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const pendingCounts: Record<string, number> = {
@@ -543,12 +571,12 @@ const AdminDashboard: React.FC = () => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 min-w-[140px] ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/30'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-                }`}
+                 onClick={() => setActiveTab(tab.id as any)}
+                 className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 min-w-[140px] ${
+                   activeTab === tab.id
+                     ? 'bg-gradient-to-r from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/30 border border-white/10'
+                     : 'text-muted-foreground hover:text-foreground hover:bg-surface-border transition-colors'
+                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <span>{tab.label}</span>
@@ -563,7 +591,7 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-slate-900/60 backdrop-blur-2xl border border-slate-800/50 rounded-[2.5rem] p-6 sm:p-8 shadow-2xl animate-fade-in">
+         <div className="admin-panel-strong p-6 sm:p-8 animate-fade-in">
           {renderTabContent()}
         </div>
       </main>
@@ -674,6 +702,7 @@ const AdminDashboard: React.FC = () => {
                     { label: 'Database Tools', desc: 'Schema, migrations, backups, SQL', icon: Database, color: 'from-purple-500 to-indigo-500', action: () => setActiveTab('database') },
                     { label: 'Branding & SEO', desc: 'Favicon, logo, titles, link previews', icon: Palette, color: 'from-pink-500 to-rose-500', action: () => setActiveTab('seo') },
                     { label: 'Broadcast Center', desc: 'Mass notifications, email digests', icon: Megaphone, color: 'from-teal-500 to-green-500', action: () => setActiveTab('broadcast') },
+                    { label: 'Referral Program', desc: 'Referral counts, rewards & resets', icon: Gift, color: 'from-pink-500 to-fuchsia-500', action: () => setActiveTab('referrals') },
                   ].map((action, i) => (
                     <button 
                       key={i}
@@ -1869,6 +1898,183 @@ const AdminDashboard: React.FC = () => {
           </div>
         );
 
+      case 'notifications':
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white">New User Notifications</h2>
+                <p className="text-xs text-slate-400">Recently registered users requiring admin follow-up</p>
+              </div>
+              <button 
+                onClick={() => loadSignupAlerts()} 
+                className="px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {signupAlerts.length === 0 ? (
+                <div className="p-8 bg-slate-950/50 border border-slate-800/50 rounded-2xl text-center space-y-3">
+                  <Bell className="w-10 h-10 text-slate-600 mx-auto" />
+                  <p className="text-slate-400">No new user notifications</p>
+                </div>
+              ) : signupAlerts
+                .filter(a => a.status === 'pending')
+                .slice()
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .map((alert: any) => (
+                  <div key={alert.id} className="p-4 bg-slate-950/50 border border-slate-800/50 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center border border-emerald-500/30">
+                        <User className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-white">{alert.user_email}</p>
+                        <p className="text-xs text-slate-400">
+                          Registered: {new Date(alert.created_at).toLocaleString()}
+                        </p>
+                        {alert.user_name && (
+                          <p className="text-xs text-slate-400">Name: {alert.user_name}</p>
+                        )}
+                        {alert.follow_up_note && (
+                          <p className="text-xs text-amber-400 mt-1">{alert.follow_up_note}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full">
+                        {alert.follow_up_call_needed ? 'CALL NEEDED' : 'NEW'}
+                      </span>
+                      <button 
+                        onClick={() => updateSignupAlert(alert.id, 'contacted', alert.follow_up_note)}
+                        className="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl border border-emerald-500/30 transition-colors"
+                        title="Mark as contacted"
+                      >
+                        Contacted
+                      </button>
+                      <button 
+                        onClick={() => updateSignupAlert(alert.id, 'completed', alert.follow_up_note)}
+                        className="px-3 py-1.5 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition-colors"
+                        title="Dismiss"
+                      >
+                        Done
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </div>
+        );
+
+      case 'login-sessions':
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-xl font-black text-white">Admin Login Audit Log</h2>
+                <p className="text-xs text-slate-400">Track all admin login sessions with geo-location and device details</p>
+              </div>
+              <button 
+                onClick={() => loadLoginSessions()} 
+                className="px-4 py-2 bg-slate-800/50 hover:bg-slate-700/50 text-slate-300 font-bold rounded-xl text-xs border border-slate-700 transition-colors flex items-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-slate-400 border-b border-slate-800/50">
+                    <th className="p-3 font-black uppercase tracking-wider">Admin</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Date & Time</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Geo Location</th>
+                    <th className="p-3 font-black uppercase tracking-wider">IP Address</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Browser</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Device</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Session Duration</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Access Method</th>
+                    <th className="p-3 font-black uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/30">
+                  {loginSessions.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-8 text-center text-slate-400">
+                        No login session records found
+                      </td>
+                    </tr>
+                  ) : loginSessions
+                    .slice()
+                    .sort((a: any, b: any) => new Date(b.session_start).getTime() - new Date(a.session_start).getTime())
+                    .map((session: any) => (
+                      <tr key={session.id} className="hover:bg-slate-800/30 transition-colors">
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-rose-500/20 flex items-center justify-center border border-rose-500/30">
+                              <Shield className="w-4 h-4 text-rose-400" />
+                            </div>
+                            <div>
+                              <p className="font-bold text-white truncate max-w-xs">{session.admin_email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3 font-mono text-slate-300">
+                          {new Date(session.session_start).toLocaleString()}
+                        </td>
+                        <td className="p-3 text-slate-300">
+                          {session.geolocation_city ? (
+                            <span>
+                              {session.geolocation_city}, {session.geolocation_region} ({session.geolocation_country})
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">Unknown</span>
+                          )}
+                        </td>
+                        <td className="p-3 font-mono text-slate-400">{session.ip_address}</td>
+                        <td className="p-3 text-slate-300">
+                          {session.browser_name && session.browser_version
+                            ? `${session.browser_name} ${session.browser_version}`
+                            : 'Unknown'}
+                        </td>
+                        <td className="p-3 text-slate-300 capitalize">{session.device_type || 'desktop'}</td>
+                        <td className="p-3 font-mono text-slate-300">
+                          {session.session_end && session.session_duration_seconds
+                            ? (() => {
+                                const mins = Math.floor(session.session_duration_seconds / 60);
+                                const secs = session.session_duration_seconds % 60;
+                                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                              })()
+                            : '—'}
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-black bg-blue-500/20 text-blue-400">
+                            {session.access_method || 'credentials'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            session.session_status === 'active' || session.session_status === 'authenticated'
+                              ? 'bg-emerald-500/20 text-emerald-400'
+                              : session.session_status === 'logged_out' || session.session_status === 'expired'
+                              ? 'bg-slate-500/20 text-slate-400'
+                              : 'bg-amber-500/20 text-amber-400'
+                          }`}>
+                            {session.session_status?.toUpperCase() || 'UNKNOWN'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
       case 'docs':
         return <ProjectDocumentation />;
       
@@ -1877,6 +2083,8 @@ const AdminDashboard: React.FC = () => {
       
       case 'components':
         return <UIComponentLibrary />;
+      case 'referrals':
+        return <AdminReferralsPanel />;
     }
   }
 };

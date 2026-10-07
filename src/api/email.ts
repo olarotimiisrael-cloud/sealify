@@ -243,7 +243,7 @@ emailRoutes.post("/welcome", emailRateLimit, async (c) => {
     if (!profile.email_notifications) {
       await sql`
         INSERT INTO email_outbox (template, recipient, payload, status, dedupe_key)
-        VALUES ('welcome', ${profile.email}, ${JSON.stringify({ userId })}, 'suppressed', ${'welcome:' || userId})
+        VALUES ('welcome', ${profile.email}, ${JSON.stringify({ userId })}, 'suppressed', ${`welcome:${userId}`})
         ON CONFLICT (dedupe_key) DO NOTHING
       `;
       return c.json({ queued: false, suppressed: true, message: "User opted out of marketing emails" });
@@ -286,7 +286,7 @@ emailRoutes.post("/welcome", emailRateLimit, async (c) => {
           supportPhone: env.SUPPORT_PHONE || '+234 813 120 8468',
         })},
         'pending',
-        ${'welcome:' || userId},
+        ${`welcome:${userId}`},
         now()
       )
       ON CONFLICT (dedupe_key) DO NOTHING
@@ -374,7 +374,7 @@ emailRoutes.post("/admin/welcome-resend", requireAdmin, emailRateLimit, async (c
             supportPhone: env.SUPPORT_PHONE || '+234 813 120 8468',
           })},
           'pending',
-          ${'welcome:' || profile.id},
+          ${`welcome:${profile.id}`},
           now()
         )
         ON CONFLICT (dedupe_key) DO NOTHING

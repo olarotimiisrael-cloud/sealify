@@ -23,7 +23,7 @@ function firstName(fullName: string): string {
 export const WELCOME_SUBJECT = "Welcome to Sealify, {{firstName}} \u2014 here's how to start selling";
 
 function preheader(): string {
-  return '<div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#fff;">You\'re in. Here\'s how to turn your Sealify listings into real sales \u2014 and how to earn a free month of promo ads by referring friends.</div>';
+  return `<div style="display:none;max-height:0;overflow:hidden;font-size:1px;line-height:1px;color:#fff;">You're in. Here's how to turn your Sealify listings into real sales \u2014 and how to earn a free month of promo ads by referring friends.</div>`;
 }
 
 function gradientBand(title: string): string {
@@ -114,7 +114,7 @@ function footer(supportEmail: string, supportPhone: string, year: string): strin
   </tr>
   <tr>
     <td align="center" style="font-size:12px;color:#6b7280;font-family:Arial,sans-serif;padding-top:8px;">
-      You\'re receiving this because you created a Sealify account.<br>
+      You're receiving this because you created a Sealify account.<br>
       <a href="${supportEmail}" style="color:#667eea;text-decoration:none;">Notification preferences</a>
     </td>
   </tr>
@@ -155,7 +155,7 @@ export function renderWelcomeHtml(p: WelcomeEmailParams): string {
               ${gradientBand('Sealify')}
               ${cardOpen()}
               <h1 style="margin:0 0 8px;font-size:24px;color:#111827;">Hi ${fn}, welcome to Sealify! \uD83D\uDC4B</h1>
-              ${textBlock('Your account is live. In the next two minutes you\'ll learn what you can do here for free, how to turn a listing into a sale, and how your friends can earn you a free month of promoted listings.')}
+              ${textBlock(`Your account is live. In the next two minutes you'll learn what you can do here for free, how to turn a listing into a sale, and how your friends can earn you a free month of promoted listings.`)}
 
               <h2 style="margin:24px 0 12px;font-size:18px;color:#111827;">Your account</h2>
               ${textBlock(`
@@ -172,7 +172,7 @@ export function renderWelcomeHtml(p: WelcomeEmailParams): string {
                 Sealify is a marketplace that connects the people of Nigeria directly \u2014 buyers who are actively searching, and sellers who have real things to sell. Post a listing in under a minute, reach buyers in your area and beyond, and handle enquiries, offers and safe meetups in one place.
               `)}
               ${textBlock(`
-                Whether you\'re clearing stock, running a small business, or just finding a better deal, Sealify is built to make buying and selling feel safe, simple and local.
+                Whether you're clearing stock, running a small business, or just finding a better deal, Sealify is built to make buying and selling feel safe, simple and local.
               `)}
 
               ${divider()}
@@ -180,8 +180,8 @@ export function renderWelcomeHtml(p: WelcomeEmailParams): string {
               <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin:20px 0;">
                 <h3 style="margin:0 0 12px;font-size:16px;color:#166534;">\uD83D\uDCE1 Sealify is completely free \u2014 until you choose otherwise</h3>
                 <p style="margin:0 0 8px;font-size:14px;color:#166534;">You can create your account, post listings, browse, message sellers and make sales <strong>without paying anything at all.</strong></p>
-                <p style="margin:0 0 8px;font-size:14px;color:#166534;">The only time money comes into play is if <strong>you</strong> decide you want your ads promoted. Promoted listings are entirely optional \u2014 they\'re a way to put your ad in front of more buyers faster.</p>
-                <p style="margin:0;font-size:14px;color:#166534;"><strong>Sealify only costs you money if, and when, you choose to subscribe to promotional ad listings. Until then, it\'s yours at no cost.</strong></p>
+                <p style="margin:0 0 8px;font-size:14px;color:#166534;">The only time money comes into play is if <strong>you</strong> decide you want your ads promoted. Promoted listings are entirely optional \u2014 they're a way to put your ad in front of more buyers faster.</p>
+                <p style="margin:0;font-size:14px;color:#166534;"><strong>Sealify only costs you money if, and when, you choose to subscribe to promotional ad listings. Until then, it's yours at no cost.</strong></p>
               </div>
 
               ${divider()}
@@ -191,7 +191,7 @@ export function renderWelcomeHtml(p: WelcomeEmailParams): string {
                 <strong>1. Post one listing today \u2014 it takes a minute.</strong> A complete listing with a real photo, a fair price and a clear description gets 5\u00D7 more enquiries than a bare one. Add your location so nearby buyers can find you.
               `)}
               ${textBlock(`
-                <strong>2. Treat enquiries like conversations, not transactions.</strong> Reply quickly \u2014 buyers often message three sellers. Ask a question, offer something small extra, and be straightforward about what\'s wrong with an item. Good-faith replies turn into completed deals.
+                <strong>2. Treat enquiries like conversations, not transactions.</strong> Reply quickly \u2014 buyers often message three sellers. Ask a question, offer something small extra, and be straightforward about what's wrong with an item. Good-faith replies turn into completed deals.
               `)}
               ${textBlock(`
                 <strong>3. Keep fresh listings at the top.</strong> Renew and update your ads regularly. Fresh activity makes your shop look active and trustworthy, which brings more buyers back.
@@ -210,7 +210,7 @@ export function renderWelcomeHtml(p: WelcomeEmailParams): string {
               ${divider()}
 
               <h2 style="margin:16px 0 12px;font-size:18px;color:#111827;">\uD83E\uDDB8 Refer friends, family and college mates \u2014 earn a free month</h2>
-              ${textBlock('You know people who\'d love this. Share your personal invite link and when they join Sealify, it counts toward your referral total.')}
+              ${textBlock(`You know people who'd love this. Share your personal invite link and when they join Sealify, it counts toward your referral total.`)}
               ${referralBlock(p.referralLink)}
               ${rewardDisclosure()}
 

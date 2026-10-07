@@ -8,6 +8,8 @@ import PwaInstallButton from '../components/PwaInstallButton';
 import VerificationModal from '../components/VerificationModal';
 import PasswordChangeModal from '../components/PasswordChangeModal';
 import VerifiedBadge from '../components/VerifiedBadge';
+import ReferralCard from '../components/referral/ReferralCard';
+import ReferralCard from '../components/referral/ReferralCard';
 import { 
   ShieldCheck, 
   Bell, 
@@ -58,6 +60,7 @@ import {
   RotateCcw,
   History,
   Mail,
+  Gift,
   Phone,
   MapPin as MapPinIcon,
   Shield,
@@ -177,7 +180,7 @@ const Settings: React.FC = () => {
   const [isVerificationModalOpen, setIsVerificationOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeSection, setActiveSection] = useState<'profile' | 'storefront' | 'security' | 'notifications' | 'pwa'>('profile');
+  const [activeSection, setActiveSection] = useState<'profile' | 'storefront' | 'referrals' | 'security' | 'notifications' | 'pwa'>('profile');
 
   const myAds = listings.filter((l) => l.sellerId === user?.id);
   const myVerificationReq = user?.verificationType;
@@ -349,6 +352,7 @@ const Settings: React.FC = () => {
                 {[
                   { id: 'profile', label: 'Profile', icon: User, desc: 'Personal info, bio, contact details' },
                   { id: 'storefront', label: 'Storefront', icon: Store, desc: 'Business details, cover photo, social links' },
+                  { id: 'referrals', label: 'Referrals', icon: Gift, desc: 'Invite link, share, rewards' },
                   { id: 'security', label: 'Security', icon: Shield, desc: 'Password and sessions' },
                   { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
                   { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
@@ -883,6 +887,11 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
               </>
+            )}
+
+            {/* Referral Section */}
+            {activeSection === 'referrals' && (
+              <ReferralCard />
             )}
 
             {/* Security Section */}

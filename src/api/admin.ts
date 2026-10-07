@@ -161,14 +161,14 @@ adminRoutes.get("/stats", async (c) => {
 // User management
 adminRoutes.get("/users", async (c) => {
   const sql = getSql(c.env);
-  const { search, role, status, verified, limit = "50", offset = "0" } = c.req.query();
+  const { search, role, status, verified, limit = "50", offset = "0", referralCode, hasReferrals, minReferrals } = c.req.query();
 
   let whereClause = "WHERE 1=1";
   const params: any[] = [];
   let paramIndex = 1;
 
   if (search) {
-    whereClause += ` AND (p.full_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex} OR p.location ILIKE $${paramIndex})`;
+    whereClause += ` AND (p.full_name ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex} OR p.referral_code ILIKE $${paramIndex})`;
     params.push(`%${search}%`);
     paramIndex++;
   }
@@ -189,6 +189,27 @@ adminRoutes.get("/users", async (c) => {
     whereClause += ` AND p.verified = $${paramIndex}`;
     params.push(verified === "true");
     paramIndex++;
+  }
+
+  if (referralCode) {
+    whereClause += ` AND p.referral_code = $${paramIndex}`;
+    params.push(referralCode.toUpperCase());
+    paramIndex++;
+  }
+
+  if (hasReferrals === "true") {
+    whereClause += ` AND p.referral_count > 0`;
+  } else if (hasReferrals === "false") {
+    whereClause += ` AND p.referral_count = 0`;
+  }
+
+  if (minReferrals) {
+    const n = parseInt(minReferrals, 10);
+    if (!Number.isNaN(n) && n >= 0) {
+      whereClause += ` AND p.referral_count >= $${paramIndex}`;
+      params.push(n);
+      paramIndex++;
+    }
   }
 
   const limitNum = Math.min(parseInt(limit) || 50, 200);
@@ -238,9 +259,28 @@ adminRoutes.get("/users", async (c) => {
       p.website_url,
       p.instagram_handle,
       p.twitter_handle,
-      p.whatsapp_number
+      p.whatsapp_number,
+      p.referral_code,
+      p.referral_count,
+      p.referral_cycle,
+      p.referred_by,
+      COALESCE(referrer.name, null) AS referrer_name,
+      COALESCE(referrer.referral_code, null) AS referrer_referral_code,
+      COALESCE(referral_stats.lifetime_count, 0) AS lifetime_referral_count,
+      COALESCE(reward_stats.last_reward_at, null) AS last_reward_at
     FROM auth.users u
     LEFT JOIN public.profiles p ON p.id = u.id
+    LEFT JOIN public.profiles referrer ON referrer.id = p.referred_by
+    LEFT JOIN (
+      SELECT referrer_id, COUNT(*) AS lifetime_count
+      FROM public.referrals
+      GROUP BY referrer_id
+    ) referral_stats ON referral_stats.referrer_id = p.id
+    LEFT JOIN (
+      SELECT user_id, MAX(created_at) AS last_reward_at
+      FROM public.referral_rewards
+      GROUP BY user_id
+    ) reward_stats ON reward_stats.user_id = p.id
     ${whereClause}
     ORDER BY u.created_at DESC
     LIMIT $${limitParam} OFFSET $${offsetParam}
@@ -628,6 +668,144 @@ adminRoutes.get("/audit-logs", async (c) => {
   `, allParams);
 
   return c.json({ logs });
+});
+
+// New-user signup alerts
+adminRoutes.get("/signup-alerts", async (c) => {
+  const sql = getSql(c.env);
+  const { status, limit = "100", offset = "0" } = c.req.query();
+
+  let whereClause = "WHERE 1=1";
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  if (status) {
+    whereClause += ` AND follow_up_status = $${paramIndex}`;
+    params.push(status);
+    paramIndex++;
+  }
+
+  const limitParam = paramIndex;
+  const offsetParam = paramIndex + 1;
+  const allParams = [...params, parseInt(limit), parseInt(offset)];
+
+  const alerts = await sql.unsafe(`
+    SELECT sa.*, p.full_name, p.phone_number, p.location, p.role
+    FROM admin_signup_alerts sa
+    LEFT JOIN profiles p ON p.id = sa.user_id
+    ${whereClause}
+    ORDER BY sa.created_at DESC
+    LIMIT $${limitParam} OFFSET $${offsetParam}
+  `, allParams);
+
+  const pendingCount = await sql`SELECT COUNT(*) as count FROM admin_signup_alerts WHERE follow_up_status = 'pending'`;
+
+  return c.json({ alerts, pending: parseInt(pendingCount[0]?.count || "0"), limit: parseInt(limit), offset: parseInt(offset) });
+});
+
+adminRoutes.patch("/signup-alerts/:id", async (c) => {
+  const sql = getSql(c.env);
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => ({}));
+  const status = z.enum(["pending", "called", "notified", "dismissed"]).parse(body.status || "called");
+  const note = z.string().max(1000).nullable().optional().parse(body.note);
+
+  const result = await sql`
+    UPDATE admin_signup_alerts
+    SET follow_up_status = ${status},
+        follow_up_note = ${note || null},
+        follow_up_at = ${status !== 'pending' ? new Date().toISOString() : null}
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  if (!result.length) {
+    throw new HTTPException(404, { message: "Signup alert not found" });
+  }
+
+  await auditLog(sql, c.get("user").id, "Signup Alert Updated", `Signup alert ${id} marked ${status}`, "user");
+
+  return c.json({ alert: result[0] });
+});
+
+// Administrator login audit sessions
+adminRoutes.get("/login-sessions", async (c) => {
+  const sql = getSql(c.env);
+  const { status, adminId, limit = "100", offset = "0" } = c.req.query();
+
+  let whereClause = "WHERE 1=1";
+  const params: any[] = [];
+  let paramIndex = 1;
+
+  if (status) {
+    whereClause += ` AND status = $${paramIndex}`;
+    params.push(status);
+    paramIndex++;
+  }
+
+  if (adminId) {
+    whereClause += ` AND admin_id = $${paramIndex}`;
+    params.push(adminId);
+    paramIndex++;
+  }
+
+  const limitParam = paramIndex;
+  const offsetParam = paramIndex + 1;
+  const allParams = [...params, parseInt(limit), parseInt(offset)];
+
+  const sessions = await sql.unsafe(`
+    SELECT ls.*, p.full_name as admin_name, p.email as admin_email
+    FROM admin_login_sessions ls
+    LEFT JOIN profiles p ON p.id = ls.admin_id
+    ${whereClause}
+    ORDER BY ls.login_at DESC
+    LIMIT $${limitParam} OFFSET $${offsetParam}
+  `, allParams);
+
+  const activeCount = await sql`SELECT COUNT(*) as count FROM admin_login_sessions WHERE status = 'logged_in'`;
+
+  return c.json({
+    sessions,
+    active: parseInt(activeCount[0]?.count || "0"),
+    limit: parseInt(limit),
+    offset: parseInt(offset),
+  });
+});
+
+adminRoutes.patch("/login-sessions/:id", async (c) => {
+  const sql = getSql(c.env);
+  const id = c.req.param("id");
+  const body = await c.req.json().catch(() => ({}));
+  const status = z.enum(["logged_in", "logged_out", "expired", "force_terminated"]).parse(body.status || "force_terminated");
+
+  const result = await sql`
+    UPDATE admin_login_sessions
+    SET status = ${status},
+        logout_at = ${status !== 'logged_in' ? 'NOW()' : null},
+        last_activity_at = NOW(),
+        updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  if (!result.length) {
+    throw new HTTPException(404, { message: "Login session not found" });
+  }
+
+  if (status === 'logged_out') {
+    const loginAt = new Date(result[0].login_at).getTime();
+    const duration = Math.max(0, Math.round((Date.now() - loginAt) / 1000));
+    await sql`
+      UPDATE admin_login_sessions
+      SET session_duration_seconds = ${duration}
+      WHERE id = ${id}
+    `;
+    result[0].session_duration_seconds = duration;
+  }
+
+  await auditLog(sql, c.get("user").id, "Login Session Updated", `Login session ${id} marked ${status}`, "security");
+
+  return c.json({ session: result[0] });
 });
 
 // Intrusion logs
@@ -1168,10 +1346,174 @@ adminRoutes.get("/schema", async (c) => {
     schema += colDefs.join(",\n") + "\n);\n\n";
   }
 
-  c.header("Content-Type", "text/sql");
-  c.header("Content-Disposition", `attachment; filename="sealify-schema-${new Date().toISOString().split('T')[0]}.sql"`);
+c.header("Content-Type", "text/sql");
+  c.header("Content-Disposition", `attachment; filename="sealify-schema-${new Date().toISOString().split('T')[0]}.sql"}`);
 
   return c.text(schema);
+});
+
+// ---------------------------------------------------------------------------
+// Referral program
+// ---------------------------------------------------------------------------
+
+// Admin: platform-wide referral stats
+adminRoutes.get("/referrals/stats", async (c) => {
+  const sql = getSql(c.env);
+
+  const [totalReferrals, referringUsers, rewardEligibleUsers, rewardsGranted] = await Promise.all([
+    sql`SELECT COUNT(*) AS count FROM public.referrals`,
+    sql`SELECT COUNT(DISTINCT referrer_id) AS count FROM public.referrals`,
+    sql`SELECT COUNT(*) AS count FROM profiles WHERE referral_count >= COALESCE((SELECT value->>0 FROM system_configs WHERE key = 'referral_reward_threshold')::int, 3)`,
+    sql`SELECT COUNT(*) AS count FROM public.referral_rewards`,
+  ]);
+
+  const topReferrers = await sql`
+    SELECT p.id, p.full_name, p.referral_code, COUNT(*) AS lifetime_referral_count
+    FROM public.referrals r
+    JOIN public.profiles p ON p.id = r.referrer_id
+    GROUP BY p.id, p.full_name, p.referral_code
+    ORDER BY lifetime_referral_count DESC
+    LIMIT 10
+  `;
+
+  const thresholdRow = await sql`SELECT value->>0 AS threshold FROM system_configs WHERE key = 'referral_reward_threshold' LIMIT 1`;
+  const threshold = parseInt(thresholdRow[0]?.threshold || "3", 10) || 3;
+
+  return c.json({
+    totalReferrals: parseInt(totalReferrals[0]?.count || "0"),
+    referringUsers: parseInt(referringUsers[0]?.count || "0"),
+    rewardEligibleUsers: parseInt(rewardEligibleUsers[0]?.count || "0"),
+    rewardsGranted: parseInt(rewardsGranted[0]?.count || "0"),
+    referralThreshold: threshold,
+    topReferrers,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Admin: list referral ledger for a single user
+adminRoutes.get("/referrals/:userId", async (c) => {
+  const sql = getSql(c.env);
+  const userId = c.req.param("userId");
+
+  const rows = await sql`
+    SELECT r.id, r.referral_code, r.cycle, r.status, r.created_at,
+           p.id AS referee_id, p.full_name AS referee_name, p.referral_code AS referee_code
+    FROM public.referrals r
+    JOIN public.profiles p ON p.id = r.referee_id
+    WHERE r.referrer_id = ${userId}
+    ORDER BY r.created_at DESC
+    LIMIT 200
+  `;
+
+  const rewards = await sql`
+    SELECT * FROM public.referral_rewards
+    WHERE user_id = ${userId}
+    ORDER BY cycle ASC
+  `;
+
+  const profile = await sql`
+    SELECT referral_code, referral_count, referral_cycle
+    FROM public.profiles
+    WHERE id = ${userId}
+  `;
+
+  return c.json({
+    referrals: rows,
+    rewards,
+    profile: profile[0] || null,
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Admin: grant a referral reward and reset the count (new cycle)
+adminRoutes.post("/referrals/:userId/grant", async (c) => {
+  const sql = getSql(c.env);
+  const userId = c.req.param("userId");
+  const body = await c.req.json().catch(() => ({}));
+  const { note, override = false, confirm = false } = body as { note?: string; override?: boolean; confirm?: boolean };
+
+  if (!confirm) {
+    throw new HTTPException(400, { message: "Confirmation required to grant a referral reward" });
+  }
+
+  const thresholdRow = await sql`SELECT value->>0 AS threshold FROM system_configs WHERE key = 'referral_reward_threshold' LIMIT 1`;
+  const threshold = parseInt(thresholdRow[0]?.threshold || "3", 10) || 3;
+
+  const profile = await sql`
+    SELECT referral_count, referral_cycle FROM public.profiles WHERE id = ${userId}
+  `;
+  if (!profile.length) {
+    throw new HTTPException(404, { message: "User not found" });
+  }
+
+  const currentCount = profile[0].referral_count;
+  if (!override && currentCount < threshold) {
+    throw new HTTPException(400, {
+      message: `User has ${currentCount} referrals; threshold is ${threshold}. Pass override: true to grant anyway.`,
+    });
+  }
+
+  try {
+    const result = await sql`
+      SELECT * FROM public.grant_referral_reward(${userId}, ${c.get("user").id}, ${note || null})
+    `;
+
+    await auditLog(sql, c.get("user").id, "Referral Reward Granted",
+      `User ${userId} | cycle ${result[0]?.cycle} | ${result[0]?.referrals_at_reset} referrals | note: ${note || "none"}`,
+      "referral");
+
+    return c.json({
+      success: true,
+      userId,
+      cycle: result[0]?.cycle,
+      referralsAtReset: result[0]?.referrals_at_reset,
+      newCount: 0,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    if (err?.code === "23505" || /already granted/i.test(err?.message || "")) {
+      throw new HTTPException(409, { message: "Reward already granted for this cycle" });
+    }
+    throw new HTTPException(500, { message: "Failed to grant referral reward" });
+  }
+});
+
+// Admin: manual reset without recording a reward (revert cycle) — audited
+adminRoutes.post("/referrals/:userId/reset", async (c) => {
+  const sql = getSql(c.env);
+  const userId = c.req.param("userId");
+  const body = await c.req.json().catch(() => ({}));
+  const { confirm = false } = body as { confirm?: boolean };
+
+  if (!confirm) {
+    throw new HTTPException(400, { message: "Confirmation required to reset referral count" });
+  }
+
+  const profile = await sql`
+    SELECT referral_count, referral_cycle FROM public.profiles WHERE id = ${userId}
+  `;
+  if (!profile.length) {
+    throw new HTTPException(404, { message: "User not found" });
+  }
+
+  await sql`
+    UPDATE public.profiles
+    SET referral_count = 0, updated_at = NOW()
+    WHERE id = ${userId}
+  `;
+
+  await auditLog(sql, c.get("user").id, "Referral Count Reset",
+    `Manual reset for user ${userId} (cycle ${profile[0].referral_cycle}, was ${profile[0].referral_count})`,
+    "referral");
+
+  return c.json({
+    success: true,
+    userId,
+    previousCount: profile[0].referral_count,
+    cycle: profile[0].referral_cycle,
+    newCount: 0,
+    timestamp: new Date().toISOString(),
+  });
 });
 
 export default adminRoutes;

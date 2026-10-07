@@ -221,11 +221,15 @@ export const queryKeys = {
   adminPromotions: (params?: any) => ["admin", "promotions", params] as const,
   adminAuditLogs: (params?: any) => ["admin", "audit-logs", params] as const,
   adminIntrusionLogs: (params?: any) => ["admin", "intrusion-logs", params] as const,
+  adminReferralStats: () => ["admin", "referrals", "stats"] as const,
+  adminReferrals: (params?: any) => ["admin", "referrals", params] as const,
+  adminReferralUser: (userId: string) => ["admin", "referrals", userId] as const,
   marketStats: () => ["market-stats"] as const,
   priceIndex: (category?: string) => ["price-index", category] as const,
   search: (query: string, filters?: any) => ["search", query, filters] as const,
   trending: () => ["trending"] as const,
   suggestions: (query: string) => ["suggestions", query] as const,
+  referralMe: () => ["referral", "me"] as const,
 };
 
 const listingSelect = "*, profiles!ads_seller_id_fkey(*), ad_images(image_url, sort_order)";
@@ -668,5 +672,74 @@ export function useSuggestions(query: string) {
     queryFn: () => api.get("/search/suggestions", { q: query }),
     enabled: query.length >= 2,
     staleTime: 1000 * 60 * 5,
+  });
+}
+
+// Referral hooks
+export function useReferralMe() {
+  return useQuery({
+    queryKey: queryKeys.referralMe(),
+    queryFn: () => api.get("/referrals/me"),
+    staleTime: 1000 * 30,
+    refetchInterval: 30000,
+  });
+}
+
+export function useValidateReferralCode(code?: string) {
+  return useQuery({
+    queryKey: ["referral", "validate", code],
+    queryFn: () => api.getPublic("/referrals/validate", { code: code || "" }),
+    enabled: !!code,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+export function useAdminReferralStats() {
+  return useQuery({
+    queryKey: queryKeys.adminReferralStats(),
+    queryFn: () => api.get("/admin/referrals/stats"),
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useAdminReferrals(params?: any) {
+  return useQuery({
+    queryKey: queryKeys.adminReferrals(params),
+    queryFn: () => api.get("/admin/users", params),
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useAdminReferralUser(userId?: string) {
+  return useQuery({
+    queryKey: queryKeys.adminReferralUser(userId || ""),
+    queryFn: () => api.get(`/admin/referrals/${userId}`),
+    enabled: !!userId,
+    staleTime: 1000 * 60,
+  });
+}
+
+export function useGrantReferralReward() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: any }) =>
+      api.post(`/admin/referrals/${userId}/grant`, data),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReferrals() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReferralUser(userId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReferralStats() });
+    },
+  });
+}
+
+export function useResetReferralCount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, data }: { userId: string; data: any }) =>
+      api.post(`/admin/referrals/${userId}/reset`, data),
+    onSuccess: (_, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReferrals() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.adminReferralUser(userId) });
+    },
   });
 }

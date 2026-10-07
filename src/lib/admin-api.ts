@@ -188,3 +188,36 @@ export async function getMessagingConfig(): Promise<any> {
   const response = await adminFetch('/api/admin-messaging/config');
   return response.json();
 }
+
+// Referral program client functions
+export async function getReferralStats(): Promise<any> {
+  const response = await adminFetch('/api/admin/referrals/stats');
+  return response.json();
+}
+
+export async function listAdminReferrals(params: Record<string, string> = {}): Promise<any> {
+  const query = new URLSearchParams(params).toString();
+  const response = await adminFetch(`/api/admin/users${query ? `?${query}` : ''}`);
+  return response.json();
+}
+
+export async function getUserReferrals(userId: string): Promise<any> {
+  const response = await adminFetch(`/api/admin/referrals/${userId}`);
+  return response.json();
+}
+
+export async function grantReferralReward(userId: string, params: { note?: string; override?: boolean; confirm?: boolean }): Promise<any> {
+  const response = await adminFetch(`/api/admin/referrals/${userId}/grant`, {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
+
+export async function resetReferralCount(userId: string, params: { confirm?: boolean }): Promise<any> {
+  const response = await adminFetch(`/api/admin/referrals/${userId}/reset`, {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return response.json();
+}
