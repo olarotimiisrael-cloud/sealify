@@ -43,6 +43,13 @@ const ProfileComplete: React.FC = () => {
       const token = session?.access_token;
       if (!token) throw new Error('No active session');
 
+      let referralCode: string | undefined;
+      try {
+        referralCode = sessionStorage.getItem('sealify_ref') || undefined;
+      } catch {
+        // sessionStorage unavailable.
+      }
+
       const response = await fetch('/api/auth/profile-complete', {
         method: 'POST',
         headers: {
@@ -55,6 +62,7 @@ const ProfileComplete: React.FC = () => {
           avatarUrl: avatarUrl.trim() || undefined,
           coverUrl: coverUrl.trim() || undefined,
           businessName: businessName.trim() || undefined,
+          referralCode,
         }),
       });
 

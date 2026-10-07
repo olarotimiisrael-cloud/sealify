@@ -2010,7 +2010,7 @@ const AdminDashboard: React.FC = () => {
                     </tr>
                   ) : loginSessions
                     .slice()
-                    .sort((a: any, b: any) => new Date(b.session_start).getTime() - new Date(a.session_start).getTime())
+                    .sort((a: any, b: any) => new Date(b.login_at).getTime() - new Date(a.login_at).getTime())
                     .map((session: any) => (
                       <tr key={session.id} className="hover:bg-slate-800/30 transition-colors">
                         <td className="p-3">
@@ -2024,7 +2024,7 @@ const AdminDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td className="p-3 font-mono text-slate-300">
-                          {new Date(session.session_start).toLocaleString()}
+                          {new Date(session.login_at).toLocaleString()}
                         </td>
                         <td className="p-3 text-slate-300">
                           {session.geolocation_city ? (

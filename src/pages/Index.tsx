@@ -84,6 +84,37 @@ export default function Index() {
     }
   }, [searchParams, setFilters]);
 
+  // Referral capture: validate ?ref=, persist in sessionStorage (30-day TTL),
+  // and fire a best-effort click tracking request.
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (!ref || typeof window === 'undefined') return;
+
+    const normalized = ref.trim().toUpperCase();
+    const valid = /^SEALIFY-[A-Z0-9]{6}$/.test(normalized);
+    if (!valid) return;
+
+    const storageKey = 'sealify_ref';
+    const expiresKey = 'sealify_ref_expires';
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const expiresAt = Date.now() + thirtyDays;
+
+    try {
+      sessionStorage.setItem(storageKey, normalized);
+      sessionStorage.setItem(expiresKey, String(expiresAt));
+    } catch {
+      // sessionStorage may be unavailable in some contexts; ignore.
+    }
+
+    fetch('/api/referrals/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: normalized, landingPath: window.location.pathname }),
+    }).catch(() => {
+      // Clicks are best-effort; never block rendering.
+    });
+  }, [searchParams]);
+
   const handleHeroSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setFilters(prev => ({ ...prev, query: heroSearch.trim() }));

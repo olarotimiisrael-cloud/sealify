@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSealify } from '../context/SealifyContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Logo from './Logo';
-import { X, ShieldCheck, Mail, Lock, LogIn, UserPlus, Smartphone, User, Sparkles, Terminal, Chrome, Apple, Briefcase } from 'lucide-react';
+import { X, ShieldCheck, Mail, Lock, LogIn, UserPlus, Smartphone, User, Sparkles, Terminal, Chrome, Apple, Briefcase, Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AuthModalProps {
@@ -28,6 +28,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialTa
   const [otpSent, setOtpSent] = useState(false);
   const [otpId, setOtpId] = useState<string | null>(null);
   const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    try {
+      const code = sessionStorage.getItem('sealify_ref');
+      if (code) {
+        setReferralCode(code);
+        // Best-effort: validate the code to show the inviter's name.
+        fetch(`/api/referrals/validate?code=${encodeURIComponent(code)}`)
+          .then((r) => r.ok ? r.json() : Promise.resolve({ valid: false }))
+          .then((data) => {
+            if (data?.valid && data?.referrer?.fullName) {
+              setReferrerName(data.referrer.fullName);
+            }
+          })
+          .catch(() => {
+            // Validation is optional; banner still shows the link.
+          });
+      }
+    } catch {
+      // sessionStorage unavailable.
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -136,6 +161,7 @@ const handleSendOtp = async (e: React.FormEvent) => {
         password,
         fullName: fullName.trim(),
         phoneNumber: phone.trim(),
+        referralCode: referralCode || undefined,
       });
       setIsSubmitting(false);
       onClose();
@@ -396,6 +422,15 @@ const handleSendOtp = async (e: React.FormEvent) => {
 
         {activeTab === 'signup' && (
           <form onSubmit={handleSignupSubmit} className="space-y-3">
+            {referralCode && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-2">
+                <Gift className="w-4 h-4 text-amber-400 shrink-0" />
+                <p className="text-[10px] text-amber-300 font-semibold leading-tight">
+                  {referrerName ? `${referrerName} invited you to Sealify. ` : "You were invited to Sealify. "}
+                  Use the link <span className="font-mono text-amber-200">{referralCode}</span> to join — it only takes a minute.
+                </p>
+              </div>
+            )}
             <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
               <p className="text-[10px] text-emerald-300 font-semibold leading-tight">

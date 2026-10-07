@@ -40,3 +40,6 @@ SUPPORT_PHONE = "+234 813 120 8468"
 # Secret used by internal route-to-route calls (e.g. /api/auth/register ->
 # /api/email/welcome). Set as a Pages Secret, never in [vars].
 INTERNAL_API_TOKEN = ""
+
+[triggers]
+crons = ["*/5 * * * *"]

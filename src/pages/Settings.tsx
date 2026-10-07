@@ -9,7 +9,6 @@ import VerificationModal from '../components/VerificationModal';
 import PasswordChangeModal from '../components/PasswordChangeModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import ReferralCard from '../components/referral/ReferralCard';
-import ReferralCard from '../components/referral/ReferralCard';
 import { 
   ShieldCheck, 
   Bell, 

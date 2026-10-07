@@ -966,4 +966,111 @@ This is an automated message. Please do not reply to this email.
   `;
 }
 
+// Internal: drain pending rows from email_outbox. Called by the scheduled
+// worker (functions/_scheduled.ts) and protected by INTERNAL_API_TOKEN.
+emailRoutes.post("/drain", async (c) => {
+  try {
+    const env = c.env as any;
+    const internalToken = c.req.header("X-Internal-Token");
+    const storedToken = env.INTERNAL_API_TOKEN;
+    if (storedToken) {
+      if (!internalToken || internalToken.length !== storedToken.length) {
+        throw new HTTPException(403, { message: "Invalid internal token" });
+      }
+      let diff = 0;
+      for (let i = 0; i < internalToken.length; i++) {
+        diff |= internalToken.charCodeAt(i) ^ storedToken.charCodeAt(i);
+      }
+      if (diff !== 0) {
+        throw new HTTPException(403, { message: "Invalid internal token" });
+      }
+    }
+
+    const sql = getSql(c.env);
+    const pending = await sql`
+      SELECT id, template, recipient, payload, attempts, last_error
+      FROM public.email_outbox
+      WHERE status = 'pending'
+        AND scheduled_at <= now()
+        AND attempts < 5
+      ORDER BY scheduled_at
+      LIMIT 50
+    `;
+
+    const results = [];
+    for (const row of pending) {
+      let status = 'failed';
+      let lastError: string | null = null;
+      try {
+        const payload = (row.payload as any) || {};
+        if (row.template === 'welcome') {
+          const html = renderWelcomeHtml({
+            fullName: payload.fullName || '',
+            email: payload.email || row.recipient,
+            maskedEmail: payload.email?.replace(/^(.{2}).*(@.*)$/, '$1••$2') || row.recipient,
+            referralCode: payload.referralCode || '',
+            referralLink: payload.referralLink || '',
+            isConfirmed: payload.isConfirmed ?? false,
+            siteUrl: payload.siteUrl || '',
+            appUrl: payload.appUrl || '',
+            supportEmail: payload.supportEmail || 'support@sealify.ng',
+            supportPhone: payload.supportPhone || '+234 813 120 8468',
+          });
+          const text = renderWelcomeText({
+            fullName: payload.fullName || '',
+            email: payload.email || row.recipient,
+            maskedEmail: payload.email?.replace(/^(.{2}).*(@.*)$/, '$1••$2') || row.recipient,
+            referralCode: payload.referralCode || '',
+            referralLink: payload.referralLink || '',
+            isConfirmed: payload.isConfirmed ?? false,
+            siteUrl: payload.siteUrl || '',
+            appUrl: payload.appUrl || '',
+            supportEmail: payload.supportEmail || 'support@sealify.ng',
+            supportPhone: payload.supportPhone || '+234 813 120 8468',
+          });
+          const firstNameMatch = (payload.fullName || '').match(/^\s*(\S+)/);
+          const firstName = firstNameMatch ? firstNameMatch[1] : 'there';
+          const subject = WELCOME_SUBJECT.replace('{{firstName}}', firstName);
+
+          await sendEmailViaEnv(env, {
+            to: row.recipient,
+            from: { email: env.WELCOME_EMAIL_FROM || 'noreply@sealify.ng', name: env.WELCOME_EMAIL_FROM_NAME || 'Sealify' },
+            subject,
+            html,
+            text,
+          });
+          status = 'sent';
+        } else {
+          lastError = `Unknown template: ${row.template}`;
+        }
+      } catch (err: any) {
+        status = 'failed';
+        lastError = err?.message || String(err);
+      }
+
+      const nextAttempts = row.attempts + 1;
+      const backoffMs = Math.min(30 * 1000 * Math.pow(2, nextAttempts - 1), 6 * 60 * 60 * 1000);
+      const nextScheduled = status === 'sent' ? null : new Date(Date.now() + backoffMs).toISOString();
+
+      await sql`
+        UPDATE public.email_outbox
+        SET status = ${status},
+            attempts = ${nextAttempts},
+            last_error = ${lastError},
+            scheduled_at = ${nextScheduled || new Date(Date.now() + (status === 'sent' ? 0 : backoffMs)).toISOString()},
+            sent_at = ${status === 'sent' ? new Date().toISOString() : null}
+        WHERE id = ${row.id}
+      `;
+
+      results.push({ id: row.id, template: row.template, status, lastError });
+    }
+
+    return c.json({ processed: pending.length, results });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Email outbox drain error:", error);
+    throw new HTTPException(500, { message: "Drain failed" });
+  }
+});
+
 export default emailRoutes;

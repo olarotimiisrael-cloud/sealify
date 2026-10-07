@@ -71,25 +71,36 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "pulse-ring": {
+          "0%": { opacity: "0.35", transform: "scale(1)" },
+          "50%": { opacity: "0.6", transform: "scale(1.05)" },
+          "100%": { opacity: "0.35", transform: "scale(1)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-ring": "pulse-ring 2.2s ease-in-out infinite",
+      },
+      dropShadow: {
+        glow: [
+          "0 0 4px theme(colors.primary.DEFAULT)",
+          "0 0 8px theme(colors.primary.DEFAULT)",
+          "0 0 16px theme(colors.primary.DEFAULT)",
+        ],
+        "glow-lg": [
+          "0 0 6px theme(colors.primary.DEFAULT)",
+          "0 0 14px theme(colors.primary.DEFAULT)",
+          "0 0 28px theme(colors.primary.DEFAULT)",
+          "0 0 42px theme(colors.primary.DEFAULT)",
+        ],
       },
     },
   },

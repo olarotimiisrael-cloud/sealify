@@ -190,7 +190,7 @@ interface SealifyContextType {
   
 // Auth functions
    login: (email: string, password: string) => Promise<boolean>;
-   signup: (data: { email: string; password: string; fullName: string; phoneNumber: string }) => Promise<void>;
+    signup: (data: { email: string; password: string; fullName: string; phoneNumber: string; referralCode?: string }) => Promise<void>;
    signInWithOAuth: (provider: 'google' | 'apple' | 'samsung') => Promise<boolean>;
    sendPhoneOtp: (phone: string, channel?: string) => Promise<{ otpId: string; otp: string | null }>;
    verifyPhoneOtp: (phone: string, code: string, otpId?: string) => Promise<boolean>;
@@ -288,6 +288,17 @@ bulkUpdateUsers: (ids: string[], updates: Partial<UserProfile>) => void;
   sealDeal: (listingTitle: string, buyerName: string, price: number) => void;
   intrusionLogs: any[];
   recordIntrusion: (attemptedEmail: string, metadata: string) => void;
+
+  // New-user signup alerts (admin follow-up queue)
+  signupAlerts: any[];
+  loadSignupAlerts: (status?: string) => Promise<any[]>;
+  updateSignupAlert: (id: string, status: string, note?: string) => Promise<any | null>;
+
+  // Administrator login audit sessions
+  loginSessions: any[];
+  activeLoginSessions: number;
+  loadLoginSessions: (params?: { status?: string; adminId?: string; limit?: number; offset?: number }) => Promise<{ sessions: any[]; active: number }>;
+  updateLoginSession: (id: string, status: string) => Promise<any | null>;
   
   // Search alerts
   searchAlerts: SearchAlert[];
@@ -719,6 +730,9 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [recentDeals, setRecentDeals] = useState<any[]>([]);
   const [intrusionLogs, setIntrusionLogs] = useState<any[]>([]);
+  const [signupAlerts, setSignupAlerts] = useState<any[]>([]);
+  const [loginSessions, setLoginSessions] = useState<any[]>([]);
+  const [activeLoginSessions, setActiveLoginSessions] = useState<number>(0);
   const [searchAlerts, setSearchAlerts] = useState<SearchAlert[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [buyerRequests, setBuyerRequests] = useState<BuyerRequest[]>([]);
@@ -904,45 +918,48 @@ const adminLogin = async (email: string, password: string, accessKey?: string): 
           setError(null);
         };
       
-        const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string }) => {
-          const { data: authData, error: authError } = await supabase.auth.signUp({
-            email: data.email,
-            password: data.password,
-            options: { data: { full_name: data.fullName, phone_number: data.phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
+        const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string; referralCode?: string }) => {
+          const response = await fetch(apiUrl('/api/auth/register'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: data.email,
+              password: data.password,
+              fullName: data.fullName,
+              phoneNumber: data.phoneNumber,
+              referralCode: data.referralCode,
+            }),
           });
 
-          if (authError) throw authError;
-          if (!authData.user) throw new Error('Supabase did not create the account');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Registration failed' }));
+            throw new Error(errorData.message || 'Registration failed');
+          }
 
-          if (!authData.session) {
+          const result = await response.json();
+          const session = result.session;
+          if (!session?.access_token) {
             toast.success('Account created. Check your email to confirm your account before signing in.');
             return;
           }
 
-          // Create profile for the newly authenticated user
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              email: data.email,
-              full_name: data.fullName,
-              phone_number: data.phoneNumber,
-              role: 'buyer',
-              status: 'active',
-              location: 'Ogbomoso, Oyo State',
-              verified: false,
-              verification_type: 'none',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+          await supabase.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          });
 
-          if (profileError) throw profileError;
-          if (!profileData) throw new Error('Failed to create profile');
+          const profile = await loadProfileForAuthUser(session.user || result.user);
+          if (!profile) {
+            await supabase.auth.signOut();
+            toast.error('Your account profile is not ready yet. Please try again shortly.');
+            return;
+          }
 
-          const profile = mapProfileToUser(profileData);
           applyAuthenticatedUser(profile);
+
+          if (!profile.fullName || !profile.phoneNumber) {
+            navigate('/profile-complete');
+          }
         };
 
 const sendPhoneOtp = async (phone: string, channel?: string) => {
@@ -1006,6 +1023,9 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
   };
 
   const logout = () => {
+    if (isAdmin) {
+      void adminFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    }
     void supabase.auth.signOut();
     setUser(null);
     setIsAdmin(false);
@@ -1564,6 +1584,76 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
     });
   };
 
+  // ---- New-user signup alerts ---------------------------------------------
+  const loadSignupAlerts = async (status?: string): Promise<any[]> => {
+    const params = new URLSearchParams({ limit: '200', offset: '0' });
+    if (status) params.set('status', status);
+    const response = await adminFetch(`/api/admin/signup-alerts?${params}`);
+    if (!response.ok) throw new Error('Unable to load signup alerts');
+    const data = await response.json();
+    const alerts = data?.alerts || [];
+    setSignupAlerts(alerts);
+    return alerts;
+  };
+
+  const updateSignupAlert = async (id: string, status: string, note?: string): Promise<any | null> => {
+    const response = await adminFetch(`/api/admin/signup-alerts/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, note }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload?.error || 'Unable to update signup alert');
+    }
+    const data = await response.json();
+    const alert = data?.alert;
+    if (alert) {
+      setSignupAlerts(prev => prev.map(item => item.id === id ? alert : item));
+    }
+    return alert || null;
+  };
+
+  // ---- Administrator login audit sessions ---------------------------------
+  const loadLoginSessions = async (params?: { status?: string; adminId?: string; limit?: number; offset?: number }): Promise<{ sessions: any[]; active: number }> => {
+    const search = new URLSearchParams();
+    search.set('limit', String(params?.limit ?? 200));
+    search.set('offset', String(params?.offset ?? 0));
+    if (params?.status) search.set('status', params.status);
+    if (params?.adminId) search.set('adminId', params.adminId);
+    const response = await adminFetch(`/api/admin/login-sessions?${search}`);
+    if (!response.ok) throw new Error('Unable to load login sessions');
+    const data = await response.json();
+    const sessions = data?.sessions || [];
+    const active = Number(data?.active || 0);
+    setLoginSessions(sessions);
+    setActiveLoginSessions(active);
+    return { sessions, active };
+  };
+
+  const updateLoginSession = async (id: string, status: string): Promise<any | null> => {
+    const response = await adminFetch(`/api/admin/login-sessions/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload?.error || 'Unable to update login session');
+    }
+    const data = await response.json();
+    const session = data?.session;
+    if (session) {
+      setLoginSessions(prev => prev.map(item => item.id === id ? session : item));
+      if (session.status === 'logged_in') {
+        setActiveLoginSessions(prev => prev + 1);
+      } else if (session.status === 'logged_out' || session.status === 'expired' || session.status === 'force_terminated') {
+        setActiveLoginSessions(prev => Math.max(0, prev - 1));
+      }
+    }
+    return session || null;
+  };
+
   const saveSearchAlert = async (alert: Omit<SearchAlert, 'id' | 'userId' | 'createdAt' | 'matchCount' | 'isActive'>) => {
     if (!user) return;
     const categoryId = alert.category === 'All'
@@ -1975,29 +2065,42 @@ const response = await adminFetch('/api/admin/users');
     setSearchAlerts((searchAlertRows || []).map(mapSearchAlertRow));
     await refreshConversations(authUser.id);
 
-     if (authUser.role === 'admin') {
-      const [adminUsers, verificationRows, passwordRows, promotionRows, reportRows, disputeRows, auditRows, intrusionRows] = await Promise.all([
-        adminFetch('/api/admin/users').then(async (response) => {
-          if (!response.ok) throw new Error('Unable to load users');
-          const data = await response.json();
-          return (data?.users || []).map(mapProfileToUser);
-        }),
-        verificationService.verificationService.getAll(),
-        passwordRequestService.passwordRequestService.getAll(),
-        promotionService.promotionService.getAll(),
-        reportService.reportService.getAll(),
-        disputeService.disputeService.getAll(),
-        auditService.auditService.getAll(),
-        intrusionService.intrusionService.getAll(),
-      ]);
-      setVerificationRequests(verificationRows || []);
-      setPasswordRequests(passwordRows || []);
-      setPromotionPaymentRequests(promotionRows || []);
-      setReports(reportRows || []);
-      setDisputeCases(disputeRows || []);
-      setAuditLogs(auditRows || []);
-      setIntrusionLogs(intrusionRows || []);
-    }
+if (authUser.role === 'admin') {
+       const [adminUsers, verificationRows, passwordRows, promotionRows, reportRows, disputeRows, auditRows, intrusionRows, signupAlertRows, loginSessionRows] = await Promise.all([
+         adminFetch('/api/admin/users').then(async (response) => {
+           if (!response.ok) throw new Error('Unable to load users');
+           const data = await response.json();
+           return (data?.users || []).map(mapProfileToUser);
+         }),
+         verificationService.verificationService.getAll(),
+         passwordRequestService.passwordRequestService.getAll(),
+         promotionService.promotionService.getAll(),
+         reportService.reportService.getAll(),
+         disputeService.disputeService.getAll(),
+         auditService.auditService.getAll(),
+         intrusionService.intrusionService.getAll(),
+         adminFetch('/api/admin/signup-alerts').then(async (response) => {
+           if (!response.ok) return [];
+           const data = await response.json();
+           return data?.alerts || [];
+         }),
+         adminFetch('/api/admin/login-sessions').then(async (response) => {
+           if (!response.ok) return { sessions: [], active: 0 };
+           const data = await response.json();
+           return { sessions: data?.sessions || [], active: Number(data?.active || 0) };
+         }),
+       ]);
+       setVerificationRequests(verificationRows || []);
+       setPasswordRequests(passwordRows || []);
+       setPromotionPaymentRequests(promotionRows || []);
+       setReports(reportRows || []);
+       setDisputeCases(disputeRows || []);
+       setAuditLogs(auditRows || []);
+       setIntrusionLogs(intrusionRows || []);
+       setSignupAlerts(signupAlertRows || []);
+       setLoginSessions(loginSessionRows.sessions || []);
+       setActiveLoginSessions(loginSessionRows.active || 0);
+     }
   };
 
   useEffect(() => {
@@ -2144,6 +2247,13 @@ bulkDeleteUsers,
     sealDeal,
     intrusionLogs,
     recordIntrusion,
+    signupAlerts,
+    loadSignupAlerts,
+    updateSignupAlert,
+    loginSessions,
+    activeLoginSessions,
+    loadLoginSessions,
+    updateLoginSession,
     searchAlerts,
     saveSearchAlert,
     deleteSearchAlert,
@@ -2170,7 +2280,7 @@ bulkDeleteUsers,
     passwordRequests, submitPasswordRequest, processPasswordRequest, verificationRequests, submitVerificationRequest, processVerificationRequest,
     promotionPaymentRequests, submitPromotionPaymentRequest, processPromotionPaymentRequest, announcements, addAnnouncement, toggleAnnouncement, deleteAnnouncement,
     reports, submitReport, processReport, disputeCases, submitDisputeCase, processDisputeCase, auditLogs, addAuditLog,
-    recentDeals, sealDeal, intrusionLogs, recordIntrusion, searchAlerts, saveSearchAlert, deleteSearchAlert,
+    recentDeals, sealDeal, intrusionLogs, recordIntrusion, signupAlerts, loadSignupAlerts, updateSignupAlert, loginSessions, activeLoginSessions, loadLoginSessions, updateLoginSession, searchAlerts, saveSearchAlert, deleteSearchAlert,
     reviews, addReview, deleteReview, buyerRequests, createBuyerRequest, deleteBuyerRequest,
     loading, isSyncing, lastSyncTime, syncDatabase, error, signInWithOAuth, completeProfile
   ]);
