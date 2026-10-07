@@ -38,6 +38,7 @@ import DatabaseDiagramViewer from '@/components/DatabaseDiagramViewer';
 import ArchitectureDiagram from '@/components/ArchitectureDiagram';
 import UIComponentLibrary from '@/components/UIComponentLibrary';
 import AdminReferralsPanel from '@/components/admin/AdminReferralsPanel';
+import BuyerRequestsAdmin from '@/pages/BuyerRequestsAdmin';
 
 const AdminDashboard: React.FC = () => {
   const { 
@@ -567,7 +568,7 @@ const pendingCounts: Record<string, number> = {
                docs: 0,
                architecture: 0,
                components: 0,
-               buyerRequests: 0,
+               'buyer-requests': buyerRequests.filter(r => r.status === 'open').length,
              };
             
             return (
@@ -1116,6 +1117,11 @@ const pendingCounts: Record<string, number> = {
               </div> */}
             </div>
           </div>
+        );
+
+      case 'buyer-requests':
+        return (
+          <BuyerRequestsAdmin isOpen={false} onClose={() => {}} />
         );
 
       case 'security':

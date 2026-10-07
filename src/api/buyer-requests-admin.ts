@@ -4,7 +4,7 @@ import { getSql } from "../db/hyperdrive";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin, auditLog } from "../middleware/security";
 import { z } from "zod";
-import { sendEmailViaSelfHosted } from "../lib/selfHostedProviders";
+import { sendEmailViaSelfHosted, sendSmsViaSelfHosted, sendWhatsAppViaSelfHosted, type Env } from "../lib/selfHostedProviders";
 
 export const buyerRequestsAdminRoutes = new Hono<{ Bindings: any; Variables: { sql: ReturnType<typeof getSql>; user: any } }>();
 
@@ -241,7 +241,7 @@ View Request: ${requestLink}
           try {
             if (user.phone_number) {
               const smsBody = `Sealify: ${validated.title || "New Request"} - ${validated.message || "Check out this request on Sealify!"} Link: ${requestLink}`;
-              await sendEmailViaSelfHosted || null;
+              await sendSmsViaSelfHosted(env, { to: user.phone_number, message: smsBody });
               smsCount++;
             }
           } catch (e: any) {
@@ -256,6 +256,8 @@ View Request: ${requestLink}
           try {
             const whatsappNumber = user.whatsapp_number || user.phone_number;
             if (whatsappNumber) {
+              const waBody = `Sealify: ${validated.title || "New Request"} - ${validated.message || "Check out this request on Sealify!"} Link: ${requestLink}`;
+              await sendWhatsAppViaSelfHosted(env, whatsappNumber, waBody);
               whatsappCount++;
             }
           } catch (e: any) {

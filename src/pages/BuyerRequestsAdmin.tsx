@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Eye
+  Eye,
+  HelpCircle
 } from 'lucide-react';
 import { useSealify } from '@/context/SealifyContext';
 import { toast } from 'sonner';
