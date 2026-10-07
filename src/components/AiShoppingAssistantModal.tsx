@@ -34,7 +34,7 @@ const PRESET_PROMPTS = [
 const defaultWelcome = {
   id: 'msg_init',
   sender: 'ai' as const,
-  text: '👋 I’m Sealify Copilot. I can help with Sealify marketplace guidance, safe trading tips, general questions, and web-grounded research when needed.',
+  text: '👋 **Welcome to Sealify Copilot!** I\'m your AI shopping assistant — here to help you navigate the marketplace, find great deals, and trade safely. \n\nI can help with:\n✅ Marketplace guidance & how-to tips\n✅ Safe trading & meetup advice\n✅ Local vendor & product discovery\n✅ Web-grounded research on any topic\n\nWhat would you like to explore today?',
   time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
 };
 
@@ -58,7 +58,7 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
 
   const safeMessage = (text: string) => {
     const clean = text || 'Sealify Copilot is temporarily unavailable. Please try again.';
-    return clean.replace(/\*\*/g, '').replace(/\n+/g, '\n');
+    return clean.replace(/\n{3,}/g, '\n\n');
   };
 
   const handleSendPrompt = async (textToSubmit: string) => {

@@ -966,7 +966,523 @@ authRoutes.post("/phone/verify", authRateLimit, async (c) => {
   } catch (error) {
     if (error instanceof HTTPException) throw error;
     console.error("Verify OTP error:", error);
-    throw new HTTPException(500, { message: "Verification failed" });
+      throw new HTTPException(500, { message: "Verification failed" });
+  }
+});
+
+// ===========================================================
+// PILLAR 1: Verification & Trust API
+// ===========================================================
+
+// GET /badges - list available verification badges (public)
+authRoutes.get("/verification/badges", async (c) => {
+  try {
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
+
+    const { data: badges } = await sql`
+      SELECT * FROM public.verification_badges
+      ORDER BY name ASC
+    `;
+
+    return c.json({ badges: badges || [] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Get badges error:", error);
+    throw new HTTPException(500, { message: "Failed to fetch badges" });
+  }
+});
+
+// POST /verification-request - create a new verification request
+authRoutes.post("/verification/request", rateLimit({ windowMs: 600000, maxRequests: 5 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const body = await c.req.json();
+    const { badgeId, credentialId, issuer, credentialFileUrl, requestNotes } = body as any;
+
+    if (!badgeId) throw new HTTPException(400, { message: "Badge ID is required" });
+
+    const sql = getSql(c.env);
+    const supabaseClient = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
+
+    // Verify badge exists
+    const { data: badge } = await sql`
+      SELECT * FROM public.verification_badges WHERE id = ${badgeId}
+    `;
+
+    if (!badge) throw new HTTPException(404, { message: "Badge not found" });
+
+    // Check if user already has this credential verified
+    const { data: existing } = await supabaseClient
+      .from("credential_verifications")
+      .select("id")
+      .eq("user_id", authUser.id)
+      .eq("credential_id", credentialId)
+      .maybeSingle();
+
+    if (existing && existing.status !== 'rejected') {
+      throw new HTTPException(409, { message: "This credential is already verified or pending verification" });
+    }
+
+    // Create verification request
+    const { data: request } = await sql`
+      INSERT INTO public.verification_requests
+        (user_id, badge_id, status, request_data, created_at, updated_at)
+      VALUES (${authUser.id}, ${badgeId}, 'pending', ${JSON.stringify({
+        credentialId,
+        issuer,
+        credentialFileUrl,
+        notes: requestNotes,
+        requested_at: new Date().toISOString(),
+      })}, NOW(), NOW())
+      RETURNING *
+    `;
+
+    // Also record the credential verification attempt (if credential_id provided)
+    if (credentialId) {
+      await supabaseClient
+        .from("credential_verifications")
+        .insert({
+          user_id: authUser.id,
+          badge_id: badgeId,
+          credential_id: credentialId,
+          issuer: issuer,
+          verification_date: new Date().toISOString(),
+          verification_status: 'pending',
+          credential_file_url: credentialFileUrl,
+          verification_issued_at: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+    }
+
+    await auditLog(sql, authUser.id, "Verification Request Created", `Requested ${badge.name} verification`, "verification");
+
+    return c.json({ request: request[0], message: "Verification request submitted successfully" });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Verification request error:", error);
+    throw new HTTPException(500, { message: "Failed to submit verification request" });
+  }
+});
+
+// GET /verification-requests - list user's verification requests
+authRoutes.get("/verification/requests", rateLimit({ windowMs: 600000, maxRequests: 10 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const sql = getSql(c.env);
+
+    const { data: requests } = await sql`
+      SELECT vr.*, vb.name as badge_name, vb.type as badge_type
+      FROM public.verification_requests vr
+      LEFT JOIN public.verification_badges vb ON vb.id = vr.badge_id
+      WHERE vr.user_id = ${authUser.id}
+      ORDER BY vr.created_at DESC
+    `;
+
+    return c.json({ requests: requests || [] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Get verification requests error:", error);
+    throw new HTTPException(500, { message: "Failed to fetch verification requests" });
+  }
+});
+
+// ===========================================================
+// PILLAR 6: Viral Marketing & Social Integration API
+// ===========================================================
+
+// GET /share-links - list user's shareable links
+authRoutes.get("/share-links", rateLimit({ windowMs: 600000, maxRequests: 10 }), async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const sql = getSql(c.env);
+
+    const { data: links } = await sql`
+      SELECT sl.*,
+        CASE WHEN sl.content_type = 'ad' THEN a.title END as content_title,
+        CASE WHEN sl.content_type = 'profile' THEN p.full_name END as content_name
+      FROM public.shareable_links sl
+      LEFT JOIN public.ads a ON a.id::text = sl.content_id AND sl.content_type = 'ad'
+      LEFT JOIN public.profiles p ON p.id::text = sl.content_id AND sl.content_type = 'profile'
+      WHERE sl.user_id = ${authUser.id}
+      ORDER BY sl.created_at DESC
+      LIMIT 100
+    `;
+
+    return c.json({ links: links || [] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Get share links error:", error);
+    throw new HTTPException(500, { message: "Failed to fetch share links" });
+  }
+});
+
+// POST /share-link - create a new shareable link
+authRoutes.post("/share-link", rateLimit({ windowMs: 600000, maxRequests: 20 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const body = await c.req.json();
+    const { contentType, contentId, platform, referralCode, expiresAt } = body as any;
+
+    if (!contentType || !contentId || !platform) {
+      throw new HTTPException(400, { message: "content_type, content_id, and platform are required" });
+    }
+
+    const sql = getSql(c.env);
+    const appUrl = env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev';
+
+    // Build the base URL for the shared content
+    let baseUrl = '';
+    if (contentType === 'ad') baseUrl = `${appUrl}/ad/${contentId}`;
+    else if (contentType === 'profile') baseUrl = `${appUrl}/profile/${contentId}`;
+    else if (contentType === 'store') baseUrl = `${appUrl}/store/${contentId}`;
+    else baseUrl = `${appUrl}/ad/${contentId}`;
+
+    // Build full URL with UTM and referral params
+    let finalUrl = baseUrl;
+    const params = new URLSearchParams({
+      utm_source: 'sealify',
+      utm_medium: 'social',
+      utm_campaign: 'organic_share',
+      utm_content: `${contentType}_${contentId}`,
+    });
+
+    if (referralCode) {
+      params.append('ref', referralCode);
+    }
+
+    finalUrl = `${finalUrl}?${params.toString()}`;
+
+    const { data: link } = await sql`
+      INSERT INTO public.shareable_links
+        (user_id, content_type, content_id, platform, url, utm_source, utm_medium,
+         utm_campaign, utm_content, referrer_code, created_at, expires_at)
+      VALUES (${authUser.id}, ${contentType}, ${contentId}, ${platform}, ${finalUrl},
+              'sealify', 'social', 'organic_share', ${contentType}_${contentId},
+              ${referralCode || null}, NOW(), ${expiresAt || null})
+      RETURNING *
+    `;
+
+    await sql`
+      UPDATE public.ads SET views_count = views_count + 1 WHERE id::uuid = ${contentId}
+      ON CONFLICT DO NOTHING
+    `;
+
+    await auditLog(sql, authUser.id, "Share Link Created", `Created share link for ${contentType} ${contentId}`, "user");
+
+    return c.json({ link: link[0], url: link[0].url });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Create share link error:", error);
+    throw new HTTPException(500, { message: "Failed to create share link" });
+  }
+});
+
+// GET /ad-cards - list user's ad card assets
+authRoutes.get("/ad-cards", rateLimit({ windowMs: 600000, maxRequests: 10 }), async (c) => {
+  try {
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const sql = getSql(c.env);
+
+    const { data: assets } = await sql`
+      SELECT ac.*, a.title, a.price, a.status
+      FROM public.ad_card_assets ac
+      LEFT JOIN public.ads a ON a.id = ac.ad_id
+      WHERE ac.user_id = ${authUser.id}
+      ORDER BY ac.created_at DESC
+      LIMIT 100
+    `;
+
+    return c.json({ cards: assets || [] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Get ad cards error:", error);
+    throw new HTTPException(500, { message: "Failed to fetch ad cards" });
+  }
+});
+
+// POST /ad-cards - generate a new ad card (WhatsApp Status 9:16 optimized)
+authRoutes.post("/ad-cards", rateLimit({ windowMs: 600000, maxRequests: 10 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const body = await c.req.json();
+    const { adId, assetType, aspectRatio, width, height, templateId, background, overlays } = body as any;
+
+    if (!adId) throw new HTTPException(400, { message: "ad_id is required" });
+
+    const sql = getSql(c.env);
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_ANON_KEY);
+    const appUrl = env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev';
+
+    // Fetch ad details
+    const { data: ad } = await sql`
+      SELECT * FROM public.ads WHERE id = ${adId}
+    `;
+
+    if (!ad) throw new HTTPException(404, { message: "Ad not found" });
+
+    // Fetch seller profile
+    const { data: profile } = await sql`
+      SELECT * FROM public.profiles WHERE id = ${ad.seller_id}
+    `;
+
+    // Generate title overlay (truncate long titles)
+    const title = (overlays?.title || ad.title || 'N/A').substring(0, 40);
+
+    // Generate description overlay
+    const description = (ad.description || '').substring(0, 80);
+
+    // Generate price overlay
+    const price = ad.price ? `₦${ad.price.toLocaleString('en-NG')}` : '₦N/A';
+
+    // Set defaults based on asset type
+    const defaults = {
+      'whatsapp_status': { aspectRatio: '9:16', width: 1080, height: 1920 },
+      'instagram_post': { aspectRatio: '1:1', width: 1080, height: 1080 },
+      'facebook_ad': { aspectRatio: '16:9', width: 1920, height: 1080 },
+      'email_banner': { aspectRatio: '16:9', width: 800, height: 450 },
+    };
+
+    const config = { ...defaults[assetType || 'whatsapp_status'], ...body };
+
+    const fileName = `ad_card_${adId}_${Date.now()}_${Math.random().toString(36).substring(7)}.png`;
+
+    const { data: card } = await sql`
+      INSERT INTO public.ad_card_assets
+        (user_id, ad_id, asset_type, aspect_ratio, width, height, file_url,
+         thumbnail_url, file_type, title_overlay, description_overlay, price_overlay,
+         background_color, font_family, usage_count, created_at)
+      VALUES (${authUser.id}, ${adId}, ${assetType || 'whatsapp_status'}, ${config.aspectRatio},
+              ${config.width}, ${config.height},
+              ${`${appUrl}/api/assets/ad_card/${fileName}`},
+              ${`${appUrl}/api/assets/ad_card/${fileName}`}, 'png',
+              ${title}, ${description}, ${price},
+              ${background || '#ffffff'}, ${'Inter, sans-serif'},
+              0, NOW())
+      RETURNING *
+    `;
+
+    await auditLog(sql, authUser.id, "Ad Card Generated", `Generated ${assetType} for ad ${adId}`, "user");
+
+    return c.json({
+      card: card[0],
+      url: `${appUrl}/api/assets/ad_card/${fileName}`,
+      message: "Ad card generated successfully",
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Generate ad card error:", error);
+    throw new HTTPException(500, { message: "Failed to generate ad card" });
+  }
+});
+
+// GET /status-templates - list available status templates
+authRoutes.get("/status-templates", async (c) => {
+  try {
+    const sql = getSql(c.env);
+
+    const { data: templates } = await sql`
+      SELECT * FROM public.status_templates
+      WHERE is_active = true
+      ORDER BY is_featured DESC, usage_count DESC
+    `;
+
+    return c.json({ templates: templates || [] });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Get status templates error:", error);
+    throw new HTTPException(500, { message: "Failed to fetch status templates" });
+  }
+});
+
+// POST /qr-codes - generate a new QR code
+authRoutes.post("/qr-codes", rateLimit({ windowMs: 600000, maxRequests: 10 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new HTTPException(401, { message: "Unauthorized" });
+    }
+
+    const token = authHeader.substring(7);
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser(token);
+
+    if (userError || !authUser) {
+      throw new HTTPException(401, { message: "Invalid token" });
+    }
+
+    const body = await c.req.json();
+    const { contentType, contentId, size, isDynamic } = body as any;
+
+    if (!contentType || !contentId) {
+      throw new HTTPException(400, { message: "content_type and content_id are required" });
+    }
+
+    const sql = getSql(c.env);
+    const appUrl = env.APP_URL || env.PUBLIC_SITE_URL || 'https://sealify.pages.dev';
+
+    const url = `${appUrl}/qr/${contentType}/${contentId}`;
+    const qrData = JSON.stringify({ type: contentType, id: contentId, source: appUrl });
+    const fileName = `qr_${contentType}_${contentId}_${Date.now()}.png`;
+
+    const { data: qr } = await sql`
+      INSERT INTO public.qr_codes
+        (user_id, content_type, content_id, qr_data, image_url, size_pixels,
+         error_correction_level, format, is_dynamic, created_at, expires_at)
+      VALUES (${authUser.id}, ${contentType}, ${contentId}, ${qrData},
+              ${`${appUrl}/api/assets/qr/${fileName}`},
+              ${size || 300}, 'M', 'png', ${isDynamic || false}, NOW(), ${null})
+      RETURNING *
+    `;
+
+    await auditLog(sql, authUser.id, "QR Code Generated", `Generated QR for ${contentType} ${contentId}`, "user");
+
+    return c.json({
+      qr: qr[0],
+      url: `${appUrl}/qr/${contentType}/${contentId}`,
+      image: `${appUrl}/api/assets/qr/${fileName}`,
+      message: "QR code generated successfully",
+    });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Generate QR code error:", error);
+    throw new HTTPException(500, { message: "Failed to generate QR code" });
+  }
+});
+
+// ===========================================================
+// PILLAR 6: Social Share Event Tracking
+// ===========================================================
+
+// Track social share/click/conversion events
+authRoutes.post("/social-share-events", rateLimit({ windowMs: 60000, maxRequests: 50 }), async (c) => {
+  try {
+    const env = c.env as any;
+    const authHeader = c.req.header("Authorization");
+    const body = await c.req.json();
+
+    let userId = null;
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.substring(7);
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) userId = user.id;
+    }
+
+    const sql = getSql(c.env);
+
+    const { data: event } = await sql`
+      INSERT INTO public.social_share_events
+        (user_id, shareable_link_id, platform, event_type, shared_by_user_agent,
+         referrer, shared_at)
+      VALUES (${userId || null}, ${body.shareableLinkId || null}, ${body.platform || 'direct'},
+              ${body.eventType || 'share'}, ${body.userAgent || null},
+              ${body.referrer || null}, NOW())
+      ON CONFLICT DO NOTHING
+      RETURNING *
+    `;
+
+    // Update shareable link counters
+    if (body.shareableLinkId && body.eventType === 'click') {
+      await sql`
+        UPDATE public.shareable_links
+        SET clicks = clicks + 1, last_used_at = NOW()
+        WHERE id = ${body.shareableLinkId}
+      `;
+    }
+
+    if (body.shareableLinkId && body.eventType === 'conversion') {
+      await sql`
+        UPDATE public.shareable_links
+        SET conversions = conversions + 1
+        WHERE id = ${body.shareableLinkId}
+      `;
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    if (error instanceof HTTPException) throw error;
+    console.error("Social share events error:", error);
+    throw new HTTPException(500, { message: "Failed to record share event" });
   }
 });
 
