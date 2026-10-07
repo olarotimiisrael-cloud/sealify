@@ -143,7 +143,14 @@ export interface UserProfile {
   appealStatus?: 'none' | 'pending' | 'resolved';
   totalValueTraded?: number;
   completedDeals?: number;
+
+  // Trust & Verification Fields
+  verifiedCredentials?: any; // jsonb from profiles.verified_credentials
+  trustScore?: number; // profiles.trust_score
+  credentialExpiryWarningDate?: string; // profiles.credential_expiry_warning_date
+  verificationPreferences?: any; // profiles.verification_preferences
   
+
   // Added for AdminSettingsModal and EditProfileModal
   businessCategory?: string;
   businessAddress?: string;
@@ -290,7 +297,7 @@ export interface MarketplaceDeal {
 }
 
 // Alias types for supabaseService.ts compatibility
-export type DbUser = UserProfile;
+export interface DbUser extends UserProfile {}
 export type DbListing = Listing;
 export type DbVerificationRequest = VerificationRequest;
 export type DbPasswordRequest = PasswordChangeRequest;

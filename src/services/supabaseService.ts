@@ -82,6 +82,11 @@ export const mapProfileToUser = (row: any): DbUser => {
     appealStatus: row.appeal_status || 'none',
     totalValueTraded: Number(row.total_value_traded || 0),
     completedDeals: Number(row.completed_deals || 0),
+    // Trust & Verification Fields
+    verifiedCredentials: row.verified_credentials,
+    trustScore: row.trust_score,
+    credentialExpiryWarningDate: row.credential_expiry_warning_date,
+    verificationPreferences: row.verification_preferences,
   };
 }
 
