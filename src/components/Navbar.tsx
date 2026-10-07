@@ -124,10 +124,10 @@ const Navbar: React.FC = () => {
             {/* AI Copilot Button */}
             <button
               onClick={() => setIsAiAssistantOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 border border-emerald-500/40 rounded-xl text-xs font-black transition-all shadow shadow-emerald-500/10 active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-primary/20 hover:bg-primary/30 text-primary border border-primary/40 rounded-xl text-xs font-black transition-all shadow shadow-primary/10 active:scale-95"
               title="Open Sealify AI Copilot Assistant"
             >
-              <Bot className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <Bot className="w-4 h-4 text-primary animate-pulse" />
               <span>AI Copilot</span>
             </button>
 

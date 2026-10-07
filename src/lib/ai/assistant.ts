@@ -15,6 +15,59 @@ export type CopilotResponse = {
   model?: string;
 };
 
+
+export interface ModerationResult {
+  allowed: boolean;
+  reason?: string;
+  transparentReason?: string;
+}
+
+const SENSITIVE_PATTERNS: { pattern: RegExp; reason: string; transparent: string }[] = [
+  {
+    pattern: /\b(api\s*key|secret\s*key|service\s*role|credentials?|password|token|private\s*key)\b[\s\S]{0,80}(sk-[a-zA-Z0-9-]{20,}|ya29\.)/i,
+    reason: 'Sensitive credential exposure',
+    transparent: 'I detected what looks like a secret credential. I cannot process or store sensitive credentials for security.',
+  },
+  {
+    pattern: /\b(private|personal)\s+(data|information|details|phone|email|address|nin|cac)\b/i,
+    reason: 'Request for private user data',
+    transparent: 'I cannot share other users\' private information. This is a privacy and safety restriction.',
+  },
+  {
+    pattern: /\b(wallet|financial\s*service|bank\s*transfer|investment|trading|forex|cryptocurrency|btc|eth|stock\s*market|loan|credit\s*score)\b/i,
+    reason: 'Financial services claim',
+    transparent: 'Sealify does not currently offer wallet or financial services.',
+  },
+];
+
+export function moderateInput(input: string): ModerationResult {
+  const trimmed = input.trim();
+  if (trimmed.length < 2) return { allowed: true };
+
+  for (const { pattern, reason, transparent } of SENSITIVE_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { allowed: false, reason, transparentReason: transparent };
+    }
+  }
+
+  const injectionPatterns = [
+    /ignore\s+(all\s+)?(previous|prior|earlier|above)\s+(instructions?|prompts?|rules?|guidance)/i,
+    /you\s+are\s+now\s+(a\s+)?(?:free|uncensored|unrestricted|jailbreak|developer|admin)/i,
+    /disregard\s+your\s+(guidance|instructions|rules|constraints|policies)/i,
+  ];
+
+  for (const pattern of injectionPatterns) {
+    if (pattern.test(trimmed)) {
+      return {
+        allowed: false,
+        reason: 'Prompt injection detected',
+        transparent: 'I noticed your request appears to be a prompt-injection attempt.',
+      };
+    }
+  }
+
+  return { allowed: true };
+}
 const safeJson = async <T>(response: Response): Promise<T> => {
   const text = await response.text();
   if (!text) {
@@ -173,6 +226,17 @@ export async function askSealifyCopilot(
 
   if (!provider) {
     throw new Error('No AI provider is configured. Set AI_PROVIDER and the provider key in the server environment.');
+  }
+
+  const moderationResult = moderateInput(input);
+  if (!moderationResult.allowed) {
+    return {
+      text: `⚠️ **Request Restricted** — ${moderationResult.transparentReason || moderationResult.reason || 'This content is restricted.'}\n\n**Why was this blocked?** ${moderationResult.reason || 'It appears this request violates our safety guidelines.'}\n\nIf you believe this was a mistake or have questions, please rephrase your request or contact support through the app.`,
+      citations: [],
+      usedWebSearch: false,
+      provider: provider.provider,
+      model: provider.model,
+    };
   }
 
   const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [

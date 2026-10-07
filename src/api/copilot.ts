@@ -99,7 +99,7 @@ copilotRoutes.post('/', async (c) => {
 
     if (!enforceRateLimit(c, provider.provider)) {
       return c.json({
-        message: 'Sealify Copilot is temporarily unavailable. Please try again later.',
+        message: '⏳ **Rate Limit Reached** — You\\'ve sent too many requests to Sealify Copilot. Please wait a moment and try again. This limit helps maintain quality service for all users.',
         citations: [],
         provider: 'none',
       }, 429);
@@ -109,8 +109,9 @@ copilotRoutes.post('/', async (c) => {
     const parsed = copilotSchema.safeParse(body);
 
     if (!parsed.success) {
+      const issues = parsed.error.errors.map(e => e.message).join(', ');
       return c.json({
-        message: 'Sealify Copilot is temporarily unavailable. Please try again later.',
+        message: `⚠️ **Request Could Not Be Processed** — ${issues}. Please check your input and try again.`,
         citations: [],
         provider: 'none',
       }, 400);
@@ -123,7 +124,7 @@ copilotRoutes.post('/', async (c) => {
     const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
     if (conversationUsed > MAX_CONVERSATION_CHARS) {
       return c.json({
-        message: 'Sealify Copilot is temporarily unavailable. Please try again later.',
+        message: `📝 **Conversation Too Long** — The total conversation length exceeds the maximum allowed (${MAX_CONVERSATION_CHARS} characters). Please start a new conversation to continue.`,
         citations: [],
         provider: 'none',
       }, 400);
@@ -140,11 +141,12 @@ copilotRoutes.post('/', async (c) => {
     });
   } catch (error) {
     console.error('Copilot request failed', error);
+    const errMsg = error instanceof Error ? error.message : String(error);
     return c.json({
-      message: 'Sealify Copilot is temporarily unavailable. Please try again later.',
+      message: `⚠️ **Copilot Temporarily Unavailable** — ${errMsg.includes('not configured') ? 'The AI provider is not configured yet. Please contact an administrator.' : errMsg.includes('rate') || errMsg.includes('429') ? 'Rate limit exceeded. Please try again shortly.' : 'An unexpected error occurred. Please try again or contact support.'}`,
       citations: [],
       provider: 'none',
-    }, 200);
+    }, 503);
   }
 });
 

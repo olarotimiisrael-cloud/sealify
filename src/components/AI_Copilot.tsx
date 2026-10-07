@@ -25,17 +25,17 @@ const AI_Copilot: React.FC = () => {
   }, [query, listings]);
 
   return (
-    <div className="ai-copilot bg-slate-950 p-6 rounded-2xl shadow-2xl">
+    <div className="ai-copilot admin-panel p-6 rounded-2xl shadow-2xl">
       <h3 className="text-xl font-bold text-white">Sealify AI Copilot</h3>
-      <p className="text-sm text-slate-400">Ask me anything about Sealify - how to use features, find items, or get help with your account.</p>
+      <p className="text-sm text-muted-foreground">Ask me anything about Sealify - how to use features, find items, or get help with your account.</p>
       <input
         type="text"
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder="Ask about Sealify..."
-        className="w-full px-4 py-2 bg-slate-900 text-white border border-slate-800 rounded-xl focus:outline-none"
+        className="w-full px-4 py-2 bg-surface text-foreground border border-surface-border rounded-xl focus:outline-none focus:border-primary"
       />
-      <div className="mt-3 text-sm text-slate-400">
+      <div className="mt-3 text-sm text-muted-foreground">
         {response}
       </div>
     </div>
