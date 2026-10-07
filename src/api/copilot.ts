@@ -99,7 +99,7 @@ copilotRoutes.post('/', async (c) => {
 
     if (!enforceRateLimit(c, provider.provider)) {
       return c.json({
-        message: '⏳ **Rate Limit Reached** — You\\'ve sent too many requests to Sealify Copilot. Please wait a moment and try again. This limit helps maintain quality service for all users.',
+        message: "⏳ **Rate Limit Reached** — You've sent too many requests to Sealify Copilot. Please wait a moment and try again. This limit helps maintain quality service for all users.",
         citations: [],
         provider: 'none',
       }, 429);

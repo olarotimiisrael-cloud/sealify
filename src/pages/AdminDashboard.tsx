@@ -369,6 +369,7 @@ const AdminDashboard: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: Layout, desc: 'System health & quick actions' },
     { id: 'users', label: 'Users', icon: Users, desc: 'Manage all accounts' },
     { id: 'content', label: 'Content', icon: Shield, desc: 'Moderation queue' },
+    { id: 'buyer-requests', label: 'Buyer Requests', icon: HelpCircle, desc: 'Want board requests & notify' },
     { id: 'finance', label: 'Promotion Revenue', icon: DollarSign, desc: 'Paid promotion revenue' },
     { id: 'seo', label: 'SEO & Branding', icon: Palette, desc: 'Titles, logo, favicon, link previews' },
     { id: 'security', label: 'Security', icon: ShieldCheck, desc: 'Audit & intrusion' },
@@ -556,17 +557,18 @@ const AdminDashboard: React.FC = () => {
          <div className="admin-panel flex flex-wrap gap-1 animate-slide-up" style={{ animationDelay: '200ms' }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            const pendingCounts: Record<string, number> = {
-              content: stats.pendingReports,
-              finance: stats.pendingPromotions + stats.pendingPasswords,
-              security: stats.openDisputes,
-              system: 0,
-              database: 0,
-              broadcast: 0,
-              docs: 0,
-              architecture: 0,
-              components: 0,
-            };
+const pendingCounts: Record<string, number> = {
+               content: stats.pendingReports,
+               finance: stats.pendingPromotions + stats.pendingPasswords,
+               security: stats.openDisputes,
+               system: 0,
+               database: 0,
+               broadcast: 0,
+               docs: 0,
+               architecture: 0,
+               components: 0,
+               buyerRequests: 0,
+             };
             
             return (
               <button
