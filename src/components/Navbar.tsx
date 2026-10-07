@@ -237,14 +237,14 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-            <div className="lg:hidden flex items-center gap-2">
-              <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
-                <Search className="w-6 h-6" />
-              </button>
-               <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
-                 {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-               </button>
-            </div>
+          <div className="lg:hidden flex items-center gap-2">
+            <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
+              <Search className="w-6 h-6" />
+            </button>
+            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
+              {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+            </button>
+          </div>
         </div>
 
         {isMobileMenuOpen && (
@@ -258,23 +258,23 @@ const Navbar: React.FC = () => {
              </div>
              <div className="grid grid-cols-2 gap-2 text-xs font-bold">
                <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">
-                <Building2 className="w-4 h-4" /> Vendors
-              </Link>
-              <Link to="/community" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-teal-400 rounded-xl text-center flex items-center justify-center gap-1.5">
-                <Newspaper className="w-4 h-4" /> Community
-              </Link>
-              <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5">
-                <PlayCircle className="w-4 h-4" /> Guide
-              </Link>
-            </div>
-            <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
-              {t('requests')}
-            </Link>
-            <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
-              {t('post_free_ad').toUpperCase()}
-            </Link>
-          </div>
-        )}
+                 <Building2 className="w-4 h-4" /> Vendors
+               </Link>
+               <Link to="/community" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-teal-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                 <Newspaper className="w-4 h-4" /> Community
+               </Link>
+               <Link to="/how-it-works" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+                 <PlayCircle className="w-4 h-4" /> Guide
+               </Link>
+             </div>
+             <Link to="/requests" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-2.5 bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold rounded-xl text-center text-xs">
+               {t('requests')}
+             </Link>
+             <Link to="/post-ad" onClick={() => setIsMobileMenuOpen(false)} className="block w-full py-3.5 bg-emerald-500 text-slate-950 font-black rounded-2xl text-center">
+               {t('post_free_ad').toUpperCase()}
+             </Link>
+           </div>
+         )}
 
         {isMagicSearchOpen && (
           <MagicSearch isOpen={isMagicSearchOpen} onClose={() => setIsMagicSearchOpen(false)} />
