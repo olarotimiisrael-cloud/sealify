@@ -119,16 +119,7 @@ const Navbar: React.FC = () => {
             </button>
           </div>
 
-          <div className="hidden lg:flex items-center gap-2">
-            {/* AI Copilot Button */}
-            <button
-              onClick={() => setIsAiAssistantOpen(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 gx-primary text-white border border-primary/40 rounded-xl text-xs font-black transition-all shadow shadow-primary/10 active:scale-95 ai-icon-overlay"
-              title="Open Sealify AI Copilot Assistant"
-            >
-              <Bot className="w-4 h-4 animate-pulse" />
-              <span>AI Copilot</span>
-            </button>
+           </div>
 
             <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
               <Building2 className="w-4 h-4 text-emerald-400" />
@@ -246,17 +237,14 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-          <div className="lg:hidden flex items-center gap-2">
-            <button onClick={() => setIsAiAssistantOpen(true)} className="p-2 text-primary ai-icon-overlay rounded-xl" title="AI Copilot">
-              <Bot className="w-6 h-6 animate-pulse" />
-            </button>
-            <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
-              <Search className="w-6 h-6" />
-            </button>
-            <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
-              {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
-            </button>
-          </div>
+           <div className="lg:hidden flex items-center gap-2">
+             <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
+               <Search className="w-6 h-6" />
+             </button>
+             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
+               {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+             </button>
+           </div>
         </div>
 
         {isMobileMenuOpen && (
@@ -268,11 +256,8 @@ const Navbar: React.FC = () => {
                   </button>
                 ))}
              </div>
-            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-               <button onClick={() => { setIsMobileMenuOpen(false); setIsAiAssistantOpen(true); }} className="py-2.5 gx-primary text-white border border-primary/30 rounded-xl text-center flex items-center justify-center gap-1.5 font-black ai-icon-overlay">
-                 <Bot className="w-4 h-4 animate-pulse" /> AI Copilot
-               </button>
-              <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">
+             <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+               <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">
                 <Building2 className="w-4 h-4" /> Vendors
               </Link>
               <Link to="/community" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-teal-400 rounded-xl text-center flex items-center justify-center gap-1.5">
