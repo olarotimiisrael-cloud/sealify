@@ -253,10 +253,10 @@ const Navbar: React.FC = () => {
           </div>
 
           <div className="lg:hidden flex items-center gap-2">
-            <button onClick={() => setIsAiAssistantOpen(true)} className="p-2 text-emerald-400" title="AI Copilot">
+            <button onClick={() => setIsAiAssistantOpen(true)} className="p-2 text-primary" title="AI Copilot">
               <Bot className="w-6 h-6 animate-pulse" />
             </button>
-            <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-emerald-400">
+            <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
               <Search className="w-6 h-6" />
             </button>
             <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-slate-300">
@@ -266,7 +266,7 @@ const Navbar: React.FC = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="lg:hidden bg-slate-900 border-b border-slate-800 p-4 space-y-3 animate-in fade-in slide-in-from-top-4">
+          <div className="lg:hidden bg-slate-900 border-b border-surface-border p-4 space-y-3 animate-in fade-in slide-in-from-top-4">
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {languages.map(l => (
                   <button key={l.code} onClick={() => { setLanguage(l.code); setIsMobileMenuOpen(false); }} className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all shrink-0 ${language === l.code ? 'bg-emerald-500 text-slate-950' : 'bg-slate-950 text-slate-500 border border-slate-800'}`}>
@@ -275,7 +275,7 @@ const Navbar: React.FC = () => {
                 ))}
              </div>
             <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-              <button onClick={() => { setIsMobileMenuOpen(false); setIsAiAssistantOpen(true); }} className="py-2.5 bg-slate-950 border border-emerald-500/30 text-emerald-400 rounded-xl text-center flex items-center justify-center gap-1.5 font-black">
+              <button onClick={() => { setIsMobileMenuOpen(false); setIsAiAssistantOpen(true); }} className="py-2.5 bg-slate-950 border border-primary/30 text-primary rounded-xl text-center flex items-center justify-center gap-1.5 font-black">
                 <Bot className="w-4 h-4" /> AI Copilot
               </button>
               <Link to="/vendors" onClick={() => setIsMobileMenuOpen(false)} className="py-2.5 bg-slate-950 border border-slate-800 text-amber-400 rounded-xl text-center flex items-center justify-center gap-1.5">

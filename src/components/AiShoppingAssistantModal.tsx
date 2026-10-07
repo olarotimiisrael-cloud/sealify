@@ -127,21 +127,21 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 font-sans select-none">
-      <div className="w-full max-w-lg bg-slate-900 border-2 border-emerald-500/40 rounded-3xl shadow-2xl relative text-slate-100 h-[640px] max-h-[92vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-background/90 backdrop-blur-md flex items-center justify-center p-4 font-sans select-none">
+      <div className="w-full max-w-lg admin-panel-strong border-2 border-primary/40 rounded-3xl shadow-2xl relative text-slate-100 h-[680px] max-h-[92vh] flex flex-col overflow-hidden">
         <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 text-slate-950 rounded-2xl shadow-lg">
+            <div className="p-2.5 gx-primary text-white rounded-2xl shadow-lg shadow-primary/30">
               <Bot className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="font-black text-base text-white">Sealify Copilot</h3>
-                <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.2 rounded border border-emerald-500/20">
+                <span className="text-[9px] font-black uppercase text-primary bg-primary/10 px-2 py-0.2 rounded border border-primary/20">
                   AI ASSISTANT
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400">Marketplace help, general advice, and web research</p>
+              <p className="text-[10px] text-slate-400">Marketplace help, safe trading tips & web research</p>
             </div>
           </div>
 

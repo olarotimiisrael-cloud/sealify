@@ -596,7 +596,7 @@ export default function Index() {
         <div className="fixed bottom-20 right-4 sm:bottom-8 sm:right-8 z-30">
           <button
             onClick={() => setIsAiCopilotOpen(true)}
-            className="group flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black px-4 py-3 rounded-full shadow-2xl shadow-emerald-500/30 hover:scale-105 active:scale-95 transition-all border-2 border-white/20"
+            className="group flex items-center gap-2 gx-primary text-white font-black px-4 py-3 rounded-full shadow-2xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all border-2 border-white/20"
             title="Open Sealify AI Shopping Copilot"
           >
             <Bot className="w-5 h-5 stroke-[2.5] animate-pulse" />
