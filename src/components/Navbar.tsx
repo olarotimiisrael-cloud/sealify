@@ -237,7 +237,7 @@ const Navbar: React.FC = () => {
             </Link>
           </div>
 
-<div className="lg:hidden flex items-center gap-2">
+            <div className="lg:hidden flex items-center gap-2">
               <button onClick={() => setIsMagicSearchOpen(true)} className="p-2 text-primary">
                 <Search className="w-6 h-6" />
               </button>
