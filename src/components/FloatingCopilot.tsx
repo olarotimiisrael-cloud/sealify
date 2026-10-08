@@ -11,7 +11,7 @@ interface FloatingCopilotProps {
   onToggle: (open: boolean) => void;
 }
 
-export const FloatingCopilat: React.FC<FloatingCopilotProps> = ({ isOpen, onToggle }) => {
+export const FloatingCopilot: React.FC<FloatingCopilotProps> = ({ isOpen, onToggle }) => {
   const navigate = useNavigate();
 
   const handleOpen = () => {
@@ -24,11 +24,11 @@ export const FloatingCopilat: React.FC<FloatingCopilotProps> = ({ isOpen, onTogg
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 hover:scale-110 transition-transform duration-150"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 hover:scale-110 transition-transform duration-150 bg-slate-950/30 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-2.5"
       title="Open Sealify AI Copilot"
     >
-      <Bot className="w-8 h-8 text-emerald-400 hover:text-emerald-300 transition-colors" />
-      <span className="text-xs font-black text-emerald-400 uppercase tracking-wider">AI Copilot</span>
+      <Bot className="w-6 h-6 text-emerald-300/70 hover:text-emerald-300 transition-colors" />
+      <span className="text-xs font-semibold text-emerald-300/80 tracking-wider">AI Copilot</span>
     </div>
   );
 };
