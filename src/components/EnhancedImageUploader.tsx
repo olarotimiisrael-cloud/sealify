@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, Fragment } from 'react';
 import { useAdImageUpload } from '@/lib/storage';
 import { Upload, X, CheckCircle2, Image as ImageIcon, Loader2, Plus, ArrowUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { toast } from 'sonner';
@@ -70,11 +70,6 @@ export const EnhancedImageUploader: React.FC<EnhancedImageUploaderProps> = ({
         toast.error(`${file.name}: Exceeds ${maxSizeMB}MB limit`);
         return false;
       }
-      
-      // Basic dimension validation (if we want to implement it)
-      // Note: Full dimension validation would require creating an Image object
-      // For now, we'll rely on backend validation or skip frontend dimension checks
-      // to avoid complexity with large files
       
       return true;
     });
@@ -203,10 +198,9 @@ export const EnhancedImageUploader: React.FC<EnhancedImageUploaderProps> = ({
 
         {/* Upload Zone */}
         <div
-          className={`relative border-2 border-dashed rounded-2xl transition-all ${
-            dragActive 
-              ? 'border-emerald-500 bg-emerald-500/5' 
-              : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
+          className={`relative border-2 border-dashed rounded-2xl transition-all ${dragActive
+            ? 'border-emerald-500 bg-emerald-500/5'
+            : 'border-slate-800 bg-slate-950 hover:border-emerald-500/50'
           }`}
           onDragOver={handleDragOverZone}
           onDragLeave={handleDragLeaveZone}
@@ -237,8 +231,10 @@ export const EnhancedImageUploader: React.FC<EnhancedImageUploaderProps> = ({
               <br />
               <span className="font-mono text-[10px]">{maxImages} max • {maxSizeMB}MB each • JPG, PNG, WebP</span>
               {minWidth > 0 || minHeight > 0 && (
-                <br />
-                <span className="font-mono text-[9px]">{minWidth > 0 && minHeight > 0 ? `${minWidth}×${minHeight}px min` : minWidth > 0 ? `${minWidth}px min width` : `${minHeight}px min height`}</span>
+                <Fragment>
+                  <br />
+                  <span className="font-mono text-[9px]">{minWidth > 0 && minHeight > 0 ? `${minWidth}×${minHeight}px min` : minWidth > 0 ? `${minWidth}px min width` : `${minHeight}px min height`}</span>
+                </Fragment>
               )}
             </p>
           </button>
@@ -255,7 +251,7 @@ export const EnhancedImageUploader: React.FC<EnhancedImageUploaderProps> = ({
                 </div>
                 <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
                   <div 
-                    className={`bg-emerald-500 h-full rounded-full transition-all duration-300` 
+                    className={`bg-emerald-500 h-full rounded-full transition-all duration-300`} 
                     style={{ width: `${prog}%` }}
                   ></div>
                 </div>
