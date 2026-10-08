@@ -25,12 +25,11 @@ export function rateLimit(options: {
       return next();
     }
 
-    if (record.count >= maxRequests) {
-      throw new HTTPException(429, {
-        message: "Too many requests, please try again later",
-        headers: { "Retry-After": String(Math.max(1, Math.ceil((record.resetAt - now) / 1000))) },
-      });
-    }
+     if (record.count >= maxRequests) {
+       throw new HTTPException(429, {
+         message: "Too many requests, please try again later"
+       });
+     }
 
     record.count++;
     return next();
