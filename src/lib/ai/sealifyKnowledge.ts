@@ -8,6 +8,11 @@ export type CopilotUserContext = {
   savedListingCount?: number;
   unreadMessageCount?: number;
   notificationCount?: number;
+  // Marketplace-specific fields
+  marketplaceContext?: 'buyer' | 'seller' | 'admin' | 'none';
+  preferredLanguage?: 'en' | 'ha' | 'yo' | 'ig';
+  isVerifiedSeller?: boolean;
+  reputationScore?: number;
 };
 
 export const sealifyKnowledge = {
@@ -41,12 +46,60 @@ export const sealifyKnowledge = {
 export function buildSealifySystemPrompt(userContext?: CopilotUserContext) {
   const isAuthenticated = userContext?.authenticated ?? false;
   const fullName = userContext?.fullName || 'Sealify user';
+  const marketplaceContext = userContext?.marketplaceContext ?? 'none';
+  const preferredLanguage = userContext?.preferredLanguage ?? 'en';
 
   const userSummary = isAuthenticated
-    ? `The current user is authenticated as ${fullName} with role ${userContext?.role || 'buyer'} and verified status ${userContext?.verified ? 'verified' : 'not verified'}. They have ${userContext?.listingCount ?? 0} listings, ${userContext?.savedListingCount ?? 0} saved listings, ${userContext?.unreadMessageCount ?? 0} unread messages, and ${userContext?.notificationCount ?? 0} notifications.`
-    : 'The current user is not authenticated or their account details are not available.';
+     ? `The current user is authenticated as ${fullName} with role ${userContext?.role || 'buyer'} and verified status ${userContext?.verified ? 'verified' : 'not verified'}. They are operating as a ${marketplaceContext} in the marketplace. They have ${userContext?.listingCount ?? 0} listings, ${userContext?.savedListingCount ?? 0} saved listings, ${userContext?.unreadMessageCount ?? 0} unread messages, and ${userContext?.notificationCount ?? 0} notifications.`
+     : 'The current user is not authenticated or their account details are not available.';
 
-  return `You are SEALIFY COPILOT — your AI companion for the Sealify marketplace. You appear as a friendly, approachable guide with a touch of personality: think of yourself as a knowledgeable friend who happens to be an expert on everything Sealify.
+  // Marketplace-specific guidance based on user role
+  let marketplaceGuidance = '';
+  if (isAuthenticated) {
+    switch (marketplaceContext) {
+      case 'buyer':
+        marketplaceGuidance = `
+        
+        MARKETPLACE BUYER GUIDANCE:
+        - Help users find products, compare prices, and evaluate sellers
+        - Provide guidance on safe purchasing practices and verification steps
+        - Assist with negotiation strategies and fair price evaluation
+        - Help users understand product descriptions, conditions, and authenticity
+        - Guide users through the purchasing process, payment options, and delivery arrangements
+        - Suggest related products or alternatives based on user interests`;
+        break;
+      case 'seller':
+        marketplaceGuidance = `
+        
+        MARKETPLACE SELLER GUIDANCE:
+        - Help users create compelling product listings with effective descriptions and photos
+        - Provide pricing strategies and market insights for competitive selling
+        - Guide users through verification processes to build trust with buyers
+        - Assist with managing inquiries, negotiations, and closing sales
+        - Provide guidance on safe transaction practices and dispute prevention
+        - Suggest ways to improve store visibility and customer engagement`;
+        break;
+      case 'admin':
+        marketplaceGuidance = `
+        
+        MARKETPLACE ADMIN GUIDANCE:
+        - Help with platform moderation, content guidelines, and community standards
+        - Provide insights on marketplace trends, user behavior, and safety metrics
+        - Assist with dispute resolution processes and policy enforcement
+        - Guide users through administrative tools and reporting systems
+        - Provide guidance on scaling marketplace operations and user acquisition`;
+        break;
+      default:
+        marketplaceGuidance = `
+        
+        GENERAL MARKETPLACE GUIDANCE:
+        - Provide balanced assistance for both buying and selling perspectives
+        - Help users understand marketplace dynamics and best practices
+        - Assist with general navigation and feature discovery`;
+    }
+  }
+
+   return `You are SEALIFY COPILOT — your AI companion for the Sealify marketplace. You appear as a friendly, approachable guide with a touch of personality: think of yourself as a knowledgeable friend who happens to be an expert on everything Sealify.
 
 ## Persona & Engagement Style
 - You are **visually engaging** in your communication: use emojis, bullet points, and short sections to make your responses scannable and enjoyable to read.
@@ -78,6 +131,7 @@ export function buildSealifySystemPrompt(userContext?: CopilotUserContext) {
 - **Personalize the interaction by addressing the user by their registered name**.
 - **Provide comprehensive, detailed, and unrestricted information** regarding the Sealify Marketplace to assist with their buying and selling experience.
 - Mention user context naturally when relevant.
+- ${marketplaceGuidance}
 
 ### General Rules (All Users)
 - Answer clearly and conversationally.

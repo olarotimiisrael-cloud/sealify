@@ -61,6 +61,7 @@ const routeMap = [
     ['/otp', () => import('../../src/api/otp')],
     ['/adsense', () => import('../../src/api/adsense')],
     ['/admin-messaging', () => import('../../src/api/admin-messaging')],
+    ['/ai-generation', () => import('../../src/api/ai-generation')],
   ] as const;
 
   for (const [path, loader] of routeMap) {

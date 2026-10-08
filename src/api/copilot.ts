@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { createClient } from '@supabase/supabase-js';
 import { askSealifyCopilot } from '../lib/ai/assistant';
 import { getActiveProvider, type SupportedAIProvider } from '../lib/ai/providers';
+import { requireBasicAuth, checkFeatureAccess } from '../middleware/authCheck';
+import { FEATURE_TIERS, isFeatureAvailable } from '../lib/features';
+import { auditLog } from '../middleware/security';
+import { getSql } from '../db/hyperdrive';
+// import { v4 as uuidv4 } from 'uuid';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 20;
@@ -18,6 +23,16 @@ const copilotSchema = z.object({
       content: z.string().min(1).max(8000),
     })
   ).max(12).default([]),
+  context: z.object({
+    marketplaceContext: z.enum(['buyer', 'seller', 'admin', 'none']).default('none'),
+    productId: z.string().optional(),
+    conversationId: z.string().default(() => {
+      const array = new Uint32Array(1);
+      crypto.getRandomValues(array);
+      return array[0].toString(36);
+    }),
+    language: z.enum(['en', 'ha', 'yo', 'ig']).default('en'), // Nigerian languages
+  }).optional(),
 });
 
 const getRateLimitKey = (c: any) => {
@@ -44,7 +59,17 @@ const enforceRateLimit = (c: any, provider?: SupportedAIProvider) => {
   return true;
 };
 
-const getUserContext = async (env: any, authHeader?: string) => {
+const getUserContext = async (env: any, authHeader?: string): Promise<{
+  authenticated: boolean;
+  userId: string;
+  fullName: string;
+  role: string;
+  verified: boolean;
+  listingCount: number;
+  savedListingCount: number;
+  unreadMessageCount: number;
+  notificationCount: number;
+} | undefined> => {
   if (!authHeader?.startsWith('Bearer ')) return undefined;
 
   try {
@@ -71,17 +96,24 @@ const getUserContext = async (env: any, authHeader?: string) => {
 
 export const copilotRoutes = new Hono<{ Bindings: any }>();
 
-copilotRoutes.get('/health', (c) => {
-  const env = c.env as any;
-  const provider = env.AI_PROVIDER || 'none';
+// Apply basic auth middleware to all routes (allows tracking of authenticated users)
+copilotRoutes.use('*', requireBasicAuth);
 
-  return c.json({
-    ok: true,
-    provider,
-    configured: Boolean(provider === 'sealify' ? (env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || env.AI_CONFIG || env.COPILOT_AI_CONFIG || env.SECRET_AI_CONFIG || env.OPENAI_API_KEY || env.GEMINI_API_KEY) : (env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY))),
-    webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== 'false',
-  });
-});
+   copilotRoutes.get('/health', (c) => {
+   const env = c.env as any;
+   const provider = env.AI_PROVIDER || 'none';
+
+   return c.json({
+     ok: true,
+     provider,
+     configured: Boolean(provider === 'sealify' ? (env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || env.AI_CONFIG || env.COPILOT_AI_CONFIG || env.SECRET_AI_CONFIG || env.OPENAI_API_KEY || env.GEMINI_API_KEY) : (env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY))),
+     webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== 'false',
+     features: {
+       basic: FEATURE_TIERS.BASIC,
+       premium: FEATURE_TIERS.PREMIUM
+     }
+   });
+ });
 
 copilotRoutes.post('/', async (c) => {
   try {
@@ -117,9 +149,41 @@ copilotRoutes.post('/', async (c) => {
       }, 400);
     }
 
-    const authHeader = c.req.header('Authorization');
-    const userContext = await getUserContext(env, authHeader);
-    const { message, conversation } = parsed.data;
+      const authHeader = c.req.header('Authorization');
+      const userContext = await getUserContext(env, authHeader);
+      
+      // Check if user has access to AI copilot feature
+      if (!isFeatureAvailable('ai-chat-basic', userContext !== undefined) && !isFeatureAvailable('ai-chat-advanced', userContext !== undefined)) {
+         await auditLog(
+           getSql(c.env), 
+           userContext?.userId ?? 'anonymous', 
+           'Feature Access Denied', 
+           `User attempted to access AI copilot without proper permissions`, 
+           'security'
+         );
+        
+        return c.json({ 
+          error: 'Feature not available',
+          message: userContext !== undefined 
+            ? 'This feature requires a premium subscription' 
+            : 'Please log in to access this feature',
+          redirect: userContext !== undefined ? '/upgrade' : '/login'
+        }, 403);
+     }
+
+     const { message, conversation, context } = parsed.data;
+     
+     // Set default context if not provided
+     const finalContext = context || {
+        marketplaceContext: 'none',
+        productId: undefined,
+        conversationId: () => {
+          const array = new Uint32Array(1);
+          crypto.getRandomValues(array);
+          return array[0].toString(36);
+        },
+        language: 'en'
+      };
 
     const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
     if (conversationUsed > MAX_CONVERSATION_CHARS) {
