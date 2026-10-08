@@ -9,8 +9,9 @@
 -- uploads and downloads.
 -- ============================================================
 
--- Ensure RLS is enabled on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- NOTE: RLS is already enabled by default on storage.objects in Supabase.
+-- We only create the policies here. Do NOT run ALTER TABLE ... ENABLE ROW LEVEL SECURITY;
+-- as it requires table ownership and will fail with: "must be owner of table objects".
 
 -- ============================================================
 -- PROFILE MEDIA BUCKET POLICIES (avatars, cover photos)
