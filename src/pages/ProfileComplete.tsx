@@ -203,16 +203,7 @@ const ProfileComplete: React.FC = () => {
                 <input
                   type="file"
                   ref={avatarInputRef}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        if (event.target?.result) setAvatarUrl(event.target.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
+                  onChange={handleAvatarUpload}
                   accept="image/*"
                   className="hidden"
                 />
