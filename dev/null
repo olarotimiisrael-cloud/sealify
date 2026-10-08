@@ -1,0 +1,133 @@
+// src/api/copilot.ts
+import { Hono } from "hono";
+import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import { askSealifyCopilot } from "../lib/ai/assistant";
+import { getActiveProvider } from "../lib/ai/providers";
+var REQUEST_LIMIT_WINDOW_MS = 6e4;
+var MAX_REQUESTS_PER_WINDOW = 20;
+var MAX_MESSAGE_CHARS = 1600;
+var MAX_CONVERSATION_CHARS = 12e3;
+var RATE_LIMIT_BUCKETS = /* @__PURE__ */ new Map();
+var copilotSchema = z.object({
+  message: z.string().min(1).max(MAX_MESSAGE_CHARS),
+  conversation: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string().min(1).max(8e3)
+    })
+  ).max(12).default([])
+});
+var getRateLimitKey = (c) => {
+  return c.req.header("CF-Connecting-IP") || c.req.header("x-real-ip") || c.req.header("x-forwarded-for") || "local-user";
+};
+var enforceRateLimit = (c, provider) => {
+  if (provider === "sealify") return true;
+  const key = getRateLimitKey(c);
+  const now = Date.now();
+  const bucket = RATE_LIMIT_BUCKETS.get(key);
+  if (!bucket || now - bucket.windowStart > REQUEST_LIMIT_WINDOW_MS) {
+    RATE_LIMIT_BUCKETS.set(key, { count: 1, windowStart: now });
+    return true;
+  }
+  if (bucket.count >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  bucket.count += 1;
+  return true;
+};
+var getUserContext = async (env, authHeader) => {
+  if (!authHeader?.startsWith("Bearer ")) return void 0;
+  try {
+    const token = authHeader.replace("Bearer ", "").trim();
+    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    if (error || !user) return void 0;
+    return {
+      authenticated: true,
+      userId: user.id,
+      fullName: user.user_metadata?.full_name || user.email || "Sealify user",
+      role: "buyer",
+      verified: false,
+      listingCount: 0,
+      savedListingCount: 0,
+      unreadMessageCount: 0,
+      notificationCount: 0
+    };
+  } catch {
+    return void 0;
+  }
+};
+var copilotRoutes = new Hono();
+copilotRoutes.get("/health", (c) => {
+  const env = c.env;
+  const provider = env.AI_PROVIDER || "none";
+  return c.json({
+    ok: true,
+    provider,
+    configured: Boolean(provider === "sealify" ? env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || env.AI_CONFIG || env.COPILOT_AI_CONFIG || env.SECRET_AI_CONFIG || env.OPENAI_API_KEY || env.GEMINI_API_KEY : env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY)),
+    webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== "false"
+  });
+});
+copilotRoutes.post("/", async (c) => {
+  try {
+    const env = c.env;
+    const provider = getActiveProvider(env);
+    if (!provider) {
+      return c.json({
+        message: "Sealify Copilot is not configured yet. Add the required AI provider credentials in the server environment.",
+        citations: [],
+        provider: "none"
+      }, 503);
+    }
+    if (!enforceRateLimit(c, provider.provider)) {
+      return c.json({
+        message: "\u23F3 **Rate Limit Reached** \u2014 You've sent too many requests to Sealify Copilot. Please wait a moment and try again. This limit helps maintain quality service for all users.",
+        citations: [],
+        provider: "none"
+      }, 429);
+    }
+    const body = await c.req.json();
+    const parsed = copilotSchema.safeParse(body);
+    if (!parsed.success) {
+      const issues = parsed.error.errors.map((e) => e.message).join(", ");
+      return c.json({
+        message: `\u26A0\uFE0F **Request Could Not Be Processed** \u2014 ${issues}. Please check your input and try again.`,
+        citations: [],
+        provider: "none"
+      }, 400);
+    }
+    const authHeader = c.req.header("Authorization");
+    const userContext = await getUserContext(env, authHeader);
+    const { message, conversation } = parsed.data;
+    const conversationUsed = conversation.reduce((total, item) => total + item.content.length, 0);
+    if (conversationUsed > MAX_CONVERSATION_CHARS) {
+      return c.json({
+        message: `\u{1F4DD} **Conversation Too Long** \u2014 The total conversation length exceeds the maximum allowed (${MAX_CONVERSATION_CHARS} characters). Please start a new conversation to continue.`,
+        citations: [],
+        provider: "none"
+      }, 400);
+    }
+    const response = await askSealifyCopilot(message, conversation, userContext, env);
+    return c.json({
+      message: response.text,
+      citations: response.citations || [],
+      usedWebSearch: !!response.usedWebSearch,
+      provider: response.provider,
+      model: response.model
+    });
+  } catch (error) {
+    console.error("Copilot request failed", error);
+    const errMsg = error instanceof Error ? error.message : String(error);
+    return c.json({
+      message: `\u26A0\uFE0F **Copilot Temporarily Unavailable** \u2014 ${errMsg.includes("not configured") ? "The AI provider is not configured yet. Please contact an administrator." : errMsg.includes("rate") || errMsg.includes("429") ? "Rate limit exceeded. Please try again shortly." : "An unexpected error occurred. Please try again or contact support."}`,
+      citations: [],
+      provider: "none"
+    }, 503);
+  }
+});
+var copilot_default = copilotRoutes;
+export {
+  copilotRoutes,
+  copilot_default as default
+};
