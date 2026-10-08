@@ -70,12 +70,15 @@ export function resolveAiConfig(env: Record<string, string | undefined>): Partia
   const rawProvider = ((base.provider || env.AI_PROVIDER || 'sealify') as string).toLowerCase();
   const provider = rawProvider === 'local' ? 'sealify' : rawProvider === 'openai' || rawProvider === 'gemini' || rawProvider === 'sealify' ? rawProvider : 'sealify';
   const apiKey = (base.apiKey || env.GEMINI_API_KEY || env.OPENAI_API_KEY || '').trim();
-  const sealifyBaseUrl = (base.baseUrl || env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || DEFAULT_SEALIFY_URL).trim();
+  const customBaseUrl = (base.baseUrl || env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || '').trim();
+  const sealifyBaseUrl = customBaseUrl || DEFAULT_SEALIFY_URL;
   const model = (base.model || (provider === 'openai' ? env.OPENAI_MODEL : provider === 'gemini' ? env.GEMINI_MODEL : env.SEALIFY_MODEL || env.AI_LOCAL_MODEL) || (provider === 'openai' ? DEFAULT_OPENAI_MODEL : provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_SEALIFY_MODEL)).trim();
+
+  const sealifyEnabled = provider === 'sealify' && (customBaseUrl || Boolean(apiKey));
 
   return {
     provider,
-    enabled: base.enabled !== false && (provider === 'sealify' || Boolean(apiKey)),
+    enabled: base.enabled !== false && (sealifyEnabled || Boolean(apiKey)),
     model,
     apiKey,
     baseUrl: sealifyBaseUrl,
@@ -92,10 +95,12 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
   const providers: ProviderConfig[] = [];
 
   if (provider === 'sealify') {
-    const sealifyBaseUrl = (config.baseUrl || env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || DEFAULT_SEALIFY_URL).trim();
+    const sealifyBaseUrl = config.baseUrl || DEFAULT_SEALIFY_URL;
     providers.push({
       provider,
-      enabled: config.enabled !== false,
+      enabled: config.enabled && Boolean(config.baseUrl && config.baseUrl !== DEFAULT_SEALIFY_URL) || Boolean(config.apiKey),
+      model: config.model || DEFAULT_SEALIFY_MODEL,
+      baseUrl: sealifyBaseUrl,
       model: config.model || DEFAULT_SEALIFY_MODEL,
       baseUrl: sealifyBaseUrl,
       apiKey: config.apiKey,

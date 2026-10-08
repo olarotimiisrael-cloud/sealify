@@ -78,7 +78,7 @@ copilotRoutes.get('/health', (c) => {
   return c.json({
     ok: true,
     provider,
-    configured: Boolean(provider === 'sealify' || (env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY))),
+    configured: Boolean(provider === 'sealify' ? (env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || env.AI_CONFIG || env.COPILOT_AI_CONFIG || env.SECRET_AI_CONFIG || env.OPENAI_API_KEY || env.GEMINI_API_KEY) : (env.AI_PROVIDER && (env.OPENAI_API_KEY || env.GEMINI_API_KEY))),
     webSearchEnabled: env.AI_WEB_SEARCH_ENABLED !== 'false',
   });
 });
