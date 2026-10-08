@@ -38,7 +38,7 @@ async function buildApp(): Promise<Hono<{ Bindings: Env }>> {
 
   app.route('/health', healthRoutes);
 
-const routeMap = [
+  const routeMap = [
     ['/auth', () => import('../../src/api/auth')],
     ['/listings', () => import('../../src/api/listings')],
     ['/categories', () => import('../../src/api/categories')],
@@ -62,6 +62,7 @@ const routeMap = [
     ['/adsense', () => import('../../src/api/adsense')],
     ['/admin-messaging', () => import('../../src/api/admin-messaging')],
     ['/ai-generation', () => import('../../src/api/ai-generation')],
+    ['/saved-searches', () => import('../../src/api/saved-searches')], // Added this line
   ] as const;
 
   for (const [path, loader] of routeMap) {

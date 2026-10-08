@@ -1769,7 +1769,7 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
 
   const updateUser = async (id: string, updates: Partial<UserProfile>) => {
     const fieldMap: Record<string, string> = {
-      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'cover_url',
+      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'store_banner_url',
       bio: 'bio', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
       businessCategory: 'business_category', businessAddress: 'business_address', cacNumber: 'cac_number', businessHours: 'business_hours',
       bankName: 'bank_name', accountNumber: 'account_number', accountName: 'account_name', websiteUrl: 'website_url',
@@ -1803,7 +1803,7 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
 
   const bulkUpdateUsers = async (ids: string[], updates: Partial<UserProfile>) => {
     const fieldMap: Record<string, string> = {
-      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'cover_url',
+      fullName: 'full_name', phoneNumber: 'phone_number', avatarUrl: 'avatar_url', storeBannerUrl: 'store_banner_url',
       bio: 'bio', verified: 'verified', verificationType: 'verification_type', businessName: 'business_name',
       businessCategory: 'business_category', businessAddress: 'business_address', cacNumber: 'cac_number', businessHours: 'business_hours',
       bankName: 'bank_name', accountNumber: 'account_number', accountName: 'account_name', websiteUrl: 'website_url',
