@@ -1,4 +1,4 @@
-export type SupportedAIProvider = 'openai' | 'gemini' | 'sealify';
+export type SupportedAIProvider = 'openai' | 'gemini' | 'sealify' | 'cloudflare-ai';
 
 export interface ProviderConfig {
   provider: SupportedAIProvider;
@@ -188,22 +188,23 @@ export function resolveAiConfig(env: Record<string, string | undefined>): Partia
   const parsedJson = envConfigJson ? (() => { try { return JSON.parse(envConfigJson); } catch { return null; } })() : null;
   const base = parsedJson || runtimeConfig || {};
 
-  const rawProvider = ((base.provider || env.AI_PROVIDER || 'sealify') as string).toLowerCase();
-  const provider = rawProvider === 'local' ? 'sealify' : rawProvider === 'openai' || rawProvider === 'gemini' || rawProvider === 'sealify' ? rawProvider : 'sealify';
+const rawProvider = ((base.provider || env.AI_PROVIDER || 'sealify') as string).toLowerCase();
+    const provider = rawProvider === 'local' ? 'sealify' : rawProvider === 'openai' || rawProvider === 'gemini' || rawProvider === 'sealify' || rawProvider === 'cloudflare-ai' ? rawProvider : 'sealify';
   const apiKey = (base.apiKey || env.GEMINI_API_KEY || env.OPENAI_API_KEY || '').trim();
   const customBaseUrl = (base.baseUrl || env.AI_LOCAL_BASE_URL || env.SEALIFY_MODEL_BASE_URL || '').trim();
   const sealifyBaseUrl = customBaseUrl || DEFAULT_SEALIFY_URL;
   const model = (base.model || (provider === 'openai' ? env.OPENAI_MODEL : provider === 'gemini' ? env.GEMINI_MODEL : env.SEALIFY_MODEL || env.AI_LOCAL_MODEL) || (provider === 'openai' ? DEFAULT_OPENAI_MODEL : provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_SEALIFY_MODEL)).trim();
 
-  const visionModel = (base.visionModel || env.AI_VISION_MODEL || (provider === 'openai' ? 'gpt-4o' : provider === 'gemini' ? 'gemini-2.5-pro' : 'sealify-vision')).trim();
-  const imageGenerationModel = (base.imageGenerationModel || env.AI_IMAGE_GENERATION_MODEL || (provider === 'openai' ? 'dall-e-3' : provider === 'gemini' ? 'imagen-3' : 'stable-diffusion-xl')).trim();
+  const visionModel = (base.visionModel || env.AI_VISION_MODEL || (provider === 'openai' ? 'gpt-4o' : provider === 'gemini' ? 'gemini-2.5-pro' : provider === 'cloudflare-ai' ? '@cf/meta/llama-3.2-11b-vision-instruct' : 'sealify-vision')).trim();
+  const imageGenerationModel = (base.imageGenerationModel || env.AI_IMAGE_GENERATION_MODEL || (provider === 'openai' ? 'dall-e-3' : provider === 'gemini' ? 'imagen-3' : provider === 'cloudflare-ai' ? '@cf/stabilityai/stable-diffusion-xl-base-1.0' : 'stable-diffusion-xl')).trim();
   const videoGenerationModel = (base.videoGenerationModel || env.AI_VIDEO_GENERATION_MODEL || 'veo-2').trim();
 
   const sealifyEnabled = provider === 'sealify' && (customBaseUrl || Boolean(apiKey));
+  const cloudflareAiEnabled = provider === 'cloudflare-ai' && Boolean(env.AI);
 
   return {
     provider,
-    enabled: base.enabled !== false && (sealifyEnabled || Boolean(apiKey)),
+    enabled: base.enabled !== false && (sealifyEnabled || cloudflareAiEnabled || Boolean(apiKey)),
     model,
     apiKey,
     baseUrl: sealifyBaseUrl,
@@ -242,6 +243,27 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
       visionModel: config.visionModel,
       imageGenerationEnabled: config.imageGenerationEnabled,
       imageGenerationModel: config.imageGenerationModel,
+      videoGenerationEnabled: config.videoGenerationEnabled,
+      videoGenerationModel: config.videoGenerationModel,
+    });
+  }
+
+if (provider === 'cloudflare-ai') {
+    providers.push({
+      provider: 'cloudflare-ai',
+      enabled: config.enabled && Boolean(env.AI),
+      model: config.model || '@cf/meta/llama-3.2-11b-instruct',
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl,
+      webSearchEnabled: config.webSearchEnabled !== false,
+      fallbackEnabled: env.AI_FALLBACK_ENABLED === 'true',
+      maxRequestLength: Number(config.maxRequestLength || 1600),
+      perUserRateLimit: Number(config.perUserRateLimit || 10),
+      dailyRequestLimit: Number(config.dailyRequestLimit || 500),
+      visionEnabled: config.visionEnabled,
+      visionModel: config.visionModel || '@cf/meta/llama-3.2-11b-vision-instruct',
+      imageGenerationEnabled: config.imageGenerationEnabled,
+      imageGenerationModel: config.imageGenerationModel || '@cf/stabilityai/stable-diffusion-xl-base-1.0',
       videoGenerationEnabled: config.videoGenerationEnabled,
       videoGenerationModel: config.videoGenerationModel,
     });
