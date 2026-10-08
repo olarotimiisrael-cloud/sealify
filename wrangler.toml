@@ -16,7 +16,7 @@ SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7"
 # Sensitive credentials are set in Cloudflare Pages > Settings > Variables and Secrets.
 # Do not add SUPABASE_SERVICE_ROLE_KEY or AI provider keys to this file.
-AI_PROVIDER = "sealify"
+AI_PROVIDER = "cloudflare-ai"
 AI_WEB_SEARCH_ENABLED = "true"
 AI_FALLBACK_ENABLED = "true"
 APP_URL = "https://sealify.pages.dev"
