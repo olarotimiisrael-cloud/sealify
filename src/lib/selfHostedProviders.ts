@@ -110,6 +110,50 @@ export async function sendSmsViaSelfHosted(env: Env, message: SmsMessage): Promi
   }
 }
 
+export interface WhatsappDeliveryResult {
+  success: boolean;
+  messageId: string;
+  error?: string;
+}
+
+export async function sendWhatsAppViaSelfHosted(env: Env, phone: string, message: string): Promise<WhatsappDeliveryResult> {
+  const accessToken = env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = env.PHONE_NUMBER_ID;
+
+  if (!accessToken || !phoneNumberId) {
+    return { success: false, messageId: '', error: 'WhatsApp credentials not configured' };
+  }
+
+  try {
+    const url = `https://graph.facebook.com/v19.0/${phoneNumberId}/messages`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: phone,
+        type: 'text',
+        text: { body: message },
+      }),
+    });
+
+    if (!response.ok) {
+      return { success: false, messageId: '', error: `WhatsApp API error: ${response.status}` };
+    }
+
+    const data = await response.json().catch(() => ({}));
+    return {
+      success: true,
+      messageId: data.messages?.[0]?.id || `wa_${Date.now()}`,
+    };
+  } catch (error: any) {
+    return { success: false, messageId: '', error: error?.message || 'WhatsApp delivery failed' };
+  }
+}
+
 export async function generateOtp(length: number = OTP_LENGTH): Promise<string> {
   const digits = '0123456789';
   const array = new Uint32Array(length);
