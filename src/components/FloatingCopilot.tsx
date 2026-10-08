@@ -137,12 +137,48 @@ export const FloatingCopilot: React.FC = () => {
         onClick={handleClick}
       >
         <motion.div
-          whileHover={{ scale: 1.1 }}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ type: "spring", stiffness: 260, damping: 20 }}
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.95 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          className="flex items-center gap-2 bg-slate-950/5 backdrop-blur-xl border border-slate-500/30 rounded-full px-3 py-2 shadow-lg"
+          className="relative flex items-center gap-3 bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 backdrop-blur-2xl border border-cyan-500/20 rounded-2xl px-5 py-3 shadow-2xl shadow-cyan-500/10 overflow-hidden"
         >
-          <Bot className="w-4 h-4 text-cyan-400/80" />
-          <span className="text-xs font-medium text-cyan-400/70 tracking-wider">Copilot</span>
+          <motion.div
+            className="relative p-2 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-xl border border-cyan-500/30 shadow-lg shadow-cyan-500/20"
+            animate={{
+              boxShadow: [
+                "0 0 20px rgba(6, 182, 212, 0.3)",
+                "0 0 40px rgba(6, 182, 212, 0.5)",
+                "0 0 20px rgba(6, 182, 212, 0.3)",
+              ],
+            }}
+            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <Bot className="w-6 h-6 text-cyan-300 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+            <motion.div
+              className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl opacity-0 blur-md"
+              animate={{ opacity: [0, 0.3, 0] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+            />
+          </motion.div>
+          <div className="relative">
+            <span className="text-sm font-semibold text-white tracking-wide bg-gradient-to-r from-cyan-300 via-white to-blue-300 bg-clip-text text-transparent">
+              Copilot
+            </span>
+            <motion.div
+              className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 200 }}
+            />
+          </div>
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-transparent to-blue-500/10"
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          />
         </motion.div>
       </motion.div>
 
