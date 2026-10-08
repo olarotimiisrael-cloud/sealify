@@ -123,7 +123,20 @@ export async function checkIsAdmin(
 export async function requireAdmin(c: any, next: any) {
   await requireAuth(c, async () => {
     const user = c.get("user");
-    const token = c.req.header("Authorization").substring(7);
+    const token = c.req.header("Authorization")?.substring(7);
+
+    // Allow users to update their own profile (self-service)
+    if (c.req.method === "PUT") {
+      try {
+        const path = c.req.path;
+        const match = path.match(/^\/users\/([^/]+)$/) || path.match(/^\/api\/admin\/users\/([^/]+)$/);
+        if (match && match[1] === user.id) {
+          return next();
+        }
+      } catch {
+        // If path parsing fails, fall through to the admin check
+      }
+    }
 
     // Authorization is decided by the database function only.
     // Do not trust a client-readable profile field as the authorization source.

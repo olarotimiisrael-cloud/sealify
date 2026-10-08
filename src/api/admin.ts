@@ -307,10 +307,20 @@ adminRoutes.post("/users", async (c) => {
 adminRoutes.put("/users/:id", async (c) => {
   const sql = getSql(c.env);
   const id = c.req.param("id");
-  const updates: any = { updated_at: new Date(), ...adminUserUpdateSchema.parse(await c.req.json()) };
+  const body = adminUserUpdateSchema.parse(await c.req.json());
+  const user = c.get("user");
+
+  // Strip admin-only fields for self-updates
+  if (user && user.id === id) {
+    const adminOnlyFields = ['role', 'status', 'verified', 'verification_type', 'restriction_reason', 'appeal_status'];
+    for (const field of adminOnlyFields) {
+      delete (body as any)[field];
+    }
+  }
+
+  const updates: any = { updated_at: new Date(), ...body };
 
   // Prevent non-admin from changing role
-  const user = c.get("user");
   if (user && user.id !== id && updates.role !== undefined && !userIsAdmin(user.id, sql)) {
     throw new HTTPException(403, { message: "Only administrators can change roles" });
   }
