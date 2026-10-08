@@ -297,7 +297,7 @@ export interface MarketplaceDeal {
 }
 
 // Alias types for supabaseService.ts compatibility
-export interface DbUser extends UserProfile {}
+export type DbUser = UserProfile;
 export type DbListing = Listing;
 export type DbVerificationRequest = VerificationRequest;
 export type DbPasswordRequest = PasswordChangeRequest;

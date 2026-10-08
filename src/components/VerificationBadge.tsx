@@ -161,7 +161,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ userId, on
             className={`flex items-center gap-3 p-3 rounded-xl ${
               hasVerification
                 ? 'bg-emerald-500/10 border border-emerald-500 text-emerald-400'
-                : 'bg-slate-800 border border-slate-700 text-slate-300'}
+                : 'bg-slate-800 border border-slate-700 text-slate-300'
+            }`}
           >
             <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center flex-shrink-0">
               {badge.type === 'government_id' && (
@@ -182,9 +183,11 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ userId, on
               <p className="text-xs text-slate-400">{badge.issuingAuthority}</p>
             </div>
             <span
-              className={`px-2 py-1 rounded text-xs font-semibold ${
-                hasVerification ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-300'
-              }`}
+              className={
+                hasVerification
+                  ? 'px-2 py-1 rounded text-xs font-semibold bg-emerald-500/20 text-emerald-400'
+                  : 'px-2 py-1 rounded text-xs font-semibold bg-slate-700 text-slate-300'
+              }
             >
               {hasVerification ? 'Verified' : 'Request Pending'}
             </span>
@@ -196,13 +199,14 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({ userId, on
       {requests?.length > 0 && (
         <div className="mt-6 p-4 rounded-xl bg-slate-800 text-xs">
           {requests.map((req: any) => (
-            <div key={req.id} className="flex items-center gap-2 mb-2">
-              <span className={`w-3 h-3 rounded-full ${
-                req.status === 'approved' ? 'bg-emerald-500' :
-                req.status === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'
-              }}` />
-              <span className="text-slate-300 text-xs">${formatRequestStatus(req.status)}</span>
-              <span className="text-slate-500 text-xs ml-2 small">(${new Date(req.requestDate).toLocaleDateString('en-NG')})</span>
+            <div className="flex items-center gap-2 mb-2">
+              <span className={
+                req.status === 'approved' ? 'w-3 h-3 rounded-full bg-emerald-500' :
+                req.status === 'rejected' ? 'w-3 h-3 rounded-full bg-rose-500' :
+                'w-3 h-3 rounded-full bg-amber-500'
+              } />
+              <span className="text-slate-300 text-xs">{formatRequestStatus(req.status)}</span>
+              <span className="text-slate-500 text-xs ml-2 small">{new Date(req.requestDate).toLocaleDateString('en-NG')}</span>
             </div>
           ))}
         </div>

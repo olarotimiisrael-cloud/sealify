@@ -119,8 +119,6 @@ const Navbar: React.FC = () => {
             </button>
           </div>
 
-           </div>
-
             <Link to="/vendors" className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-300 hover:text-emerald-400 transition-colors mr-1">
               <Building2 className="w-4 h-4 text-emerald-400" />
               <span>Vendors</span>
@@ -245,9 +243,8 @@ const Navbar: React.FC = () => {
                 {isMobileMenuOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
               </button>
             </div>
-        </div>
 
-        {isMobileMenuOpen && (
+            {isMobileMenuOpen && (
           <div className="lg:hidden bg-slate-900 border-b border-surface-border p-4 space-y-3 animate-in fade-in slide-in-from-top-4">
              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
                 {languages.map(l => (

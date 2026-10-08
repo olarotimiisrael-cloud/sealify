@@ -355,7 +355,7 @@ export const WhatsAppStatusOptimizer: React.FC<WhatsAppStatusProps> = ({
         <div>
           <label className="text-sm font-bold text-slate-300 uppercase tracking-wider block mb-2">
             Design Template
-          </div>
+          </label>
           <div className="space-y-2">
             {Object.entries(templates).map(([key, template]) => (
               <div
@@ -383,7 +383,7 @@ export const WhatsAppStatusOptimizer: React.FC<WhatsAppStatusProps> = ({
         <div>
           <label className="text-sm font-bold text-slate-300 uppercase tracking-wider block mb-2">
             Color Psychology
-          </div>
+          </label>
           <div className="flex gap-2">
             {[
               { value: 'trust', label: 'Trust', desc: 'Green = Safety, Growth', color: '#059669' },
