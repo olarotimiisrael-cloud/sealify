@@ -6,6 +6,7 @@ import SplashScreen from "./components/SplashScreen";
 import ToasterWrapper from "./components/ToasterWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AdminRouteGuard from "./components/AdminRouteGuard";
+import FloatingCopilotWrapper from "./components/FloatingCopilot";
 
 const Index = lazy(() => import("./pages/Index"));
 const ListingDetail = lazy(() => import("./pages/ListingDetail"));
@@ -47,6 +48,7 @@ const App = () => (
       <SiteMetadataProvider>
       <SplashScreen />
       <ToasterWrapper />
+      <FloatingCopilotWrapper />
       <Suspense fallback={routeFallback}>
         <Routes>
           <Route path="/" element={<Index />} />
