@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Save, User, Mail, Phone, MapPin, Building2, Briefcase, Image, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -40,38 +41,58 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
   if (!isOpen || !user) return null;
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Avatar must be less than 5MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setAvatarUrl(event.target.result as string);
-        toast.success('Avatar preview updated');
-      }
-    };
-    reader.readAsDataURL(file);
+    
+    try {
+      const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+      
+      if (error) throw error;
+      
+      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(avatarPath);
+      setAvatarUrl(publicUrl);
+      toast.success('Avatar uploaded successfully');
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      toast.error(`Failed to upload avatar: ${err.message}`);
+    }
   };
 
-  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
       toast.error('Cover photo must be less than 10MB');
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setCoverUrl(event.target.result as string);
-        toast.success('Cover photo preview updated');
-      }
-    };
-    reader.readAsDataURL(file);
+    
+    try {
+      const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+      
+      if (error) throw error;
+      
+      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(coverPath);
+      setCoverUrl(publicUrl);
+      toast.success('Cover photo uploaded successfully');
+    } catch (err: any) {
+      console.error('Cover upload error:', err);
+      toast.error(`Failed to upload cover photo: ${err.message}`);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {

@@ -11,6 +11,13 @@ export interface ProviderConfig {
   maxRequestLength?: number;
   perUserRateLimit?: number;
   dailyRequestLimit?: number;
+  // New vision/image generation capabilities
+  visionEnabled?: boolean;
+  visionModel?: string;
+  imageGenerationEnabled?: boolean;
+  imageGenerationModel?: string;
+  videoGenerationEnabled?: boolean;
+  videoGenerationModel?: string;
 }
 
 export interface AdminAiSettings {
@@ -23,6 +30,35 @@ export interface AdminAiSettings {
   maxRequestLength: number;
   perUserRateLimit: number;
   dailyRequestLimit: number;
+  // New vision/image generation settings
+  visionEnabled: boolean;
+  visionModel: string;
+  imageGenerationEnabled: boolean;
+  imageGenerationModel: string;
+  videoGenerationEnabled: boolean;
+  videoGenerationModel: string;
+}
+
+export interface VisionCapability {
+  supported: boolean;
+  maxImageSize?: number; // MB
+  supportedFormats?: string[];
+  maxImagesPerRequest?: number;
+}
+
+export interface ImageGenerationCapability {
+  supported: boolean;
+  maxResolution?: string;
+  supportedSizes?: string[];
+  supportedFormats?: string[];
+  maxImagesPerRequest?: number;
+}
+
+export interface VideoGenerationCapability {
+  supported: boolean;
+  maxDuration?: number; // seconds
+  supportedResolutions?: string[];
+  supportedFormats?: string[];
 }
 
 const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
@@ -31,11 +67,80 @@ const DEFAULT_SEALIFY_MODEL = 'sealify-mini';
 const DEFAULT_SEALIFY_URL = 'http://localhost:11434';
 const AI_CONFIG_STORE_KEY = '__sealify_ai_runtime_config__';
 
+// Model capabilities registry
+export const MODEL_CAPABILITIES: Record<string, {
+  vision?: VisionCapability;
+  imageGeneration?: ImageGenerationCapability;
+  videoGeneration?: VideoGenerationCapability;
+}> = {
+  'gpt-4o': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif'], maxImagesPerRequest: 10 },
+    imageGeneration: { supported: false }, // Use DALL-E 3 separately
+  },
+  'gpt-4o-mini': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif'], maxImagesPerRequest: 10 },
+    imageGeneration: { supported: false },
+  },
+  'gpt-4.1-mini': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif'], maxImagesPerRequest: 10 },
+    imageGeneration: { supported: false },
+  },
+  'gpt-4-turbo': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif'], maxImagesPerRequest: 10 },
+    imageGeneration: { supported: false },
+  },
+  'gemini-2.5-pro': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif', 'heic'], maxImagesPerRequest: 16 },
+    imageGeneration: { supported: false }, // Use Imagen separately
+    videoGeneration: { supported: false }, // Use Veo separately
+  },
+  'gemini-2.5-flash': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif', 'heic'], maxImagesPerRequest: 16 },
+    imageGeneration: { supported: false },
+    videoGeneration: { supported: false },
+  },
+  'gemini-2.0-flash': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif', 'heic'], maxImagesPerRequest: 16 },
+    imageGeneration: { supported: false },
+    videoGeneration: { supported: false },
+  },
+  'sealify-vision': {
+    vision: { supported: true, maxImageSize: 20, supportedFormats: ['png', 'jpeg', 'webp', 'gif'], maxImagesPerRequest: 10 },
+    imageGeneration: { supported: false },
+  },
+  'sealify-pro': {
+    vision: { supported: false },
+    imageGeneration: { supported: false },
+  },
+  'sealify-mini': {
+    vision: { supported: false },
+    imageGeneration: { supported: false },
+  },
+  'dall-e-3': {
+    imageGeneration: { supported: true, maxResolution: '1792x1024', supportedSizes: ['1024x1024', '1792x1024', '1024x1792'], supportedFormats: ['png'], maxImagesPerRequest: 1 },
+  },
+  'dall-e-2': {
+    imageGeneration: { supported: true, maxResolution: '1024x1024', supportedSizes: ['256x256', '512x512', '1024x1024'], supportedFormats: ['png'], maxImagesPerRequest: 10 },
+  },
+  'imagen-3': {
+    imageGeneration: { supported: true, maxResolution: '2048x2048', supportedSizes: ['1024x1024', '2048x2048'], supportedFormats: ['png', 'jpeg'], maxImagesPerRequest: 4 },
+  },
+  'veo-2': {
+    videoGeneration: { supported: true, maxDuration: 60, supportedResolutions: ['720p', '1080p', '4k'], supportedFormats: ['mp4'] },
+  },
+  'sora': {
+    videoGeneration: { supported: true, maxDuration: 60, supportedResolutions: ['720p', '1080p'], supportedFormats: ['mp4'] },
+  },
+};
+
 const modelOptions: Record<SupportedAIProvider, string[]> = {
   gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
   openai: ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o'],
   sealify: ['sealify-mini', 'sealify-pro', 'sealify-vision'],
 };
+
+export const IMAGE_GENERATION_MODELS = ['dall-e-3', 'dall-e-2', 'imagen-3', 'stable-diffusion-xl', 'stable-diffusion-3'];
+export const VIDEO_GENERATION_MODELS = ['veo-2', 'veo-3', 'sora', 'runway-gen3', 'pika', 'luma-dream-machine'];
 
 export function maskSecret(secret?: string) {
   const value = (secret || '').trim();
@@ -58,7 +163,23 @@ export function setRuntimeAiConfig(config: Partial<AdminAiSettings> | null) {
 export function isModelSupported(provider: SupportedAIProvider, model: string) {
   const normalizedModel = (model || '').trim();
   if (!normalizedModel) return false;
-  return modelOptions[provider].includes(normalizedModel) || normalizedModel.startsWith('gemini-') || normalizedModel.startsWith('gpt-');
+  return modelOptions[provider].includes(normalizedModel) || normalizedModel.startsWith('gemini-') || normalizedModel.startsWith('gpt-') || IMAGE_GENERATION_MODELS.includes(normalizedModel) || VIDEO_GENERATION_MODELS.includes(normalizedModel);
+}
+
+export function getModelCapabilities(model: string) {
+  return MODEL_CAPABILITIES[model] || {};
+}
+
+export function supportsVision(model: string): boolean {
+  return MODEL_CAPABILITIES[model]?.vision?.supported === true;
+}
+
+export function supportsImageGeneration(model: string): boolean {
+  return MODEL_CAPABILITIES[model]?.imageGeneration?.supported === true;
+}
+
+export function supportsVideoGeneration(model: string): boolean {
+  return MODEL_CAPABILITIES[model]?.videoGeneration?.supported === true;
 }
 
 export function resolveAiConfig(env: Record<string, string | undefined>): Partial<AdminAiSettings> {
@@ -74,6 +195,10 @@ export function resolveAiConfig(env: Record<string, string | undefined>): Partia
   const sealifyBaseUrl = customBaseUrl || DEFAULT_SEALIFY_URL;
   const model = (base.model || (provider === 'openai' ? env.OPENAI_MODEL : provider === 'gemini' ? env.GEMINI_MODEL : env.SEALIFY_MODEL || env.AI_LOCAL_MODEL) || (provider === 'openai' ? DEFAULT_OPENAI_MODEL : provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_SEALIFY_MODEL)).trim();
 
+  const visionModel = (base.visionModel || env.AI_VISION_MODEL || (provider === 'openai' ? 'gpt-4o' : provider === 'gemini' ? 'gemini-2.5-pro' : 'sealify-vision')).trim();
+  const imageGenerationModel = (base.imageGenerationModel || env.AI_IMAGE_GENERATION_MODEL || (provider === 'openai' ? 'dall-e-3' : provider === 'gemini' ? 'imagen-3' : 'stable-diffusion-xl')).trim();
+  const videoGenerationModel = (base.videoGenerationModel || env.AI_VIDEO_GENERATION_MODEL || 'veo-2').trim();
+
   const sealifyEnabled = provider === 'sealify' && (customBaseUrl || Boolean(apiKey));
 
   return {
@@ -86,6 +211,12 @@ export function resolveAiConfig(env: Record<string, string | undefined>): Partia
     maxRequestLength: Number(base.maxRequestLength ?? env.AI_MAX_REQUEST_LENGTH ?? 1600),
     perUserRateLimit: Number(base.perUserRateLimit ?? env.AI_PER_USER_RATE_LIMIT ?? 10),
     dailyRequestLimit: Number(base.dailyRequestLimit ?? env.AI_DAILY_LIMIT ?? 500),
+    visionEnabled: base.visionEnabled ?? env.AI_VISION_ENABLED !== 'false',
+    visionModel,
+    imageGenerationEnabled: base.imageGenerationEnabled ?? env.AI_IMAGE_GENERATION_ENABLED !== 'false',
+    imageGenerationModel,
+    videoGenerationEnabled: base.videoGenerationEnabled ?? env.AI_VIDEO_GENERATION_ENABLED !== 'false',
+    videoGenerationModel,
   };
 }
 
@@ -98,9 +229,7 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
     const sealifyBaseUrl = config.baseUrl || DEFAULT_SEALIFY_URL;
     providers.push({
       provider,
-      enabled: config.enabled && Boolean(config.baseUrl && config.baseUrl !== DEFAULT_SEALIFY_URL) || Boolean(config.apiKey),
-      model: config.model || DEFAULT_SEALIFY_MODEL,
-      baseUrl: sealifyBaseUrl,
+      enabled: config.enabled && (Boolean(config.baseUrl && config.baseUrl !== DEFAULT_SEALIFY_URL) || Boolean(config.apiKey)),
       model: config.model || DEFAULT_SEALIFY_MODEL,
       baseUrl: sealifyBaseUrl,
       apiKey: config.apiKey,
@@ -109,6 +238,12 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
       maxRequestLength: Number(config.maxRequestLength || 1600),
       perUserRateLimit: Number(config.perUserRateLimit || 10),
       dailyRequestLimit: Number(config.dailyRequestLimit || 500),
+      visionEnabled: config.visionEnabled,
+      visionModel: config.visionModel,
+      imageGenerationEnabled: config.imageGenerationEnabled,
+      imageGenerationModel: config.imageGenerationModel,
+      videoGenerationEnabled: config.videoGenerationEnabled,
+      videoGenerationModel: config.videoGenerationModel,
     });
   }
 
@@ -123,6 +258,12 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
       maxRequestLength: Number(config.maxRequestLength || 1600),
       perUserRateLimit: Number(config.perUserRateLimit || 10),
       dailyRequestLimit: Number(config.dailyRequestLimit || 500),
+      visionEnabled: config.visionEnabled,
+      visionModel: config.visionModel,
+      imageGenerationEnabled: config.imageGenerationEnabled,
+      imageGenerationModel: config.imageGenerationModel,
+      videoGenerationEnabled: config.videoGenerationEnabled,
+      videoGenerationModel: config.videoGenerationModel,
     });
   }
 
@@ -141,6 +282,12 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
       maxRequestLength: Number(env.AI_MAX_REQUEST_LENGTH || 1600),
       perUserRateLimit: Number(env.AI_PER_USER_RATE_LIMIT || 10),
       dailyRequestLimit: Number(env.AI_DAILY_LIMIT || 500),
+      visionEnabled: env.AI_VISION_ENABLED !== 'false',
+      visionModel: fallbackProvider === 'openai' ? 'gpt-4o' : 'gemini-2.5-pro',
+      imageGenerationEnabled: env.AI_IMAGE_GENERATION_ENABLED !== 'false',
+      imageGenerationModel: fallbackProvider === 'openai' ? 'dall-e-3' : 'imagen-3',
+      videoGenerationEnabled: env.AI_VIDEO_GENERATION_ENABLED !== 'false',
+      videoGenerationModel: 'veo-2',
     });
   }
 

@@ -7,7 +7,7 @@ import tseslint from "typescript-eslint";
 export default tseslint.config(
   // Wrangler and Vite generate JavaScript artifacts outside the application
   // source tree. They are build output, not files we author or lint.
-  { ignores: ["dist/**", ".wrangler/**", ".output/**", ".npm-cache/**"] },
+  { ignores: ["dist/**", ".wrangler/**", ".output/**", ".npm-cache/**", "tmp/**"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

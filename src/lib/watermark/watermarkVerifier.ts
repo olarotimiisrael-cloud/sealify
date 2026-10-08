@@ -39,10 +39,6 @@ export class WatermarkVerifier {
     // such as OpenCV or TensorFlow.js to detect the Sealify watermark
     
     // For now, we return a placeholder result since we apply watermarks mandatorily
-    #ifdef PRODUCTION
-    // Real implementation would go here
-    #else
-    // Development/placeholder implementation
     return {
       present: true,
       confidence: 0.95,
@@ -54,7 +50,6 @@ export class WatermarkVerifier {
         position: 'bottom-right'
       }
     };
-    #endif
   }
 
   /**
@@ -97,15 +92,12 @@ export class WatermarkVerifier {
     /** Details about potential tampering */
     details?: string;
   }> {
-    #ifdef PRODUCTION
     // Real implementation would compare expected vs actual watermark
-    #else
     return {
       tampered: false,
       confidence: 0.9,
       details: 'No tampering detected (placeholder)'
     };
-    #endif
   }
 }
 
