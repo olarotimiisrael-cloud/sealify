@@ -132,6 +132,28 @@ copilotRoutes.post('/', async (c) => {
 
     const response = await askSealifyCopilot(message, conversation as { role: 'user' | 'assistant'; content: string }[], userContext, env as Record<string, string | undefined>);
 
+    // Detect if the AI model returned an error about unsupported image input
+    // This can happen when a non-vision model is asked to process an image
+    const imageErrorPatterns = [
+      'cannot read',
+      'does not support image input',
+      'image input',
+      'vision',
+      'image.png',
+    ];
+    const responseText = response.text.toLowerCase();
+    const isImageError = imageErrorPatterns.some((pattern) => responseText.includes(pattern));
+
+    if (isImageError) {
+      return c.json({
+        message: `⚠️ **AI Vision Not Available** — The current AI model (${response.provider}: ${response.model}) doesn't support image analysis. Please switch to a vision-capable model (e.g., GPT-4o, Gemini 2.5 Pro, or Sealify Vision) in Admin → AI & Copilot settings, or describe the image in text instead.`,
+        citations: [],
+        usedWebSearch: false,
+        provider: response.provider,
+        model: response.model,
+      }, 400);
+    }
+
     return c.json({
       message: response.text,
       citations: response.citations || [],
