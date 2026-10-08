@@ -216,11 +216,41 @@ async function callLocalModel(
     };
 }
 
+async function callCloudflareAI(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  model: string,
+  ai: any,
+  useWebSearch: boolean,
+): Promise<CopilotResponse> {
+  if (!ai) {
+    throw new Error('Cloudflare Workers AI binding not available');
+  }
+
+  const response = await ai.run(model, {
+    messages: messages.map((msg) => ({
+      role: msg.role === 'assistant' ? 'assistant' : msg.role,
+      content: msg.content,
+    })),
+    stream: false,
+  });
+
+  const content = response?.response || response?.choices?.[0]?.message?.content || '';
+
+  return {
+    text: content,
+    citations: [],
+    usedWebSearch: useWebSearch,
+    provider: 'cloudflare-ai',
+    model,
+  };
+}
+
 export async function askSealifyCopilot(
   input: string,
   conversation: Array<{ role: 'user' | 'assistant'; content: string }>,
   userContext?: CopilotUserContext,
   env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,
+  ai?: any, // Cloudflare AI binding instance (for Workers AI)
 ): Promise<CopilotResponse> {
   const provider = getActiveProvider(env);
 
@@ -250,6 +280,10 @@ export async function askSealifyCopilot(
   try {
     if (provider.provider === 'sealify') {
       return await callLocalModel(messages, provider.model, provider.baseUrl || 'http://localhost:11434');
+    }
+
+    if (provider.provider === 'cloudflare-ai') {
+      return await callCloudflareAI(messages, provider.model, ai, useWebSearch);
     }
 
     if (provider.provider === 'openai') {
@@ -288,6 +322,9 @@ export async function askSealifyCopilot(
         try {
           if (fallback.provider === 'sealify') {
             return await callLocalModel(fallbackMessages, fallback.model, fallback.baseUrl || 'http://localhost:11434');
+          }
+          if (fallback.provider === 'cloudflare-ai') {
+            return await callCloudflareAI(fallbackMessages, fallback.model, ai, useWebSearch);
           }
           if (fallback.provider === 'openai') {
             if (!fallback.apiKey) throw new Error('OpenAI API key missing');

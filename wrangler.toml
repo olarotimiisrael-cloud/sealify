@@ -4,13 +4,19 @@ compatibility_flags = ["nodejs_compat"]
 observability = { enabled = true }
 pages_build_output_dir = "./dist"
 
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "4450cb10a9fb4977ba6a1d1cd2e6b110"
+
+[ai]
+binding = "AI"
+
 [vars]
 SUPABASE_URL = "https://eliwjdafimaugnwvadlr.supabase.co"
 SUPABASE_ANON_KEY = "sb_publishable_h4te__ofhyf2Ou5uALG-Sw_lsKjDQR7"
 # Sensitive credentials are set in Cloudflare Pages > Settings > Variables and Secrets.
 # Do not add SUPABASE_SERVICE_ROLE_KEY or AI provider keys to this file.
 AI_PROVIDER = "sealify"
-AI_LOCAL_BASE_URL = "https://your-sealify-model-endpoint.com"
 AI_WEB_SEARCH_ENABLED = "true"
 AI_FALLBACK_ENABLED = "true"
 APP_URL = "https://sealify.pages.dev"

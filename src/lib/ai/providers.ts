@@ -137,6 +137,7 @@ const modelOptions: Record<SupportedAIProvider, string[]> = {
   gemini: ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'],
   openai: ['gpt-4o-mini', 'gpt-4.1-mini', 'gpt-4o'],
   sealify: ['sealify-mini', 'sealify-pro', 'sealify-vision'],
+  'cloudflare-ai': ['@cf/meta/llama-3.2-11b-instruct', '@cf/meta/llama-3.3b-instruct', '@cf/meta/llama-3.1-8b-instruct', '@cf/google/gemma-2b-it', '@cf/google/gemma-7b-it', '@cf/meta/llama-3.2-11b-vision-instruct'],
 };
 
 export const IMAGE_GENERATION_MODELS = ['dall-e-3', 'dall-e-2', 'imagen-3', 'stable-diffusion-xl', 'stable-diffusion-3'];

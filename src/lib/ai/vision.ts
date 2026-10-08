@@ -35,7 +35,7 @@ export async function analyzeImage(
     throw new Error('Vision analysis is not enabled for the current provider');
   }
 
-  const visionModel = provider.visionModel || (provider.provider === 'openai' ? 'gpt-4o' : provider.provider === 'gemini' ? 'gemini-2.5-pro' : 'sealify-vision');
+  const visionModel = provider.visionModel || (provider.provider === 'openai' ? 'gpt-4o' : provider.provider === 'gemini' ? 'gemini-2.5-pro' : provider.provider === 'cloudflare-ai' ? '@cf/meta/llama-3.2-11b-vision-instruct' : 'sealify-vision');
 
   if (provider.provider === 'openai') {
     return await analyzeWithOpenAI(imageData, visionModel, provider.apiKey || '', options);
@@ -182,6 +182,54 @@ async function analyzeWithSealify(
 
   const payload = await response.json();
   const content = payload.analysis || payload.message || JSON.stringify(payload);
+
+  try {
+    return JSON.parse(content) as VisionAnalysisResult;
+  } catch {
+    return { description: content };
+  }
+}
+
+async function analyzeWithCloudflareAI(
+  imageData: string,
+  model: string,
+  options: VisionAnalysisOptions
+): Promise<VisionAnalysisResult> {
+  const prompt = options.customPrompt || buildVisionPrompt(options);
+
+  const isBase64 = imageData.startsWith('data:') || /^[A-Za-z0-9+/=]+$/.test(imageData);
+  const imageContent = isBase64
+    ? { type: 'image_url', image_url: { url: `data:image/png;base64,${imageData.replace(/^data:image\/[a-z]+;base64,/, '')}` } }
+    : { type: 'image_url', image_url: { url: imageData } };
+
+  // For Cloudflare Workers AI, we need to construct the proper request
+  // Since we're in a Pages Function, we can't directly access the AI binding from here
+  // Instead, we'll use the fetch API to call our own endpoint that has the AI binding
+  const response = await fetch(`/api/ai/vision`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      image: imageData,
+      prompt,
+      options: {
+        detail: options.detail || 'high',
+        extractText: options.extractText ?? true,
+        detectObjects: options.detectObjects ?? true,
+        analyzeColors: options.analyzeColors ?? true,
+        checkNSFW: options.checkNSFW ?? true,
+        assessQuality: options.assessQuality ?? true,
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: { message: 'Cloudflare AI vision request failed' } }));
+    throw new Error(error?.error?.message || 'Cloudflare AI vision request failed');
+  }
+
+  const payload = await response.json();
+  const content = payload.analysis || payload.result || JSON.stringify(payload);
 
   try {
     return JSON.parse(content) as VisionAnalysisResult;

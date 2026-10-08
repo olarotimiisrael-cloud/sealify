@@ -194,7 +194,7 @@ copilotRoutes.post('/', async (c) => {
       }, 400);
     }
 
-    const response = await askSealifyCopilot(message, conversation as { role: 'user' | 'assistant'; content: string }[], userContext, env as Record<string, string | undefined>);
+    const response = await askSealifyCopilot(message, conversation as { role: 'user' | 'assistant'; content: string }[], userContext, env as Record<string, string | undefined>, c.env.AI);
 
     // Detect if the AI model returned an error about unsupported image input
     // This can happen when a non-vision model is asked to process an image
@@ -232,6 +232,45 @@ copilotRoutes.post('/', async (c) => {
       message: `⚠️ **Copilot Temporarily Unavailable** — ${errMsg.includes('not configured') ? 'The AI provider is not configured yet. Please contact an administrator.' : errMsg.includes('rate') || errMsg.includes('429') ? 'Rate limit exceeded. Please try again shortly.' : 'An unexpected error occurred. Please try again or contact support.'}`,
       citations: [],
       provider: 'none',
+    }, 503);
+  }
+});
+
+copilotRoutes.post('/vision', async (c) => {
+  try {
+    const env = c.env as any;
+    const { model, image, prompt, options } = await c.req.json();
+
+    const isBase64 = image.startsWith('data:') || /^[A-Za-z0-9+/=]+$/.test(image);
+    const imageContent = isBase64
+      ? { type: 'image_url', image_url: { url: `data:image/png;base64,${image.replace(/^data:image\/[a-z]+;base64,/, '')}` } }
+      : { type: 'image_url', image_url: { url: image } };
+
+    const visionModel = env.AI_VISION_MODEL || '@cf/meta/llama-3.2-11b-vision-instruct';
+    const ai = env.AI;
+
+    if (!ai) {
+      return c.json({ error: 'Vision analysis not available' }, 503);
+    }
+
+    const result = await ai.run(visionModel, {
+      messages: [
+        { role: 'user', content: [{ type: 'text', text: prompt }, imageContent] },
+      ],
+      stream: false,
+    });
+
+    const content = result?.response || '{}';
+
+    try {
+      return c.json({ analysis: JSON.parse(content) });
+    } catch {
+      return c.json({ analysis: { description: content } });
+    }
+  } catch (error) {
+    console.error('Vision analysis failed', error);
+    return c.json({
+      error: error instanceof Error ? error.message : 'Vision analysis failed'
     }, 503);
   }
 });
