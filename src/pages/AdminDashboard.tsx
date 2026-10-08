@@ -21,7 +21,7 @@ import {
   Cloud, Cpu, Download as DownloadIcon, FileText as FileTextIcon,
   Navigation, Box, Megaphone, Paperclip, Bold, Italic, Underline,
   Heading1, Heading2, List as ListIcon, ListOrdered, AlignLeft, AlignCenter, AlignRight,
-  Type, Palette, PaintBucket, Gift,
+  Type, Palette, PaintBucket, Gift, HelpCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserProfile, UserStatus } from '@/types/sealify';

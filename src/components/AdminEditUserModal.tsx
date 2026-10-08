@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, ShieldCheck, User, Mail, Phone, MapPin, Save, Camera, Building2, FileText, CreditCard, Layout, Award, KeyRound, Lock, Unlock, Users, Heart, Tag, DollarSign, Truck, Smartphone, Laptop, Home, Car, Shirt, Sparkles, Wrench, Briefcase, GraduationCap, Building, Zap, ShieldCheck as ShieldCheckIcon, CheckCircle, XCircle, Loader2, FileText as FileTextIcon, Image, Video, Music, Film, Code, Database, Server, Cloud, Globe, Wifi, Bluetooth, Usb, Monitor, Printer, Headphones, Mic, Speaker, Keyboard, Mouse, Cpu, HardDrive, MemoryStick, Battery, Power, Wifi as WifiIcon, Bluetooth as BluetoothIcon, Usb as UsbIcon, Monitor as MonitorIcon, Printer as PrinterIcon, Headphones as HeadphonesIcon, Mic as MicIcon, Speaker as SpeakerIcon, Keyboard as KeyboardIcon, Mouse as MouseIcon, Cpu as CpuIcon, HardDrive as HardDriveIcon, MemoryStick as MemoryStickIcon, Battery as BatteryIcon, Power as PowerIcon, TrendingDown, Info, Terminal, AlertTriangle, Siren, Radio, MapPin as MapPinIcon, Shield, Lock as LockIcon, Unlock as UnlockIcon,  Heart as HeartIcon, Tag as TagIcon, DollarSign as DollarSignIcon, Truck as TruckIcon, Smartphone as SmartphoneIcon, Laptop as LaptopIcon, Home as HomeIcon, Car as CarIcon, Shirt as ShirtIcon, Sparkles as SparklesIcon, Wrench as WrenchIcon, Briefcase as BriefcaseIcon, GraduationCap as GraduationCapIcon, Building as BuildingIcon, Zap as ZapIcon, ShieldCheck as ShieldCheckIcon2, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Loader2 as Loader2Icon, FileText as FileTextIcon2, Image as ImageIcon, Video as VideoIcon, Music as MusicIcon, Film as FilmIcon, Code as CodeIcon, Database as DatabaseIcon, Server as ServerIcon, Cloud as CloudIcon, Globe as GlobeIcon, Wifi as WifiIcon2, Bluetooth as BluetoothIcon2, Usb as UsbIcon2, Monitor as MonitorIcon2, Printer as PrinterIcon2, Headphones as HeadphonesIcon2, Mic as MicIcon2, Speaker as SpeakerIcon2, Keyboard as KeyboardIcon2, Mouse as MouseIcon2, Cpu as CpuIcon2, HardDrive as HardDriveIcon2, MemoryStick as MemoryStickIcon2, Battery as BatteryIcon2, Power as PowerIcon2 } from 'lucide-react';
 import { UserProfile, UserStatus, VerificationBadgeType } from '@/types/sealify';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminEditUserModalProps {
   user: UserProfile | null;
@@ -63,30 +64,60 @@ export const AdminEditUserModal: React.FC<AdminEditUserModalProps> = ({
 
   const isNewUser = !user.id;
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setAvatarUrl(event.target.result as string);
-        toast.success('Avatar preview updated');
-      }
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Avatar must be less than 5MB');
+      return;
+    }
+    
+    try {
+      const userId = user.id || `temp-${Date.now()}`;
+      const avatarPath = `${userId}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+
+      if (error) throw error;
+
+      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      setAvatarUrl(publicUrl);
+      toast.success('Avatar uploaded successfully');
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      toast.error(`Failed to upload avatar: ${err.message}`);
+    }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setStoreBannerUrl(event.target.result as string);
-        toast.success('Store cover photo preview updated');
-      }
-    };
-    reader.readAsDataURL(file);
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Cover photo must be less than 10MB');
+      return;
+    }
+    
+    try {
+      const userId = user.id || `temp-${Date.now()}`;
+      const coverPath = `${userId}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+      const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+
+      if (error) throw error;
+
+      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      setStoreBannerUrl(publicUrl);
+      toast.success('Cover photo uploaded successfully');
+    } catch (err: any) {
+      console.error('Cover upload error:', err);
+      toast.error(`Failed to upload cover photo: ${err.message}`);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

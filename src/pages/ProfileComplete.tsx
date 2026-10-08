@@ -31,6 +31,64 @@ const ProfileComplete: React.FC = () => {
     setBusinessName(user.businessName || '');
   }, [user, navigate]);
 
+  const uploadAvatar = async (file: File): Promise<string> => {
+    if (!user?.id) throw new Error('User not authenticated');
+    if (file.size > 5 * 1024 * 1024) throw new Error('Avatar must be less than 5MB');
+    
+    const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+    const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    });
+
+    if (error) throw error;
+    return supabase.storage.from('profile-media').getPublicUrl(data.path).publicUrl;
+  };
+
+  const uploadCover = async (file: File): Promise<string> => {
+    if (!user?.id) throw new Error('User not authenticated');
+    if (file.size > 10 * 1024 * 1024) throw new Error('Cover photo must be less than 10MB');
+    
+    const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+    const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    });
+
+    if (error) throw error;
+    return supabase.storage.from('profile-media').getPublicUrl(data.path).publicUrl;
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const publicUrl = await uploadAvatar(file);
+      setAvatarUrl(publicUrl);
+      toast.success('Avatar uploaded successfully');
+    } catch (err: any) {
+      console.error('Avatar upload error:', err);
+      toast.error(`Failed to upload avatar: ${err.message}`);
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    try {
+      const publicUrl = await uploadCover(file);
+      setCoverUrl(publicUrl);
+      toast.success('Cover photo uploaded successfully');
+    } catch (err: any) {
+      console.error('Cover upload error:', err);
+      toast.error(`Failed to upload cover photo: ${err.message}`);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !phoneNumber.trim()) {
