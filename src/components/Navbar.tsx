@@ -1,6 +1,11 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { User, Settings as SettingsIcon, Save, ShieldCheck } from 'lucide-react';
+import { useSealify } from '../context/SealifyContext';
+
 const Navbar = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const { t } = useTranslation();
+  const { t } = useSealify();
   const { isAdmin } = useSealify();
 
   return (
