@@ -18,12 +18,12 @@
 -- ============================================================
 
 -- Public read access for avatars and cover photos
-CREATE POLICY "Public avatars are viewable" 
+CREATE POLICY IF NOT EXISTS "Public avatars are viewable" 
 ON storage.objects FOR SELECT 
 USING (bucket_id = 'profile-media');
 
 -- Users can upload their own profile media
-CREATE POLICY "Users can upload their own profile media" 
+CREATE POLICY IF NOT EXISTS "Users can upload their own profile media" 
 ON storage.objects FOR INSERT 
 WITH CHECK (
   bucket_id = 'profile-media' 
@@ -31,7 +31,7 @@ WITH CHECK (
 );
 
 -- Users can update their own profile media
-CREATE POLICY "Users can update their own profile media" 
+CREATE POLICY IF NOT EXISTS "Users can update their own profile media" 
 ON storage.objects FOR UPDATE 
 USING (
   bucket_id = 'profile-media' 
@@ -39,7 +39,7 @@ USING (
 );
 
 -- Users can delete their own profile media
-CREATE POLICY "Users can delete their own profile media" 
+CREATE POLICY IF NOT EXISTS "Users can delete their own profile media" 
 ON storage.objects FOR DELETE 
 USING (
   bucket_id = 'profile-media' 
