@@ -24,11 +24,11 @@ export const FloatingCopilot: React.FC<FloatingCopilotProps> = ({ isOpen, onTogg
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 hover:scale-110 transition-transform duration-150 bg-slate-950/30 backdrop-blur-sm border border-emerald-500/20 rounded-xl p-2.5"
+      className="fixed bottom-6 right-6 z-50 flex items-center gap-2 hover:scale-110 transition-transform duration-150 bg-slate-900/10 backdrop-blur-md border border-slate-700/20 rounded-xl p-2"
       title="Open Sealify AI Copilot"
     >
-      <Bot className="w-6 h-6 text-emerald-300/70 hover:text-emerald-300 transition-colors" />
-      <span className="text-xs font-semibold text-emerald-300/80 tracking-wider">AI Copilot</span>
+      <Bot className="w-5 h-5 text-sky-400/60 hover:text-sky-300/80 transition-colors" />
+      <span className="text-xs font-medium text-sky-400/70 tracking-wider">AI Copilot</span>
     </div>
   );
 };
