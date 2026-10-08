@@ -261,6 +261,17 @@ export async function askSealifyCopilot(
     return await callGemini(messages, provider.model, provider.apiKey, useWebSearch);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'AI request failed';
+    const imageErrorPatterns = ['cannot read', 'does not support image input', 'image input', 'vision', 'image.png'];
+    const isImageError = imageErrorPatterns.some((pattern) => message.toLowerCase().includes(pattern));
+    if (isImageError) {
+      return {
+        text: `⚠️ **AI Vision Not Available** — The current AI model (${provider.provider}: ${provider.model}) doesn't support image analysis. Please switch to a vision-capable model (e.g., GPT-4o, Gemini 2.5 Pro, or Sealify Vision) in Admin → AI & Copilot settings, or describe the image in text instead.`,
+        citations: [],
+        usedWebSearch: false,
+        provider: provider.provider,
+        model: provider.model,
+      };
+    }
     if (provider.fallbackEnabled) {
       const fallback = getActiveProvider({
         ...env,
