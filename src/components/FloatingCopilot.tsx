@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Bot } from 'lucide-react';
 import { AiShoppingAssistantModal } from '@/components/AiShoppingAssistantModal';
