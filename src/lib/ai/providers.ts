@@ -201,7 +201,7 @@ const rawProvider = ((base.provider || env.AI_PROVIDER || 'sealify') as string).
   const videoGenerationModel = (base.videoGenerationModel || env.AI_VIDEO_GENERATION_MODEL || 'veo-2').trim();
 
   const sealifyEnabled = provider === 'sealify' && (customBaseUrl || Boolean(apiKey));
-  const cloudflareAiEnabled = provider === 'cloudflare-ai' && Boolean(env.AI);
+  const cloudflareAiEnabled = provider === 'cloudflare-ai';
 
   return {
     provider,
@@ -252,7 +252,7 @@ export function getProviderConfig(env: Record<string, string | undefined>): Prov
 if (provider === 'cloudflare-ai') {
     providers.push({
       provider: 'cloudflare-ai',
-      enabled: config.enabled && Boolean(env.AI),
+      enabled: config.enabled,
       model: config.model || '@cf/meta/llama-3.2-11b-instruct',
       apiKey: config.apiKey,
       baseUrl: config.baseUrl,
