@@ -228,10 +228,14 @@ copilotRoutes.post('/', async (c) => {
   } catch (error) {
     console.error('Copilot request failed', error);
     const errMsg = error instanceof Error ? error.message : String(error);
+    const errStack = error instanceof Error ? error.stack : '';
+    console.error('Copilot error details', { errMsg, errStack });
     return c.json({
       message: `⚠️ **Copilot Temporarily Unavailable** — ${errMsg.includes('not configured') ? 'The AI provider is not configured yet. Please contact an administrator.' : errMsg.includes('rate') || errMsg.includes('429') ? 'Rate limit exceeded. Please try again shortly.' : 'An unexpected error occurred. Please try again or contact support.'}`,
       citations: [],
       provider: 'none',
+      error: errMsg,
+      stack: errStack,
     }, 503);
   }
 });
