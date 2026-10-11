@@ -97,9 +97,9 @@ const getUserContext = async (env: any, authHeader?: string): Promise<{
 export const copilotRoutes = new Hono<{ Bindings: any }>();
 
 // Debug test route without middleware
-copilotRoutes.post('/debug-body', (c) => {
+copilotRoutes.post('/debug-body', async (c) => {
   try {
-    const body = c.req.json();
+    const body = await c.req.json();
     return c.json({ ok: true, got: body });
   } catch (error) {
     return c.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, 400);
