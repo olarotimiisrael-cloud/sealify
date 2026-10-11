@@ -301,6 +301,10 @@ export function createMcpTransport(options?: WebStandardStreamableHTTPServerTran
 }
 
 export async function handleMcpRequest(req: Request): Promise<Response | undefined> {
+  console.log('MCP request received:', req.method, req.url);
+  console.log('Accept header:', req.headers.get('accept'));
+  console.log('MCP-Protocol-Version:', req.headers.get('mcp-protocol-version'));
+  
   let activeTransport = transport;
   
   if (isInitializeRequest(req)) {
@@ -311,6 +315,7 @@ export async function handleMcpRequest(req: Request): Promise<Response | undefin
   }
   
   if (!activeTransport) {
+    console.log('No MCP transport available');
     return undefined;
   }
   
