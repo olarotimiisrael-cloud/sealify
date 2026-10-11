@@ -107,7 +107,7 @@ copilotRoutes.post('/debug-body', async (c) => {
 });
 
 // Apply basic auth middleware to all routes (allows tracking of authenticated users)
-copilotRoutes.use('*', requireBasicAuth);
+// copilotRoutes.use('*', requireBasicAuth);
 
    copilotRoutes.get('/health', (c) => {
    const env = c.env as any;
