@@ -109,7 +109,7 @@ copilotRoutes.post('/debug-body', async (c) => {
 });
 
 // Apply basic auth middleware to all routes (allows tracking of authenticated users)
-// copilotRoutes.use('*', requireBasicAuth);
+copilotRoutes.use('*', requireBasicAuth);
 
    copilotRoutes.get('/health', (c) => {
    const env = c.env as any;
@@ -149,7 +149,25 @@ copilotRoutes.post('/', async (c) => {
       }, 429);
     }
 
-    const body = await c.req.json();
+    const contentType = c.req.header('Content-Type');
+    console.log('[COPILOT] Content-Type:', contentType);
+    console.log('[COPILOT] Authorization:', c.req.header('Authorization') ? 'present' : 'missing');
+
+    let body: any;
+    try {
+      body = await c.req.json();
+      console.log('[COPILOT] Body parsed successfully:', JSON.stringify(body).slice(0, 200));
+    } catch (parseError) {
+      console.error('[COPILOT] JSON parse error:', parseError);
+      const rawText = await c.req.text().catch(() => 'Unable to read body');
+      console.log('[COPILOT] Raw body:', rawText.slice(0, 500));
+      return c.json({
+        message: `⚠️ **Request Could Not Be Processed** — Invalid JSON body: ${parseError instanceof Error ? parseError.message : 'Unknown error'}. Please check your input and try again.`,
+        citations: [],
+        provider: 'none',
+      }, 400);
+    }
+
     const parsed = copilotSchema.safeParse(body);
 
     if (!parsed.success) {
