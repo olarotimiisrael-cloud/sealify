@@ -7,6 +7,7 @@ import { requireBasicAuth, checkFeatureAccess } from '../middleware/authCheck';
 import { FEATURE_TIERS, isFeatureAvailable } from '../lib/features';
 import { auditLog } from '../middleware/security';
 import { getSql } from '../db/hyperdrive';
+import { handleMcpRequest } from '../mcp/server.js';
 // import { v4 as uuidv4 } from 'uuid';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
@@ -95,6 +96,24 @@ const getUserContext = async (env: any, authHeader?: string): Promise<{
 };
 
 export const copilotRoutes = new Hono<{ Bindings: any }>();
+
+// MCP endpoint for gemini-cli and other MCP clients
+copilotRoutes.all('/mcp', async (c) => {
+  const env = c.env as any;
+  // Add AI binding to env for the MCP server
+  const req = new Request(c.req.url, {
+    method: c.req.method,
+    headers: c.req.headers,
+    body: c.req.raw.body,
+  });
+  (req as any).env = env;
+  
+  const response = await handleMcpRequest(req);
+  if (response) {
+    return response;
+  }
+  return c.json({ error: 'MCP transport not initialized' }, 500);
+});
 
 // Debug test route without middleware
 copilotRoutes.post('/debug-body', async (c) => {
