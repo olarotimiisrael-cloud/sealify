@@ -306,6 +306,7 @@ export async function handleMcpRequest(req: Request): Promise<Response | undefin
   if (isInitializeRequest(req)) {
     if (!activeTransport) {
       activeTransport = createMcpTransport();
+      await getServer().connect(activeTransport);
     }
   }
   
