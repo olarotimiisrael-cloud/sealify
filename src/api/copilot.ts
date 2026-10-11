@@ -96,6 +96,16 @@ const getUserContext = async (env: any, authHeader?: string): Promise<{
 
 export const copilotRoutes = new Hono<{ Bindings: any }>();
 
+// Debug test route without middleware
+copilotRoutes.post('/debug-body', (c) => {
+  try {
+    const body = c.req.json();
+    return c.json({ ok: true, got: body });
+  } catch (error) {
+    return c.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, 400);
+  }
+});
+
 // Apply basic auth middleware to all routes (allows tracking of authenticated users)
 copilotRoutes.use('*', requireBasicAuth);
 
