@@ -117,7 +117,6 @@ export const requireBasicAuth = async (c: any, next: () => Promise<void>) => {
                 
                 // Log basic feature usage by authenticated users
                 try {
-                    const sql = getSql(c.env);
                     await auditLog(
                         getSql(c.env), 
                         user.id, 
@@ -134,6 +133,9 @@ export const requireBasicAuth = async (c: any, next: () => Promise<void>) => {
             // Continue without user context - don't block basic feature access
             console.warn('Failed to attach user context:', error.message);
         }
+    } else {
+        // For unauthenticated requests, skip all processing to avoid consuming request body
+        // This prevents issues where middleware processing interferes with body parsing in handlers
     }
     
     await next();

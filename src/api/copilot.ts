@@ -99,7 +99,9 @@ export const copilotRoutes = new Hono<{ Bindings: any }>();
 // Debug test route without middleware
 copilotRoutes.post('/debug-body', async (c) => {
   try {
-    const body = await c.req.json();
+    const rawBody = await c.req.text();
+    console.log('[DEBUG] Raw body received:', rawBody);
+    const body = JSON.parse(rawBody);
     return c.json({ ok: true, got: body });
   } catch (error) {
     return c.json({ ok: false, error: error instanceof Error ? error.message : String(error) }, 400);
