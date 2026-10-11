@@ -304,6 +304,7 @@ export async function handleMcpRequest(req: Request): Promise<Response | undefin
   console.log('MCP request received:', req.method, req.url);
   console.log('Accept header:', req.headers.get('accept'));
   console.log('MCP-Protocol-Version:', req.headers.get('mcp-protocol-version'));
+  console.log('All headers:', JSON.stringify(Object.fromEntries(req.headers.entries())));
   
   let activeTransport = transport;
   
