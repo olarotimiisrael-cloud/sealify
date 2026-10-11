@@ -30,5 +30,5 @@ export function apiUrl(path: string): string {
   if (base.startsWith('http')) {
     return `${base}/${cleanPath}`;
   }
-  return `/${base}/${cleanPath}`;
+  return '/' + (base.startsWith('/') ? base.slice(1) : base) + '/' + cleanPath;
 }
