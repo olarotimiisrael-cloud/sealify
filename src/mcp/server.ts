@@ -304,23 +304,34 @@ export async function handleMcpRequest(req: Request): Promise<Response | undefin
   console.log('MCP request received:', req.method, req.url);
   console.log('Accept header:', req.headers.get('accept'));
   console.log('MCP-Protocol-Version:', req.headers.get('mcp-protocol-version'));
-  console.log('All headers:', JSON.stringify(Object.fromEntries(req.headers.entries())));
   
-  let activeTransport = transport;
-  
-  if (isInitializeRequest(req)) {
-    if (!activeTransport) {
-      activeTransport = createMcpTransport();
-      await getServer().connect(activeTransport);
+  try {
+    let activeTransport = transport;
+    
+    if (isInitializeRequest(req)) {
+      if (!activeTransport) {
+        activeTransport = createMcpTransport();
+        await getServer().connect(activeTransport);
+      }
     }
+    
+    if (!activeTransport) {
+      console.log('No MCP transport available');
+      return undefined;
+    }
+    
+    const response = await activeTransport.handleRequest(req);
+    console.log('MCP response success:', response.status);
+    return response;
+  } catch (error) {
+    console.error('MCP handler error:', error);
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({
+      jsonrpc: '2.0',
+      error: { code: -32000, message: message },
+      id: null,
+    }), { status: 500, headers: { 'Content-Type': 'application/json' } });
   }
-  
-  if (!activeTransport) {
-    console.log('No MCP transport available');
-    return undefined;
-  }
-  
-  return activeTransport.handleRequest(req);
 }
 
 function isInitializeRequest(req: Request): boolean {

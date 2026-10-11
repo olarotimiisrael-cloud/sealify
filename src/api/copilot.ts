@@ -108,12 +108,8 @@ copilotRoutes.all('/mcp', async (c) => {
   });
   (req as any).env = env;
   
-  console.log('MCP endpoint called:', c.req.method, c.req.url);
-  console.log('Headers:', JSON.stringify(Object.fromEntries(c.req.headers.entries())));
-  
   const response = await handleMcpRequest(req);
   if (response) {
-    console.log('MCP response status:', response.status);
     return response;
   }
   return c.json({ error: 'MCP transport not initialized' }, 500);
