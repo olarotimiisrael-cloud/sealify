@@ -105,36 +105,30 @@ export const requireAuth = async (c: any, next: () => Promise<void>) => {
 export const requireBasicAuth = async (c: any, next: () => Promise<void>) => {
     const authHeader = c.req.header('Authorization');
     
-    // Debug environment variables
-    const supabaseUrl = c.env.SUPABASE_URL;
-    const supabaseAnonKey = c.env.SUPABASE_ANON_KEY;
-    console.debug('Supabase config check', { supabaseUrl: !!supabaseUrl, supabaseAnonKey: !!supabaseAnonKey });
-    
     // Try to get user info if token is provided
     if (authHeader && authHeader.startsWith('Bearer ')) {
         try {
             const token = authHeader.substring(7);
-            if (!supabaseUrl || !supabaseAnonKey) {
-                console.warn('Missing Supabase configuration', { supabaseUrl, supabaseAnonKey });
-                // Continue without user context - don't block basic feature access
-                await next();
-                return;
-            }
-            
-            const supabase = createClient(supabaseUrl, supabaseAnonKey);
+            const supabase = createClient(c.env.SUPABASE_URL, c.env.SUPABASE_ANON_KEY);
             const { data: { user }, error } = await supabase.auth.getUser(token);
             
             if (!error && user) {
                 c.set('user', user);
                 
                 // Log basic feature usage by authenticated users
-                await auditLog(
-                    getSql(c.env), 
-                    user.id, 
-                    'Basic Feature Access', 
-                    `Authenticated user using basic feature: ${c.req.path}`, 
-                    'user'
-                );
+                try {
+                    const sql = getSql(c.env);
+                    await auditLog(
+                        getSql(c.env), 
+                        user.id, 
+                        'Basic Feature Access', 
+                        `Authenticated user using basic feature: ${c.req.path}`, 
+                        'user'
+                    );
+                } catch (auditErr) {
+                    // Audit log failure shouldn't block the request
+                    console.warn('Audit log failed:', auditErr.message);
+                }
             }
         } catch (error) {
             // Continue without user context - don't block basic feature access
