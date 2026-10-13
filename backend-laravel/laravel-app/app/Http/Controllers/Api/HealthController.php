@@ -47,6 +47,9 @@ class HealthController extends Controller
     protected function checkRedis(): array
     {
         try {
+            if (!extension_loaded('redis')) {
+                return ['healthy' => false, 'error' => 'Redis extension not installed'];
+            }
             \Redis::ping();
             return ['healthy' => true];
         } catch (\Exception $e) {

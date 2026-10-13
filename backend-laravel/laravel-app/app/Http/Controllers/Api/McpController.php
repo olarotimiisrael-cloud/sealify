@@ -42,9 +42,9 @@ class McpController extends Controller
     {
         return response()->json([
             'protocolVersion' => '2024-11-05',
-            'capabilities' => {
-                'tools': {}
-            },
+            'capabilities' => [
+                'tools' => []
+            ],
             'serverInfo' => [
                 'name' => 'sealify-copilot',
                 'version' => '1.0.0'

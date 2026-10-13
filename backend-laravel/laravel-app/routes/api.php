@@ -128,8 +128,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Market Insights
     Route::get('/market-insights', [MarketInsightsController::class, 'index']);
-    Route::get('/market-insights/{id}', [MarketInsightsController::class, 'show']);
     Route::get('/market-insights/stats', [MarketInsightsController::class, 'stats']);
+    Route::get('/market-insights/{id}', [MarketInsightsController::class, 'show']);
 
     // Analytics
     Route::post('/analytics/track', [AnalyticsController::class, 'track']);
