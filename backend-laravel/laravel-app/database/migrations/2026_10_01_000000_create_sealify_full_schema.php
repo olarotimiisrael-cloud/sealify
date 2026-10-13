@@ -310,10 +310,12 @@ return new class extends Migration
                 $table->string('reason');
                 $table->text('details')->nullable();
                 $table->string('status')->default('pending');
-                $table->text('admin_notes')->nullable();
-                $table->timestamp('reviewed_at')->nullable();
-                $table->timestamp('created_at')->useCurrent();
-            },
+$table->text('admin_notes')->nullable();
+            $table->string('reset_token')->unique()->nullable();
+            $table->timestamp('reset_expires_at')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->timestamps();
+},
             'audit_logs' => function (Blueprint $table) {
                 $table->id();
                 $table->string('action');

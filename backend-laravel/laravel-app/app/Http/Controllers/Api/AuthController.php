@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
+use App\Models\PasswordRequest;
 
 class AuthController extends Controller
 {
@@ -89,7 +91,7 @@ class AuthController extends Controller
             'whatsapp_notifications' => 'sometimes|boolean',
             'hide_phone_publicly' => 'sometimes|boolean',
             'hide_location_publicly' => 'sometimes|boolean',
-        ]);
+        ];
 
         if (isset($data['full_name'])) {
             $data['name'] = $data['full_name'];
@@ -116,5 +118,63 @@ class AuthController extends Controller
             'token_type' => 'Bearer',
             'user' => $user,
         ];
+    }
+
+    /**
+     * Initiate a password reset email send.
+     */
+    public function requestPasswordReset(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+
+        // If user not found, still proceed (to avoid user enumeration)
+        // Create a password reset request record
+        PasswordRequest::create([
+            'user_id' => $user->id ?? null,
+            'user_email' => $user->email ?? '',
+            'user_name' => $user->name ?? $user->full_name ?? '',
+            'reset_token' => Str::random(60),
+            'reset_expires_at' => now()->addHour(),
+            'status' => 'pending',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password reset link sent to your email.']);
+    }
+
+    /**
+     * Reset the user's password using a token.
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token' => 'required|string',
+            'password' => 'required|string|min:8',
+        ]);
+
+        $resetRequest = PasswordRequest::where('reset_token', $request->token)->first();
+
+        if (!$resetRequest) {
+            return response()->json(['success' => false, 'message' => 'Invalid token.'], 401);
+        }
+
+        if ($resetRequest->reset_expires_at->isPast() || $resetRequest->used_at !== null) {
+            return response()->json(['success' => false, 'message' => 'Token expired or already used.'], 401);
+        }
+
+        // Update the user's password
+        $user = User::findOrFail($resetRequest->user_id);
+        $user->forceFill([
+            'password' => Hash::make($request->password),
+        ])->save();
+
+        // Mark the reset request as used
+        $resetRequest->update([
+            'used_at' => now(),
+            'status' => 'used',
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Password has been reset.']);
     }
 }

@@ -279,7 +279,7 @@ async function callLaravelCopilot(
 ): Promise<{ text: string; citations?: { title: string; url: string }[]; usedWebSearch: boolean; provider: string; model: string }> {
   const env = process.env as Record<string, string | undefined>;
   const laravelApiUrl = env.LARAVEL_API_URL || env.NEXT_PUBLIC_LARAVEL_API_URL || '';
-  const authHeader = '';
+  const authHeader = `Bearer ${process.env.LARAVEL_API_TOKEN || ''}`;
   
   try {
     const response = await fetch(`${laravelApiUrl}/api/copilot`, {
@@ -333,8 +333,8 @@ export async function handleMcpRequest(req: Request): Promise<Response | undefin
     }
     
     if (!activeTransport) {
-      console.log('No MCP transport available');
-      return undefined;
+      activeTransport = createMcpTransport();
+      await getServer().connect(activeTransport);
     }
     
     const response = await activeTransport.handleRequest(req);

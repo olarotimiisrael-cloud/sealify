@@ -34,6 +34,9 @@ Route::post('/auth/register', [AuthController::class, 'register']);
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    Route::post('/auth/password-reset/request', [AuthController::class, 'requestPasswordReset']);
+    Route::post('/auth/password-reset/reset', [AuthController::class, 'resetPassword']);
+
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
