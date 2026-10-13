@@ -2,11 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { useNavigate } from 'react-router-dom';
 import { Listing, UserProfile, SearchFilter, Message, Conversation, Category, CategoryStats, SystemAnnouncement, SearchAlert, Review, BuyerRequest, SafeMeetupSpotConfig, VerificationBadgeType, UserStatus, AppNotification, CategoryConfig } from '@/types/sealify';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { mapListingToListing, mapProfileToUser } from '@/services/supabaseService';
 import { adminFetch } from '@/lib/admin-api';
 import { apiUrl } from '@/lib/env';
 import { api } from '@/lib/api-client';
+import { laravelApi } from '@/lib/laravel-api';
 
 // Service imports
 import * as favoriteService from '@/services/supabaseService';
@@ -30,6 +30,28 @@ import * as searchAlertService from '@/services/supabaseService';
 import * as intrusionService from '@/services/supabaseService';
 import * as recentDealsService from '@/services/supabaseService';
 import * as storageService from '@/services/supabaseService';
+
+const laravelData = laravelApi.data;
+
+const laravelDataList = async (resource: string, params: Record<string, any> = {}) => {
+  try {
+    const query: Record<string, string> = {};
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') query[key] = String(value);
+    });
+
+    return await laravelData.list<any>(resource, query);
+  } catch {
+    return [];
+  }
+};
+
+const laravelDataSingle = async (resource: string, params: Record<string, any> = {}) => {
+  const rows = await laravelDataList(resource, params);
+
+  return rows[0] || null;
+};
+
 
 const mapCategoryRow = (row: any): CategoryConfig => ({
   id: row.id,
@@ -747,13 +769,8 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const loadProfileForAuthUser = async (authUser: any): Promise<UserProfile | null> => {
     if (!authUser?.id) return null;
 
-    const { data, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', authUser.id)
-      .maybeSingle();
+    const data = await laravelDataSingle('profiles', { id: authUser.id });
 
-    if (profileError) throw profileError;
     return data ? mapProfileToUser({ ...data, email: data.email || authUser.email }) : null;
   };
 
@@ -764,234 +781,107 @@ export const SealifyProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const login = async (email: string, password: string) => {
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError || !data.user) return false;
+      const data = await api.signIn(email, password);
+      if (!data?.user) return false;
 
       const profile = await loadProfileForAuthUser(data.user);
-            if (!profile) {
-              await supabase.auth.signOut();
-              toast.error('Your account profile is not ready yet. Please try again shortly.');
-              return false;
-            }
+      if (!profile) {
+        await api.signOut();
+        toast.error('Your account profile is not ready yet. Please try again shortly.');
+        return false;
+      }
+
+      applyAuthenticatedUser(profile);
+
+      if (!profile.fullName || !profile.phoneNumber) {
+        navigate('/profile-complete');
+      }
+      return true;
+    } catch (authError: any) {
+      setError(authError?.message || 'Unable to sign in');
+      return false;
+    }
+  };
       
-            applyAuthenticatedUser(profile);
+const adminLogin = async (email: string, password: string): Promise<AdminLoginResult> => {
+  const report = (stage: AdminLoginStage, status: number | undefined, message: string): AdminLoginResult => {
+    console.warn(`[AdminLogin] stage=${stage} status=${status ?? 'n/a'} reason="${message}"`);
+    setError(message);
+    return { success: false, stage, status, message };
+  };
 
-            // Require additional profile information before account is complete
-            if (!profile.fullName || !profile.phoneNumber) {
-              navigate('/profile-complete');
-            }
-            return true;
-          } catch (authError: any) {
-            setError(authError?.message || 'Unable to sign in');
-            return false;
-          }
-        };
-      
-const adminLogin = async (email: string, password: string, accessKey?: string): Promise<AdminLoginResult> => {
-     // Sanitized, user-safe messages only. Deliberately never surfaces raw
-     // backend/Supabase error text, which could enable account enumeration.
-     const MSG_UNREACHABLE = 'Unable to reach the authentication service. Please check your connection and try again.';
-     const MSG_INVALID_RESPONSE = 'Received an invalid response from the authentication server. Please check your connection and try again.';
-     const MSG_SESSION = 'Authentication succeeded, but the browser session could not be started. Please try again or check your connection.';
-     const MSG_PROFILE = 'Authentication succeeded, but your administrator profile could not be loaded. Please try again.';
+  try {
+    if (!email.trim() || !password.trim()) return report('validation', undefined, 'Email and password are required.');
 
-     // Diagnostics only: stage + HTTP status + sanitized message. Never logs
-     // the password, tokens, session object, cookies or Authorization headers.
-     const report = (stage: AdminLoginStage, status: number | undefined, message: string): AdminLoginResult => {
-       console.warn(`[AdminLogin] stage=${stage} status=${status ?? 'n/a'} reason="${message}"`);
-       setError(message);
-       return { success: false, stage, status, message };
-     };
+    const data = await api.signIn(email, password);
+    if (!data?.user) return report('api', 401, 'Unable to authenticate administrator. Please verify your credentials and try again.');
 
-     const directSupabaseAdminLogin = async (): Promise<{ success: boolean; profile?: UserProfile | null; status?: number; message?: string }> => {
-       try {
-         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-           email,
-           password,
-         });
+    const profile = await loadProfileForAuthUser(data.user);
+    if (!profile) {
+      await api.signOut();
+      return report('profile', 404, 'Authentication succeeded, but your administrator profile could not be loaded. Please try again.');
+    }
 
-         if (authError || !authData.user) {
-           return { success: false, status: 401, message: 'Unable to authenticate administrator. Please verify your credentials and try again.' };
-         }
+    if (profile.role !== 'admin') {
+      await api.signOut();
+      return report('profile', 403, 'Administrator access is not enabled for this account.');
+    }
 
-         const profile = await loadProfileForAuthUser(authData.user);
-         if (!profile) {
-           await supabase.auth.signOut();
-           return { success: false, status: 404, message: MSG_PROFILE };
-         }
-
-         if (profile.role !== 'admin') {
-           await supabase.auth.signOut();
-           return { success: false, status: 403, message: 'Administrator access is not enabled for this account.' };
-         }
-
-         applyAuthenticatedUser(profile);
-         return { success: true, profile };
-       } catch (authError: any) {
-         return { success: false, status: undefined, message: MSG_UNREACHABLE };
-       }
-     };
-
-     try {
-       if (!email.trim() || !password.trim()) return { success: false, stage: 'validation', message: 'Email and password are required.' };
-
-       let response: Response | null = null;
-       let backendMessage = MSG_UNREACHABLE;
-       try {
-         // Stage 1 - our own API. Relative path => same-origin.
-         response = await adminFetch('/api/auth/admin-login', {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json'
-           },
-           body: JSON.stringify({ email, password }),
-         });
-       } catch {
-         backendMessage = MSG_UNREACHABLE;
-       }
-
-       if (response) {
-         if (response.ok) {
-           const rawBody = await response.text();
-           let result: { session?: any };
-           try {
-             result = JSON.parse(rawBody) as { session?: any };
-           } catch {
-             return report('api', response.status, MSG_INVALID_RESPONSE);
-           }
-           if (!result.session) return report('api', response.status, MSG_INVALID_RESPONSE);
-
-           const { data: sessionData, error: sessionError } = await supabase.auth.setSession(result.session);
-           if (sessionError || !sessionData.user) return report('session', response.status, MSG_SESSION);
-
-           let profile: UserProfile | null = null;
-           try {
-             profile = await loadProfileForAuthUser(sessionData.user);
-           } catch {
-             return report('profile', response.status, MSG_PROFILE);
-           }
-           if (!profile) {
-             await supabase.auth.signOut();
-             return report('profile', response.status, MSG_PROFILE);
-           }
-
-           if (profile.role !== 'admin') {
-             await supabase.auth.signOut();
-             return report('profile', response.status, 'Administrator access is not enabled for this account.');
-           }
-
-           applyAuthenticatedUser(profile);
-           return { success: true };
-         }
-
-         try {
-           const payload = await response.json().catch(() => ({}));
-           if (response.status === 503) {
-             backendMessage = 'Administrator authentication service is temporarily unavailable. Please try again shortly.';
-           } else if (response.status === 403) {
-             backendMessage = 'Administrator access is not enabled for this account.';
-           } else if (response.status === 401) {
-             backendMessage = 'Unable to authenticate administrator. Please verify your credentials and try again.';
-           } else {
-             backendMessage = payload?.error || 'Unable to authenticate administrator. Please try again.';
-           }
-         } catch {
-           backendMessage = MSG_INVALID_RESPONSE;
-         }
-       }
-
-       // Fallback for local/dev misconfigurations and transient backend issues.
-       // A valid admin account should still be able to sign in directly via
-       // Supabase when the Cloudflare Pages API is temporarily unreachable.
-       const fallbackResult = await directSupabaseAdminLogin();
-       if (fallbackResult.success) {
-         return { success: true };
-       }
-
-       return report('api', response?.status ?? fallbackResult.status, fallbackResult.message || backendMessage);
-     } catch (authError: any) {
-       return report('api', undefined, MSG_UNREACHABLE);
-     }
-   };
+    applyAuthenticatedUser(profile);
+    return { success: true };
+  } catch {
+    return report('api', undefined, 'Unable to reach the authentication service. Please check your connection and try again.');
+  }
+};
 
         const clearError = () => {
           setError(null);
         };
       
-        const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string; referralCode?: string }) => {
-          const response = await fetch(apiUrl('/api/auth/register'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: data.email,
-              password: data.password,
-              fullName: data.fullName,
-              phoneNumber: data.phoneNumber,
-              referralCode: data.referralCode,
-            }),
-          });
+         const signup = async (data: { email: string; password: string; fullName: string; phoneNumber: string; referralCode?: string }) => {
+           try {
+             const result = await api.signUp(data.email, data.password, data.fullName, data.phoneNumber);
+             const session = result?.session;
 
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: 'Registration failed' }));
-            throw new Error(errorData.message || 'Registration failed');
-          }
+             if (!session?.access_token) {
+               toast.success('Account created. You can now sign in.');
+               return;
+             }
 
-          const result = await response.json();
-          const session = result.session;
-          if (!session?.access_token) {
-            toast.success('Account created. Check your email to confirm your account before signing in.');
-            return;
-          }
+             const profile = await loadProfileForAuthUser(session.user || result?.user);
+             if (!profile) {
+               await api.signOut();
+               toast.error('Your account profile is not ready yet. Please try again shortly.');
+               return;
+             }
 
-          await supabase.auth.setSession({
-            access_token: session.access_token,
-            refresh_token: session.refresh_token,
-          });
+             applyAuthenticatedUser(profile);
 
-          const profile = await loadProfileForAuthUser(session.user || result.user);
-          if (!profile) {
-            await supabase.auth.signOut();
-            toast.error('Your account profile is not ready yet. Please try again shortly.');
-            return;
-          }
-
-          applyAuthenticatedUser(profile);
-
-          if (!profile.fullName || !profile.phoneNumber) {
-            navigate('/profile-complete');
-          }
-        };
+             if (!profile.fullName || !profile.phoneNumber) {
+               navigate('/profile-complete');
+             }
+           } catch (error: any) {
+             toast.error(error?.message || 'Unable to create your account');
+           }
+         };
 
 const sendPhoneOtp = async (phone: string, channel?: string) => {
-     const response = await fetch(apiUrl('/api/auth/phone/otp'), {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ phone, channel }),
-     });
-     if (!response.ok) throw new Error('Failed to send OTP');
-     const data = await response.json();
-     // Return both the OTP ID and the OTP code (for in-app display in development)
-     return { otpId: data.otpId || 'otp_sent', otp: data.otp || null };
-   };
+      void phone;
+      void channel;
+      throw new Error('Phone OTP is not available on the Laravel backend. Use email and password.');
+    };
 
-  const verifyPhoneOtp = async (phone: string, code: string, otpId?: string) => {
-    const response = await fetch(apiUrl('/api/auth/phone/verify'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, otp: code, otpId }),
-    });
-    if (!response.ok) throw new Error('OTP verification failed');
-    return true;
-  };
+   const verifyPhoneOtp = async (phone: string, code: string, otpId?: string) => {
+     void phone;
+     void code;
+     void otpId;
+     throw new Error('Phone OTP is not available on the Laravel backend. Use email and password.');
+   };
 
   const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider === 'samsung' ? 'google' : provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-      return true;
+      void provider;
+      throw new Error('OAuth is not configured for the Laravel backend. Use email and password authentication.');
     } catch {
       return false;
     }
@@ -999,16 +889,13 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
 
   const completeProfile = async (data: { fullName: string; phoneNumber: string }): Promise<boolean> => {
     try {
-      const response = await fetch(apiUrl('/api/auth/profile-complete'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const updated = await api.put<any>('/auth/profile', {
+        full_name: data.fullName,
+        phone_number: data.phoneNumber,
       });
-      if (!response.ok) throw new Error('Failed to complete profile');
-      const result = await response.json();
-      const profile = mapProfileToUser(result.user);
+      const profile = updated ? mapProfileToUser(updated) : null;
       applyAuthenticatedUser(profile);
-      return true;
+      return Boolean(profile);
     } catch (error: any) {
       setError(error?.message || 'Unable to complete profile');
       return false;
@@ -1016,17 +903,15 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) throw new Error(error.message);
+    try {
+      await api.resetPassword(email);
+    } catch (error: any) {
+      throw new Error(error?.message || 'Unable to request password reset');
+    }
   };
 
   const logout = () => {
-    if (isAdmin) {
-      void adminFetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
-    }
-    void supabase.auth.signOut();
+    void api.signOut().catch(() => {});
     setUser(null);
     setIsAdmin(false);
     setSavedListingIds([]);
@@ -1075,27 +960,30 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
       }
 
       const categoryId = categories.find(category => category.name === data.category)?.id || data.category;
-      const { data: createdAd, error: createError } = await supabase
-        .from('ads')
-        .insert({
-          seller_id: user.id,
-          category_id: categoryId,
-          title: data.title,
-          description: data.description,
-          price: data.price,
-          original_price: data.originalPrice ?? null,
-          condition: data.condition,
-          location: data.location,
-          status: 'active',
-          images: imageUrls,
-          video_url: data.videoUrl || null,
-          specifications: data.specifications || {},
-        })
-        .select('*')
-        .single();
+      const createdAd = await laravelData.create<any>('ads', {
+        seller_id: user.id,
+        category_id: categoryId,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        original_price: data.originalPrice ?? null,
+        condition: data.condition,
+        location: data.location,
+        status: 'active',
+        images: imageUrls,
+        video_url: data.videoUrl || null,
+        specifications: data.specifications || {},
+      });
 
-      if (createError) throw createError;
-      const newListing = mapListingToListing({ ...createdAd, profiles: user });
+      const newListing = mapListingToListing({
+        ...createdAd,
+        seller_name: user.fullName,
+        seller_phone: user.phoneNumber,
+        seller_avatar: user.avatarUrl,
+        seller_verified: user.verified,
+        seller_verification_type: user.verificationType,
+      });
+      newListing.category = data.category as any;
       setListings(prev => [newListing, ...prev]);
       toast.success('Your ad was posted successfully!');
       return true;
@@ -1121,21 +1009,14 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
     if (updates.videoUrl !== undefined) databaseUpdates.video_url = updates.videoUrl;
     if (updates.specifications !== undefined) databaseUpdates.specifications = updates.specifications;
 
-    const { data: updatedAd, error: updateError } = await supabase
-      .from('ads')
-      .update(databaseUpdates)
-      .eq('id', id)
-      .select('*')
-      .single();
-    if (updateError) throw updateError;
+    const updatedAd = await laravelData.update<any>('ads', id, databaseUpdates);
     const listing = listings.find(item => item.id === id);
-    setListings(prev => prev.map(item => item.id === id ? mapListingToListing({ ...updatedAd, profiles: listing ? { full_name: listing.sellerName, phone_number: listing.sellerPhone, avatar_url: listing.sellerAvatar, verified: listing.sellerVerified, verification_type: listing.sellerVerificationType } : user }) : item));
+    setListings(prev => prev.map(item => item.id === id ? mapListingToListing({ ...updatedAd, seller_name: listing?.sellerName || user.fullName, seller_phone: listing?.sellerPhone || user.phoneNumber, seller_avatar: listing?.sellerAvatar || user.avatarUrl, seller_verified: listing?.sellerVerified ?? user.verified, seller_verification_type: listing?.sellerVerificationType || user.verificationType }) : item));
   };
 
   const deleteListing = async (id: string) => {
     if (!user) return;
-    const { error: deleteError } = await supabase.from('ads').delete().eq('id', id);
-    if (deleteError) throw deleteError;
+    await laravelData.destroy('ads', id);
     setListings(prev => prev.filter(item => item.id !== id));
   };
 
@@ -1162,36 +1043,35 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
   };
 
   const refreshConversations = async (userId: string) => {
-    const { data: conversationRows, error: conversationError } = await supabase
-      .from('conversations')
-      .select('*')
-      .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
-      .order('last_message_time', { ascending: false });
-
-    if (conversationError) throw conversationError;
+    const [participantOneRows, participantTwoRows] = await Promise.all([
+      laravelDataList('conversations', { participant_1: userId, sort_by: 'last_message_time', sort_dir: 'desc' }),
+      laravelDataList('conversations', { participant_2: userId, sort_by: 'last_message_time', sort_dir: 'desc' }),
+    ]);
+    const conversationRows = [...participantOneRows, ...participantTwoRows]
+      .sort((a: any, b: any) => new Date(b.last_message_time || b.created_at || 0).getTime() - new Date(a.last_message_time || a.created_at || 0).getTime());
 
     const mappedConversations = await Promise.all((conversationRows || []).map(async (row: any): Promise<Conversation> => {
       const otherUserId = row.participant_1 === userId ? row.participant_2 : row.participant_1;
-      const [adResult, profileResult, messagesResult] = await Promise.all([
-        supabase.from('ads').select('id, title, price, images').eq('id', row.ad_id).maybeSingle(),
-        supabase.from('profiles').select('id, full_name, avatar_url').eq('id', otherUserId).maybeSingle(),
-        supabase.from('messages').select('*').eq('conversation_id', row.id).order('created_at', { ascending: true }),
+      const [adRow, profileRow, messageRows] = await Promise.all([
+        laravelDataSingle('ads', { id: row.ad_id }),
+        laravelDataSingle('profiles', { id: otherUserId }),
+        laravelDataList('messages', { conversation_id: row.id, sort_by: 'created_at', sort_dir: 'asc' }),
       ]);
 
       return {
         id: row.id,
         listingId: row.ad_id,
-        listingTitle: adResult.data?.title || 'Marketplace ad',
-        listingImage: adResult.data?.images?.[0] || '',
-        listingPrice: Number(adResult.data?.price || 0),
+        listingTitle: adRow?.title || 'Marketplace ad',
+        listingImage: adRow?.images?.[0] || '',
+        listingPrice: Number(adRow?.price || 0),
         otherUser: {
           id: otherUserId,
-          name: profileResult.data?.full_name || 'Sealify user',
-          avatar: profileResult.data?.avatar_url || '',
+          name: profileRow?.full_name || 'Sealify user',
+          avatar: profileRow?.avatar_url || '',
         },
         lastMessage: row.last_message || '',
         lastMessageTime: row.last_message_time || row.created_at,
-        messages: (messagesResult.data || []).map((message: any) => ({
+        messages: (messageRows || []).map((message: any) => ({
           id: message.id,
           senderId: message.sender_id,
           receiverId: message.receiver_id,
@@ -1210,37 +1090,31 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
     if (!user || !content.trim()) return;
 
     let conversation: any = null;
-    const firstConversation = await supabase
-      .from('conversations')
-      .select('*')
-      .eq('ad_id', listingId)
-      .eq('participant_1', user.id)
-      .eq('participant_2', receiverId)
-      .maybeSingle();
-    conversation = firstConversation.data;
+    const firstConversation = await laravelDataSingle('conversations', {
+      ad_id: listingId,
+      participant_1: user.id,
+      participant_2: receiverId,
+    });
+    conversation = firstConversation;
 
     if (!conversation) {
-      const secondConversation = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('ad_id', listingId)
-        .eq('participant_1', receiverId)
-        .eq('participant_2', user.id)
-        .maybeSingle();
-      conversation = secondConversation.data;
+      const secondConversation = await laravelDataSingle('conversations', {
+        ad_id: listingId,
+        participant_1: receiverId,
+        participant_2: user.id,
+      });
+      conversation = secondConversation;
     }
 
     if (!conversation) {
-      const { data: createdConversation, error: conversationError } = await supabase
-        .from('conversations')
-        .insert({ ad_id: listingId, participant_1: user.id, participant_2: receiverId })
-        .select('*')
-        .single();
-      if (conversationError) throw conversationError;
-      conversation = createdConversation;
+      conversation = await laravelData.create<any>('conversations', {
+        ad_id: listingId,
+        participant_1: user.id,
+        participant_2: receiverId,
+      });
     }
 
-    const { error: messageError } = await supabase.from('messages').insert({
+    await laravelData.create<any>('messages', {
       conversation_id: conversation.id,
       sender_id: user.id,
       receiver_id: receiverId,
@@ -1249,13 +1123,11 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
       status: 'sent',
       read: false,
     });
-    if (messageError) throw messageError;
 
     const unreadUpdate = conversation.participant_1 === receiverId
       ? { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_1: Number(conversation.unread_count_1 || 0) + 1 }
       : { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_2: Number(conversation.unread_count_2 || 0) + 1 };
-    const { error: conversationUpdateError } = await supabase.from('conversations').update(unreadUpdate).eq('id', conversation.id);
-    if (conversationUpdateError) throw conversationUpdateError;
+    await laravelData.update<any>('conversations', conversation.id, unreadUpdate);
 
     await refreshConversations(user.id);
   };
@@ -1282,8 +1154,8 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
 
   const markAllNotificationsRead = async () => {
     if (!user) return;
-    const { error: updateError } = await supabase.from('notifications').update({ read: true }).eq('user_id', user.id);
-    if (updateError) throw updateError;
+    const unreadNotifications = await laravelDataList('notifications', { user_id: user.id });
+    await Promise.all((unreadNotifications || []).map((row: any) => laravelData.update('notifications', row.id, { read: true })));
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
@@ -1513,8 +1385,7 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
   const toggleAnnouncement = async (id: string) => {
     const announcement = announcements.find(item => item.id === id);
     if (!announcement) return;
-    const { data, error: updateError } = await supabase.from('announcements').update({ active: !announcement.active }).eq('id', id).select().single();
-    if (updateError) throw updateError;
+    const data = await laravelData.update<any>('announcements', id, { active: !announcement.active });
     setAnnouncements(prev => dedupeAnnouncements(prev.map(item => item.id === id ? mapAnnouncementRow(data) : item)));
   };
 
@@ -1902,10 +1773,18 @@ const response = await adminFetch('/api/admin/users');
   };
 
   const updatePromotionPlanRate = (months: number, rate: number) => {
-    void supabase.from('promotion_plans').update({ rate }).eq('months', months).then(({ data, error }) => {
-      if (error) throw error;
-      if (data) setPromotionPlans(prev => prev.map(plan => plan.months === months ? { ...plan, rate } : plan));
-    });
+    void (async () => {
+      try {
+        const rows = await laravelDataList('promotion_plans', { months });
+        const targetRow = rows[0];
+        if (targetRow?.id) {
+          await laravelData.update('promotion_plans', targetRow.id, { rate });
+          setPromotionPlans(prev => prev.map(plan => plan.months === months ? { ...plan, rate } : plan));
+        }
+      } catch (error) {
+        console.error('updatePromotionPlanRate failed:', error);
+      }
+    })();
   };
 
   const addCategory = (category: CategoryConfig) => {
@@ -1949,36 +1828,21 @@ const response = await adminFetch('/api/admin/users');
 
   const updateSiteSettings = (settings: Partial<typeof siteSettings>) => {
     setSiteSettings(prev => ({ ...prev, ...settings }));
-    void supabase
-      .from('site_settings')
-      .select('id')
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('updateSiteSettings lookup failed:', error);
-          return;
-        }
+    void (async () => {
+      const databaseSettings = {
+        logo_url: settings.logoUrl ?? siteSettings?.logoUrl ?? MOCK_SITE_SETTINGS.logoUrl,
+        site_name: settings.siteName ?? siteSettings?.siteName ?? MOCK_SITE_SETTINGS.siteName,
+        site_description: settings.siteDescription ?? siteSettings?.siteDescription ?? MOCK_SITE_SETTINGS.siteDescription,
+        og_image: settings.ogImage ?? siteSettings?.ogImage ?? MOCK_SITE_SETTINGS.ogImage,
+        contact_email: settings.contactEmail ?? siteSettings?.contactEmail ?? MOCK_SITE_SETTINGS.contactEmail,
+        contact_phone: settings.contactPhone ?? siteSettings?.contactPhone ?? MOCK_SITE_SETTINGS.contactPhone,
+        updated_at: new Date().toISOString(),
+      };
 
-        const databaseSettings = {
-          logo_url: settings.logoUrl ?? siteSettings?.logoUrl ?? MOCK_SITE_SETTINGS.logoUrl,
-          site_name: settings.siteName ?? siteSettings?.siteName ?? MOCK_SITE_SETTINGS.siteName,
-          site_description: settings.siteDescription ?? siteSettings?.siteDescription ?? MOCK_SITE_SETTINGS.siteDescription,
-          og_image: settings.ogImage ?? siteSettings?.ogImage ?? MOCK_SITE_SETTINGS.ogImage,
-          contact_email: settings.contactEmail ?? siteSettings?.contactEmail ?? MOCK_SITE_SETTINGS.contactEmail,
-          contact_phone: settings.contactPhone ?? siteSettings?.contactPhone ?? MOCK_SITE_SETTINGS.contactPhone,
-          updated_at: new Date().toISOString(),
-        };
-
-        const targetRow = data?.[0];
-
-        if (targetRow?.id) {
-          void supabase.from('site_settings').update(databaseSettings).eq('id', targetRow.id);
-          return;
-        }
-
-        void supabase.from('site_settings').insert(databaseSettings);
-      });
+      await siteSettingsService.siteSettingsService.updateSettings(databaseSettings as any);
+    })().catch((error) => {
+      console.error('updateSiteSettings failed:', error);
+    });
   };
 
   const loadDatabaseState = async (authUser: any | null) => {
@@ -2110,18 +1974,16 @@ if (authUser.role === 'admin') {
       setLoading(true);
       setError(null);
       try {
-        const session = sessionOverride ?? (await supabase.auth.getSession()).data.session;
+        const currentSession = sessionOverride ?? (await api.getSession()).data.session;
+        const session = currentSession;
         const profile = session?.user ? await loadProfileForAuthUser(session.user) : null;
         if (profile) applyAuthenticatedUser(profile);
         await loadDatabaseState(profile ? { ...session.user, role: profile.role } : null);
-        // The administrator dashboard derives its user, verification and
-        // admin counters from `allUsers`. Without this the panel rendered
-        // zeros on every load and only filled in after a user was edited.
         if (mounted && profile?.role === 'admin') {
           await reloadUsers();
         }
       } catch (loadError: any) {
-        console.error('Supabase hydration failed:', loadError);
+        console.error('Laravel hydration failed:', loadError);
         if (mounted) setError(loadError?.message || 'Unable to load marketplace data');
       } finally {
         if (mounted) {
@@ -2132,13 +1994,16 @@ if (authUser.role === 'admin') {
     };
 
     void hydrate();
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      window.setTimeout(() => void hydrate(session), 0);
-    });
+    const handleAuthStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== 'sealify_access_token') return;
+      void hydrate();
+    };
+
+    window.addEventListener('storage', handleAuthStorage);
 
     return () => {
       mounted = false;
-      authListener.subscription.unsubscribe();
+      window.removeEventListener('storage', handleAuthStorage);
     };
   }, []);
 

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api-client';
+import { laravelAuth } from '@/lib/laravel-api';
 import { mapProfileToUser } from '@/services/supabaseService';
 
 interface AuthContextType {
@@ -21,16 +22,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const storedToken = laravelAuth.getToken();
+    if (!storedToken) {
+      setLoading(false);
+      return;
+    }
+
     const initAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        if (currentSession?.user) {
-          const { data: { user: currentUser } } = await supabase.auth.getUser();
-          setUser(currentUser);
-        }
+        const { data } = await api.getSession();
+        setSession(data.session);
+        setUser(data.session?.user ? mapProfileToUser(data.session.user) : null);
       } catch (error) {
         console.error('Auth init error:', error);
+        laravelAuth.clearSession();
+        setSession(null);
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -38,82 +45,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        supabase.auth.getUser().then(({ data: { user: currentUser } }) => setUser(currentUser));
-      } else {
-        setUser(null);
-      }
-    });
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== 'sealify_access_token') return;
+      if (laravelAuth.getToken()) return;
 
-    return () => subscription.unsubscribe();
+      setSession(null);
+      setUser(null);
+    };
+
+    window.addEventListener('storage', handleStorage);
+
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
+    const data = await api.signIn(email, password);
     setSession(data.session);
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    setUser(currentUser);
+    setUser(data.user ? mapProfileToUser(data.user) : null);
   };
 
   const signUp = async (email: string, password: string, fullName: string, phoneNumber?: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, phone_number: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
-    });
-    if (error) throw new Error(error.message);
-    if (data.session && data.user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email,
-          full_name: fullName,
-          phone_number: phoneNumber,
-          role: 'buyer',
-          status: 'active',
-          location: 'Ogbomoso, Oyo State',
-          verified: false,
-          verification_type: 'none',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-      if (profileError) throw new Error('Failed to create profile');
-      if (!profileData) throw new Error('Failed to create profile');
-      setSession(data.session);
-      setUser(mapProfileToUser(profileData));
-    }
+    const data = await api.signUp(email, password, fullName, phoneNumber);
+    setSession(data.session);
+    setUser(data.user ? mapProfileToUser(data.user) : null);
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await api.signOut();
     setSession(null);
     setUser(null);
   };
 
-  const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider === 'samsung' ? 'google' : provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-      return true;
-    } catch {
-      return false;
-    }
+  const signInWithOAuth = async (): Promise<boolean> => {
+    throw new Error('OAuth is not configured for the Laravel backend.');
   };
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) throw new Error(error.message);
+    await api.resetPassword(email);
   };
 
   return (

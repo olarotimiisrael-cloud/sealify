@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSealify } from '@/context/SealifyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { laravelAuth } from '@/lib/laravel-api';
+import { uploadFileWithToken } from '@/lib/upload';
 import { User, Smartphone, Loader2, ShieldCheck, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import SEO from '@/components/SEO';
@@ -34,31 +35,17 @@ const ProfileComplete: React.FC = () => {
   const uploadAvatar = async (file: File): Promise<string> => {
     if (!user?.id) throw new Error('User not authenticated');
     if (file.size > 5 * 1024 * 1024) throw new Error('Avatar must be less than 5MB');
-    
-    const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
-    const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type,
-    });
 
-    if (error) throw error;
-    return supabase.storage.from('profile-media').getPublicUrl(data.path).publicUrl;
+    const avatarPath = `profile-media/${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+    return uploadFileWithToken(file, avatarPath);
   };
 
   const uploadCover = async (file: File): Promise<string> => {
     if (!user?.id) throw new Error('User not authenticated');
     if (file.size > 10 * 1024 * 1024) throw new Error('Cover photo must be less than 10MB');
-    
-    const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
-    const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: file.type,
-    });
 
-    if (error) throw error;
-    return supabase.storage.from('profile-media').getPublicUrl(data.path).publicUrl;
+    const coverPath = `profile-media/${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+    return uploadFileWithToken(file, coverPath);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,8 +84,7 @@ const ProfileComplete: React.FC = () => {
     }
     setIsSubmitting(true);
     try {
-      const { data: { session} } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = laravelAuth.getToken();
       if (!token) throw new Error('No active session');
 
       let referralCode: string | undefined;

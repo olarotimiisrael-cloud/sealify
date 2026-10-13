@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React, { useState } from 'react';
+import { laravelApi, laravelAuth } from '@/lib/laravel-api';
 import { adminFetch } from '@/lib/admin-api';
 import { Button } from '@/components/ui/button';
 import { Database, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -15,11 +15,11 @@ interface TestResult {
 
 export const DatabaseTest: React.FC = () => {
   const [tests, setTests] = useState<TestResult[]>([
-    { name: 'Supabase Client Init', status: 'pending', message: '' },
+    { name: 'Laravel API Init', status: 'pending', message: '' },
     { name: 'Users Table Exists', status: 'pending', message: '' },
     { name: 'Listings Table Exists', status: 'pending', message: '' },
     { name: 'Auth Working', status: 'pending', message: '' },
-    { name: 'RLS Policies Active', status: 'pending', message: '' },
+    { name: 'Admin Controls Active', status: 'pending', message: '' },
   ]);
   const [running, setRunning] = useState(false);
 
@@ -28,55 +28,40 @@ export const DatabaseTest: React.FC = () => {
     const newTests = [...tests].map(t => ({...t, status: 'pending' as TestStatus}));
     setTests(newTests);
 
-    // Test 1: Client init
     try {
-      const { data, error } = await supabase.from('profiles').select('count').limit(1);
-      if (error) throw error;
-      newTests[0] = { ...newTests[0], status: 'success', message: 'Client connected' };
+      const profiles = await laravelApi.data.list<any>('profiles', { limit: '5' });
+      newTests[0] = { ...newTests[0], status: 'success', message: 'API connected' };
+      newTests[1] = { ...newTests[1], status: 'success', message: `Found ${profiles?.length || 0} users` };
     } catch (e: any) {
       newTests[0] = { ...newTests[0], status: 'error', message: e.message };
-    }
-    setTests([...newTests]);
-
-    // Test 2: Users table
-    try {
-      const { data, error } = await supabase.from('profiles').select('id, email, full_name').limit(5);
-      if (error) throw error;
-      newTests[1] = { ...newTests[1], status: 'success', message: `Found ${data?.length || 0} users` };
-    } catch (e: any) {
       newTests[1] = { ...newTests[1], status: 'error', message: e.message };
     }
     setTests([...newTests]);
 
-    // Test 3: Listings table
     try {
-      const { data, error } = await supabase.from('ads').select('id, title').limit(5);
-      if (error) throw error;
-      newTests[2] = { ...newTests[2], status: 'success', message: `Found ${data?.length || 0} listings` };
+      const listings = await laravelApi.data.list<any>('ads', { limit: '5' });
+      newTests[2] = { ...newTests[2], status: 'success', message: `Found ${listings?.length || 0} listings` };
     } catch (e: any) {
       newTests[2] = { ...newTests[2], status: 'error', message: e.message };
     }
     setTests([...newTests]);
 
-    // Test 4: Auth
     try {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) throw error;
-      newTests[3] = { ...newTests[3], status: 'success', message: data.session ? 'Session active' : 'No active session' };
+      const token = laravelAuth.getToken();
+      newTests[3] = { ...newTests[3], status: 'success', message: token ? 'Session token present' : 'No active session' };
     } catch (e: any) {
       newTests[3] = { ...newTests[3], status: 'error', message: e.message };
     }
     setTests([...newTests]);
 
-    // Test 4: RLS
-        try {
-          const response = await adminFetch('/api/admin/system-config');
-          if (!response.ok) throw new Error('Admin system configuration endpoint unavailable');
-          const payload = await response.json() as { configs: any[] };
-          newTests[4] = { ...newTests[4], status: 'success', message: `Configs loaded: ${payload.configs?.length || 0}` };
-        } catch (e: any) {
-          newTests[4] = { ...newTests[4], status: 'error', message: e.message };
-        }
+    try {
+      const response = await adminFetch('/api/admin/system-config');
+      if (!response.ok) throw new Error('Admin system configuration endpoint unavailable');
+      const payload = await response.json() as { config: any };
+      newTests[4] = { ...newTests[4], status: 'success', message: `Config loaded: ${Object.keys(payload.config || {}).length} keys` };
+    } catch (e: any) {
+      newTests[4] = { ...newTests[4], status: 'error', message: e.message };
+    }
     setTests([...newTests]);
 
     setRunning(false);
@@ -87,7 +72,7 @@ export const DatabaseTest: React.FC = () => {
       <div className="flex items-center justify-between">
         <h3 className="font-bold text-white flex items-center gap-2">
           <Database className="w-5 h-5 text-emerald-400" />
-          Supabase Connection Test
+          Database Connection Test
         </h3>
         <Button onClick={runTests} disabled={running} className="bg-emerald-500 text-slate-950">
           {running ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Run Tests'}

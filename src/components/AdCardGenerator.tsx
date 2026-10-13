@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { laravelApi } from '@/lib/laravel-api';
 import { toast } from 'sonner';
 import { Camera, Download, Smartphone, Share2, Sparkles, Image, Link, QrCode } from 'lucide-react';
 
@@ -203,30 +203,20 @@ export const AdCardGenerator: React.FC<AdCardGeneratorProps> = ({ adId, adData, 
       setGeneratedCard(previewUrl);
       setGeneratedAssetUrl(previewUrl);
 
-      // Save to Supabase
       if (adId && user) {
-        const { data: session } = await supabase.auth.getSession();
-        const accessToken = session?.access_token;
-        if (accessToken) {
-          const { data, error } = await fetch('/api/ad-cards', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({
-              adId,
-              assetType: selectedAssetType,
-              aspectRatio: templates[selectedAssetType].aspectRatio,
-              width: templates[selectedAssetType].width,
-              height: templates[selectedAssetType].height,
-              background: background,
-            }),
-          }).then(res => res.json());
-
-          if (error || !data) {
-            console.error('Failed to save ad card:', error);
-          }
+        try {
+          await laravelApi.data.create('ad_card_assets', {
+            ad_id: adId,
+            user_id: user.id,
+            asset_type: selectedAssetType,
+            aspect_ratio: templates[selectedAssetType].aspectRatio,
+            width: templates[selectedAssetType].width,
+            height: templates[selectedAssetType].height,
+            file_url: previewUrl,
+            background_color: background,
+          });
+        } catch (error) {
+          console.error('Failed to save ad card:', error);
         }
       }
 

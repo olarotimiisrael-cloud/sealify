@@ -2,8 +2,6 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport, type WebStandardStreamableHTTPServerTransportOptions } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
-import { askSealifyCopilot, type CopilotUserContext } from '../lib/ai/assistant.js';
-import { getActiveProvider } from '../lib/ai/providers.js';
 
 let mcpServer: McpServer | null = null;
 let transport: WebStandardStreamableHTTPServerTransport | null = null;
@@ -11,7 +9,7 @@ let transport: WebStandardStreamableHTTPServerTransport | null = null;
 export interface SealifyMcpContext {
   env: Record<string, string | undefined>;
   ai?: any;
-  userContext?: CopilotUserContext;
+  userContext?: any;
 }
 
 function getServer(): McpServer {
@@ -48,22 +46,9 @@ function registerTools(server: McpServer): void {
       }),
     },
     async (args: { query: string; language?: string }) => {
-      const env = process.env as Record<string, string | undefined>;
-      const provider = getActiveProvider(env);
-      
-      if (!provider) {
-        return createToolError('No AI provider configured. Please contact your administrator.');
-      }
-
-      const searchQuery = `Search the web for: "${args.query}". Provide the top 5 relevant results with their titles, URLs, and brief descriptions.`;
-      
       try {
-        const response = await askSealifyCopilot(
-          searchQuery,
-          [],
-          undefined,
-          env,
-          provider.provider === 'cloudflare-ai' ? undefined : env
+        const response = await callLaravelCopilot(
+          `Provide web search results for: "${args.query}". Return the top 5 relevant results with their titles, URLs, and brief descriptions. Format as: Title — URL | Snippet`
         );
 
         const results = extractSearchResults(response.text);
@@ -71,7 +56,7 @@ function registerTools(server: McpServer): void {
         return {
           content: [{
             type: 'text',
-            text: JSON.stringify({ results }, null, 2),
+            text: `Web search completed. Found ${results.length} results.`,
           }],
           structuredContent: { results },
           isError: false,
@@ -145,7 +130,7 @@ function registerTools(server: McpServer): void {
   server.registerTool(
     'sealify_copilot_query',
     {
-      description: 'Ask the Sealify Copilot a question with optional conversation context.',
+      description: 'Ask the Sealify Copilot a question with optional conversation context. Uses Laravel native AI - no external API keys required.',
       inputSchema: z.object({
         message: z.string().min(1).max(8000).describe('User message'),
         conversation: z.array(z.object({
@@ -179,18 +164,7 @@ function registerTools(server: McpServer): void {
       };
     }) => {
       try {
-        const userContext: CopilotUserContext | undefined = args.context ? {
-          ...args.context,
-          conversationId: crypto.getRandomValues(new Uint32Array(1))[0].toString(36),
-        } : undefined;
-
-        const response = await askSealifyCopilot(
-          args.message,
-          args.conversation || [],
-          userContext,
-          process.env as Record<string, string | undefined>,
-          (process.env as any).AI
-        );
+        const response = await callLaravelCopilot(args.message, args.conversation, args.context);
 
         return {
           content: [{
@@ -222,12 +196,10 @@ function registerTools(server: McpServer): void {
     },
     async (args: { query: string }) => {
       try {
-        const response = await askSealifyCopilot(
+        const response = await callLaravelCopilot(
           `You are Sealify Marketplace Assistant. Provide information about: ${args.query}. Include relevant details about products, pricing, and features.`,
           [],
-          undefined,
-          process.env as Record<string, string | undefined>,
-          (process.env as any).AI
+          { marketplaceContext: 'none' }
         );
 
         return {
@@ -298,6 +270,51 @@ export function createMcpTransport(options?: WebStandardStreamableHTTPServerTran
   };
   
   return transport;
+}
+
+async function callLaravelCopilot(
+  message: string,
+  conversation?: any[],
+  context?: any
+): Promise<{ text: string; citations?: { title: string; url: string }[]; usedWebSearch: boolean; provider: string; model: string }> {
+  const env = process.env as Record<string, string | undefined>;
+  const laravelApiUrl = env.LARAVEL_API_URL || env.NEXT_PUBLIC_LARAVEL_API_URL || '';
+  const authHeader = '';
+  
+  try {
+    const response = await fetch(`${laravelApiUrl}/api/copilot`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        message,
+        conversation: conversation || [],
+        marketplaceContext: context?.marketplaceContext || 'none',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Laravel API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    const citations = data.citations?.map((c: any) => ({ title: c.title, url: c.url })) || [];
+    
+    return {
+      text: data.message || 'No response from AI',
+      citations: citations,
+      usedWebSearch: data.usedWebSearch || false,
+      provider: data.provider || 'sealify-native',
+      model: data.model || 'sealify-native-v1',
+    };
+  } catch (error) {
+    console.error('Laravel Copilot API call failed:', error);
+    throw error;
+  }
 }
 
 export async function handleMcpRequest(req: Request): Promise<Response | undefined> {

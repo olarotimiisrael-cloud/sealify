@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import SEO from '@/components/SEO';
 import { Lock, EyeOff, Eye, KeyRound, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,38 +14,9 @@ const ResetPassword: React.FC = () => {
   const [validToken, setValidToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkRecovery = async () => {
-      const token = searchParams.get('token') || searchParams.get('code');
-      const type = searchParams.get('type') || searchParams.get('token_type');
-
-      if (token && (type === 'recovery' || type === 'email')) {
-        try {
-          const { error } = await supabase.auth.verifyOtp({
-            token_hash: token,
-            type: type === 'recovery' ? 'recovery' : 'email',
-          });
-          if (error) {
-            console.error('Token verification error:', error);
-            setValidToken(false);
-            toast.error('Invalid or expired recovery link. Please request a new password reset.');
-          } else {
-            setValidToken(true);
-          }
-        } catch (e) {
-          setValidToken(false);
-          toast.error('Unable to verify recovery token.');
-        }
-      } else {
-        const { data: { session } } = await supabase.auth.getSession();
-        setValidToken(!!session);
-        if (!session) {
-          toast.error('No active session found. Please use the password reset link from your email.');
-        }
-      }
-    };
-
-    void checkRecovery();
-  }, [searchParams]);
+    setValidToken(false);
+    toast.error('Recovery links are unavailable on the Laravel backend. Request a new password reset.');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,11 +39,7 @@ const ResetPassword: React.FC = () => {
     setIsResetting(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-
-      toast.success('Your password has been reset successfully. You can now sign in with your new password.');
-      navigate('/login');
+      throw new Error('Password recovery links are not configured on the Laravel backend.');
     } catch (err: any) {
       console.error('Password reset error:', err);
       toast.error(err.message || 'Failed to reset password. Please try again or request a new reset link.');

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Save, User, Mail, Phone, MapPin, Building2, Briefcase, Image, Loader2, CheckCircle2 } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFileWithToken } from '@/lib/upload';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -50,16 +50,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     }
     
     try {
-      const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-      
-      if (error) throw error;
-      
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(avatarPath);
+      const avatarPath = `profile-media/${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, avatarPath);
       setAvatarUrl(publicUrl);
       toast.success('Avatar uploaded successfully');
     } catch (err: any) {
@@ -77,16 +69,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     }
     
     try {
-      const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-      
-      if (error) throw error;
-      
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(coverPath);
+      const coverPath = `profile-media/${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, coverPath);
       setCoverUrl(publicUrl);
       toast.success('Cover photo uploaded successfully');
     } catch (err: any) {

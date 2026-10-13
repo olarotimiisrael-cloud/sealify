@@ -1,59 +1,54 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api-client';
+import { laravelAuth } from '@/lib/laravel-api';
 
 export const useAuth = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    let active = true;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const readSession = async () => {
+      try {
+        const { data } = await api.getSession();
+        if (!active) return;
+        setUser(data.session?.user ?? null);
+      } catch {
+        if (!active) return;
+        laravelAuth.clearSession();
+        setUser(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    void readSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+    const { user: signedIn } = await api.signIn(email, password);
+    setUser(signedIn ?? null);
+    return signedIn;
   };
 
   const signUp = async (email: string, password: string, fullName: string, phoneNumber: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName, phone: phoneNumber }
-      }
-    });
-    if (error) throw error;
-    return data;
+    const { user: created } = await api.signUp(email, password, fullName, phoneNumber);
+    setUser(created ?? null);
+    return created;
   };
 
-  const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: provider === 'samsung' ? 'google' : provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-      return true;
-    } catch {
-      return false;
-    }
+  const signInWithOAuth = async (): Promise<boolean> => {
+    throw new Error('OAuth is not configured for the Laravel backend.');
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await api.signOut();
+    setUser(null);
   };
 
   return { user, loading, signIn, signUp, signInWithOAuth, signOut };

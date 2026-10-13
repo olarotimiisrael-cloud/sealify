@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, Notifiable;
+
+    protected $table = 'users';
+
+    protected $guarded = [];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+            'verified' => 'boolean',
+            'email_notifications' => 'boolean',
+            'whatsapp_notifications' => 'boolean',
+            'hide_phone_publicly' => 'boolean',
+            'hide_location_publicly' => 'boolean',
+            'verified_credentials' => 'array',
+            'verification_preferences' => 'array',
+            'total_value_traded' => 'decimal:2',
+            'completed_deals' => 'integer',
+            'referral_count' => 'integer',
+            'referral_cycle' => 'integer',
+            'trust_score' => 'integer',
+        ];
+    }
+
+    public function listings()
+    {
+        return $this->hasMany(Listing::class, 'seller_id');
+    }
+}

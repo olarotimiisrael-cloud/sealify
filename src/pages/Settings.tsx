@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSealify } from '../context/SealifyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFileWithToken } from '@/lib/upload';
 import Navbar from '../components/Navbar';
 import MobileNav from '../components/MobileNav'
 import Footer from '../components/Footer';
@@ -216,16 +216,8 @@ const Settings: React.FC = () => {
     }
     
     try {
-      const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-      if (error) throw error;
-
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      const avatarPath = `profile-media/${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, avatarPath);
       await updateUser(user.id, { avatarUrl: publicUrl });
       setAvatarUrl(publicUrl);
       toast.success('Profile picture updated!');
@@ -244,16 +236,8 @@ const Settings: React.FC = () => {
     }
     
     try {
-      const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-      if (error) throw error;
-
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      const coverPath = `profile-media/${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, coverPath);
       await updateUser(user.id, { storeBannerUrl: publicUrl });
       setStoreBannerUrl(publicUrl);
       toast.success('Store cover photo updated!');
@@ -295,7 +279,7 @@ const Settings: React.FC = () => {
       });
 
       setIsSaving(false);
-      toast.success('🎉 Profile & preferences synchronized instantly to Supabase!');
+      toast.success('🎉 Profile & preferences synchronized successfully!');
     } catch (e: any) {
       setIsSaving(false);
       toast.error('Failed to save profile changes. Please try again.');
@@ -680,7 +664,7 @@ const Settings: React.FC = () => {
                     className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95"
                   >
                     <Save className="w-4 h-4" />
-                    <span>{isSaving ? 'Synchronizing to Supabase...' : 'Save Profile Changes'}</span>
+                    <span>{isSaving ? 'Synchronizing...' : 'Save Profile Changes'}</span>
                   </button>
                 </form>
               </>
@@ -910,7 +894,7 @@ const Settings: React.FC = () => {
                       className="w-full py-4 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95"
                     >
                       <Save className="w-4 h-4" />
-                      <span>{isSaving ? 'Synchronizing to Supabase...' : 'Save Storefront Changes'}</span>
+                      <span>{isSaving ? 'Synchronizing...' : 'Save Storefront Changes'}</span>
                     </button>
                   </div>
                 </div>
@@ -1000,7 +984,7 @@ const Settings: React.FC = () => {
 
                     <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800">
                       <p className="text-xs font-black text-white">Session security</p>
-                      <p className="text-[10px] text-slate-400 mt-1">Sealify uses Supabase Auth sessions and refresh handling for account security.</p>
+                      <p className="text-[10px] text-slate-400 mt-1">Sealify uses secure token sessions with automatic refresh handling for account security.</p>
                     </div>
 
                     <div className="flex items-center justify-between p-4 bg-slate-950 rounded-2xl border border-slate-800 flex-wrap gap-3">

@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
 import { askSealifyCopilot } from '../lib/ai/assistant';
 import { getActiveProvider, type SupportedAIProvider } from '../lib/ai/providers';
 import { requireBasicAuth, checkFeatureAccess } from '../middleware/authCheck';
 import { FEATURE_TIERS, isFeatureAvailable } from '../lib/features';
 import { auditLog } from '../middleware/security';
 import { getSql } from '../db/hyperdrive';
+import { laravelRequest } from '../lib/laravel-api';
+import { laravelAuth } from '../lib/laravel-api';
 // import { v4 as uuidv4 } from 'uuid';
 
 const REQUEST_LIMIT_WINDOW_MS = 60_000;
@@ -74,20 +75,30 @@ const getUserContext = async (env: any, authHeader?: string): Promise<{
 
   try {
     const token = authHeader.replace('Bearer ', '').trim();
-    const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    if (error || !user) return undefined;
+    const laravelApiUrl = env.LARAVEL_API_URL || env.NEXT_PUBLIC_LARAVEL_API_URL || '';
+    
+    const response = await fetch(`${laravelApiUrl}/auth/me`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+    });
 
+    if (!response.ok) return undefined;
+
+    const data = await response.json();
+    
     return {
       authenticated: true,
-      userId: user.id,
-      fullName: user.user_metadata?.full_name || user.email || 'Sealify user',
-      role: 'buyer',
-      verified: false,
-      listingCount: 0,
-      savedListingCount: 0,
-      unreadMessageCount: 0,
-      notificationCount: 0,
+      userId: String(data.id || data.user_id || ''),
+      fullName: data.full_name || data.name || data.email || 'Sealify user',
+      role: data.role || 'buyer',
+      verified: data.email_verified_at !== null,
+      listingCount: data.listings_count || 0,
+      savedListingCount: data.saved_listings_count || 0,
+      unreadMessageCount: data.unread_messages_count || 0,
+      notificationCount: data.notifications_count || 0,
     };
   } catch {
     return undefined;
@@ -224,37 +235,50 @@ copilotRoutes.post('/', async (c) => {
       }, 400);
     }
 
-    const response = await askSealifyCopilot(message, conversation as { role: 'user' | 'assistant'; content: string }[], userContext, env as Record<string, string | undefined>, c.env.AI);
+    // Route to Laravel's native CopilotService via API - fully self-contained, no external API keys needed
+    const laravelApiUrl = env.LARAVEL_API_URL || env.NEXT_PUBLIC_LARAVEL_API_URL || '';
+    const authHeader = c.req.header('Authorization');
+    
+    try {
+      const laravelResponse = await fetch(`${laravelApiUrl}/api/copilot`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authHeader || '',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          conversation,
+          marketplaceContext: finalContext.marketplaceContext || 'none',
+        }),
+      });
 
-    // Detect if the AI model returned an error about unsupported image input
-    // This can happen when a non-vision model is asked to process an image
-    const imageErrorPatterns = [
-      'cannot read',
-      'does not support image input',
-      'image input',
-      'vision',
-      'image.png',
-    ];
-    const responseText = response.text.toLowerCase();
-    const isImageError = imageErrorPatterns.some((pattern) => responseText.includes(pattern));
+      if (!laravelResponse.ok) {
+        const errorData = await laravelResponse.json().catch(() => ({}));
+        return c.json({
+          message: errorData?.message || '⚠️ **Copilot Temporarily Unavailable** — Unable to reach the AI service.',
+          citations: [],
+          provider: 'none',
+        }, laravelResponse.status);
+      }
 
-    if (isImageError) {
+      const laravelData = await laravelResponse.json();
       return c.json({
-        message: `⚠️ **AI Vision Not Available** — The current AI model (${response.provider}: ${response.model}) doesn't support image analysis. Please switch to a vision-capable model (e.g., GPT-4o, Gemini 2.5 Pro, or Sealify Vision) in Admin → AI & Copilot settings, or describe the image in text instead.`,
+        message: laravelData.message,
+        citations: laravelData.citations || [],
+        usedWebSearch: laravelData.usedWebSearch || false,
+        provider: laravelData.provider || 'sealify-native',
+        model: laravelData.model || 'sealify-native-v1',
+      });
+    } catch (apiError) {
+      console.error('Laravel API call failed:', apiError);
+      return c.json({
+        message: '⚠️ **Copilot Temporarily Unavailable** — Could not connect to the AI service. Please try again.',
         citations: [],
-        usedWebSearch: false,
-        provider: response.provider,
-        model: response.model,
-      }, 400);
+        provider: 'none',
+      }, 503);
     }
-
-    return c.json({
-      message: response.text,
-      citations: response.citations || [],
-      usedWebSearch: !!response.usedWebSearch,
-      provider: response.provider,
-      model: response.model,
-    });
   } catch (error) {
     console.error('Copilot request failed', error);
     const errMsg = error instanceof Error ? error.message : String(error);

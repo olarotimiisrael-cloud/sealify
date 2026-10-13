@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { laravelAuth } from '@/lib/laravel-api';
 import { apiUrl } from '@/lib/env';
 
 interface AiShoppingAssistantModalProps {
@@ -79,12 +79,12 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
     setIsThinking(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch(apiUrl('/api/copilot'), {
+      const token = laravelAuth.getToken();
+      const response = await fetch(apiUrl('/copilot'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({ message: trimmed, conversation: nextConversation }),
       });

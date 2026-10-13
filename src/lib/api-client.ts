@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { mapListingToListing } from "@/services/supabaseService";
 import { appEnv } from "@/lib/env";
+import { laravelAuth } from "@/lib/laravel-api";
 
 const API_BASE = appEnv.apiBase;
 
@@ -12,7 +12,6 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
-  private authClient = supabase;
 
   constructor() {
     this.baseUrl = API_BASE;
@@ -55,9 +54,9 @@ class ApiClient {
     };
 
     if (requireAuth) {
-      const { data: { session } } = await this.authClient.auth.getSession();
-      if (session?.access_token) {
-        requestHeaders["Authorization"] = `Bearer ${session.access_token}`;
+      const token = laravelAuth.getToken();
+      if (token) {
+        requestHeaders["Authorization"] = `Bearer ${token}`;
       }
     }
 
@@ -107,81 +106,77 @@ class ApiClient {
   }
 
   async signUp(email: string, password: string, fullName: string, phoneNumber?: string) {
-    const { data, error } = await this.authClient.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name: fullName, phone: phoneNumber }, emailRedirectTo: `${window.location.origin}/verify` },
-    });
-    if (error) throw new Error(error.message);
-    return data;
+    const data = await this.post<any>("/auth/register", { email, password, full_name: fullName, phone_number: phoneNumber });
+    laravelAuth.setSession(data);
+    return { session: data, user: data.user };
   }
 
   async signIn(email: string, password: string) {
-    const { data, error } = await this.authClient.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message);
-    return data;
+    const data = await this.post<any>("/auth/login", { email, password });
+    laravelAuth.setSession(data);
+    return { session: data, user: data.user };
   }
 
   async signOut() {
-    await this.authClient.auth.signOut();
-  }
-
-  async signInWithOAuth(provider: 'google' | 'apple' | 'samsung'): Promise<boolean> {
     try {
-      const { data, error } = await this.authClient.auth.signInWithOAuth({
-        provider: provider === 'samsung' ? 'google' : provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      });
-      if (error) throw error;
-      return true;
-    } catch {
-      return false;
+      await this.post("/auth/logout", {});
+    } finally {
+      laravelAuth.clearSession();
     }
   }
 
+  async signInWithOAuth(provider: 'google' | 'apple' | 'samsung'): Promise<boolean> {
+    throw new Error("OAuth is not configured for the Laravel backend. Use email and password authentication.");
+  }
+
   async sendPhoneOtp(phone: string, channel?: string): Promise<string> {
-    const response = await fetch(apiUrl('/api/auth/phone/otp'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, channel }),
-    });
-    if (!response.ok) throw new Error('Failed to send OTP');
-    const data = await response.json();
-    return data.otpId || 'otp_sent';
+    const response = await this.post<any>("/auth/phone/otp", { phone, channel });
+    return response.otpId || "otp_sent";
   }
 
   async verifyPhoneOtp(phone: string, code: string, otpId?: string): Promise<boolean> {
-    const response = await fetch(apiUrl('/api/auth/phone/verify'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, otp: code, otpId }),
-    });
-    if (!response.ok) throw new Error('OTP verification failed');
+    await this.post("/auth/phone/verify", { phone, otp: code, otpId });
     return true;
   }
 
   async resetPassword(email: string) {
-    const { error } = await this.authClient.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) throw new Error(error.message);
+    await this.post("/auth/password/reset-request", { email });
   }
 
   async updatePassword(password: string) {
-    const { error } = await this.authClient.auth.updateUser({ password });
-    if (error) throw new Error(error.message);
+    throw new Error("Password reset must be completed from the emailed reset link.");
   }
 
-  getSession() {
-    return this.authClient.auth.getSession();
+  async getSession() {
+    const token = laravelAuth.getToken();
+    if (!token) {
+      return { data: { session: null } };
+    }
+
+    try {
+      const user = await this.get<any>("/auth/me");
+      laravelAuth.setSession({ ...({ access_token: token, token_type: "Bearer", user }) });
+      return { data: { session: { access_token: token, user } } };
+    } catch {
+      laravelAuth.clearSession();
+      return { data: { session: null } };
+    }
   }
 
-  getUser() {
-    return this.authClient.auth.getUser();
+  async getUser() {
+    const { data } = await this.getSession();
+
+    return { data: { user: data.session?.user || null } };
   }
 
-  onAuthStateChange(callback: (event: string, session: any) => void) {
-    return this.authClient.auth.onAuthStateChange(callback);
+  onAuthStateChange(_callback: (event: string, session: any) => void) {
+    return {
+      data: {
+        subscription: {
+          unsubscribe() {},
+        },
+      },
+    };
   }
 }
 
@@ -232,61 +227,92 @@ export const queryKeys = {
   referralMe: () => ["referral", "me"] as const,
 };
 
-const listingSelect = "*, profiles!ads_seller_id_fkey(*), ad_images(image_url, sort_order)";
-
-const mapListingUpdates = (updates: Record<string, any>) => {
-  const fieldMap: Record<string, string> = {
-    sellerId: "seller_id", categoryId: "category_id", subcategoryId: "subcategory_id", originalPrice: "original_price",
-    videoUrl: "video_url", viewsCount: "views_count", promotionPlanName: "promotion_plan_name",
-    promotionDurationMonths: "promotion_duration_months", promotionStartDate: "promotion_start_date",
-    promotionEndDate: "promotion_end_date", paymentStatus: "payment_status", paymentProofUrl: "payment_proof_url",
-    amountPaid: "amount_paid", createdAt: "created_at", updatedAt: "updated_at",
-  };
-  return Object.entries(updates).reduce((mapped: Record<string, any>, [key, value]) => {
-    mapped[fieldMap[key] || key] = value;
-    return mapped;
-  }, {});
-};
-
 const getCurrentUserId = async () => {
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  if (!data.user) throw new Error("Authentication required");
-  return data.user.id;
+  const token = laravelAuth.getToken();
+  if (!token) throw new Error('Authentication required');
+
+  try {
+    const user = await api.get<any>('/auth/me');
+    if (user?.id) return String(user.id);
+  } catch {
+    laravelAuth.clearSession();
+  }
+
+  throw new Error('Authentication required');
 };
 
 const loadListings = async (sellerOnly = false) => {
   const userId = sellerOnly ? await getCurrentUserId() : null;
-  let query = supabase.from("ads").select(listingSelect, { count: "exact" }).order("created_at", { ascending: false });
-  if (sellerOnly && userId) query = query.eq("seller_id", userId);
-  const { data, error, count } = await query;
-  if (error) throw error;
-  return { listings: (data || []).map(mapListingToListing), total: count || data?.length || 0 };
+  const response = await api.getPublic<{ listings: any[]; total?: number }>('/listings', { limit: '100' });
+  const rows = (response?.listings || []).filter((row: any) =>
+    sellerOnly && userId ? String(row.seller_id) === userId : true,
+  );
+  return { listings: rows.map(mapListingToListing), total: response?.total ?? rows.length };
 };
 
 const loadConversationSummaries = async (userId: string) => {
-  const { data: rows, error } = await supabase
-    .from("conversations")
-    .select("*")
-    .or(`participant_1.eq.${userId},participant_2.eq.${userId}`)
-    .order("last_message_time", { ascending: false });
-  if (error) throw error;
+  const conversationsResponse = await api.get<{ conversations: any[] }>('/conversations');
+  const rows = conversationsResponse?.conversations || [];
 
-  return Promise.all((rows || []).map(async (row: any) => {
-    const otherUserId = row.participant_1 === userId ? row.participant_2 : row.participant_1;
-    const [adResult, profileResult] = await Promise.all([
-      supabase.from("ads").select("id, title, price, images").eq("id", row.ad_id).maybeSingle(),
-      supabase.from("profiles").select("id, full_name, avatar_url").eq("id", otherUserId).maybeSingle(),
-    ]);
+  const listingsResponse = await api
+    .getPublic<{ listings: any[] }>('/listings', { limit: '100' })
+    .catch(() => ({ listings: [] as any[] }));
+  const ads = listingsResponse?.listings || [];
+
+  const otherUserIds = Array.from(
+    new Set(rows.map((row: any) => String(row.other_user_id ?? '')).filter(Boolean)),
+  );
+
+  const profileEntries = await Promise.all(
+    otherUserIds.map(async (id) => {
+      try {
+        const profile = await api.get<any>(`/users/${id}`);
+        return [id, profile] as const;
+      } catch {
+        return [id, null] as const;
+      }
+    }),
+  );
+
+  const profiles = new Map<string, any>(profileEntries);
+
+  return Promise.all(rows.map(async (row: any) => {
+    const otherUserId = String(row.other_user_id ?? '');
+    const profile = profiles.get(otherUserId);
+    let messages: any[] = [];
+
+    try {
+      const messagesResponse = await api.get<{ messages: any[] }>(`/conversations/${row.id}/messages`);
+      messages = messagesResponse?.messages || [];
+    } catch {
+      messages = [];
+    }
+
+    const ad = ads.find((item: any) => String(item.id) === String(row.ad_id));
+
     return {
-      id: row.id,
-      listingId: row.ad_id,
-      listingTitle: adResult.data?.title || "Marketplace ad",
-      listingImage: adResult.data?.images?.[0] || "",
-      listingPrice: Number(adResult.data?.price || 0),
-      otherUser: { id: otherUserId, name: profileResult.data?.full_name || "Sealify user", avatar: profileResult.data?.avatar_url || "" },
-      lastMessage: row.last_message || "",
+      id: String(row.id),
+      listingId: String(row.ad_id ?? ''),
+      listingTitle: ad?.title || 'Marketplace ad',
+      listingImage: (Array.isArray(ad?.images) ? ad.images[0] : '') || '',
+      listingPrice: Number(ad?.price || 0),
+      otherUser: {
+        id: otherUserId,
+        name: profile?.full_name || 'Sealify user',
+        avatar: profile?.avatar_url || '',
+      },
+      lastMessage: row.last_message || '',
       lastMessageTime: row.last_message_time || row.created_at,
+      messages: messages.map((message: any) => ({
+        id: String(message.id),
+        senderId: String(message.sender_id ?? ''),
+        receiverId: String(message.receiver_id ?? ''),
+        listingId: String(message.ad_id ?? ''),
+        content: message.content,
+        createdAt: message.created_at,
+        isRead: Boolean(message.read),
+        attachments: [],
+      })),
     };
   }));
 };
@@ -350,9 +376,8 @@ export function useListing(id: string) {
   return useQuery({
     queryKey: queryKeys.listing(id),
     queryFn: async () => {
-      const { data, error } = await supabase.from("ads").select(listingSelect).eq("id", id).maybeSingle();
-      if (error) throw error;
-      return { listing: data ? mapListingToListing(data) : null };
+      const row = await api.getPublic<any>(`/listings/${id}`);
+      return { listing: row ? mapListingToListing(row) : null };
     },
     enabled: !!id,
     staleTime: 1000 * 60,
@@ -363,23 +388,20 @@ export function useCreateListing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: any) => {
-      const userId = await getCurrentUserId();
-      const { data: created, error } = await supabase.from("ads").insert({
-        seller_id: userId,
-        category_id: data.categoryId || data.category_id || data.category || null,
-        subcategory_id: data.subcategoryId || data.subcategory_id || null,
+      const created = await api.post<any>('/listings', {
+        category_id: data.categoryId || data.category_id || data.category || undefined,
+        subcategory_id: data.subcategoryId || data.subcategory_id || undefined,
         title: data.title,
         description: data.description,
         price: data.price,
-        original_price: data.originalPrice ?? data.original_price ?? null,
+        original_price: data.originalPrice ?? data.original_price ?? undefined,
         condition: data.condition,
         location: data.location,
-        status: "active",
+        status: 'active',
         images: data.images || [],
-        video_url: data.videoUrl || data.video_url || null,
+        video_url: data.videoUrl || data.video_url || undefined,
         specifications: data.specifications || {},
-      }).select(listingSelect).single();
-      if (error) throw error;
+      });
       return { listing: mapListingToListing(created) };
     },
     onSuccess: () => {
@@ -393,8 +415,20 @@ export function useUpdateListing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const { data: updated, error } = await supabase.from("ads").update(mapListingUpdates(data)).eq("id", id).select(listingSelect).single();
-      if (error) throw error;
+      const updates: Record<string, any> = {};
+      const fieldMap: Record<string, string> = {
+        sellerId: 'seller_id', categoryId: 'category_id', subcategoryId: 'subcategory_id', originalPrice: 'original_price',
+        videoUrl: 'video_url', viewsCount: 'views_count', promotionPlanName: 'promotion_plan_name',
+        promotionDurationMonths: 'promotion_duration_months', promotionStartDate: 'promotion_start_date',
+        promotionEndDate: 'promotion_end_date', paymentStatus: 'payment_status', paymentProofUrl: 'payment_proof_url',
+        amountPaid: 'amount_paid', createdAt: 'created_at', updatedAt: 'updated_at',
+      };
+
+      Object.entries(data).forEach(([key, value]) => {
+        updates[fieldMap[key] || key] = value;
+      });
+
+      const updated = await api.put<any>(`/listings/${id}`, updates);
       return { listing: mapListingToListing(updated) };
     },
     onSuccess: (_, { id }) => {
@@ -409,8 +443,7 @@ export function useDeleteListing() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("ads").delete().eq("id", id);
-      if (error) throw error;
+      await api.delete(`/listings/${id}`);
       return undefined;
     },
     onSuccess: () => {
@@ -440,27 +473,17 @@ export function useMessages(conversationId: string) {
   return useQuery({
     queryKey: queryKeys.messages(conversationId),
     queryFn: async () => {
-      const { data, error } = await supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true });
-      if (error) throw error;
-      const messageIds = (data || []).map((m: any) => m.id);
-      const { data: attachmentRows, error: attachmentError } = messageIds.length
-        ? await supabase.from("message_attachments").select("*").in("message_id", messageIds)
-        : { data: [], error: null };
-      if (attachmentError) throw attachmentError;
-      const attachmentsByMessage = (attachmentRows || []).reduce((acc: any, att: any) => {
-        (acc[att.message_id] ||= []).push(att);
-        return acc;
-      }, {} as Record<string, any>);
+      const response = await api.get<{ messages: any[] }>(`/conversations/${conversationId}/messages`);
       return {
-        messages: (data || []).map((message: any) => ({
-          id: message.id,
-          senderId: message.sender_id,
-          receiverId: message.receiver_id,
-          listingId: message.ad_id,
+        messages: (response?.messages || []).map((message: any) => ({
+          id: String(message.id),
+          senderId: String(message.sender_id ?? ''),
+          receiverId: String(message.receiver_id ?? ''),
+          listingId: String(message.ad_id ?? ''),
           content: message.content,
           createdAt: message.created_at,
           isRead: Boolean(message.read),
-          attachments: attachmentsByMessage[message.id] || [],
+          attachments: [],
         })),
       };
     },
@@ -472,41 +495,8 @@ export function useMessages(conversationId: string) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ conversationId, receiverId, content, attachments }: { conversationId: string; receiverId: string; content: string; attachments?: Array<{ filename: string; mime_type?: string; size: number; public_url?: string; storage_path?: string }> }) => {
-      const senderId = await getCurrentUserId();
-      const { data: conversation, error: conversationError } = await supabase.from("conversations").select("*").eq("id", conversationId).single();
-      if (conversationError) throw conversationError;
-      const { data: message, error: messageError } = await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: senderId,
-        receiver_id: receiverId,
-        ad_id: conversation.ad_id,
-        content: content.trim(),
-        status: "sent",
-        read: false,
-      }).select().single();
-      if (messageError) throw messageError;
-      if (attachments && attachments.length > 0) {
-        const { error: attachmentError } = await supabase.from("message_attachments").insert(
-          attachments.map((a) => ({
-            message_id: message.id,
-            uploaded_by: senderId,
-            filename: a.filename,
-            mime_type: a.mime_type || null,
-            size: a.size,
-            storage_bucket: "messages",
-            storage_path: a.storage_path || a.public_url || null,
-            public_url: a.public_url || null,
-            created_at: new Date().toISOString(),
-          }))
-        );
-        if (attachmentError) throw attachmentError;
-      }
-      const unreadUpdate = conversation.participant_1 === receiverId
-        ? { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_1: Number(conversation.unread_count_1 || 0) + 1 }
-        : { last_message: content.trim(), last_message_time: new Date().toISOString(), unread_count_2: Number(conversation.unread_count_2 || 0) + 1 };
-      const { error: updateError } = await supabase.from("conversations").update(unreadUpdate).eq("id", conversationId);
-      if (updateError) throw updateError;
+    mutationFn: async ({ conversationId, content }: { conversationId: string; receiverId: string; content: string; attachments?: Array<{ filename: string; mime_type?: string; size: number; public_url?: string; storage_path?: string }> }) => {
+      const message = await api.post<any>(`/conversations/${conversationId}/messages`, { content: content.trim() });
       return { message };
     },
     onSuccess: (_, { conversationId }) => {
@@ -520,11 +510,12 @@ export function useNotifications(params?: any) {
   return useQuery({
     queryKey: queryKeys.notifications(params),
     queryFn: async () => {
-      const userId = await getCurrentUserId();
-      const { data, error } = await supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false });
-      if (error) throw error;
-      const notifications = data || [];
-      return { notifications, unreadCount: notifications.filter((notification: any) => !notification.read).length };
+      const response = await api.get<{ notifications: any[]; unreadCount?: number }>('/notifications');
+      const notifications = response?.notifications || [];
+      return {
+        notifications,
+        unreadCount: response?.unreadCount ?? notifications.filter((notification: any) => !notification.read).length,
+      };
     },
     staleTime: 1000 * 30,
   });
@@ -534,8 +525,7 @@ export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
-      if (error) throw error;
+      await api.post(`/notifications/${id}/read`, {});
       return undefined;
     },
     onSuccess: () => {
@@ -549,9 +539,7 @@ export function useMarkAllNotificationsRead() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async () => {
-      const userId = await getCurrentUserId();
-      const { error } = await supabase.from("notifications").update({ read: true }).eq("user_id", userId);
-      if (error) throw error;
+      await api.post('/notifications/read-all', {});
       return undefined;
     },
     onSuccess: () => {

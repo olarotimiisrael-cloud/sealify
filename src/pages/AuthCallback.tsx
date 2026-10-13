@@ -1,54 +1,41 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api-client';
+import { laravelApi } from '@/lib/laravel-api';
 import SEO from '@/components/SEO';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     let mounted = true;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-
+    void (async () => {
+      const { data } = await api.getSession();
       const session = data?.session;
       if (!session?.user) {
-        navigate('/login');
+        if (mounted) navigate('/login');
         return;
       }
 
-      // Check if profile has required fields for completion
-      supabase
-        .from('profiles')
-        .select('full_name, phone_number, verified')
-        .eq('id', session.user.id)
-        .maybeSingle()
-        .then(({ data: profile }) => {
-          if (!mounted) return;
+      try {
+        const profiles = await laravelApi.data.list<any>('profiles', { id: String(session.user.id) });
+        const profile = profiles[0];
 
-          if (!profile) {
-            // No profile exists – redirect to profile completion
-            navigate('/profile-complete');
-            return;
-          }
+        if (!profile) {
+          if (mounted) navigate('/profile-complete');
+          return;
+        }
 
-          const needsCompletion =
-            !profile.full_name || !profile.phone_number;
+        const needsCompletion = !profile.full_name || !profile.phone_number;
 
-          if (needsCompletion) {
-            navigate('/profile-complete');
-          } else {
-            // Profile is complete, go home
-            navigate('/');
-          }
-        })
-        .catch(() => {
-          if (!mounted) return;
-          navigate('/login');
-        });
-    });
+        if (mounted) {
+          navigate(needsCompletion ? '/profile-complete' : '/');
+        }
+      } catch {
+        if (mounted) navigate('/login');
+      }
+    })();
 
     return () => {
       mounted = false;

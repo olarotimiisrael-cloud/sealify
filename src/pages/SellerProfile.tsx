@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSealify } from '../context/SealifyContext';
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFileWithToken } from '@/lib/upload';
 import Navbar from '../components/Navbar';
 import ListingCard from '../components/ListingCard';
 import MobileNav from '../components/MobileNav';
@@ -175,16 +175,8 @@ const SellerProfile: React.FC = () => {
     }
     
     try {
-      const avatarPath = `${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(avatarPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-      if (error) throw error;
-
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      const avatarPath = `profile-media/${user.id}/${Date.now()}-avatar.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, avatarPath);
       await updateUser(user.id, { avatarUrl: publicUrl });
       toast.success('Profile photo updated & saved to database!');
     } catch (err: any) {
@@ -202,16 +194,8 @@ const SellerProfile: React.FC = () => {
     }
     
     try {
-      const coverPath = `${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
-      const { data, error } = await supabase.storage.from('profile-media').upload(coverPath, file, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: file.type,
-      });
-
-      if (error) throw error;
-
-      const { publicUrl } = supabase.storage.from('profile-media').getPublicUrl(data.path);
+      const coverPath = `profile-media/${user.id}/${Date.now()}-cover.${file.name.split('.').pop()}`;
+      const publicUrl = await uploadFileWithToken(file, coverPath);
       await updateUser(user.id, { storeBannerUrl: publicUrl });
       toast.success('Storefront cover photo updated & saved to database!');
     } catch (err: any) {

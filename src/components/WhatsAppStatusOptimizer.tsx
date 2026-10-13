@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useSealify } from '../context/SealifyContext';
+import { laravelApi } from '@/lib/laravel-api';
 import { toast } from 'sonner';
 import { Smartphone, Download, Share2, Image, QrCode, ArrowRight, Link } from 'lucide-react';
 
@@ -212,34 +213,21 @@ export const WhatsAppStatusOptimizer: React.FC<WhatsAppStatusProps> = ({
       const dataUrl = canvas.toDataURL('image/png');
       setStatusImage(dataUrl);
 
-      // Auto-save to Supabase if adId provided
       if (adId && user) {
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          const response = await fetch('/api/ad-cards', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({
-              adId,
-              assetType: 'whatsapp_status',
-              aspectRatio: '9:16',
-              width: statusDimensions.width,
-              height: statusDimensions.height,
-              colorScheme,
-              template: templateSelected,
-              fileUrl: dataUrl,
-            }),
+        try {
+          await laravelApi.data.create('ad_card_assets', {
+            ad_id: adId,
+            user_id: user.id,
+            asset_type: 'whatsapp_status',
+            aspect_ratio: '9:16',
+            width: statusDimensions.width,
+            height: statusDimensions.height,
+            file_url: dataUrl,
+            color_scheme: colorScheme,
+            template_name: templateSelected,
           });
-
-          const result = await response.json();
-          if (result.error) {
-            console.warn('Failed to save status card to DB:', result.error);
-          } else {
-            console.log('Status card saved successfully');
-          }
+        } catch (error) {
+          console.warn('Failed to save status card to DB:', error);
         }
       }
 

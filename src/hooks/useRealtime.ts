@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface RealtimeOptions {
   table: string;
@@ -14,38 +13,16 @@ export const useRealtime = ({ table, filter, onInsert, onUpdate, onDelete }: Rea
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const channel = supabase
-      .channel(`realtime:${table}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table,
-          filter,
-        },
-        (payload) => {
-          switch (payload.eventType) {
-            case 'INSERT':
-              onInsert?.(payload.new);
-              break;
-            case 'UPDATE':
-              onUpdate?.(payload.new);
-              break;
-            case 'DELETE':
-              onDelete?.(payload.old);
-              break;
-          }
-        }
-      )
-      .subscribe((status) => {
-        setConnected(status === 'SUBSCRIBED');
-      });
-
-    channelRef.current = channel;
+    void table;
+    void filter;
+    void onInsert;
+    void onUpdate;
+    void onDelete;
+    channelRef.current = null;
+    setConnected(false);
 
     return () => {
-      supabase.removeChannel(channel);
+      channelRef.current = null;
     };
   }, [table, filter, onInsert, onUpdate, onDelete]);
 

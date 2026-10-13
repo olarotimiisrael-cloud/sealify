@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { laravelApi, laravelAuth } from "@/lib/laravel-api";
 
 export const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
@@ -7,22 +7,22 @@ export const useAdmin = () => {
 
   useEffect(() => {
     const checkAdminStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const token = laravelAuth.getToken();
 
-      if (!user) {
+      if (!token) {
         setIsAdmin(false);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", user.id)
-        .eq("role", "admin")
-        .maybeSingle();
+      try {
+        const user = await laravelApi.me();
+        setIsAdmin(user?.role === 'admin');
+      } catch {
+        laravelAuth.clearSession();
+        setIsAdmin(false);
+      }
 
-      setIsAdmin(!!data && !error);
       setLoading(false);
     };
 

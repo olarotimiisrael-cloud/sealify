@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import SEO from '../components/SEO';
-import { supabase } from '../integrations/supabase/client';
+import { laravelAuth } from '@/lib/laravel-api';
 
 const Verify: React.FC = () => {
   const [status, setStatus] = useState<'checking' | 'verified' | 'pending'>('checking');
@@ -10,9 +10,8 @@ const Verify: React.FC = () => {
   useEffect(() => {
     let mounted = true;
 
-    void supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setStatus(data.session ? 'verified' : 'pending');
-    });
+    setStatus(laravelAuth.getToken() ? 'verified' : 'pending');
+    void mounted;
 
     return () => {
       mounted = false;

@@ -1,13 +1,4 @@
-/**
- * Admin branding asset uploads.
- *
- * Writes to the public `site-assets` Supabase Storage bucket provisioned by
- * supabase/migrations/20261001000000_site_metadata_and_branding.sql. Access is
- * gated by RLS (admin-only writes, public reads), so this runs with the
- * signed-in administrator's own session.
- */
-
-import { supabase } from '@/integrations/supabase/client';
+import { uploadFileWithToken } from '@/lib/upload';
 
 export const SITE_ASSETS_BUCKET = 'site-assets';
 
@@ -52,14 +43,10 @@ export interface UploadAssetResult {
   path: string;
 }
 
-/**
- * Uploads a branding asset and returns its public URL. Replaces any previously
- * uploaded file of the same kind so the bucket does not accumulate orphans.
- */
 export async function uploadSiteAsset(
   kind: AssetKind,
   file: File,
-  previousPath?: string | null,
+  _previousPath?: string | null,
 ): Promise<UploadAssetResult> {
   const rule = ASSET_RULES[kind];
 
@@ -74,22 +61,10 @@ export async function uploadSiteAsset(
 
   const path = buildFileName(kind, file);
 
-  const { error } = await supabase.storage
-    .from(SITE_ASSETS_BUCKET)
-    .upload(path, file, { cacheControl: '31536000', upsert: false, contentType: file.type });
-
-  if (error) {
-    throw new Error(error.message || 'The asset could not be uploaded.');
+  try {
+    const url = await uploadFileWithToken(file, `${SITE_ASSETS_BUCKET}/${path}`);
+    return { url, path };
+  } catch {
+    throw new Error('The asset could not be uploaded.');
   }
-
-  const { data } = supabase.storage.from(SITE_ASSETS_BUCKET).getPublicUrl(path);
-
-  if (previousPath && previousPath.includes(`/${SITE_ASSETS_BUCKET}/`)) {
-    const previous = previousPath.split(`/${SITE_ASSETS_BUCKET}/`)[1];
-    if (previous && previous !== path) {
-      await supabase.storage.from(SITE_ASSETS_BUCKET).remove([previous]);
-    }
-  }
-
-  return { url: data.publicUrl, path };
 }
