@@ -1,12 +1,7 @@
 allowBuilds:
-  "@firebase/util": false # dyad-auto-denied
-  "@google/genai": false # dyad-auto-denied
-  "@google/genai@2.28.0(@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@3.25.76))(supports-color": false # dyad-auto-denied
-  protobufjs: false # dyad-auto-denied
-  # dyad-default-allow-builds begin
-  # dyad-default-allow-builds-schema=v1
-  # dyad-default-allow-builds-data-version=2026-07-08.1
-  # dyad-default-allow-builds-channel=remote
+  "@google/genai": false
+  "@google/genai@2.28.0(@modelcontextprotocol/sdk@1.32.1(supports-color@10.2.2)(zod@3.25.76))(supports-color": false
+  protobufjs: false
   "@airbnb/node-memwatch": true
   "@anthropic-ai/claude-code": true
   "@apollo/protobufjs": true
@@ -376,7 +371,6 @@ allowBuilds:
   zeromq: true
   zlib-sync: true
   zopflipng-bin: true
-  # dyad-default-allow-builds end
 
 packages:
   - .

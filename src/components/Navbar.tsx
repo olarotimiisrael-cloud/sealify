@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Settings as SettingsIcon, Save, ShieldCheck } from 'lucide-react';
+import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, SignUp } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 
 const Navbar = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const { t } = useSealify();
   const { isAdmin } = useSealify();
+  const { user } = useSealify();
 
   return (
     <nav className="bg-slate-900/50 backdrop-blur-md border-b border-slate-800/50 sticky top-0 z-50">
@@ -38,6 +39,24 @@ const Navbar = () => {
                 <div className="px-4 py-2 border-b border-slate-800">
                   <p className="text-sm font-medium text-white">User Menu</p>
                 </div>
+
+                <Link
+                  to="/auth/signup"
+                  onClick={() => setShowUserDropdown(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors"
+                >
+                  <SignUp className="w-4 h-4 text-emerald-400" />
+                  <span>{t('signup')}</span>
+                </Link>
+
+                <Link
+                  to="/auth/login"
+                  onClick={() => setShowUserDropdown(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors"
+                >
+                  <LogIn className="w-4 h-4 text-emerald-400" />
+                  <span>{t('login')}</span>
+                </Link>
 
                 <Link
                   to="/settings"

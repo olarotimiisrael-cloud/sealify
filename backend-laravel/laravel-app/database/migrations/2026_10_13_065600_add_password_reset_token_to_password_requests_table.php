@@ -20,4 +20,4 @@ return new class extends Migration
             $table->dropColumn(['reset_token', 'reset_expires_at']);
         });
     }
-}
+};

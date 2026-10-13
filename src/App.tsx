@@ -31,9 +31,7 @@ const BuyerRequests = lazy(() => import("./pages/BuyerRequests"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const CommunityBoard = lazy(() => import("./pages/CommunityBoard"));
 const VendorsPage = lazy(() => import("./pages/VendorsPage"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const Verify = lazy(() => import("./pages/Verify"));
-const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const Auth = lazy(() => import("./pages/Auth"));
 const ProfileComplete = lazy(() => import("./pages/ProfileComplete"));
 
 const routeFallback = (
@@ -76,6 +74,8 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify" element={<Verify />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/login" element={<Auth />} />
+          <Route path="/auth/signup" element={<Auth />} />
           <Route path="/profile-complete" element={<ProfileComplete />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

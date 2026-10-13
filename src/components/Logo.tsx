@@ -55,46 +55,66 @@ const Logo: React.FC<LogoProps> = ({
           xmlns="http://www.w3.org/2000/svg"
           className="w-full h-full drop-shadow-lg"
         >
-          {/* Shopping Bag Body */}
-          <path 
-            d="M20 30C20 27.2386 22.2386 25 25 25H75C77.7614 25 80 27.2386 80 30V85C80 90.5228 75.5228 95 70 95H30C24.4772 95 20 90.5228 20 85V30Z" 
-            fill="#1e3a8a" 
+          {/* Falcon Body - streamlined shape */}
+          <ellipse 
+            cx="50" 
+            cy="55" 
+            rx="22" 
+            ry="28" 
+            fill="#10b981" 
           />
           
-          {/* Left Side Highlight (Teal) */}
-          <path 
-            d="M20 30C20 27.2386 22.2386 25 25 25H30V95H25C22.2386 95 20 92.7614 20 90V30Z" 
+          {/* Falcon Head */}
+          <circle 
+            cx="50" 
+            cy="30" 
+            r="14" 
             fill="#0d9488" 
           />
-
-          {/* Bag Handles */}
-          <path 
-            d="M35 25C35 16.7157 41.7157 10 50 10C58.2843 10 65 16.7157 65 25" 
-            stroke="#0d9488" 
-            strokeWidth="4" 
-            strokeLinecap="round" 
-          />
-          <circle cx="35" cy="25" r="3" fill="white" />
-          <circle cx="65" cy="25" r="3" fill="white" />
-
-          {/* Stylized 'S' with Arrow */}
-          <path 
-            d="M32 75C45 75 55 65 65 60M65 35C45 35 35 45 35 55" 
-            stroke="white" 
-            strokeWidth="10" 
-            strokeLinecap="round" 
-          />
           
-          {/* Golden Arrow Part of 'S' */}
+          {/* Falcon Beak - sharp and prominent */}
           <path 
-            d="M35 75L62 55L58 48L35 75Z" 
+            d="M50 22L62 16L50 30L38 16L50 22Z" 
             fill="#fbbf24" 
           />
+          
+          {/* Falcon Eye - sharp and focused */}
+          <circle 
+            cx="55" 
+            cy="28" 
+            r="3" 
+            fill="white" 
+          />
+          <circle 
+            cx="56" 
+            cy="28" 
+            r="1.5" 
+            fill="#000" 
+          />
+          
+          {/* Falcon Wing - left side */}
           <path 
-            d="M62 55L50 58" 
-            stroke="#fbbf24" 
-            strokeWidth="4" 
-            strokeLinecap="round" 
+            d="M28 50C28 40 35 35 45 35C40 45 38 55 35 65C30 60 28 55 28 50Z" 
+            fill="#047857" 
+          />
+          
+          {/* Falcon Wing - right side */}
+          <path 
+            d="M72 50C72 40 65 35 55 35C60 45 62 55 65 65C70 60 72 55 72 50Z" 
+            fill="#065f46" 
+          />
+          
+          {/* Falcon Tail - pointed downward */}
+          <path 
+            d="M50 83L42 95H58L50 83Z" 
+            fill="#065f46" 
+          />
+          
+          {/* Falcon Chest - highlight */}
+          <path 
+            d="M40 55C40 50 45 48 50 48C55 48 60 50 60 55C60 60 55 62 50 62C45 62 40 60 40 55Z" 
+            fill="#a7f3d0" 
+            opacity="0.6"
           />
         </svg>
         )}

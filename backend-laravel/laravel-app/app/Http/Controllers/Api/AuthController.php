@@ -91,7 +91,7 @@ class AuthController extends Controller
             'whatsapp_notifications' => 'sometimes|boolean',
             'hide_phone_publicly' => 'sometimes|boolean',
             'hide_location_publicly' => 'sometimes|boolean',
-        ];
+        ]);
 
         if (isset($data['full_name'])) {
             $data['name'] = $data['full_name'];

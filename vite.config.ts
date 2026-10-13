@@ -3,8 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import fs from "node:fs";
 import path from "path";
 
-import dyadComponentTagger from '@dyad-sh/react-vite-component-tagger';
-
 /**
  * Client-public build defaults, committed at config/public-build-env.json.
  *
@@ -46,7 +44,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [dyadComponentTagger(), react()],
+    plugins: [react()],
     resolve: {
       alias: {
         "@": path.resolve(import.meta.dirname, "./src"),

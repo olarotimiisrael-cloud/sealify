@@ -264,7 +264,7 @@ class OtpController extends Controller
                     <body style=\"font-family: Arial, sans-serif; background: #f4f4f5; padding: 20px; color: #1e293b;\">
                         <div style=\"max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px;\">
                             <h2 style=\"color: #059669;\">Sealify Email Verification</h2>
-                            <p>Hello {$user->full_name ?? 'Sealify User'},</p>
+                             <p>Hello ' . ($user->full_name ?? 'Sealify User') . ',</p>
                             <p>Your one-time password (OTP) to verify your Sealify account is:</p>
                             <div style=\"text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #059669; padding: 20px; background: #ecfdf5; border-radius: 8px;\">{$otp}</div>
                             <p>This code expires in 10 minutes. If you did not request this code, please ignore this email.</p>
