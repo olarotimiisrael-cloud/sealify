@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { SealifyProvider } from "./context/SealifyContext";
 import { SiteMetadataProvider } from "./context/SiteMetadataContext";
+import { LanguageProvider } from "./context/LanguageContext";
 import SplashScreen from "./components/SplashScreen";
 import ToasterWrapper from "./components/ToasterWrapper";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -42,13 +43,14 @@ const routeFallback = (
 
 const App = () => (
   <ErrorBoundary>
-    <SealifyProvider>
-      <SiteMetadataProvider>
-      <SplashScreen />
-      <ToasterWrapper />
-      <FloatingCopilotWrapper />
-      <Suspense fallback={routeFallback}>
-        <Routes>
+    <LanguageProvider>
+      <SealifyProvider>
+        <SiteMetadataProvider>
+        <SplashScreen />
+        <ToasterWrapper />
+        <FloatingCopilotWrapper />
+        <Suspense fallback={routeFallback}>
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/listing/:id" element={<ListingDetail />} />
           <Route path="/seller/:id" element={<SellerProfile />} />
@@ -78,11 +80,11 @@ const App = () => (
           <Route path="/auth/signup" element={<Auth />} />
           <Route path="/profile-complete" element={<ProfileComplete />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
+</Routes>
       </Suspense>
-      </SiteMetadataProvider>
     </SealifyProvider>
-  </ErrorBoundary>
+  </LanguageProvider>
+</ErrorBoundary>
 );
 
 export default App;

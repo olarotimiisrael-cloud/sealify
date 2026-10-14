@@ -20,11 +20,11 @@ class UserSafetyService
     const THRESHOLD_CRITICAL = 12;
 
     /**
-     * Analyze a user's report frequency and calculate risk level
+     * Analyze a user's report frequency and calculate risk level (Phase 1: Marketplace Analytics)
      */
     public function analyzeUserRisk($userId)
     {
-        $cacheKey = "user_safety_risk_{$userId}";
+        $cacheKey = "marketplace_safety_risk_{$userId}";
         
         // Check cache first (refresh every 15 minutes)
         $cached = Cache::get($cacheKey);
@@ -32,7 +32,7 @@ class UserSafetyService
             return $cached;
         }
 
-        // Calculate report counts
+        // Calculate report counts (for content moderation & marketplace fraud detection)
         $reportsLast7Days = Report::where('reporter_id', $userId)
             ->where('created_at', '>=', now()->subDays(7))
             ->count();
@@ -41,19 +41,16 @@ class UserSafetyService
             ->where('created_at', '>=', now()->subDays(30))
             ->count();
 
-        // Calculate risk score
-        $riskScore = $this->calculateRiskScore($reportsLast7Days, $reportsLast30Days);
+        // Calculate risk score with enhanced weights for marketplace fraud
+        $riskScore = $this->calculateMarketRiskScore($reportsLast7Days, $reportsLast30Days);
         
-        // Determine risk level
-        $riskLevel = $this->determineRiskLevel($riskScore, $reportsLast30Days);
+        // Determine risk level for marketplace operations
+        $riskLevel = $this->determineMarketRiskLevel($riskScore, $reportsLast30Days);
         
-        // Collect report reasons for analysis
-        $reportReasons = Report::where('reporter_id', $userId)
-            ->where('created_at', '>=', now()->subDays(30))
-            ->pluck('reason')
-            ->toArray();
+        // Collect detailed report reasons for market analytics
+        $reportDetails = $this->collectMarketRiskDetails($userId);
 
-        // Update or create safety analysis record
+        // Update or create market analysis record (reusing SafetyReportAnalysis table)
         $analysis = SafetyReportAnalysis::updateOrCreate(
             ['user_id' => $userId],
             [
@@ -61,30 +58,246 @@ class UserSafetyService
                 'report_count_30d' => $reportsLast30Days,
                 'risk_score' => $riskScore,
                 'risk_level' => $riskLevel,
-                'report_reasons' => json_encode(array_count_values($reportReasons)),
+                'report_reasons' => json_encode($reportDetails['reasons']),
                 'last_assessed_at' => now(),
             ]
         );
 
-        // Cache the result
+        // Enhanced caching for market analytics
         $result = [
             'user_id' => $userId,
             'report_count_7d' => $reportsLast7Days,
             'report_count_30d' => $reportsLast30Days,
             'risk_score' => $riskScore,
             'risk_level' => $riskLevel,
-            'report_reasons' => array_count_values($reportReasons),
+            'risk_category' => $reportDetails['category'],
+            'report_reasons' => $reportDetails['reasons'],
+            'marketplace_insights' => $this->generateMarketplaceInsights($userId, $reportDetails),
             'analyzed_at' => now()->toIso8601String(),
         ];
 
         Cache::put($cacheKey, $result, now()->addMinutes(15));
 
-        // Trigger safety alerts if thresholds are crossed
-        $this->triggerSafetyAlerts($userId, $riskLevel);
+        // Trigger enhanced marketplace alerts
+        $this->triggerMarketAlerts($userId, $riskLevel, $reportDetails);
 
-        Log::info("Safety analysis for user {$userId}: Risk level = {$riskLevel}, score = {$riskScore}");
+        Log::info("Marketplace safety analysis for user {$userId}: Risk level = {$riskLevel}, score = {$riskScore}");
 
         return $result;
+    }
+
+    /**
+     * Enhanced risk scoring for marketplace fraud detection
+     */
+    private function calculateMarketRiskScore($reportsLast7Days, $reportsLast30Days)
+    {
+        $score = 0;
+        
+        // Heavy weight for marketplace fraud patterns
+        $score += $reportsLast7Days * 5;  // Higher weight for recent marketplace fraud
+        
+        // Medium weight for historical marketplace issues
+        $score += ($reportsLast30Days - $reportsLast7Days) * 2;
+        
+        // Additional risk factors for marketplace operations
+        if ($reportsLast7Days >= 3) {
+            $score += 20; // Multiple reports in short timeframe
+        }
+        
+        // Cap the score at 100
+        return min($score, 100);
+    }
+
+    /**
+     * Enhanced risk levels for marketplace operations
+     */
+    private function determineMarketRiskLevel($riskScore, $reportsLast30Days)
+    {
+        if ($riskScore >= self::THRESHOLD_CRITICAL) {
+            return 'blocked';
+        }
+        if ($riskScore >= self::THRESHOLD_HIGH) {
+            return 'suspended';
+        }
+        if ($riskScore >= self::THRESHOLD_MEDIUM) {
+            return 'caution';
+        }
+        return 'verified';
+    }
+
+    /**
+     * Collect detailed marketplace risk information for analytics
+     */
+    private function collectMarketRiskDetails($userId)
+    {
+        $reports = Report::where('reporter_id', $userId)
+            ->where('created_at', '>=', now()->subDays(30))
+            ->get();
+            
+        $reasons = [];
+        $categories = [];
+        $patternAnalysis = [];
+        
+        foreach ($reports as $report) {
+            $category = $this->categorizeMarketReport($report->reason);
+            $categories[] = $category;
+            $reasons[$category] = ($reasons[$category] ?? 0) + 1;
+        }
+        
+        // Analyze patterns for fraud detection
+        $patternAnalysis = $this->analyzeMarketRiskPatterns($userId, $reports);
+        
+        return [
+            'reasons' => $reasons,
+            'categories' => array_count_values($categories),
+            'pattern_analysis' => $patternAnalysis,
+            'category' => $this->determinePrimaryRiskCategory($reasons),
+        ];
+    }
+
+    /**
+     * Categorize reports for marketplace content moderation
+     */
+    private function categorizeMarketReport($reason)
+    {
+        $reason = strtolower($reason);
+        
+        if (str_contains($reason, 'fraud') || str_contains($reason, 'scam')) {
+            return 'fraud';
+        }
+        if (str_contains($reason, 'spam') || str_contains($reason, 'fake')) {
+            return 'spam';
+        }
+        if (str_contains($reason, 'inappropriate') || str_contains($reason, 'illegal')) {
+            return 'inappropriate_content';
+        }
+        if (str_contains($reason, 'price') || str_contains($reason, 'price violation')) {
+            return 'pricing_fraud';
+        }
+        if (str_contains($reason, 'identity') || str_contains($reason, 'identity_theft')) {
+            return 'identity_theft';
+        }
+        
+        return 'other';
+    }
+
+    /**
+     * Analyze marketplace risk patterns using ML-like heuristics
+     */
+    private function analyzeMarketRiskPatterns($userId, $reports)
+    {
+        $patterns = [];
+        
+        // Temporal patterns
+        $reportsByHour = [];
+        foreach ($reports as $report) {
+            $hour = now()->parse($report->created_at)->hour;
+            $reportsByHour[$hour] = ($reportsByHour[$hour] ?? 0) + 1;
+        }
+        
+        $patterns['temporal_analysis'] = [
+            'reports_per_hour' => $reportsByHour,
+            'peak_activity_hour' => $this->findPeakActivity($reportsByHour),
+            'pattern_type' => $this->identifyActivityPattern($reportsByHour),
+        ];
+        
+        // Pattern-based risk indicators
+        $patterns['risk_indicators'] = [
+            'multiple_reports_same_hour' => $this->hasMultipleReportsSameHour($reports),
+            'rapid_report_sequence' => $this->hasRapidReportSequence($reports),
+            'coordination_patterns' => $this->detectCoordinationPatterns($reports),
+        ];
+        
+        return $patterns;
+    }
+
+    /**
+     * Generate marketplace insights for business intelligence
+     */
+    private function generateMarketplaceInsights($userId, $reportDetails)
+    {
+        $insights = [
+            'risk_assessment' => $this->assessMarketplaceRisk($userId, $reportDetails),
+            'behavior_pattern' => $this->analyzeUserBehaviorPattern($userId, $reportDetails),
+            'recommended_actions' => $this->suggestMarketplaceActions($userId, $reportDetails),
+            'impact_score' => $this->calculateMarketImpactScore($reportDetails),
+        ];
+        
+        return $insights;
+    }
+
+    /**
+     * Enhanced marketplace alert system
+     */
+    private function triggerMarketAlerts($userId, $riskLevel, $reportDetails)
+    {
+        switch ($riskLevel) {
+            case 'blocked':
+                // Immediate account suspension
+                $this->executeAccountBlock($userId, 'marketplace_security_violation');
+                break;
+                
+            case 'suspended':
+                // Temporary suspension with review
+                $this->executeAccountSuspend($userId, 'marketplace_safety_concern');
+                $this->notifyMarketSecurityTeam($userId, 'suspension_required');
+                break;
+                
+            case 'caution':
+                // Warning with enhanced monitoring
+                $this->sendMarketWarning($userId, 'marketplace_cautionary_alert');
+                $this->enableEnhancedMonitoring($userId);
+                break;
+                
+            case 'verified':
+                // Normal operations continue
+                $this->logMarketActivity('account_verified', $userId, $reportDetails);
+                break;
+        }
+    }
+
+    /**
+     * Enhanced marketplace analytics
+     */
+    public function analyzeMarketplaceAnalytics($days = 30)
+    {
+        $startDate = now()->subDays($days);
+        
+        // Aggregate marketplace risk data
+        $totalReports = Report::where('created_at', '>=', $startDate)->count();
+        $uniqueReporters = Report::where('created_at', '>=', $startDate)
+            ->where('reporter_id', '!=', null)
+            ->distinct()
+            ->count('reporter_id');
+        
+        // Categorize risk types
+        $fraudReports = Report::where('created_at', '>=', $startDate)
+            ->where('reason', 'like', '%fraud%')
+            ->orWhere('reason', 'like', '%scam%')
+            ->count();
+            
+        $spamReports = Report::where('created_at', '>=', $startDate)
+            ->where('reason', 'like', '%spam%')
+            ->orWhere('reason', 'like', '%fake%')
+            ->count();
+        
+        // Risk trends analysis
+        $dailyReports = Report::where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as count')
+            ->groupBy('date')
+            ->orderBy('date')
+            ->pluck('count', 'date');
+        
+        return [
+            'total_reports' => $totalReports,
+            'unique_reporters' => $uniqueReporters,
+            'report_rate_per_day' => $totalReports / $days,
+            'fraud_risk_level' => $this->calculateFraudRiskLevel($fraudReports, $totalReports),
+            'spam_level' => $this->calculateSpamLevel($spamReports, $totalReports),
+            'daily_trends' => $dailyReports->toArray(),
+            'peak_moderation_hours' => $this->identifyPeakModerationHours(),
+            'market_insights' => $this->generateDailyMarketInsights($dailyReports),
+        ];
     }
 
     /**
