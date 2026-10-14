@@ -140,6 +140,7 @@ class VideoCallService
         ]);
 
         // Check if room should be ended
+        $room = VideoRoom::where('id', $roomId)->firstOrFail();
         $activeParticipants = $this->getActiveParticipantCount($roomId);
         if ($activeParticipants === 0) {
             $this->endRoom($roomId);

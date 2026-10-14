@@ -264,6 +264,41 @@ class VideoController extends Controller
         ], 200);
     }
 
+    public function signal(Request $request, $roomId)
+    {
+        $user = $request->user();
+
+        $room = VideoRoom::where('id', $roomId)->firstOrFail();
+
+        $canJoin = $this->checkRoomAccess($user->id, $room);
+        if (!$canJoin['allowed']) {
+            return response()->json(['error' => 'Access denied', 'message' => $canJoin['reason']], 403);
+        }
+
+        $data = $request->validate([
+            'type' => 'required|in:offer,answer,ice-candidate',
+            'payload' => 'required|array',
+        ]);
+
+        broadcast(new \App\Events\CallSignal($roomId, $user->id, $data['type'], $data['payload']))->toOthers();
+
+        return response()->json(['status' => 'sent'], 200);
+    }
+
+    public function turnCredentials(Request $request, $roomId)
+    {
+        $user = $request->user();
+
+        $room = VideoRoom::where('id', $roomId)->firstOrFail();
+
+        $canJoin = $this->checkRoomAccess($user->id, $room);
+        if (!$canJoin['allowed']) {
+            return response()->json(['error' => 'Access denied', 'message' => $canJoin['reason']], 403);
+        }
+
+        return response()->json(app(\App\Services\TurnCredentialService::class)->credentials($user->id));
+    }
+
     /**
      * Check if users can interact
      */

@@ -103,6 +103,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/video/stop-recording/{recordingId}', [VideoController::class, 'stopRecording']);
     Route::post('/video/recordings/{recordingId}', [VideoController::class, 'getRecording']);
     Route::post('/video/user-calls', [VideoController::class, 'getUserCalls']);
+    Route::post('/video/signal/{roomId}', [VideoController::class, 'signal']);
+    Route::get('/video/turn-credentials/{roomId}', [VideoController::class, 'turnCredentials']);
 
     // Safety routes
     Route::post('/safety/check', [SafetyController::class, 'checkUserSafety']);

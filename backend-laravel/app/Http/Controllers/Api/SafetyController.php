@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ReassessUserSafety;
+use App\Models\Report;
 use App\Services\UserSafetyService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -80,9 +82,10 @@ class SafetyController extends Controller
             'ad_id' => 'nullable|exists:ads,id',
         ]);
 
-        // Create report record
-        $report = \App\Models\Report::create([
+        // Create report record (reported_id stores the account being reported)
+        $report = Report::create([
             'reporter_id' => $request->user()->id,
+            'reported_id' => $userId,
             'reason' => $request->input('reason'),
             'details' => $request->input('details'),
             'ad_id' => $request->input('ad_id'),
@@ -90,7 +93,7 @@ class SafetyController extends Controller
         ]);
 
         // Trigger safety reassessment for the reported user
-        dispatch(new \App\Jobs\ReassessUserSafety($request->user()->id, $userId, $report->reason));
+        dispatch(new ReassessUserSafety($request->user()->id, $userId, $report->reason));
 
         Log::info("User " . $request->user()->id . " reported user " . $userId . " for reason: " . $request->input('reason'));
 
@@ -130,6 +133,13 @@ class SafetyController extends Controller
         $warnings = [];
 
         switch ($safetyStatus['risk_level']) {
+            case 'medium':
+                $warnings[] = [
+                    'type' => 'notice',
+                    'title' => 'Safety Notice',
+                    'message' => 'This account has received a few reports recently. Please be cautious and never share payment details.',
+                ];
+                break;
             case 'high':
                 $warnings[] = [
                     'type' => 'warning',

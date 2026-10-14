@@ -22,7 +22,6 @@ allowBuilds:
   "@bufbuild/buf": true
   "@cdktf/node-pty-prebuilt-multiarch": true
   "@ckeditor/ckeditor5-vue": true
-  "@cloudflare/wrangler": true
   "@contrast/fn-inspect": true
   "@cubejs-backend/cubestore": true
   "@cubejs-backend/native": true

@@ -11,7 +11,8 @@ return [
     // OpenAI Configuration
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
-        'model' => 'gpt-4',
+        'base_url' => env('OPENAI_BASE_URL', 'https://api.openai.com/v1'),
+        'model' => 'gpt-4o-mini',
         'temperature' => 0.3,
     ],
 
@@ -72,6 +73,13 @@ return [
         'secret_key' => env('FLUTTERWAVE_SECRET_KEY', 'FLWSECRET_'),
         'base_url' => 'https://api.flutterwave.com/v3',
         'payment_link' => env('FLUTTERWAVE_PAYMENT_LINK', 'https://flutterwave.com/pay/8eqijxd7cmv1'),
+    ],
+
+    // TURN/STUN Configuration for WebRTC calls
+    'turn' => [
+        'secret' => env('TURN_SECRET'),
+        'ttl' => (int) env('TURN_TTL', 3600),
+        'urls' => array_values(array_filter(array_map('trim', explode(',', (string) env('TURN_URLS', 'stun:stun.l.google.com:19302')))),
     ],
 
 ];

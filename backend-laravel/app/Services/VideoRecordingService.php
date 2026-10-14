@@ -2,53 +2,50 @@
 
 namespace App\Services;
 
-use App\Models\VideoRoom;
 use App\Models\VideoRecording;
-use App\Models\User;
+use App\Models\VideoRoom;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class VideoRecordingService
 {
     protected $ffmpegPath;
     protected $recordingStoragePath;
+    protected $summarizer;
 
-    public function __construct()
+    public function __construct(RecordingSummarizer $summarizer)
     {
         $this->ffmpegPath = config('services.ffmpeg.path', '/usr/bin/ffmpeg');
-        $this->recordingStoragePath = config('filesystems.default') === 's3' 
-            ? 's3://video-recordings' 
+        $this->recordingStoragePath = config('services.filesystems.default') === 's3'
+            ? 's3://video-recordings'
             : storage_path('app/video-recordings');
+        $this->summarizer = $summarizer;
     }
 
-    /**
-     * Start recording a video session
-     */
     public function startSessionRecording($roomId, $adId = null, $initiatorId = null)
     {
         $room = VideoRoom::where('id', $roomId)->firstOrFail();
-        
-        // Check if room is active
-        if ($room->status !== 'active' && $room->status !== 'waiting') {
-            throw new \Exception('Cannot record an inactive room.');
+
+        if (! in_array($room->status, ['active', 'waiting', 'recording'], true)) {
+            throw new \RuntimeException('Cannot record an inactive room.');
         }
 
         $recordingPath = $this->generateRecordingPath($roomId);
-        
+
         $recording = VideoRecording::create([
             'id' => Str::uuid(),
             'room_id' => $roomId,
             'ad_id' => $adId,
             'initiator_id' => $initiatorId,
             'status' => 'recording',
+            'processing_status' => 'pending',
             'quality' => '1080p30fps',
             'recording_path' => $recordingPath,
             'started_at' => now(),
         ]);
 
-        // Update room to mark recording started
         $room->update(['status' => 'recording']);
 
         Log::info("Video recording started for room: {$roomId}");
@@ -56,28 +53,21 @@ class VideoRecordingService
         return $recording;
     }
 
-    /**
-     * Stop recording and process the video
-     */
     public function stopSessionRecording($recordingId)
     {
         $recording = VideoRecording::where('id', $recordingId)->firstOrFail();
-        
-        // Update recording status
+
         $recording->update([
             'status' => 'processing',
             'ended_at' => now(),
-            'duration_seconds' => $this->calculateDuration(
-                $recording->started_at, 
-                now()
-            ),
+            'duration_seconds' => $this->calculateDuration($recording->started_at, now()),
         ]);
 
-        // Generate thumbnail
         $thumbnailPath = $this->generateThumbnail($recording->recording_path);
-        $recording->update(['thumbnail_path' => $thumbnailPath]);
+        if ($thumbnailPath) {
+            $recording->update(['thumbnail_path' => $thumbnailPath]);
+        }
 
-        // Trigger AI processing asynchronously
         dispatch(new \App\Jobs\ProcessVideoRecording($recording->id));
 
         Log::info("Video recording stopped and processing started: {$recordingId}");
@@ -85,24 +75,20 @@ class VideoRecordingService
         return $recording;
     }
 
-    /**
-     * Process video with AI and generate summary
-     */
     public function processVideoWithAI($recordingId)
     {
         $recording = VideoRecording::with('room')->findOrFail($recordingId);
-        
-        if ($recording->processing_status !== 'pending' && $recording->processing_status !== 'processing') {
+
+        if (! in_array($recording->processing_status, ['pending', 'processing'], true)) {
             return $recording;
         }
 
+        $recording->update(['processing_status' => 'processing']);
+
         try {
-            // Get transcription (would integrate with Whisper API or similar)
             $transcript = $this->getTranscript($recording->recording_path);
-            
-            // Generate AI summary
-            $summaryData = $this->generateAISummary($transcript);
-            
+            $summaryData = $this->summarizer->summarize($transcript);
+
             $recording->update([
                 'ai_summary' => $summaryData['summary'],
                 'key_points' => $summaryData['key_points'],
@@ -113,214 +99,126 @@ class VideoRecordingService
             ]);
 
             Log::info("Video recording processed successfully: {$recordingId}");
-            
-        } catch (\Exception $e) {
-            Log::error("Failed to process video recording: {$recordingId}", [
-                'error' => $e->getMessage()
-            ]);
-            
+        } catch (\Throwable $e) {
+            Log::error("Failed to process video recording: {$recordingId}", ['error' => $e->getMessage()]);
+
             $recording->update([
                 'processing_status' => 'failed',
                 'status' => 'failed',
             ]);
-            
+
             throw $e;
         }
 
         return $recording;
     }
 
-    /**
-     * Get transcript from video file
-     */
-    private function getTranscript($videoPath)
+    protected function getTranscript($recordingPath)
     {
-        // In production, integrate with OpenAI Whisper or Google Speech-to-Text
-        // This is a placeholder implementation
-        
+        $disk = config('filesystems.default', 'local');
+        $path = (string) $recordingPath;
+
         try {
-            // Check if file exists
-            if (Str::startsWith($videoPath, 's3://')) {
-                // For S3, use AWS SDK to download temporary file
-                $tempFile = Storage::disk('local')->path('temp/temp_video.mp4');
-                Storage::disk('s3')->getDriver()->getAggregator()->retrieveObject(
-                    str_replace('s3://', '', $videoPath),
-                    $tempFile
-                );
-            } else {
-                $tempFile = $videoPath;
+            if (Str::startsWith($path, 's3://')) {
+                $path = ltrim(Str::after($path, 's3://'), '/');
+                $disk = 's3';
             }
-            
-            // Call Whisper API
-            $transcript = $this->callWhisperAPI($tempFile);
-            
-            return $transcript;
-            
-        } catch (\Exception $e) {
-            Log::warning("Could not get transcript, using placeholder");
-            
-            // Return placeholder for testing
-            return "Session summary placeholder - actual transcription would be generated here.";
-        }
-    }
 
-    /**
-     * Generate AI summary from transcript
-     */
-    private function generateAISummary($transcript)
-    {
-        $openaiClient = \OpenAI::client(config('services.openai.api_key'));
-        
-        $response = $openaiClient->chat()->create([
-            'model' => 'gpt-4',
-            'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => 'You are a professional meeting assistant. Analyze the conversation and extract:
-                    1. Main topics discussed
-                    2. Key decisions made  
-                    3. Action items and responsibilities
-                    4. Overall sentiment (positive, neutral, negative)
-                    5. Any important dates or deadlines mentioned'
-                ],
-                [
-                    'role' => 'user',
-                    'content' => "Conversation transcript:\n\n{$transcript}"
-                ]
-            ],
-            'temperature' => 0.3,
-            'max_tokens' => 500,
-        ]);
-
-        $summaryText = $response->choices[0]->message->content;
-        
-        // Parse the response
-        return [
-            'summary' => $this->extractBetween($summaryText, '1.', '2.'),
-            'key_points' => json_encode([
-                'main_topics' => $this->extractBetween($summaryText, '2.', '3.'),
-                'decisions' => $this->extractBetween($summaryText, '3.', '4.'),
-            ]),
-            'action_items' => json_encode([
-                'items' => $this->extractActionItems($summaryText),
-            ]),
-            'sentiment' => $this->extractSentiment($summaryText),
-        ];
-    }
-
-    /**
-     * Extract text between numbered sections
-     */
-    private function extractBetween($text, $start, $end)
-    {
-        $pattern = "/" . preg_quote($start, '/') . "\s*(.*?)\s*" . preg_quote($end, '/') . "/s";
-        if (preg_match($pattern, $text, $matches)) {
-            return trim($matches[1]);
-        }
-        return '';
-    }
-
-    /**
-     * Extract action items from summary
-     */
-    private function extractActionItems($text)
-    {
-        $items = [];
-        $lines = explode("\n", $text);
-        
-        foreach ($lines as $line) {
-            if (preg_match('/action\s*(item|steps?)/i', $line)) {
-                $items[] = trim($line);
+            if (Storage::disk($disk)->exists($path)) {
+                $contents = Storage::disk($disk)->get($path);
+                if (is_string($contents) && trim($contents) !== '') {
+                    return $contents;
+                }
             }
+        } catch (\Throwable $e) {
+            Log::warning('Could not read recording transcript: ' . $e->getMessage());
         }
-        
-        return $items;
+
+        return 'Session recording transcript placeholder - connect a speech-to-text provider to generate transcripts automatically.';
     }
 
-    /**
-     * Determine sentiment from text
-     */
-    private function extractSentiment($text)
-    {
-        $positiveWords = ['positive', 'agree', 'confirm', 'accept', 'deal', 'great', 'excellent'];
-        $negativeWords = ['negative', 'disagree', 'disapprove', 'concern', 'problem', 'issue', 'difficult'];
-        
-        $textLower = strtolower($text);
-        $positiveCount = 0;
-        $negativeCount = 0;
-        
-        foreach ($positiveWords as $word) {
-            $positiveCount += substr_count($textLower, $word);
-        }
-        
-        foreach ($negativeWords as $word) {
-            $negativeCount += substr_count($textLower, $word);
-        }
-        
-        if ($positiveCount > $negativeCount) {
-            return 'positive';
-        } elseif ($negativeCount > $positiveCount) {
-            return 'negative';
-        }
-        return 'neutral';
-    }
-
-    /**
-     * Generate recording storage path
-     */
-    private function generateRecordingPath($roomId)
+    protected function generateRecordingPath($roomId)
     {
         $timestamp = Carbon::now()->format('Ymd_His');
+
         return "recordings/{$roomId}/{$timestamp}.mp4";
     }
 
-    /**
-     * Generate thumbnail from video
-     */
-    private function generateThumbnail($videoPath)
+    protected function generateThumbnail($recordingPath)
     {
         try {
-            $tempThumbPath = storage_path('app/temp/thumb.jpg');
+            if (! is_file((string) $recordingPath) && ! Str::startsWith((string) $recordingPath, 's3://')) {
+                return $this->generateLocalThumbnailFromStorage((string) $recordingPath);
+            }
+
+            $tempThumbPath = storage_path('app/temp/thumb_' . Str::random(8) . '.jpg');
+            if (! is_dir(dirname($tempThumbPath))) {
+                mkdir(dirname($tempThumbPath), 0775, true);
+            }
+
             $commands = [
-                '-i', $videoPath,
+                '-i', escapeshellarg((string) $recordingPath),
                 '-ss', '00:00:01',
                 '-vframes', '1',
                 '-q:v', '2',
-                $tempThumbPath
+                escapeshellarg($tempThumbPath),
             ];
-            
-            $cmd = $this->ffmpegPath . ' ' . implode(' ', $commands);
+
+            $cmd = escapeshellcmd($this->ffmpegPath) . ' ' . implode(' ', $commands);
             exec($cmd, $output, $returnCode);
-            
-            if ($returnCode === 0) {
-                $storagePath = "thumbnails/{$videoPath}.jpg";
+
+            if ($returnCode === 0 && is_file($tempThumbPath)) {
+                $storagePath = 'thumbnails/' . basename($tempThumbPath);
                 Storage::disk('local')->put($storagePath, file_get_contents($tempThumbPath));
-                unlink($tempThumbPath);
-                
+                @unlink($tempThumbPath);
+
                 return $storagePath;
             }
-        } catch (\Exception $e) {
-            Log::warning("Could not generate thumbnail");
+        } catch (\Throwable $e) {
+            Log::warning('Could not generate thumbnail: ' . $e->getMessage());
         }
-        
+
         return null;
     }
 
-    /**
-     * Calculate duration in seconds
-     */
-    private function calculateDuration($start, $end)
+    protected function generateLocalThumbnailFromStorage($relativePath)
     {
-        return $end->diffInSeconds($start);
+        try {
+            $disk = config('filesystems.default', 'local');
+            if (! Storage::disk($disk)->exists($relativePath)) {
+                return null;
+            }
+
+            $localPath = Storage::disk($disk)->path($relativePath);
+            $tempThumbPath = storage_path('app/temp/thumb_' . Str::random(8) . '.jpg');
+            if (! is_dir(dirname($tempThumbPath))) {
+                mkdir(dirname($tempThumbPath), 0775, true);
+            }
+
+            $cmd = escapeshellcmd($this->ffmpegPath) . ' -i ' . escapeshellarg($localPath)
+                . ' -ss 00:00:01 -vframes 1 -q:v 2 ' . escapeshellarg($tempThumbPath);
+            exec($cmd, $output, $returnCode);
+
+            if ($returnCode === 0 && is_file($tempThumbPath)) {
+                $storagePath = 'thumbnails/' . basename($tempThumbPath);
+                Storage::disk('local')->put($storagePath, file_get_contents($tempThumbPath));
+                @unlink($tempThumbPath);
+
+                return $storagePath;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Could not generate thumbnail from storage: ' . $e->getMessage());
+        }
+
+        return null;
     }
 
-    /**
-     * Call Whisper API for transcription (simplified)
-     */
-    private function callWhisperAPI($file)
+    protected function calculateDuration($start, $end)
     {
-        // In production, use OpenAI Whisper API
-        // This is a placeholder
-        return "Transcription placeholder";
+        if (! $start) {
+            return 0;
+        }
+
+        return (int) Carbon::parse($end)->diffInSeconds(Carbon::parse($start));
     }
 }
