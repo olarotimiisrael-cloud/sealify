@@ -44,4 +44,29 @@ class User extends Authenticatable
     {
         return $this->hasMany(Listing::class, 'seller_id');
     }
+
+    public function interests()
+    {
+        return $this->hasMany(UserInterest::class, 'user_id');
+    }
+
+    public function skills()
+    {
+        return $this->hasMany(UserSkill::class, 'user_id');
+    }
+
+    public function stories()
+    {
+        return $this->hasMany(ProfileStory::class, 'user_id');
+    }
+
+    public function safetyAnalyses()
+    {
+        return $this->hasMany(SafetyReportAnalysis::class, 'user_id');
+    }
+
+    public function hasRole($role)
+    {
+        return ($this->role ?? 'buyer') === $role;
+    }
 }

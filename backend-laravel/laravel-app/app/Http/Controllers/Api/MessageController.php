@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Message;
+use App\Events\MessageSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -74,6 +75,8 @@ class MessageController extends Controller
 
             return $message;
         });
+
+        broadcast(new MessageSent($message->fresh()))->toOthers();
 
         return response()->json($message, 201);
     }

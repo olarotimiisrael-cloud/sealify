@@ -28,6 +28,9 @@ use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SiteMetadataController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VideoController;
+use App\Http\Controllers\Api\SafetyController;
+use App\Http\Controllers\Api\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -201,4 +204,31 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/admin/buyer-requests/{id}', [BuyerRequestsAdminController::class, 'update']);
     Route::delete('/admin/buyer-requests/{id}', [BuyerRequestsAdminController::class, 'delete']);
     Route::post('/admin/buyer-requests/bulk', [BuyerRequestsAdminController::class, 'bulk']);
+
+    // Video calls & recordings
+    Route::post('/video/initiate', [VideoController::class, 'initiateCall']);
+    Route::post('/video/join/{roomId}', [VideoController::class, 'joinCall']);
+    Route::post('/video/leave/{roomId}', [VideoController::class, 'leaveCall']);
+    Route::post('/video/end/{roomId}', [VideoController::class, 'endCall']);
+    Route::post('/video/start-recording/{roomId}', [VideoController::class, 'startRecording']);
+    Route::post('/video/stop-recording/{recordingId}', [VideoController::class, 'stopRecording']);
+    Route::get('/video/recordings/{recordingId}', [VideoController::class, 'getRecording']);
+    Route::post('/video/user-calls', [VideoController::class, 'getUserCalls']);
+    Route::post('/video/signal/{roomId}', [VideoController::class, 'signal']);
+    Route::get('/video/turn-credentials/{roomId}', [VideoController::class, 'turnCredentials']);
+
+    // User safety
+    Route::post('/safety/check', [SafetyController::class, 'checkUserSafety']);
+    Route::post('/safety/conversation/{participantId}', [SafetyController::class, 'checkConversationSafety']);
+    Route::post('/safety/conversation-info/{participantId}', [SafetyController::class, 'getConversationSafety']);
+    Route::post('/safety/safety-center', [SafetyController::class, 'getSafetyCenter']);
+    Route::post('/safety/report/{userId}', [SafetyController::class, 'reportUser']);
+
+    // Profiles & social
+    Route::post('/profile/interests', [ProfileController::class, 'updateInterests']);
+    Route::post('/profile/skills', [ProfileController::class, 'updateSkills']);
+    Route::get('/profile/{userId}/stories', [ProfileController::class, 'getStories']);
+    Route::get('/profile/{userId}', [ProfileController::class, 'getProfile']);
+    Route::post('/profile/stories', [ProfileController::class, 'createStory']);
+    Route::post('/profile/stories/{storyId}/react', [ProfileController::class, 'reactToStory']);
 });
