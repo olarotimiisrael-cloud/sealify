@@ -1,7 +1,0 @@
-# Cloudflare Pages SPA fallback for the React Router app.
-# _routes.json already handles deep-link routing for the app shell, so we must
-# avoid a catch-all redirect that loops back into itself.
-# Keep only the explicit asset rule and the non-HTML exclusion, which Cloudflare
-# accepts without the infinite-loop warning.
-/assets/*  /assets/:splat  200
-!/*.html   /*              200

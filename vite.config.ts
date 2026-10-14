@@ -54,7 +54,12 @@ export default defineConfig(({ mode }) => {
       Object.entries(resolved).map(([key, value]) => [`import.meta.env.${key}`, JSON.stringify(value)])
     ),
     build: {
-      outDir: "dist",
+      // Build straight into the Laravel app's public directory so the whole
+      // product ships as a single Laravel application (PHP + built SPA).
+      // emptyOutDir is disabled on purpose: Laravel's index.php and .htaccess
+      // live in that directory and must survive every build.
+      outDir: "backend-laravel/laravel-app/public",
+      emptyOutDir: false,
     },
     server: {
       hmr: {
@@ -62,7 +67,7 @@ export default defineConfig(({ mode }) => {
       },
       proxy: {
         "/api": {
-          target: "http://localhost:8788",
+          target: "http://localhost:8000",
           changeOrigin: true,
         },
       },
@@ -71,7 +76,7 @@ export default defineConfig(({ mode }) => {
       port: 4173,
       proxy: {
         "/api": {
-          target: "http://localhost:8788",
+          target: "http://localhost:8000",
           changeOrigin: true,
         },
       },
