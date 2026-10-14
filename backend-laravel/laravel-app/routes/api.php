@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\MarketInsightsController;
 use App\Http\Controllers\Api\McpController;
 use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\MobileController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OtpController;
 use App\Http\Controllers\Api\PaymentController;
@@ -266,5 +267,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/market-comparison', [ProfessionalToolsController::class, 'getMarketplaceComparison']);
         Route::get('/sales-forecast/{sellerId}', [ProfessionalToolsController::class, 'generateSalesForecast']);
         Route::get('/customer-insights/{sellerId}', [ProfessionalToolsController::class, 'getCustomerInsights']);
+    });
+
+    // Phase 4: Enhanced Mobile Experience Routes
+    Route::prefix('mobile')->group(function () {
+        Route::get('/home', [MobileController::class, 'home']);
+        Route::get('/config', [MobileController::class, 'config']);
+        Route::get('/listing/{id}', [MobileController::class, 'listing']);
+        Route::get('/feed', [MobileController::class, 'feed']);
+        Route::get('/notifications', [MobileController::class, 'notifications']);
+        Route::post('/notifications/mark-read', [MobileController::class, 'markNotificationsRead']);
+        Route::get('/search', [MobileController::class, 'search']);
+        Route::post('/push-notification', [MobileController::class, 'pushNotification']);
+        Route::post('/offline-sync', [MobileController::class, 'syncOffline']);
+        Route::post('/session', [MobileController::class, 'recordSession']);
     });
 });

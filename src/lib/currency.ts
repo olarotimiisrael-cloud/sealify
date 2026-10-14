@@ -1,3 +1,5 @@
+import { SupportedLanguage } from '@/translations/languages';
+
 export type CurrencyCode = 'NGN' | 'USDT' | 'BTC' | 'ETH' | string;
 
 export interface CurrencyMeta {
@@ -236,4 +238,127 @@ export function formatCurrencyForGateway(
   return `${symbol}${formatted}`;
 }
 
+// Localized currency names by language
+export const LOCALIZED_CURRENCY_NAMES: Record<string, Record<CurrencyCode, string>> = {
+  en: {
+    NGN: 'Nigerian Naira',
+    USDT: 'Tether USD',
+    BTC: 'Bitcoin',
+    ETH: 'Ethereum',
+  },
+  yo: {
+    NGN: 'Naira Orílẹ̀-èdè',
+    USDT: 'Tether USD',
+    BTC: 'Bitcoin',
+    ETH: 'Ethereum',
+  },
+  ha: {
+    NGN: 'Naira Naijiria',
+    USDT: 'Tether USD',
+    BTC: 'Bitcoin',
+    ETH: 'Ethereum',
+  },
+  ig: {
+    NGN: 'Naira Naijiria',
+    USDT: 'Tether USD',
+    BTC: 'Bitcoin',
+    ETH: 'Ethereum',
+  },
+  zh: {
+    NGN: '尼日利亚奈拉',
+    USDT: '泰达币',
+    BTC: '比特币',
+    ETH: '以太币',
+  },
+};
+
+// Localized gateway type labels
+export const LOCALIZED_GATEWAY_TYPES: Record<string, Record<string, string>> = {
+  card: {
+    en: 'Card Payment',
+    yo: 'Eti Káàdì',
+    ha: 'Bukuku na Kàdí',
+    ig: 'Ezigbo Káádì',
+    zh: '卡支付',
+  },
+  bank: {
+    en: 'Bank Transfer',
+    yo: 'Ìfowọkan Nínú Ìṣẹ́pọ̀wọ́',
+    ha: 'Kìnge Banki',
+    ig: 'Nchịkọta Bank',
+    zh: '银行转账',
+  },
+  mobile: {
+    en: 'Mobile Money',
+    yo: 'Owó Ìlaparí',
+    ha: 'Mutum Money',
+    ig: 'Ego Mobile',
+    zh: '移动支付',
+  },
+  crypto: {
+    en: 'Cryptocurrency',
+    yo: 'Ìwé-ẹrọ ẹmi',
+    ha: 'Kìrɑfiwò',
+    ig: 'Ntanụta ịnụ ọnọ',
+    zh: '加密货币',
+  },
+  ussd: {
+    en: 'USSD Transfer',
+    yo: 'Ìfowọkan USSD',
+    ha: 'Kìnge USSD',
+    ig: 'Nchịkọta USSD',
+    zh: 'USSD 转账',
+  },
+};
+
+// Get localized currency name
+export function getLocalizedCurrencyName(
+  code: CurrencyCode,
+  language: SupportedLanguage = 'en'
+): string {
+  return LOCALIZED_CURRENCY_NAMES[language]?.[code] || CURRENCIES[code]?.name || code;
+}
+
+// Get localized gateway type label
+export function getLocalizedGatewayType(
+  type: PaymentGateway['type'],
+  language: SupportedLanguage = 'en'
+): string {
+  return LOCALIZED_GATEWAY_TYPES[type]?.[language] || type;
+}
+
+// Format currency amount with localized currency name for display
+export function formatCurrencyLocalized(
+  amount: number,
+  currency: CurrencyCode = 'NGN',
+  language: SupportedLanguage = 'en'
+): string {
+  const currencyMeta = getCurrencyByCode(currency);
+  const localizedName = getLocalizedCurrencyName(currency, language);
+  
+  if (typeof window === 'undefined') {
+    return `${amount} ${localizedName}`;
+  }
+
+  try {
+    const localeMap: Record<SupportedLanguage, string> = {
+      en: 'en-NG',
+      yo: 'en-NG',
+      ha: 'en-NG',
+      ig: 'en-NG',
+      zh: 'zh-CN',
+    };
+    
+    const formatted = new Intl.NumberFormat(localeMap[language] || 'en-NG', {
+      minimumFractionDigits: currencyMeta.fractionDigits === 0 ? 0 : 2,
+      maximumFractionDigits: currencyMeta.fractionDigits === 0 ? 0 : 2,
+    }).format(amount);
+    
+    return `${currencyMeta.symbol}${formatted} (${localizedName})`;
+  } catch {
+    return `${currencyMeta.symbol}${amount.toLocaleString()} (${localizedName})`;
+  }
+}
+
+export type { SupportedLanguage };
 export default CURRENCIES;
