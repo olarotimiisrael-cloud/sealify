@@ -45,7 +45,7 @@ const App = () => (
   <ErrorBoundary>
     <LanguageProvider>
       <SealifyProvider>
-        <SiteMetadataProvider>
+        <SiteMetadataProvider />
         <SplashScreen />
         <ToasterWrapper />
         <FloatingCopilotWrapper />
@@ -81,10 +81,10 @@ const App = () => (
           <Route path="/profile-complete" element={<ProfileComplete />} />
           <Route path="*" element={<NotFound />} />
 </Routes>
-      </Suspense>
-    </SealifyProvider>
-  </LanguageProvider>
-</ErrorBoundary>
+        </Suspense>
+      </SealifyProvider>
+    </LanguageProvider>
+  </ErrorBoundary>
 );
 
 export default App;

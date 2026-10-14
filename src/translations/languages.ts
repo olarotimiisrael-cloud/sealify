@@ -272,7 +272,7 @@ export const TRANSLATIONS: Record<SupportedLanguage, Record<string, string>> = {
     visitors: 'Masu Kallo',
     total_ads: 'Dukan Talla',
     sold_confirm: 'An sayar da wannan?',
-    sold_confirm_desc: 'Za mu sanar da masu sha'awa.',
+    sold_confirm_desc: "Za mu sanar da masu sha'awa.",
     my_ads: 'Tallata Ta',
     stats: 'Kididdiga',
     edit: 'Gyara',

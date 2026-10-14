@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\McpController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\OtpController;
+use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\ProfessionalToolsController;
 use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\ReferralsController;
 use App\Http\Controllers\Api\ReviewController;
@@ -55,6 +57,12 @@ Route::post('/mcp/query', [McpController::class, 'handle'])->defaults('tool', 's
 Route::get('/mcp/info', [McpController::class, 'handle'])->defaults('tool', 'sealify_marketplace_info');
 
 Route::get('/health', [HealthController::class, 'check']);
+
+// Phase 2: Multi-language & Localization Routes
+Route::get('/languages', [PaymentController::class, 'getSupportedLocales']);
+Route::get('/currencies', [PaymentController::class, 'getSupportedCurrencies']);
+Route::post('/currency/convert', [PaymentController::class, 'convertCurrency']);
+Route::get('/payment-methods/{countryCode}', [PaymentController::class, 'getAvailablePaymentMethods']);
 
 Route::get('/data/{resource}', [DataController::class, 'index']);
 Route::get('/data/{resource}/{id}', [DataController::class, 'show']);
@@ -231,4 +239,32 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile/{userId}', [ProfileController::class, 'getProfile']);
     Route::post('/profile/stories', [ProfileController::class, 'createStory']);
     Route::post('/profile/stories/{storyId}/react', [ProfileController::class, 'reactToStory']);
+
+    // Phase 2: Payment Integration Routes
+    Route::prefix('payments')->group(function () {
+        Route::post('/process', [PaymentController::class, 'processPayment']);
+        Route::post('/verify/{paymentId}/{paymentMethod}', [PaymentController::class, 'verifyPayment']);
+        Route::post('/tax/calculate', [PaymentController::class, 'calculateTax']);
+        Route::get('/local-methods/{countryCode}', [PaymentController::class, 'getAvailablePaymentMethods']);
+    });
+
+    // Phase 2: Localization Routes
+    Route::get('/locale/change/{locale}', function ($locale) {
+        if (!in_array($locale, ['en', 'fr', 'es', 'de', 'pt', 'it', 'zh', 'ar'])) {
+            $locale = 'en';
+        }
+        app()->setLocale($locale);
+        session(['locale' => $locale]);
+        return response()->json(['success' => true, 'locale' => $locale]);
+    });
+
+    // Phase 3: Professional Tools Routes
+    Route::prefix('professional-tools')->group(function () {
+        Route::get('/analytics/{sellerId}', [ProfessionalToolsController::class, 'generateSellerAnalyticsReport']);
+        Route::get('/analytics/my', [ProfessionalToolsController::class, 'getMyAnalyticsReport']);
+        Route::get('/opportunities/{sellerId}', [ProfessionalToolsController::class, 'getOptimizationOpportunities']);
+        Route::get('/market-comparison', [ProfessionalToolsController::class, 'getMarketplaceComparison']);
+        Route::get('/sales-forecast/{sellerId}', [ProfessionalToolsController::class, 'generateSalesForecast']);
+        Route::get('/customer-insights/{sellerId}', [ProfessionalToolsController::class, 'getCustomerInsights']);
+    });
 });

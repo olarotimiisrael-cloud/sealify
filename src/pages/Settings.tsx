@@ -368,6 +368,7 @@ const Settings: React.FC = () => {
                   { id: 'security', label: 'Security', icon: Shield, desc: 'Password and sessions' },
                   { id: 'notifications', label: 'Notifications', icon: Bell, desc: 'Email, push, WhatsApp preferences' },
                   { id: 'pwa', label: 'Mobile App', icon: Smartphone, desc: 'Install PWA, offline access' },
+                  { id: 'language', label: 'Language', icon: Globe, desc: 'Local language support' },
                 ].map((section) => (
                   <button
                     key={section.id}
@@ -1190,8 +1191,38 @@ const Settings: React.FC = () => {
                     ))}
                   </div>
                 </section>
+            </div>
+            )}
+
+            {/* Language Section */}
+            {activeSection === 'language' && (
+              <div className="p-6 sm:p-8 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl">
+                <h2 className="text-lg font-black text-white mb-6">Language Selection</h2>
+                <p className="text-slate-400 mb-6">{t('language_switcher_desc')}</p>
+                
+                <div className="space-y-4">
+                  {availableLanguages.map((lang) => (
+                    <div key={lang.code} className="flex items-center gap-4 p-3 rounded-2xl border border-slate-800/50 hover:bg-slate-900 transition-colors">
+                      <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl {language === lang.code ? 'bg-emerald-500 text-slate-950' : 'text-slate-400'}">
+                        {lang.flag}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-white truncate">{lang.nativeName}</p>
+                        <p className="text-[10px] opacity-60 uppercase tracking-wider">{lang.code}</p>
+                      </div>
+                      <button
+                        onClick={() => setLanguage(lang.code)}
+                        className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 hover:text-emerald-300 transition-colors"
+                        aria-label={`Switch to ${lang.nativeName}`}
+                      >
+                        <Globe className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+
           </div>
         </div>
       </main>

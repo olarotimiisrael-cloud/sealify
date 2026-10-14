@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, SignUp } from 'lucide-react';
+import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, SignUp, Globe } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
 
 const Navbar = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
@@ -27,6 +28,7 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <button
               onClick={() => setShowUserDropdown(!showUserDropdown)}
               className="p-2 text-slate-300 hover:text-white transition-colors"
