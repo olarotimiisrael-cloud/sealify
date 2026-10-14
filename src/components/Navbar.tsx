@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, SignUp, Globe } from 'lucide-react';
+import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, UserPlus, Globe } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
 
@@ -47,7 +47,7 @@ const Navbar = () => {
                   onClick={() => setShowUserDropdown(false)}
                   className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-800 rounded-xl text-slate-200 font-bold transition-colors"
                 >
-                  <SignUp className="w-4 h-4 text-emerald-400" />
+                  <UserPlus className="w-4 h-4 text-emerald-400" />
                   <span>{t('signup')}</span>
                 </Link>
 
