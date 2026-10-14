@@ -43,4 +43,80 @@ class User extends Authenticatable
     {
         return $this->hasMany(Listing::class, 'seller_id');
     }
+
+    public function interests()
+    {
+        return $this->hasMany(UserInterest::class, 'user_id');
+    }
+
+    public function skills()
+    {
+        return $this->hasMany(UserSkill::class, 'user_id');
+    }
+
+    public function stories()
+    {
+        return $this->hasMany(ProfileStory::class, 'user_id');
+    }
+
+    public function reviewsReceived()
+    {
+        return $this->hasMany(Review::class, 'seller_id');
+    }
+
+    public function reviewsGiven()
+    {
+        return $this->hasMany(Review::class, 'buyer_id');
+    }
+
+    public function safetyAnalyses()
+    {
+        return $this->hasMany(SafetyReportAnalysis::class, 'user_id');
+    }
+
+    public function isRestricted()
+    {
+        return $this->status === 'restricted';
+    }
+
+    public function isBanned()
+    {
+        return $this->status === 'banned';
+    }
+
+    public function canInteract()
+    {
+        return !in_array($this->status, ['banned', 'restricted']);
+    }
+
+    // New relationships for promotion system
+    public function adPromotions()
+    {
+        return $this->hasMany(AdPromotion::class, 'ad_id');
+    }
+
+    public function promotions()
+    {
+        return $this->hasMany(AdPromotion::class, 'ad_id');
+    }
+
+    public function promotionReceipts()
+    {
+        return $this->hasMany(AdPromotionReceipt::class, 'promotion_id');
+    }
+
+    public function idVerifications()
+    {
+        return $this->hasMany(UserVerification::class, 'user_id');
+    }
+
+    public function businessVerifications()
+    {
+        return $this->hasMany(BusinessVerification::class, 'user_id');
+    }
+
+    public function kycAcceptance()
+    {
+        return $this->hasOne(UserKycAcceptance::class, 'user_id');
+    }
 }

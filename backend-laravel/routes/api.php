@@ -8,11 +8,15 @@ use App\Http\Controllers\Api\DataController;
 use App\Http\Controllers\Api\ListingController;
 use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\ReviewController;
 use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\SiteMetadataController;
+use App\Http\Controllers\Api\SafetyController;
+use App\Http\Controllers\Api\SmartMessagingController;
 use App\Http\Controllers\Api\UploadController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\VideoController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register']);
@@ -40,8 +44,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/uploads', [UploadController::class, 'store']);
 });
-
-Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::put('/auth/profile', [AuthController::class, 'updateProfile']);
 
@@ -91,4 +93,54 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/email/admin/sms', [AdminController::class, 'smsBroadcast']);
     Route::post('/email/admin/whatsapp', [AdminController::class, 'whatsappBroadcast']);
     Route::post('/email/admin/upload-attachment', [AdminController::class, 'uploadAttachment']);
+
+    // Video chat routes
+    Route::post('/video/initiate', [VideoController::class, 'initiateCall']);
+    Route::post('/video/join/{roomId}', [VideoController::class, 'joinCall']);
+    Route::post('/video/leave/{roomId}', [VideoController::class, 'leaveCall']);
+    Route::post('/video/end/{roomId}', [VideoController::class, 'endCall']);
+    Route::post('/video/start-recording/{roomId}', [VideoController::class, 'startRecording']);
+    Route::post('/video/stop-recording/{recordingId}', [VideoController::class, 'stopRecording']);
+    Route::post('/video/recordings/{recordingId}', [VideoController::class, 'getRecording']);
+    Route::post('/video/user-calls', [VideoController::class, 'getUserCalls']);
+
+    // Safety routes
+    Route::post('/safety/check', [SafetyController::class, 'checkUserSafety']);
+    Route::post('/safety/conversation/{participantId}', [SafetyController::class, 'checkConversationSafety']);
+    Route::post('/safety/conversation-info/{participantId}', [SafetyController::class, 'getConversationSafety']);
+    Route::post('/safety/report/{userId}', [SafetyController::class, 'reportUser']);
+    Route::post('/safety/safety-center', [SafetyController::class, 'getSafetyCenterInfo']);
+
+    // Smart messaging routes
+    Route::post('/messaging/smart-replies/{conversationId}', [SmartMessagingController::class, 'getSmartReplies']);
+    Route::post('/messaging/schedule', [SmartMessagingController::class, 'scheduleMessage']);
+    Route::post('/messaging/scheduled/{conversationId}', [SmartMessagingController::class, 'getScheduledMessages']);
+    Route::post('/messaging/cancel/{scheduledMessageId}', [SmartMessagingController::class, 'cancelScheduledMessage']);
+
+    // Profile routes
+    Route::post('/profile/stories', [ProfileController::class, 'getStories']);
+    Route::post('/profile/stories', [ProfileController::class, 'createStory']);
+    Route::post('/profile/stories/{storyId}/react', [ProfileController::class, 'reactToStory']);
+    Route::post('/profile/{userId}', [ProfileController::class, 'getProfile']);
+    Route::post('/profile/interests', [ProfileController::class, 'updateInterests']);
+    Route::post('/profile/skills', [ProfileController::class, 'updateSkills']);
+
+    // Promotion routes
+    Route::post('/promotion/create', [PromotionController::class, 'createPromotion']);
+    Route::post('/promotion/payment-callback', [PromotionController::class, 'paymentCallback']);
+    Route::post('/promotion/admin/approve/{promotionId}', [PromotionController::class, 'adminApprovePromotion']);
+    Route::post('/promotion/admin/terminate/{promotionId}', [PromotionController::class, 'adminTerminatePromotion']);
+    Route::post('/promotion/receipt/upload/{receiptId}', [PromotionController::class, 'uploadReceipt']);
+    Route::post('/promotion/user', [PromotionController::class, 'userPromotions']);
+    Route::post('/promotion/receipt/{receiptId}', [PromotionController::class, 'getReceipt']);
+
+    // Verification routes
+    Route::post('/verification/id', [VerificationController::class, 'createIdVerification']);
+    Route::post('/verification/business', [VerificationController::class, 'createBusinessVerification']);
+    Route::post('/verification/admin/id/{verificationId}', [VerificationController::class, 'adminVerifyIdVerification']);
+    Route::post('/verification/admin/business/{verificationId}', [VerificationController::class, 'adminVerifyBusinessVerification']);
+    Route::post('/verification/user', [VerificationController::class, 'getUserVerifications']);
+    Route::post('/verification/user/business', [VerificationController::class, 'getUserBusinessVerifications']);
+    Route::post('/verification/status', [VerificationController::class, 'verificationStatus']);
+    Route::post('/verification/document/{verificationId}', [VerificationController::class, 'getVerificationDocument']);
 });
