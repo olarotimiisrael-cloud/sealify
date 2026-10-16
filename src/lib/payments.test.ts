@@ -2,8 +2,6 @@
 import { 
   paymentGatewayRegistry,
   DEFAULT_PAYMENT_GATEWAYS,
-  PaymentGatewayRegistry,
-  PaymentGateway,
   calculatePaymentFee
 } from './payments';
 import { CurrencyCode } from './currency';
@@ -23,9 +21,12 @@ function assert(condition: boolean, message: string) {
   }
 }
 
-// Test registry instantiation
+// Test registry instantiation - use the singleton instance
 console.log('--- Registry Instantiation Tests ---');
-assert(paymentGatewayRegistry instanceof PaymentGatewayRegistry, 'Registry is instance of PaymentGatewayRegistry');
+assert(paymentGatewayRegistry !== undefined, 'Registry instance exists');
+assert(paymentGatewayRegistry.getGatewayById !== undefined, 'Registry has getGatewayById method');
+assert(paymentGatewayRegistry.getActiveGateways !== undefined, 'Registry has getActiveGateways method');
+assert(typeof paymentGatewayRegistry.getGatewayById === 'function', 'getGatewayById is a function');
 
 console.log('--- Default Gateways Tests ---');
 assert(Array.isArray(DEFAULT_PAYMENT_GATEWAYS), 'DEFAULT_PAYMENT_GATEWAYS is array');
@@ -97,7 +98,6 @@ console.log('\n--- Country Filter Tests ---');
 const nigeriaGateways = paymentGatewayRegistry.getGatewaysByCountry('NG');
 assert(nigeriaGateways.length >= 6, 'At least 6 Nigeria gateways (most support NG)');
 
-const globalGateways = paymentGatewayRegistry.getGateByCountry('GLOBAL');
 const globalCount = paymentGatewayRegistry.getGatewaysByCountry('GLOBAL').length;
 assert(globalCount >= 1, 'At least 1 global gateway (Crypto)');
 

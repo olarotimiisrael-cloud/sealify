@@ -80,14 +80,11 @@ class PaymentGatewayRegistryImpl implements PaymentGatewayRegistry {
     if (!gateway) return false;
     
     // Tier-based KYC requirements
-    // Tier 1: Basic (no documents)
-    // Tier 2: Verified (NIN/BVN)
-    // Tier 3: Trusted (additional business documents)
-    if (userTier === 1) return false; // Tier 1 users can use basic payment methods
-    if (gateway.requiresKYC) {
-      return userTier < 2; // Tier 1 users need KYC for this gateway
-    }
-    return false;
+    // Tier 1: Basic (needs KYC for regulated services)
+    // Tier 2: Verified (completed basic KYC)
+    // Tier 3: Trusted (advanced verification)
+    if (!gateway.requiresKYC) return false;
+    return userTier < 2;
   }
   
   getUserAccessibleGateways(

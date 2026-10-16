@@ -360,5 +360,6 @@ export function formatCurrencyLocalized(
   }
 }
 
+export { CURRENCIES };
 export type { SupportedLanguage };
 export default CURRENCIES;
