@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Sealify API — Stoplight</title>
+
+    <script src="https://unpkg.com/@stoplight/elements/web-components.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@stoplight/elements/styles.min.css">
+
+    <style>
+        body { margin: 0; padding: 0; }
+        elements-api { display: block; height: 100vh; }
+    </style>
+</head>
+<body>
+
+    <elements-api
+        apiDescriptionUrl="/api.json"
+        router="hash"
+        layout="responsive"
+        tryItCredentialsPolicy="same-origin"
+    ></elements-api>
+
+</body>
+</html>
