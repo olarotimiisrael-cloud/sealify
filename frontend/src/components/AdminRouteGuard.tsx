@@ -1,0 +1,85 @@
+import React, { useEffect, useState } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { Loader2, ShieldAlert } from 'lucide-react';
+import { useSealify } from '@/context/SealifyContext';
+
+type AdminGateState = 'checking' | 'anonymous' | 'not-admin' | 'allowed';
+
+const AdminRouteGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAdmin, loading, logout } = useSealify();
+  const location = useLocation();
+  const [state, setState] = useState<AdminGateState>('checking');
+
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (loading) return;
+      if (!user) {
+        setState('anonymous');
+        return;
+      }
+      if (!isAdmin) {
+        setState('not-admin');
+        return;
+      }
+      setState('allowed');
+    };
+
+    void checkAdminStatus();
+  }, [isAdmin, loading, user]);
+
+  useEffect(() => {
+      if (state !== 'allowed') return;
+  
+      let warningTimer = 0;
+      let logoutTimer = 0;
+  
+      const resetTimers = () => {
+        window.clearTimeout(warningTimer);
+        window.clearTimeout(logoutTimer);
+        warningTimer = window.setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('sealify:admin-session-warning'));
+        }, 28 * 60 * 1000);
+        logoutTimer = window.setTimeout(() => {
+          logout();
+          window.location.assign('/admin/login?reason=inactive');
+        }, 30 * 60 * 1000);
+      };
+
+    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, resetTimers, { passive: true }));
+    resetTimers();
+
+    return () => {
+      window.clearTimeout(warningTimer);
+      window.clearTimeout(logoutTimer);
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, resetTimers));
+    };
+  }, [logout, state]);
+
+  if (state === 'anonymous') return <Navigate to="/admin/login" replace state={{ from: location }} />;
+  if (state === 'not-admin') return <Navigate to="/admin/login" replace />;
+  if (state === 'allowed') return <>{children}</>;
+
+  return (
+    <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center">
+      <div className="flex items-center gap-3 text-sm font-bold">
+        <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+        <span>Verifying administrator session</span>
+      </div>
+    </div>
+  );
+};
+
+export const AdminAccessDenied: React.FC = () => (
+  <div className="min-h-screen bg-white text-slate-900 flex items-center justify-center px-4">
+    <div className="max-w-md rounded-2xl border border-rose-500/30 bg-white p-6 text-center shadow-2xl">
+      <ShieldAlert className="mx-auto mb-4 h-10 w-10 text-rose-600" />
+      <h1 className="text-xl font-black text-slate-900">Admin access required</h1>
+      <p className="mt-2 text-sm text-slate-600">Sign in with an administrator account to continue.</p>
+    </div>
+  </div>
+);
+
+export default AdminRouteGuard;
+
+

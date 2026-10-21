@@ -1,0 +1,122 @@
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { X, Home, Heart, PlusCircle, MessageSquare, Shield, User, Settings, Store, HelpCircle, LogOut, Newspaper, TrendingUp, PlayCircle, Building2 } from 'lucide-react';
+import { useSealify } from '../context/SealifyContext';
+
+interface NavigationDrawerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const NavigationDrawer: React.FC<NavigationDrawerProps> = ({ isOpen, onClose }) => {
+  const { user, isAdmin, isAuthenticated, t } = useSealify();
+  const location = useLocation();
+
+  const navItems = [
+    { path: '/', label: t('home'), icon: Home },
+    { path: '/saved', label: t('saved'), icon: Heart },
+    { path: '/post-ad', label: t('sell'), icon: PlusCircle, highlight: true },
+    { path: '/messages', label: t('inbox'), icon: MessageSquare },
+    { path: '/vendors', label: 'Vendors', icon: Building2 },
+    { path: '/community', label: 'Community', icon: Newspaper },
+    { path: '/how-it-works', label: 'Guide', icon: PlayCircle },
+    { path: '/requests', label: t('requests'), icon: HelpCircle },
+    { path: '/safety', label: t('safety'), icon: Shield },
+    { path: '/market-insights', label: t('insights'), icon: TrendingUp },
+  ];
+
+  const userItems = isAuthenticated ? [
+    { path: '/my-ads', label: t('my_ads'), icon: Store },
+    { path: '/settings', label: t('settings'), icon: Settings },
+  ] : [
+    { path: '/login', label: t('login'), icon: User },
+  ];
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-white/90 backdrop-blur-md flex justify-end">
+      <div className="w-full max-w-sm bg-white h-full overflow-y-auto p-6 space-y-6 shadow-2xl border-l border-slate-200 text-slate-200">
+        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+          <div className="flex items-center gap-2 font-bold text-lg text-slate-900">
+            <span>Navigation</span>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-slate-900"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <nav className="space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                  isActive
+                    ? 'bg-emerald-100 text-emerald-600 font-bold border border-emerald-500/30'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : ''}`} />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="pt-4 border-t border-slate-200 space-y-1">
+          {userItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${
+                  isActive
+                    ? 'bg-emerald-100 text-emerald-600 font-bold border border-emerald-500/30'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${isActive ? 'text-emerald-600' : ''}`} />
+                <span className="font-medium">{item.label}</span>
+              </Link>
+            );
+          })}
+          {isAdmin && (
+            <Link
+              to="/admin"
+              onClick={onClose}
+              className="flex items-center gap-3 px-4 py-3 rounded-2xl text-rose-600 font-bold hover:bg-rose-600/10 border border-rose-500/20 transition-colors"
+            >
+              <Shield className="w-5 h-5" />
+              <span>Admin Terminal</span>
+            </Link>
+          )}
+        </div>
+
+        <div className="pt-4 border-t border-slate-200">
+          <button
+            onClick={onClose}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:text-rose-600 hover:bg-rose-600/10 border border-slate-200 transition-colors font-bold"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>{t('logout')}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NavigationDrawer;
+
+

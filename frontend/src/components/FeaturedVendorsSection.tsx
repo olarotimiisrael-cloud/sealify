@@ -1,0 +1,124 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import VerifiedBadge from './VerifiedBadge';
+import { Building2, ArrowRight, MapPin, Package, User } from 'lucide-react';
+
+export const FeaturedVendorsSection: React.FC = () => {
+  const { allUsers, listings, t } = useSealify();
+
+  // Find top verified sellers or admins
+  const topVendors = allUsers
+    .filter((u) => u.verified || u.role === 'seller' || u.role === 'admin')
+    .slice(0, 4);
+
+  if (topVendors.length === 0) return null;
+
+  return (
+    <section className="bg-white/60 border border-slate-200 rounded-3xl p-5 sm:p-7 space-y-4 shadow-xl relative overflow-hidden font-sans">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2.5">
+          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-500/30">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">{t('verified_merchants')}</h2>
+              <span className="text-[9px] font-black uppercase bg-emerald-100 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                {t('cac_verified')}
+              </span>
+            </div>
+            <p className="text-xs text-slate-800">{t('verified_merchants_desc')}</p>
+          </div>
+        </div>
+
+        <Link
+          to="/vendors"
+          className="text-xs font-bold text-emerald-600 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+        >
+          <span>{t('view_all')} ({allUsers.filter((u) => u.verified).length})</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {topVendors.map((vendor) => {
+          const vendorListings = listings.filter((l) => l.sellerId === vendor.id);
+
+          return (
+<div
+              key={vendor.id}
+              className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden transition-all duration-300 shadow-sm drop-shadow-sm flex flex-col justify-between group"
+            >
+              <div>
+                {/* Store Cover Header */}
+                <div className="h-20 w-full relative overflow-hidden bg-white flex items-center justify-center">
+                  {vendor.storeBannerUrl ? (
+                    <img
+                      src={vendor.storeBannerUrl}
+                      alt={vendor.fullName}
+                      className="w-full h-full object-cover opacity-70 group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <span className="text-[10px] font-black text-slate-800 uppercase tracking-widest">Storefront</span>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute top-2 right-2">
+                    <VerifiedBadge type={vendor.verificationType || 'individual'} />
+                  </div>
+                </div>
+
+                {/* Avatar & Title info */}
+                <div className="p-4 -mt-8 relative z-10 space-y-2">
+                  <div className="flex items-end gap-3">
+                    {vendor.avatarUrl ? (
+                      <img
+                        src={vendor.avatarUrl}
+                        alt={vendor.fullName}
+                        className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-950 shadow-md shrink-0 bg-white"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-2xl border-2 border-slate-950 bg-white flex items-center justify-center text-slate-600 shrink-0">
+                        <User className="w-6 h-6" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <h3 className="font-extrabold text-sm text-slate-900 truncate leading-tight">{vendor.fullName}</h3>
+                      <p className="text-[11px] font-bold text-emerald-600 truncate">
+                        {vendor.businessName || 'Verified Merchant'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[10px] text-slate-600 pt-2 border-t border-slate-200">
+                    <span className="flex items-center gap-1 truncate">
+                      <MapPin className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                      {vendor.location || 'Ogbomoso, Oyo State'}
+                    </span>
+                    <span className="font-bold text-slate-700 flex items-center gap-1 shrink-0">
+                      <Package className="w-3.5 h-3.5 text-emerald-600" />
+                      {vendorListings.length} {t('active_ads_count')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 pt-0">
+                <Link
+                  to={`/seller/${vendor.id}`}
+                  className="w-full py-2 bg-white hover:bg-emerald-500 hover:text-slate-950 text-emerald-600 font-extrabold rounded-xl text-xs text-center flex items-center justify-center gap-1.5 border border-slate-200 transition-all"
+                >
+                  <span>{t('visit_storefront')}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
+
+export default FeaturedVendorsSection;
+

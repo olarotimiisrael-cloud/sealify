@@ -1,0 +1,426 @@
+import React, { useState, useRef } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import { useMyListings, useDeleteListing } from '../lib/api-client';
+import { Listing, StatusFilter } from '../types/sealify';
+import { toast } from 'sonner';
+import SEO from '../components/SEO';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import VerifiedBadge from '../components/VerifiedBadge';
+import EditListingModal from '../components/EditListingModal';
+import PromoteModal from '../components/PromoteModal';
+import VerificationModal from '../components/VerificationModal';
+import SalesReportModal from '../components/SalesReportModal';
+import AdAnalyticsModal from '../components/AdAnalyticsModal';
+import StorefrontFlycardModal from '../components/StorefrontFlycardModal';
+import {
+  User,
+  Camera,
+  Award,
+  FileSpreadsheet,
+  LogOut,
+  PlusCircle,
+  Search,
+  Eye,
+  Crown,
+  RefreshCw,
+  Edit3,
+  Trash2,
+  Package,
+  Clock,
+  XCircle,
+  ShieldCheck,
+  ArrowRight,
+} from 'lucide-react';
+
+export default function MyAds() {
+  const { 
+    user, 
+    logout, 
+    updateUser, 
+    promoteListing, 
+    updateListing,
+    verificationRequests,
+    isSyncing,
+    lastSyncTime,
+    syncDatabase
+  } = useSealify();
+  
+  const navigate = useNavigate();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
+  // Real API hooks
+  const { data: myListingsData, refetch: refetchMyListings } = useMyListings();
+  const deleteListingMutation = useDeleteListing();
+
+  const myVerificationReq = user
+    ? verificationRequests.find(r => r.userId === user.id)
+    : undefined;
+
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
+  const [promotingListing, setPromotingListing] = useState<Listing | null>(null);
+  const [flycardListing, setFlycardListing] = useState<Listing | null>(null);
+  const [analyticsListing, setAnalyticsListing] = useState<Listing | null>(null);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isSalesReportOpen, setIsSalesReportOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const myListings = myListingsData?.listings || [];
+  
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const newAvatarUrl = event.target.result as string;
+        updateUser(user.id, { avatarUrl: newAvatarUrl });
+        toast.success('🎉 Profile picture updated!');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const filteredAds = myListings.filter((ad) => {
+    if (statusFilter === 'active' && ad.status !== 'active') return false;
+    if (statusFilter === 'sold' && ad.status !== 'sold') return false;
+    if (statusFilter === 'featured' && !ad.featured) return false;
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      return ad.title.toLowerCase().includes(q) || ad.category.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const totalImpressions = myListings.reduce((acc, ad) => acc + (ad.viewsCount || 0), 0);
+  const activeCount = myListings.filter((ad) => ad.status === 'active').length;
+  const soldCount = myListings.filter((ad) => ad.status === 'sold').length;
+  const totalInventoryValuation = myListings.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0);
+
+  const handleBumpAd = async (ad: Listing) => {
+    try {
+      await updateListing(ad.id, { createdAt: new Date().toISOString() });
+      toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to bump ad');
+    }
+  };
+
+  const handleBumpAdApi = async (ad: Listing) => {
+    try {
+      await updateListing(ad.id, { createdAt: new Date().toISOString() });
+      toast.success(`⚡ "${ad.title}" has been bumped to the top of category feeds!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to bump ad');
+    }
+  };
+
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // Profile completion check for new users
+  const hasIncompleteProfile = !user.avatarUrl || !user.storeBannerUrl || !user.businessName;
+
+  if (!user) return null;
+
+  return (
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col pb-16 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-950">
+      <SEO title="My Ads & Inventory — Sealify" />
+      <Navbar />
+
+      <main className="max-w-7xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
+        {hasIncompleteProfile && (
+          <div className="p-4 bg-emerald-50 border-l-4 border-emerald-500 rounded-t-xl rounded-b-xl mb-6 text-slate-900">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-emerald-600 tracking-wider mb-1">Welcome to Sealify! 🎉</h3>
+                <p className="text-sm text-slate-300">
+                  Your account has been created successfully. To get started, please complete your profile setup:
+                </p>
+                <ul className="list-disc list-inside text-slate-300 space-y-1">
+                  <li>Add a profile photo</li>
+                  <li>Add a cover photo</li>
+                  <li>Set your business/shop name</li>
+                </ul>
+                <div className="mt-3">
+                  <button
+                    onClick={() => navigate('/profile-complete')}
+                    className="inline-flex items-center gap-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-xl text-sm transition-colors"
+                  >
+                    Complete Profile
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {/* Sync Status Banner */}
+        <div className="p-3 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="font-bold text-slate-300">Database Sync Status:</span>
+            <span className="text-emerald-600 font-mono text-[11px]">{isSyncing ? 'Synchronizing...' : `Connected (Synced ${lastSyncTime})`}</span>
+          </div>
+
+          <button
+            onClick={() => syncDatabase()}
+            disabled={isSyncing}
+            className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-emerald-600 font-bold rounded-xl text-[11px] flex items-center gap-1 border border-slate-200 transition-colors"
+          >
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        {/* Profile & Summary Header Card */}
+        <div className="bg-white border border-slate-200 rounded-[2.5rem] p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+            <div className="relative group shrink-0">
+              {user.avatarUrl ? (
+                <img 
+                  src={user.avatarUrl} 
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover border-2 border-emerald-500 shadow-xl bg-white" 
+                  alt="Avatar"
+                />
+              ) : (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl border-2 border-slate-200 bg-white flex flex-col items-center justify-center text-slate-600 shadow-xl">
+                  <User className="w-8 h-8 sm:w-10 sm:h-10" />
+                  <span className="text-[8px] font-extrabold uppercase mt-0.5">No Photo</span>
+                </div>
+              )}
+              <input type="file" ref={avatarInputRef} onChange={handleAvatarUpload} accept="image/*" className="hidden" />
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                className="absolute bottom-0 right-0 p-2 bg-emerald-500 text-slate-950 rounded-xl shadow-lg font-black hover:scale-110 transition-transform"
+                title="Change Profile Picture"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{user.fullName}</h1>
+                {user.verified ? (
+                  <VerifiedBadge type={user.verificationType || 'individual'} showText />
+                ) : (
+                  <button
+                    onClick={() => setIsVerificationOpen(true)}
+                    className="text-[10px] font-extrabold text-amber-600 bg-amber-50 hover:bg-amber-500/20 px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1 transition-colors"
+                  >
+                    <Award className="w-3.5 h-3.5" />
+                    <span>Get Verified Badge</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-slate-600 font-mono">{user.email}</p>
+              <div className="flex items-center gap-4 text-xs pt-1 font-semibold text-slate-600 justify-center sm:justify-start flex-wrap">
+                <span>Active Ads: <strong className="text-emerald-600 font-black">{myListings.filter((ad) => ad.status === 'active').length}</strong></span>
+                <span>Sold: <strong className="text-teal-600 font-black">{myListings.filter((ad) => ad.status === 'sold').length}</strong></span>
+                <span>Valuation: <strong className="text-amber-600 font-black">{formatNGN(myListings.reduce((acc, ad) => acc + (ad.status === 'active' ? ad.price : 0), 0))}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-end w-full lg:w-auto relative z-10">
+            <button
+              onClick={() => setIsSalesReportOpen(true)}
+              className="flex items-center gap-1.5 px-4 py-3 bg-slate-100 hover:bg-slate-750 text-slate-200 font-bold rounded-2xl text-xs border border-slate-200 transition-colors"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+              <span>Report</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-4 py-3 bg-rose-600/10 hover:bg-rose-600 text-rose-500 hover:text-slate-900 font-bold rounded-2xl text-xs border border-rose-500/20 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
+
+            <Link
+              to="/post-ad"
+              className="flex items-center gap-2 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl text-xs shadow-lg transition-colors"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Post Ad</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Verification Tracker */}
+        {myVerificationReq && !user.verified && (
+          <section className="bg-white/50 border border-slate-200 rounded-3xl p-5 shadow-xl animate-in fade-in slide-in-from-top-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl border ${myVerificationReq.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-500/20' : myVerificationReq.status === 'rejected' ? 'bg-rose-600/10 text-rose-600 border-rose-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-500/20'}`}>
+                  {myVerificationReq.status === 'pending' ? <Clock className="w-5 h-5" /> : myVerificationReq.status === 'rejected' ? <XCircle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    Verification Status: {myVerificationReq.status.toUpperCase()}
+                  </h3>
+                  <p className="text-[11px] text-slate-600">
+                    {myVerificationReq.status === 'pending' 
+                      ? 'Our team is currently reviewing your documents. ETA: 24-48 hours.' 
+                      : myVerificationReq.status === 'rejected' 
+                      ? 'Application declined. Please check your email for details or re-apply.'
+                      : 'Congratulations! Your official verification badge is now active.'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col items-end shrink-0">
+                <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Type: {myVerificationReq.type}</span>
+                <span className="text-[10px] font-mono text-slate-600 mt-0.5">REQ_ID: {myVerificationReq.id.slice(-6)}</span>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-600 absolute left-3.5 top-3" />
+            <input
+              type="text"
+              placeholder="Search your inventory by ad title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white border border-slate-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-2xl shrink-0">
+            {(['all', 'active', 'sold', 'featured'] as StatusFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all ${statusFilter === f ? 'bg-emerald-500 text-slate-950 shadow' : 'text-slate-600 hover:text-slate-900'}`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {filteredAds.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-600 text-xs my-8 space-y-4 shadow-xl">
+             <Package className="w-12 h-12 text-slate-700 mx-auto" />
+             <div className="space-y-1">
+                <p className="font-bold text-slate-900 text-sm">No ads found matching your search.</p>
+                <p className="text-slate-600 max-w-xs mx-auto">Publish your first ad today and reach thousands of buyers in Ogbomoso!</p>
+             </div>
+             <Link to="/post-ad" className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-500 text-slate-950 font-black rounded-xl text-xs">
+                <PlusCircle className="w-4 h-4" />
+                <span>Create New Listing</span>
+             </Link>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredAds.map((ad) => (
+              <div
+                key={ad.id}
+                className="bg-white border border-slate-200 hover:border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 transition-all shadow-md"
+              >
+                <div className="flex items-center gap-3.5 w-full sm:w-auto">
+                  <div className="relative shrink-0">
+                    <img 
+                      src={ad.images[0]} 
+                      alt={ad.title} 
+                      className="w-20 h-20 rounded-xl object-cover bg-white border border-slate-200" 
+                    />
+                    {ad.featured && (
+                      <div className="absolute -top-1.5 -left-1.5 bg-amber-500 p-1 rounded-md shadow">
+                        <Crown className="w-3 h-3 text-slate-950 fill-current" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900 truncate max-w-xs">{ad.title}</h3>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="font-extrabold text-emerald-600">{formatNGN(ad.price)}</span>
+                      <span className="text-slate-600 flex items-center gap-1 text-[11px]">
+                        <Eye className="w-3 h-3 text-slate-600" />
+                        {ad.viewsCount} views
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200">
+                  <button onClick={() => handleBumpAdApi(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-750 text-emerald-600 font-bold rounded-xl text-xs border border-slate-200 transition-colors">
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>Bump</span>
+                  </button>
+
+                  <button onClick={() => setEditingListing(ad)} className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-750 text-slate-200 font-bold rounded-xl text-xs transition-colors">
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Edit</span>
+                  </button>
+
+                  <button onClick={() => setPromotingListing(ad)} className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-slate-900 font-black rounded-xl text-xs shadow-lg">
+                    <Crown className="w-3.5 h-3.5 text-amber-300" />
+                    <span>Promote</span>
+                  </button>
+
+                  <button onClick={() => deleteListingMutation.mutate(ad.id)} className="p-2 bg-slate-100 hover:bg-rose-600/20 text-slate-600 hover:text-rose-600 rounded-xl transition-colors">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      <EditListingModal isOpen={!!editingListing} onClose={() => setEditingListing(null)} listing={editingListing} onSave={async (id, updates) => { await updateListing(id, updates); refetchMyListings(); }} />
+      <PromoteModal isOpen={!!promotingListing} onClose={() => setPromotingListing(null)} listing={promotingListing} onPromoteSuccess={(id, dur, plan) => promoteListing(id, dur, plan)} />
+      <VerificationModal isOpen={isVerificationOpen} onClose={() => setIsVerificationOpen(false)} />
+      <SalesReportModal isOpen={isSalesReportOpen} onClose={() => setIsSalesReportOpen(false)} userListings={myListings} />
+      <AdAnalyticsModal isOpen={!!analyticsListing} onClose={() => setAnalyticsListing(null)} listing={analyticsListing} />
+      
+      {flycardListing && (
+        <StorefrontFlycardModal
+          isOpen={!!flycardListing}
+          onClose={() => setFlycardListing(null)}
+          title={flycardListing.title}
+          price={flycardListing.price}
+          location={flycardListing.location}
+          image={flycardListing.images[0]}
+          sellerName={user.fullName}
+          sellerPhone={user.phoneNumber}
+          verificationType={user.verificationType}
+          itemUrl={`${window.location.origin}/listing/${flycardListing.id}`}
+        />
+      )}
+
+      <MobileNav />
+    </div>
+  );
+};
+
+

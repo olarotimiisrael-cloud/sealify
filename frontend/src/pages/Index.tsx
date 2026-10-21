@@ -1,0 +1,603 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
+import { useSealify } from '../context/SealifyContext';
+import { useSiteMetadata } from '../context/SiteMetadataContext';
+import Navbar from '../components/Navbar';
+import MobileNav from '../components/MobileNav';
+import Footer from '../components/Footer';
+import CategoryGrid from '../components/CategoryGrid';
+import CategoryBar from '../components/CategoryBar';
+import NeighborhoodFilter from '../components/NeighborhoodFilter';
+import ListingCard from '../components/ListingCard';
+import PromotedSpotlightBanner from '../components/PromotedSpotlightBanner';
+import FeaturedVendorsSection from '../components/FeaturedVendorsSection';
+import MapView from '../components/MapView';
+import FilterDrawer from '../components/FilterDrawer';
+import CompareModal from '../components/CompareModal';
+import SavedAlertsModal from '../components/SavedAlertsModal';
+import SEO from '../components/SEO';
+import AdSenseBanner from '../components/AdSenseBanner';
+import { useListings } from '../lib/api-client';
+import {
+  Grid,
+  MapPin,
+  SlidersHorizontal,
+  Sparkles,
+  Bell,
+  Scale,
+  Zap,
+  CheckCircle2,
+  Package,
+  RotateCcw,
+  BrainCircuit,
+  Activity,
+  Users,
+  Eye,
+  ShoppingBag,
+  Search,
+  ArrowRight,
+  X,
+  Clock,
+} from 'lucide-react';
+
+export default function Index() {
+  const [searchParams] = useSearchParams();
+  const { resolved: liveMetadata, error: metadataError } = useSiteMetadata();
+  const {
+    filters,
+    setFilters,
+    activeCategory,
+    announcements,
+    compareListingIds,
+    recentDeals,
+    resetFilters,
+    recentlyViewedIds,
+    userInterests,
+    allUsers,
+    t,
+  } = useSealify();
+  const { data: listingsData } = useListings(filters);
+
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const [heroSearch, setHeroSearch] = useState('');
+  const [announcementIndex, setAnnouncementIndex] = useState(0);
+
+  // Sync URL search parameters with filter state
+  useEffect(() => {
+    const qParam = searchParams.get('q');
+    const catParam = searchParams.get('category');
+    const locParam = searchParams.get('location');
+
+    if (qParam || catParam || locParam) {
+      setFilters((prev) => ({
+        ...prev,
+        query: qParam || prev.query,
+        category: (catParam as any) || prev.category,
+        location: locParam || prev.location,
+      }));
+    }
+  }, [searchParams, setFilters]);
+
+  // Referral capture: validate ?ref=, persist in sessionStorage (30-day TTL),
+  // and fire a best-effort click tracking request.
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (!ref || typeof window === 'undefined') return;
+
+    const normalized = ref.trim().toUpperCase();
+    const valid = /^SEALIFY-[A-Z0-9]{6}$/.test(normalized);
+    if (!valid) return;
+
+    const storageKey = 'sealify_ref';
+    const expiresKey = 'sealify_ref_expires';
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    const expiresAt = Date.now() + thirtyDays;
+
+    try {
+      sessionStorage.setItem(storageKey, normalized);
+      sessionStorage.setItem(expiresKey, String(expiresAt));
+    } catch {
+      // sessionStorage may be unavailable in some contexts; ignore.
+    }
+
+    fetch('/api/referrals/click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: normalized, landingPath: window.location.pathname }),
+    }).catch(() => {
+      // Clicks are best-effort; never block rendering.
+    });
+  }, [searchParams]);
+
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters(prev => ({ ...prev, query: heroSearch.trim() }));
+  };
+
+  const activeAnnouncements = useMemo(
+    () => [...new Map(announcements.filter((a) => a.active).map((a) => [a.id, a])).values()],
+    [announcements],
+  );
+
+  useEffect(() => {
+    if (activeAnnouncements.length <= 1) return;
+
+    const intervalId = window.setInterval(() => {
+      setAnnouncementIndex((current) => (current + 1) % activeAnnouncements.length);
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [activeAnnouncements]);
+
+  useEffect(() => {
+    if (announcementIndex >= activeAnnouncements.length) {
+      setAnnouncementIndex(0);
+    }
+  }, [activeAnnouncements.length, announcementIndex]);
+
+  const currentAnnouncement = activeAnnouncements[announcementIndex] ?? null;
+
+  const listings = listingsData?.listings || [];
+  const totalCount = listingsData?.total || 0;
+
+  const filteredListings = useMemo(() => {
+    // Additional client-side filtering for features not in API yet
+    return listings.filter((item) => {
+      if (activeCategory !== 'All' && item.category !== activeCategory) return false;
+      if (filters.condition !== 'All' && item.condition !== filters.condition) return false;
+      return true;
+    });
+  }, [listings, activeCategory, filters]);
+
+  const recentlyViewed = useMemo(() => {
+    return listings.filter(l => recentlyViewedIds.includes(l.id));
+  }, [listings, recentlyViewedIds]);
+
+  // AI Recommendation Logic
+  const recommendedListings = useMemo(() => {
+    if (Object.keys(userInterests).length === 0) return [];
+    
+    const sortedInterests = Object.entries(userInterests)
+      .sort(([, a], [, b]) => b - a)
+      .map(([cat]) => cat);
+
+    return listings
+      .filter(l => l.status === 'active' && !recentlyViewedIds.includes(l.id))
+      .sort((a, b) => {
+        const aIndex = sortedInterests.indexOf(a.category);
+        const bIndex = sortedInterests.indexOf(b.category);
+        
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      })
+      .slice(0, 4);
+  }, [listings, userInterests, recentlyViewedIds]);
+
+  const sortedListings = [...filteredListings].sort((a, b) => {
+    if (filters.sortBy === 'price-asc') return a.price - b.price;
+    if (filters.sortBy === 'price-desc') return b.price - a.price;
+    return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+  });
+
+  const formatNGN = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const hasActiveFilters = Boolean(
+    filters.query || 
+    filters.category !== 'All' || 
+    filters.location || 
+    filters.minPrice !== null || 
+    filters.maxPrice !== null
+  );
+
+  const totalMarketViews = listings.reduce((acc, l) => acc + (l.viewsCount || 0), 0);
+
+  // Administrator-managed hero copy. Falls back to the designed markup below
+  // whenever the metadata service is unreachable, so the landing page never
+  // renders empty headings.
+  const managedHeadings = useMemo(() => {
+    const managed = metadataError === null;
+    const rawTitle = managed ? liveMetadata.headingTitle : '';
+
+    // A "|" in the configured heading highlights everything after it.
+    const [headline, accent] = rawTitle.includes('|')
+      ? [rawTitle.slice(0, rawTitle.indexOf('|')), rawTitle.slice(rawTitle.indexOf('|') + 1)]
+      : [rawTitle, ''];
+
+    return {
+      title: headline.trim(),
+      titleAccent: accent.trim(),
+      subtitle: managed ? liveMetadata.headingSubtitle : '',
+      badge: managed ? liveMetadata.headingBadge : '',
+    };
+  }, [liveMetadata, metadataError]);
+
+  return (
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col pb-20 md:pb-0 font-sans selection:bg-emerald-500 selection:text-slate-700">
+      <SEO />
+      <Navbar />
+      <CategoryBar />
+
+      <main className="max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 py-6 flex-1 space-y-8 relative">
+        {/* HERO SECTION */}
+        <section className="relative py-12 sm:py-20 text-center space-y-8">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_70%)] pointer-events-none"></div>
+
+          <div className="space-y-4 relative z-10">
+            <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-sm shadow-emerald-100">
+              <Sparkles className="w-4 h-4 animate-pulse" />
+              <span>{managedHeadings.badge || t('trusted_marketplace')}</span>
+            </div>
+            <h1 className="text-4xl sm:text-7xl font-black text-[#0f172a] tracking-tighter leading-none">
+              {managedHeadings.title ? (
+                <>
+                  {managedHeadings.title}
+                  {managedHeadings.titleAccent && (
+                    <span className="text-emerald-600"> {managedHeadings.titleAccent}</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  Trade Securely in <br/>
+                  <span className="text-emerald-600">Ogbomosoland.</span>
+                </>
+              )}
+            </h1>
+            <p className="text-[#0f172a] text-xs sm:text-base max-w-xl mx-auto font-bold">
+              {managedHeadings.subtitle ||
+                'Verified local items, safe meetup locations, and AI-powered pricing. Connect with thousands of buyers in Under G, Takie, and LAUTECH.'}
+            </p>
+          </div>
+
+          <form onSubmit={handleHeroSearch} className="max-w-2xl mx-auto relative z-10 px-4">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-emerald-100 blur-2xl rounded-full opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
+              <div className="relative flex items-center bg-white border-2 border-slate-200 focus-within:border-emerald-500 rounded-[2rem] p-2 pr-2.5 transition-all shadow-2xl">
+                <Search className="w-6 h-6 text-slate-600 ml-4 shrink-0" />
+                <input 
+                  type="text" 
+                  placeholder={t('search_placeholder')}
+                  value={heroSearch}
+                  onChange={(e) => setHeroSearch(e.target.value)}
+                  className="flex-1 bg-transparent border-none text-slate-900 text-base sm:text-lg px-4 py-3 focus:outline-none placeholder:text-slate-700 font-bold"
+                />
+                <button type="submit" className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                  <span className="hidden sm:inline">FIND DEALS</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
+              <span className="text-[10px] font-black text-[#0f172a] uppercase tracking-widest mr-1">Trending:</span>
+              {['iPhone', 'Toyota', 'Hostel', 'Generator', 'Laptop'].map(tag => (
+                <button 
+                  key={tag} 
+                  type="button"
+                  onClick={() => { setHeroSearch(tag); setFilters(f => ({...f, query: tag})); }}
+                  className="text-[11px] font-bold text-slate-800 hover:text-emerald-600 bg-white border border-slate-200 px-3 py-1 rounded-full transition-colors"
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </form>
+        </section>
+
+        {currentAnnouncement && (
+          <div className="p-3.5 bg-gradient-to-r from-emerald-950/80 via-slate-900 to-teal-950/80 border border-emerald-500/30 rounded-2xl shadow-lg">
+            <div className="flex items-center gap-3 text-xs">
+              <span className="p-1.5 bg-emerald-100 text-emerald-600 rounded-xl shrink-0"><Sparkles className="w-4 h-4 animate-pulse" /></span>
+              <p className="min-w-0 flex-1"><strong className="text-slate-900 font-black">{currentAnnouncement.title}: </strong>{currentAnnouncement.message}</p>
+
+              {activeAnnouncements.length > 1 && (
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    aria-label="Previous announcement"
+                    onClick={() => setAnnouncementIndex((current) => (current - 1 + activeAnnouncements.length) % activeAnnouncements.length)}
+                    className="h-7 w-7 rounded-full border border-slate-200 bg-slate-50/70 text-slate-300 hover:text-slate-900 transition-colors"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next announcement"
+                    onClick={() => setAnnouncementIndex((current) => (current + 1) % activeAnnouncements.length)}
+                    className="h-7 w-7 rounded-full border border-slate-200 bg-slate-50/70 text-slate-300 hover:text-slate-900 transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {activeAnnouncements.length > 1 && (
+              <div className="mt-3 flex items-center gap-2 justify-center">
+                {activeAnnouncements.map((announcement, index) => (
+                  <button
+                    key={announcement.id}
+                    type="button"
+                    aria-label={`Show announcement ${index + 1}`}
+                    onClick={() => setAnnouncementIndex(index)}
+                    className={`h-1.5 rounded-full transition-all ${
+                      index === announcementIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-slate-300 hover:bg-slate-500'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <PromotedSpotlightBanner listings={listings} />
+
+        {/* Marketplace Pulse Metrics */}
+        {activeCategory === 'All' && !hasActiveFilters && (
+          <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-2 shadow-xl hover:border-emerald-500/30 transition-colors group">
+              <div className="flex items-center gap-2 text-emerald-600 mb-1">
+                <Activity className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Market Pulse</span>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <p className="text-2xl sm:text-3xl font-black text-slate-900">Live</p>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              </div>
+              <p className="text-[11px] text-slate-600 font-medium">Active Node Trading</p>
+            </div>
+
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-2 shadow-xl hover:border-blue-500/30 transition-colors group">
+              <div className="flex items-center gap-2 text-blue-400 mb-1">
+                <Users className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Community</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900">{allUsers.length}</p>
+              <p className="text-[11px] text-slate-600 font-medium">Registered Members</p>
+            </div>
+
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-2 shadow-xl hover:border-amber-200 transition-colors group">
+              <div className="flex items-center gap-2 text-amber-600 mb-1">
+                <Eye className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Impressions</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900">{(totalMarketViews / 1000).toFixed(1)}k</p>
+              <p className="text-[11px] text-slate-600 font-medium">Cumulative Ad Views</p>
+            </div>
+
+            <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-2 shadow-xl hover:border-purple-200 transition-colors group">
+              <div className="flex items-center gap-2 text-purple-600 mb-1">
+                <ShoppingBag className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Volume</span>
+              </div>
+              <p className="text-2xl sm:text-3xl font-black text-slate-900">{listings.length}</p>
+              <p className="text-[11px] text-slate-600 font-medium">Verified Classifieds</p>
+            </div>
+          </section>
+        )}
+
+        {/* Recent Market Activity Ticker */}
+        {recentDeals.length > 0 && (activeCategory === 'All') && (
+          <section className="bg-slate-50 border-y border-slate-200/50 py-3 -mx-4 sm:-mx-8 overflow-hidden">
+            <div className="flex items-center gap-4 px-4 whitespace-nowrap">
+              <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 border border-emerald-200">
+                <Zap className="w-3 h-3 fill-current" />
+                <span>Recent Deals</span>
+              </div>
+              <div className="flex items-center gap-8 animate-marquee">
+                {recentDeals.concat(recentDeals).map((deal, idx) => (
+                  <div key={`${deal.id}-${idx}`} className="flex items-center gap-2 text-xs">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="text-slate-600">Sold:</span>
+                    <span className="font-bold text-slate-900">{deal.itemTitle}</span>
+                    <span className="text-emerald-600 font-black">{formatNGN(deal.price)}</span>
+                    <span className="text-slate-600 text-[10px]">{deal.location}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* AI Recommendations Section */}
+        {recommendedListings.length > 0 && activeCategory === 'All' && !hasActiveFilters && (
+          <section className="bg-slate-50 border border-slate-200/50 p-6 rounded-[2.5rem] space-y-4 animate-in fade-in slide-in-from-right-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-50 text-purple-600 rounded-xl border border-purple-200">
+                  <BrainCircuit className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-slate-900">{t('recommended_for_you')}</h2>
+                  <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">{t('ai_matched')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {recommendedListings.map(item => (
+                <ListingCard key={item.id} listing={item} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Recently Viewed Tray */}
+        {recentlyViewed.length > 0 && !hasActiveFilters && (
+          <section className="bg-slate-50 border border-slate-200/60 p-5 rounded-3xl space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">Recently Inspected Items</h3>
+              </div>
+              <span className="text-[10px] text-slate-600 font-bold">{recentlyViewed.length} items</span>
+            </div>
+
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar pb-1">
+              {recentlyViewed.map((item) => (
+                <Link
+                  key={item.id}
+                  to={`/listing/${item.id}`}
+                  className="min-w-[180px] sm:min-w-[200px] bg-slate-50 border border-slate-200 hover:border-emerald-500/40 p-2.5 rounded-2xl flex items-center gap-3 shrink-0 transition-all group"
+                >
+                  <img src={item.images?.[0]} alt={item.title} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0" />
+                  <div className="min-w-0 space-y-0.5">
+                    <p className="text-xs font-bold text-slate-900 truncate group-hover:text-emerald-600 transition-colors">{item.title}</p>
+                    <p className="text-xs font-black text-emerald-600">{formatNGN(item.price)}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <CategoryGrid />
+        <NeighborhoodFilter />
+        <FeaturedVendorsSection />
+
+        {/* Active Filter Chips Bar */}
+        {hasActiveFilters && (
+          <div className="bg-white/80 border border-slate-200 p-3 rounded-2xl flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">Active Filters:</span>
+
+            {filters.query && (
+              <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 text-emerald-600 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Keyword: "{filters.query}"</span>
+                <button onClick={() => setFilters(f => ({ ...f, query: '' }))} className="hover:text-slate-900"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {filters.category !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 bg-purple-50 border border-purple-200 border-purple-200 text-purple-700 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Category: {filters.category}</span>
+                <button onClick={() => setFilters(f => ({ ...f, category: 'All' }))} className="hover:text-slate-900"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {filters.location && (
+              <span className="inline-flex items-center gap-1.5 bg-teal-50 border border-teal-200 text-teal-300 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Location: {filters.location}</span>
+                <button onClick={() => setFilters(f => ({ ...f, location: '' }))} className="hover:text-slate-900"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            {(filters.minPrice !== null || filters.maxPrice !== null) && (
+              <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-300 text-xs font-bold px-2.5 py-1 rounded-xl">
+                <span>Price: {filters.minPrice ? formatNGN(filters.minPrice) : '₦0'} - {filters.maxPrice ? formatNGN(filters.maxPrice) : 'Any'}</span>
+                <button onClick={() => setFilters(f => ({ ...f, minPrice: null, maxPrice: null }))} className="hover:text-slate-900"><X className="w-3.5 h-3.5" /></button>
+              </span>
+            )}
+
+            <button
+              onClick={resetFilters}
+              className="text-[10px] font-black uppercase text-rose-600 hover:underline ml-auto flex items-center gap-1"
+            >
+              <RotateCcw className="w-3 h-3" /> Clear All
+            </button>
+          </div>
+        )}
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">{t('marketplace_feed')}</h2>
+              <span className="text-[10px] bg-white text-emerald-600 font-extrabold px-3 py-1 rounded-full border border-slate-200 shadow">
+                {totalCount} ads
+              </span>
+            </div>
+            {filters.query && (
+              <p className="text-xs text-slate-600 mt-1">
+                Showing results for "<strong className="text-emerald-600">{filters.query}</strong>"
+              </p>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+            <button onClick={() => setIsAlertsOpen(true)} className="px-3 py-2 bg-white text-slate-300 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors">
+              <Bell className="w-4 h-4 text-emerald-600" />
+              <span>{t('search_alerts')}</span>
+            </button>
+            <button onClick={() => setIsCompareOpen(true)} className="px-3 py-2 bg-white text-slate-300 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors">
+              <Scale className="w-4 h-4 text-emerald-600" />
+              <span>{t('compare')} ({compareListingIds.length})</span>
+            </button>
+            <button onClick={() => setIsFilterOpen(true)} className="px-3 py-2 bg-white text-slate-300 rounded-xl text-xs font-bold border border-slate-200 flex items-center gap-1.5 transition-colors">
+              <SlidersHorizontal className="w-4 h-4 text-emerald-600" />
+              <span>{t('filters')}</span>
+            </button>
+            <div className="bg-white p-1 rounded-xl border border-slate-200 flex items-center gap-1 shrink-0">
+              <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-lg ${viewMode === 'grid' ? 'bg-emerald-500 text-slate-900' : 'text-slate-600'}`}><Grid className="w-4 h-4" /></button>
+              <button onClick={() => setViewMode('map')} className={`p-1.5 rounded-lg ${viewMode === 'map' ? 'bg-emerald-500 text-slate-900' : 'text-slate-600'}`}><MapPin className="w-4 h-4" /></button>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:gap-6 lg:items-start">
+          <div>
+            {viewMode === 'map' ? (
+              <MapView listings={sortedListings} />
+            ) : sortedListings.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-5">
+                {sortedListings.map((item, index) => (
+                  <React.Fragment key={item.id}>
+                    <ListingCard listing={item} />
+                    {(index + 1) % 8 === 0 && (
+                      <AdSenseBanner
+                        slot={import.meta.env.VITE_ADSENSE_SLOT_LISTINGS}
+                        className="col-span-full"
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </div>
+            ) : (
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center text-slate-600 text-xs my-6 space-y-4 shadow-xl">
+            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto border border-slate-200">
+              <Package className="w-8 h-8 text-slate-600" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-slate-900">No ads found matching your criteria</h3>
+              <p className="text-slate-600 max-w-sm mx-auto">Try clearing your search keyword, category, or location filters to view all listings.</p>
+            </div>
+            <button
+              onClick={resetFilters}
+              className="px-5 py-2.5 bg-emerald-500 text-slate-900 font-black rounded-xl text-xs hover:bg-emerald-400 transition-colors shadow-lg"
+            >
+              Reset All Filters
+            </button>
+          </div>
+            )}
+          </div>
+
+          <aside className="hidden lg:block lg:sticky lg:top-24">
+            <AdSenseBanner
+              slot={import.meta.env.VITE_ADSENSE_SLOT_LISTINGS_SIDEBAR}
+              format="vertical"
+            />
+          </aside>
+        </div>
+
+         <AdSenseBanner slot={import.meta.env.VITE_ADSENSE_SLOT_HOME} />
+
+      </main>
+
+      <Footer />
+      <MobileNav />
+      <FilterDrawer isOpen={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+      <CompareModal isOpen={isCompareOpen} onClose={() => setIsCompareOpen(false)} />
+      <SavedAlertsModal isOpen={isAlertsOpen} onClose={() => setIsAlertsOpen(false)} />
+    </div>
+  );
+}
+
+
