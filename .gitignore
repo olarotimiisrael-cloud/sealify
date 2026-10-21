@@ -25,3 +25,12 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Frontend (SPA) subdirectory
+/frontend/node_modules
+/frontend/.env
+/frontend/dist
+/frontend/build
+
+# Built SPA assets (generated on deploy)
+/public/assets

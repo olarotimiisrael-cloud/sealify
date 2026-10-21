@@ -58,7 +58,6 @@ Route::get('users/{user}/listings', [UserController::class, 'listings']);
 // Social graph — public read
 Route::get('users/{user}/following', [FollowController::class, 'following']);
 Route::get('users/{user}/followers', [FollowController::class, 'followers']);
-Route::get('users/{user}/follow/check', [FollowController::class, 'check']);
 
 // Post interactions — public read (polymorphic: works on listings and live-video sessions)
 Route::get('comments', [CommentController::class, 'index']);
@@ -176,6 +175,7 @@ Route::middleware(['auth:sanctum', 'verified', 'active'])->group(function () {
     Route::post('uploads', [UploadController::class, 'store']);
 
     // Social graph — authenticated mutations
+    Route::get('users/{user}/follow/check', [FollowController::class, 'check']);
     Route::post('users/{user}/follow', [FollowController::class, 'store']);
     Route::delete('users/{user}/follow', [FollowController::class, 'destroy']);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMessageRequest;
 use App\Http\Resources\MessageResource;
@@ -39,7 +40,7 @@ class MessageController extends Controller
 
         $type = $this->detectType($files);
 
-        $message = DB::transaction(function () use ($conversation, $user, $body, $files, $type) {
+        $message = DB::transaction(function () use ($conversation, $user, $body, $files, $type, $request) {
             $message = Message::create([
                 'conversation_id' => $conversation->id,
                 'sender_id' => $user->id,
@@ -77,6 +78,8 @@ class MessageController extends Controller
         });
 
         $message->load(['sender', 'attachments']);
+
+        broadcast(new MessageSent($message))->toOthers();
 
         return response()->json([
             'data' => new MessageResource($message),

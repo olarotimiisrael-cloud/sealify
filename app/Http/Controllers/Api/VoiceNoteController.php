@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\MessageSent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVoiceNoteRequest;
 use App\Http\Resources\MessageAttachmentResource;
@@ -68,6 +69,8 @@ class VoiceNoteController extends Controller
         [$message, $attachment] = $result;
 
         $message->load(['sender', 'attachments']);
+
+        broadcast(new MessageSent($message))->toOthers();
 
         return response()->json([
             'data' => new MessageResource($message),
