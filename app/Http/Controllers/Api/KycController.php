@@ -67,6 +67,8 @@ class KycController extends Controller
 
         $result = $this->bytid->normalise($raw);
 
+        $verification = null;
+
         // Persist record (never store the full ID number)
         $verification = DB::transaction(function () use ($user, $data, $reference, $result) {
             $record = KycVerification::create([
