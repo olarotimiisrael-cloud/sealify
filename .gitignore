@@ -34,3 +34,6 @@ Thumbs.db
 
 # Built SPA assets (generated on deploy)
 /public/assets
+
+# Legacy nested build artifact (from old vite outDir)
+/sealify-backend/

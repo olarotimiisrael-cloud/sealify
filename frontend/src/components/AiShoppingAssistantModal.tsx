@@ -173,7 +173,7 @@ export const AiShoppingAssistantModal: React.FC<AiShoppingAssistantModalProps> =
                 </div>
               )}
 
-              <div className={`max-w-[84%] p-3.5 rounded-2xl text-xs space-y-2 ${m.sender === 'user' ? 'bg-emerald-500 text-slate-950 font-semibold rounded-br-none shadow' : 'bg-white text-slate-200 border border-slate-200 rounded-bl-none shadow-md'}`}>
+              <div className={`max-w-[84%] p-3.5 rounded-2xl text-xs space-y-2 ${m.sender === 'user' ? 'bg-emerald-500 text-slate-950 font-semibold rounded-br-none shadow' : 'bg-white text-slate-900 border border-slate-200 rounded-bl-none shadow-md'}`}>
                 <p className="whitespace-pre-line leading-relaxed">{m.text}</p>
 
                 {m.citations && m.citations.length > 0 && (

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BankAccountController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CommentController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\CopilotController;
 use App\Http\Controllers\Api\DevWalletController;
 use App\Http\Controllers\Api\EmailController;
 use App\Http\Controllers\Api\FavoriteController;
@@ -51,6 +52,8 @@ Route::get('referrals/validate', [ReferralController::class, 'validate']);
 Route::post('otp/request', [OtpController::class, 'request']);
 Route::post('otp/verify', [OtpController::class, 'verify']);
 Route::post('otp/resend', [OtpController::class, 'resend']);
+
+Route::post('copilot', [CopilotController::class, 'chat']);
 
 Route::get('users/{user}', [UserController::class, 'show']);
 Route::get('users/{user}/listings', [UserController::class, 'listings']);
