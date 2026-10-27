@@ -1,0 +1,45 @@
+# Sealify — Docker build context exclusions
+# Never copy secrets, credentials, local databases, or build artifacts
+# into the image. These are provided at runtime or built during the build.
+
+# Environment / secrets (provided via Render environment settings)
+.env
+.env.backup
+.env.production
+.env.local
+
+# Git metadata and CI (not needed in the image)
+.git
+.gitignore
+.github/
+
+# Dependency directories (installed during image build)
+node_modules
+vendor
+frontend/node_modules
+
+# Build artifacts (rebuilt during image build)
+dist
+frontend/dist
+frontend/build
+public/assets
+public/build
+public/hot
+public/storage
+
+# Local runtime caches / logs
+*.log
+database/database.sqlite
+storage/*.key
+storage/pail
+.phpunit.cache
+.phpunit.result.cache
+
+# Tests (not required to run the production image)
+tests/
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+Thumbs.db
