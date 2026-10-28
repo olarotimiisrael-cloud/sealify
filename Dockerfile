@@ -61,6 +61,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Apache: URL rewriting for Laravel front controller + SPA fallback.
 RUN a2enmod rewrite
 
+# Serve Laravel's public directory as the document root so that
+# public/index.php (Laravel front controller) and public/index.html
+# (built SPA) are served for / requests. AllowOverride All lets the
+# shipped .htaccess rewrite rules (SPA fallback + asset routing) work.
+RUN sed -i 's#DocumentRoot /var/www/html#DocumentRoot /var/www/html/public#' /etc/apache2/sites-available/000-default.conf \
+    && sed -i 's#<Directory /var/www/html>#<Directory /var/www/html/public>#' /etc/apache2/sites-available/000-default.conf \
+    && sed -i '/<Directory \/var\/www\/html\/public>/,/<\/Directory>/ s/AllowOverride None/AllowOverride All/' /etc/apache2/sites-available/000-default.conf
+
 WORKDIR /var/www/html
 
 # Copy the Laravel application (secrets, node_modules, vendor, etc. are
