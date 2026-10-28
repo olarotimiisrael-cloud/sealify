@@ -45,7 +45,7 @@ export default defineConfig(({ mode }) => {
       // product ships as a single Laravel application (PHP + built SPA).
       // emptyOutDir is disabled on purpose: Laravel's index.php and .htaccess
       // live in that directory and must survive every build.
-      outDir: "../sealify-backend/public",
+      outDir: "../public",
       emptyOutDir: false,
     },
     server: {
