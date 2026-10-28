@@ -3,7 +3,7 @@
 # Multi-stage Dockerfile for a single Render web service.
 #
 # Stage 1: Build the React/Vite frontend into Laravel's public/ directory.
-# Stage 2: Run the Laravel application (PHP 8.3 + Apache) serving public/.
+# Stage 2: Run the Laravel application (PHP 8.4 + Apache) serving public/.
 # ---------------------------------------------------------------------------
 
 # ===========================================================================
@@ -26,9 +26,9 @@ ENV VITE_API_BASE=/api
 RUN npm run build
 
 # ===========================================================================
-# Stage 2 — Laravel application (PHP 8.3 + Apache)
+# Stage 2 — Laravel application (PHP 8.4 + Apache)
 # ===========================================================================
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 # System packages + PHP extensions required by composer.lock deps and
 # PostgreSQL connectivity (PDO_PGSQL for the staging pgsql connection).
