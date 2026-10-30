@@ -3,15 +3,19 @@ import { Link, NavLink } from 'react-router-dom';
 import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, UserPlus, Globe, MessageSquare, Bell } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { NotificationCenter } from './NotificationCenter';
 
 const Navbar = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { t } = useSealify();
   const { isAdmin } = useSealify();
-  const { user, conversations } = useSealify();
+  const { user, conversations, notifications } = useSealify();
   const totalUnreadMessages = conversations.reduce((acc, c) => acc + (c.unreadCount || 0), 0);
+  const totalUnreadNotifications = notifications.filter((n) => !n.read).length;
 
   return (
+    <>
     <nav className="bg-white border-b border-emerald-50 sticky top-0 z-50 shadow-sm">
       <div className="relative">
         {/* Top accent stripe */}
@@ -45,11 +49,16 @@ const Navbar = () => {
                   </span>
                 )}
               </NavLink>
-              <button className="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl"
+              >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-0 right-0 bg-rose-600 text-white text-[10px] font-bold w-3 h-3 rounded-full flex items-center justify-center">
-                  3
-                </span>
+                {totalUnreadNotifications > 0 && (
+                  <span className="absolute top-0 right-0 bg-rose-600 text-white text-[10px] font-bold w-3 h-3 rounded-full flex items-center justify-center">
+                    {totalUnreadNotifications > 9 ? '9+' : totalUnreadNotifications}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setShowUserDropdown(!showUserDropdown)}
@@ -119,6 +128,14 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
+
+    {showNotifications && (
+      <NotificationCenter
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+      />
+    )}
+    </>
   );
 };
 
