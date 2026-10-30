@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sealify-pwa-v5';
+const CACHE_NAME = 'sealify-pwa-v6';
 
 // Only immutable, content-hashed build output is cached. The app shell
 // (index.html) is deliberately NOT cached: a cached shell outlives the build
