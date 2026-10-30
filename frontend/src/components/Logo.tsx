@@ -29,7 +29,8 @@ const Logo: React.FC<LogoProps> = ({
   };
 
   // Only honour the uploaded logo once the metadata service has answered, so
-  // the built-in mark is used during load and on any metadata outage.
+  // the built-in shopping-bag mark is used during load and on any metadata
+  // outage. This guarantees the logo never fails to render.
   const logoUrl = error === null ? resolved.logoUrl : '';
   const siteName = name || (error === null ? resolved.siteName : '') || 'Sealify';
 
@@ -49,81 +50,70 @@ const Logo: React.FC<LogoProps> = ({
             className="w-full h-full object-contain drop-shadow-lg"
           />
         ) : (
-        <svg 
-          viewBox="0 0 100 100" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full drop-shadow-lg"
-        >
-          {/* Falcon Body - streamlined shape */}
-          <ellipse 
-            cx="50" 
-            cy="55" 
-            rx="22" 
-            ry="28" 
-            fill="#10b981" 
-          />
-          
-          {/* Falcon Head */}
-          <circle 
-            cx="50" 
-            cy="30" 
-            r="14" 
-            fill="#0d9488" 
-          />
-          
-          {/* Falcon Beak - sharp and prominent */}
-          <path 
-            d="M50 22L62 16L50 30L38 16L50 22Z" 
-            fill="#fbbf24" 
-          />
-          
-          {/* Falcon Eye - sharp and focused */}
-          <circle 
-            cx="55" 
-            cy="28" 
-            r="3" 
-            fill="white" 
-          />
-          <circle 
-            cx="56" 
-            cy="28" 
-            r="1.5" 
-            fill="#000" 
-          />
-          
-          {/* Falcon Wing - left side */}
-          <path 
-            d="M28 50C28 40 35 35 45 35C40 45 38 55 35 65C30 60 28 55 28 50Z" 
-            fill="#047857" 
-          />
-          
-          {/* Falcon Wing - right side */}
-          <path 
-            d="M72 50C72 40 65 35 55 35C60 45 62 55 65 65C70 60 72 55 72 50Z" 
-            fill="#065f46" 
-          />
-          
-          {/* Falcon Tail - pointed downward */}
-          <path 
-            d="M50 83L42 95H58L50 83Z" 
-            fill="#065f46" 
-          />
-          
-          {/* Falcon Chest - highlight */}
-          <path 
-            d="M40 55C40 50 45 48 50 48C55 48 60 50 60 55C60 60 55 62 50 62C45 62 40 60 40 55Z" 
-            fill="#a7f3d0" 
-            opacity="0.6"
-          />
-        </svg>
+          // Built-in shopping-bag brand mark (always renders, never 404s).
+          <svg
+            viewBox="0 0 64 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-full h-full drop-shadow-lg"
+          >
+            {/* Bag body */}
+            <path
+              d="M16 20C16 12 22 8 32 8S48 12 48 20V42H16V20Z"
+              fill="#10b981"
+            />
+            {/* Bag fold / top rim */}
+            <path
+              d="M16 20C16 12 22 8 32 8S48 12 48 20H16Z"
+              fill="#059669"
+            />
+            {/* Left handle */}
+            <path
+              d="M24 20C24 10 28 6 32 6C36 6 40 10 40 20"
+              fill="#10b981"
+            />
+            <path
+              d="M24 20C24 10 28 6 32 6C36 6 40 10 40 20"
+              stroke="#059669"
+              strokeWidth="2.5"
+              fill="none"
+              strokeLinecap="round"
+            />
+            {/* Right handle */}
+            <path
+              d="M32 20C36 20 40 16 40 12C40 8 36 4 32 4C28 4 24 8 24 12C24 16 28 20 32 20"
+              fill="#10b981"
+            />
+            <path
+              d="M32 20C36 20 40 16 40 12C40 8 36 4 32 4C28 4 24 8 24 12C24 16 28 20 32 20"
+              stroke="#059669"
+              strokeWidth="2.5"
+              fill="none"
+              strokeLinecap="round"
+            />
+            {/* Seal / verified checkmark on bag */}
+            <path
+              d="M20 36L25 41L38 28"
+              stroke="white"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <circle
+              cx="20"
+              cy="36"
+              r="4"
+              fill="#059669"
+            />
+          </svg>
         )}
       </div>
 
       {withText && (
         <span className={`font-black tracking-tighter ${size === 'sm' ? 'text-lg' : size === 'md' ? 'text-2xl' : 'text-3xl'} ${textColor}`}>
           {head && <>{head} </>}
-          <span className="text-emerald-500">{tail}</span>
+          <span className="text-emerald-600">{tail}</span>
         </span>
       )}
     </div>

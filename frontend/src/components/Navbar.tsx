@@ -23,10 +23,7 @@ const Navbar = () => {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="p-1 bg-emerald-500/10 rounded-lg border border-emerald-200 group-hover:border-emerald-500/50 transition-colors">
-                <img src="/logo.png" alt="Sealify" className="h-8 w-8" />
-              </div>
-              <span className="text-xl font-black text-slate-900 tracking-tighter group-hover:text-emerald-600 transition-colors">Sealify</span>
+              <Logo size="sm" withText textColor="text-slate-900" />
             </Link>
 
             <div className="hidden md:flex items-center gap-4">

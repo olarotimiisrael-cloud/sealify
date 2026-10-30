@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSealify } from "@/context/SealifyContext";
+import { GoogleIcon } from "@/components/Icons";
 
 const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => {
   const [fullName, setFullName] = useState('');
@@ -13,7 +14,7 @@ const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { signup } = useSealify();
+  const { signup, signInWithOAuth } = useSealify();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +66,15 @@ const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => 
           <Input id="register-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
         </div>
         <Button type="submit" disabled={isSubmitting} className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold">Create Account</Button>
+        <Button
+          type="button"
+          onClick={() => signInWithOAuth('google')}
+          disabled={isSubmitting}
+          variant="outline"
+          className="w-full mt-2"
+        >
+          <GoogleIcon className="w-4 h-4 mr-2" /> Continue with Google
+        </Button>
       </form>
 
       {onSwitchToLogin && (

@@ -126,7 +126,15 @@ class ApiClient {
   }
 
   async signInWithOAuth(provider: 'google' | 'apple' | 'samsung'): Promise<boolean> {
-    throw new Error("OAuth is not configured for the Laravel backend. Use email and password authentication.");
+    if (provider !== 'google') {
+      throw new Error(`OAuth provider "${provider}" is not configured.`);
+    }
+    const base = import.meta.env.VITE_API_BASE ?? '/api';
+    // Redirect the browser to the backend Google OAuth URL. Google will send the
+    // user back to /api/auth/google/callback, which then redirects to the frontend
+    // OAuth-callback handler with a Sanctum access token.
+    window.location.replace(`${base}/auth/google`);
+    return true;
   }
 
   async sendPhoneOtp(phone: string, channel?: string): Promise<string> {
