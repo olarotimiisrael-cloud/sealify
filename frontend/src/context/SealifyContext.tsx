@@ -1575,7 +1575,7 @@ const response = await adminFetch('/api/admin/users');
           return payload.configs || [];
         })
       : Promise.resolve([]);
-    const [listingResult, categoryRows, subcategoryRows, announcementRows, safeSpotRows, promotionPlanRows, configRows, siteSettingsRow, reviewRows, buyerRequestRows, recentDealRows] = await Promise.all([
+    const results = await Promise.allSettled([
       listingResultPromise,
       categoryService.getAll(),
       subcategoryService.getAll(),
@@ -1588,6 +1588,18 @@ const response = await adminFetch('/api/admin/users');
       buyerRequestService.getAll(),
       recentDealsService.getAll(),
     ]);
+
+    const listingResult = results[0].status === 'fulfilled' ? results[0].value : { listings: [] };
+    const categoryRows = results[1].status === 'fulfilled' ? results[1].value : [];
+    const subcategoryRows = results[2].status === 'fulfilled' ? results[2].value : [];
+    const announcementRows = results[3].status === 'fulfilled' ? results[3].value : [];
+    const safeSpotRows = results[4].status === 'fulfilled' ? results[4].value : [];
+    const promotionPlanRows = results[5].status === 'fulfilled' ? results[5].value : [];
+    const configRows = results[6].status === 'fulfilled' ? results[6].value : [];
+    const siteSettingsRow = results[7].status === 'fulfilled' ? results[7].value : null;
+    const reviewRows = results[8].status === 'fulfilled' ? results[8].value : [];
+    const buyerRequestRows = results[9].status === 'fulfilled' ? results[9].value : [];
+    const recentDealRows = results[10].status === 'fulfilled' ? results[10].value : [];
 
     const mappedListings = (listingResult.listings || []).map(mapListingToListing);
     setListings(mappedListings);
