@@ -47,12 +47,14 @@ Route::prefix('auth')->group(function () {
     Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:auth');
 
     // Google OAuth — requires GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI
-    Route::get('google', [AuthController::class, 'googleRedirect'])->name('auth.google');
-    Route::get('google/callback', [AuthController::class, 'googleCallback'])->name('auth.google.callback');
+    Route::middleware('web')->group(function () {
+        Route::get('google', [AuthController::class, 'googleRedirect'])->name('auth.google');
+        Route::get('google/callback', [AuthController::class, 'googleCallback'])->name('auth.google.callback');
 
-    // Apple OAuth — requires APPLE_CLIENT_ID / APPLE_CLIENT_SECRET / APPLE_REDIRECT_URI
-    Route::get('apple', [AuthController::class, 'appleRedirect'])->name('auth.apple');
-    Route::get('apple/callback', [AuthController::class, 'appleCallback'])->name('auth.apple.callback');
+        // Apple OAuth — requires APPLE_CLIENT_ID / APPLE_CLIENT_SECRET / APPLE_REDIRECT_URI
+        Route::get('apple', [AuthController::class, 'appleRedirect'])->name('auth.apple');
+        Route::get('apple/callback', [AuthController::class, 'appleCallback'])->name('auth.apple.callback');
+    });
 });
 
 Route::get('referrals/validate', [ReferralController::class, 'validate']);
