@@ -2,12 +2,12 @@
 
 This document covers deploying Sealify to Render as a single Docker-based web
 service that serves both the React/Vite frontend and the Laravel backend from
-the `staging/render-combined-deploy` branch.
+the `main` branch.
 
 ## Repository / branch
 
 - Repository: `olarotimiisrael-cloud/sealify`
-- Branch: `staging/render-combined-deploy`
+- Branch: `main`
 - Dockerfile: `/Dockerfile` (repository root)
 - Entrypoint: `/docker-entrypoint.sh`
 - Docker ignore: `/.dockerignore`
@@ -17,8 +17,8 @@ the `staging/render-combined-deploy` branch.
 | Layer | Technology | Where it runs |
 |-------|-----------|---------------|
 | Frontend | React 19 + Vite 8 + TypeScript | Built at image-build time into Laravel `public/` |
-| Backend | Laravel 13 (PHP 8.3) | Same container, Apache + PHP-FPM (mod_php via `php:8.3-apache`) |
-| Database | PostgreSQL (Render managed DB) | Separate Render PostgreSQL service, NOT this container |
+| Backend | Laravel 13 (PHP 8.4) | Same container, Apache + PHP (mod_php via `php:8.4-apache`) |
+| Database | SQLite (`database/database.sqlite`) | Local filesystem within the container |
 | Storage | Local filesystem (`storage/app/public`) | Ephemeral within the container |
 
 The frontend and backend share the same origin, so all API calls use same-origin
@@ -27,13 +27,13 @@ The frontend and backend share the same origin, so all API calls use same-origin
 ## Render service setup
 
 1. Create a new **Web Service** on Render connected to this repo,
-   branch `staging/render-combined-deploy`.
+   branch `main`.
 2. Runtime: **Docker** (Dockerfile at repo root).
-3. Create a separate **PostgreSQL** database on Render for staging only.
-   Do NOT point the staging service at the production database.
-4. Add the Render PostgreSQL internal connection string as the staging
-   `DB_*` environment variables (see below).
-5. Set all environment variables in Render's "Environment" settings.
+3. **SQLite note:** Render's free tier has an ephemeral filesystem — SQLite
+   data (`database/database.sqlite`) will be reset on each deploy. For
+   persistent data, attach a **Render Disk** to the web service and mount it
+   at `/var/www/html/database`, then set `DB_DATABASE=/var/www/html/database/database.sqlite`.
+4. Add the environment variables below in Render's "Environment" settings.
    Never commit `.env` or secret values.
 
 ## Environment variables (Render → staging service)
@@ -52,12 +52,8 @@ Set these in Render's web-service environment settings. Values marked
 | `SESSION_SECURE_COOKIE` | HTTPS-only session cookie | `true` (Render serves HTTPS) | No |
 | `SESSION_DRIVER` | Session storage | `database` | No |
 | `SESSION_LIFETIME` | Session minutes | `120` | No |
-| `DB_CONNECTION` | Database driver | `pgsql` | No |
-| `DB_HOST` | Staging PostgreSQL host | Render internal DB host | Yes |
-| `DB_PORT` | Staging PostgreSQL port | Render internal DB port (5432) | Yes |
-| `DB_DATABASE` | Staging database name | Render internal DB name | Yes |
-| `DB_USERNAME` | Staging database user | Render internal DB user | Yes |
-| `DB_PASSWORD` | Staging database password | Render internal DB password | Yes |
+| `DB_CONNECTION` | Database driver | `sqlite` | No |
+| `DB_DATABASE` | SQLite database file path | `database/database.sqlite` (or mounted disk path) | No |
 | `QUEUE_CONNECTION` | Queue driver | `database` | No |
 | `CACHE_STORE` | Cache driver | `database` | No |
 | `FILESYSTEM_DISK` | File storage disk | `local` | No |
@@ -82,21 +78,21 @@ Set these in Render's web-service environment settings. Values marked
 - **Paystack**: Use sandbox/test credentials for staging. Never enable live keys on staging.
 - **Bytid / Pusher**: Optional. The app degrades gracefully when these are unset.
 - **Mail**: `log` driver in staging so no real email is sent.
+- **SQLite persistence**: Without a Render Disk, the SQLite database is recreated on each deploy. Attach a Render Disk mounted at `/var/www/html/database` and set `DB_DATABASE=/var/www/html/database/database.sqlite` for persistent data across deploys.
 
 ## Session / cache / queue drivers
 
 Staging uses database-backed `SESSION_DRIVER`, `CACHE_STORE`, and
 `QUEUE_CONNECTION`. The required tables (`sessions`, `cache`, `cache_locks`,
 `jobs`) are all created by the committed migrations, so no driver change is
-needed for PostgreSQL.
+needed for SQLite.
 
 ## Database (migrations)
 
-- Migrations are PostgreSQL-compatible (no MySQL-specific `engine`/`collation`/
-  `charset` overrides; all `up()` changes are additive).
+- Migrations are SQLite-compatible (all `up()` changes are additive).
 - Do **NOT** run migrations automatically in the container entrypoint. The
   entrypoint intentionally does not migrate.
-- Run migrations once against the dedicated staging database after the service
+- Run migrations once against the SQLite database after the service
   is created, e.g. via a Render shell / one-off deploy:
   `php artisan migrate --force`
 - Never run `migrate:fresh`, `migrate:refresh`, `db:wipe`, or destructive SQL.
@@ -118,6 +114,7 @@ a different port in Render's service settings.
 - `.git` directory
 - `tests/` (not required to run the app)
 - `public/assets` (rebuilt at image-build time from the frontend source)
+- `database/database.sqlite` (created at runtime via migrations)
 
 ## Rollback
 

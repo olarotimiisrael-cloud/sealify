@@ -31,7 +31,7 @@ RUN npm run build
 FROM php:8.4-apache
 
 # System packages + PHP extensions required by composer.lock deps and
-# PostgreSQL connectivity (PDO_PGSQL for the staging pgsql connection).
+# SQLite connectivity (pdo_sqlite is compiled into PHP by default).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
@@ -40,13 +40,10 @@ RUN apt-get update \
         libonig-dev \
         libxml2-dev \
         libzip-dev \
-        libpq-dev \
         zip \
         unzip \
     && docker-php-ext-install -j"$(nproc)" \
-        pdo_pgsql \
-        pgsql \
-        pdo_mysql \
+        pdo_sqlite \
         mbstring \
         exif \
         pcntl \
