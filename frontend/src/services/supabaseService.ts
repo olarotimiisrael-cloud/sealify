@@ -26,7 +26,12 @@ import { toast } from 'sonner';
 
 const handleError = (error: any, operation: string) => {
   console.error(`[Laravel Error] ${operation}:`, error);
-  toast.error(`Database error: ${error?.message || 'Unknown error'}`);
+  // Suppress toasts for 404s on optional resources that may not be implemented yet
+  const msg = error?.message || '';
+  const isOptionalNotFound = msg.includes('404') || msg.includes('Not Found') || msg.includes('Unsupported marketplace resource') || msg.includes('Request failed');
+  if (!isOptionalNotFound) {
+    toast.error(`Database error: ${msg || 'Unknown error'}`);
+  }
   throw error;
 };
 
