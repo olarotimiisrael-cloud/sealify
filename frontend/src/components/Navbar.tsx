@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { User, Settings as SettingsIcon, Save, ShieldCheck, LogIn, UserPlus, Globe, MessageSquare, Bell } from 'lucide-react';
 import { useSealify } from '../context/SealifyContext';
+import Logo from './Logo';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationCenter } from './NotificationCenter';
 

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSealify } from "@/context/SealifyContext";
-import { GoogleIcon } from "@/components/Icons";
+import { GoogleIcon, AppleIcon } from "@/components/Icons";
 
 const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => {
   const [fullName, setFullName] = useState('');
@@ -74,6 +74,15 @@ const RegisterForm = ({ onSwitchToLogin }: { onSwitchToLogin?: () => void }) => 
           className="w-full mt-2"
         >
           <GoogleIcon className="w-4 h-4 mr-2" /> Continue with Google
+        </Button>
+        <Button
+          type="button"
+          onClick={() => signInWithOAuth('apple')}
+          disabled={isSubmitting}
+          variant="outline"
+          className="w-full mt-2"
+        >
+          <AppleIcon className="w-4 h-4 mr-2" /> Continue with Apple
         </Button>
       </form>
 

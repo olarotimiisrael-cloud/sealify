@@ -126,14 +126,20 @@ class ApiClient {
   }
 
   async signInWithOAuth(provider: 'google' | 'apple' | 'samsung'): Promise<boolean> {
-    if (provider !== 'google') {
+    const base = import.meta.env.VITE_API_BASE ?? '/api';
+    const route = {
+      google: `${base}/auth/google`,
+      apple: `${base}/auth/apple`,
+    }[provider];
+
+    if (!route) {
       throw new Error(`OAuth provider "${provider}" is not configured.`);
     }
-    const base = import.meta.env.VITE_API_BASE ?? '/api';
-    // Redirect the browser to the backend Google OAuth URL. Google will send the
-    // user back to /api/auth/google/callback, which then redirects to the frontend
+
+    // Redirect the browser to the backend OAuth URL. The provider will send the
+    // user back to the backend callback, which then redirects to the frontend
     // OAuth-callback handler with a Sanctum access token.
-    window.location.replace(`${base}/auth/google`);
+    window.location.replace(route);
     return true;
   }
 

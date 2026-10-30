@@ -147,6 +147,27 @@ class AuthController extends Controller
         return Redirect::to('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
     }
 
+    public function appleRedirect(Request $request): JsonResponse
+    {
+        $clientId = config('services.apple.client_id');
+        $redirectUri = config('services.apple.redirect');
+        $state = Str::random(32);
+
+        $request->session()->put('oauth_state', $state);
+        $request->session()->put('oauth_provider', 'apple');
+
+        $query = http_build_query([
+            'client_id'     => $clientId,
+            'redirect_uri'  => $redirectUri,
+            'response_type' => 'code',
+            'scope'         => 'name email',
+            'language'      => 'en',
+            'state'         => $state,
+        ]);
+
+        return Redirect::to('https://appleid.apple.com/auth/authorize?' . $query);
+    }
+
     public function googleCallback(Request $request): JsonResponse
     {
         $state = $request->session()->pull('oauth_state');
@@ -222,7 +243,10 @@ class AuthController extends Controller
                     'password'         => Str::random(60),
                     'email_verified_at'=> now(),
                     'avatar_url'       => $picture,
+                    'google_id'        => $googleId,
                 ]);
+            } else {
+                $user->forceFill(['google_id' => $googleId])->save();
             }
 
             $credentials = $user->verified_credentials ?? [];
@@ -245,6 +269,104 @@ class AuthController extends Controller
                 'name'     => $user->name,
                 'email'    => $user->email,
                 'avatar_url' => $user->avatar_url,
+            ])));
+        });
+    }
+
+    public function appleCallback(Request $request): JsonResponse
+    {
+        $state = $request->session()->pull('oauth_state');
+        if (! $state || $state !== $request->query('state')) {
+            throw ValidationException::withMessages([
+                'state' => ['Invalid OAuth state. Please try again.'],
+            ]);
+        }
+
+        $code = $request->query('code');
+        if (! $code) {
+            throw ValidationException::withMessages([
+                'code' => ['No authorization code returned from Apple.'],
+            ]);
+        }
+
+        $clientId = config('services.apple.client_id');
+        $clientSecret = config('services.apple.client_secret');
+        $redirectUri = config('services.apple.redirect');
+
+        $tokenResponse = Http::asJson()->post('https://appleid.apple.com/auth/token', [
+            'grant_type'    => 'authorization_code',
+            'code'          => $code,
+            'redirect_uri'  => $redirectUri,
+            'client_id'     => $clientId,
+            'client_secret' => $clientSecret,
+        ]);
+
+        if (! $tokenResponse->ok()) {
+            Log::warning('Apple OAuth token exchange failed', ['body' => $tokenResponse->body()]);
+            throw ValidationException::withMessages([
+                'apple' => ['Unable to exchange authorization code with Apple.'],
+            ]);
+        }
+
+        $tokens = $tokenResponse->json();
+        $idToken = $tokens['id_token'] ?? null;
+
+        if (! $idToken) {
+            throw ValidationException::withMessages([
+                'apple' => ['No ID token returned from Apple.'],
+            ]);
+        }
+
+        $parts = explode('.', $idToken);
+        $payload = json_decode(base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]) . str_repeat('=', 4 - strlen($parts[1]) % 4)), true);
+        $appleId = $payload['sub'] ?? null;
+        $email = $payload['email'] ?? null;
+        $name = $payload['name'] ?? $payload['email'];
+        $firstName = $payload['firstName'] ?? '';
+        $lastName = $payload['lastName'] ?? '';
+
+        if (! $appleId || ! $email) {
+            throw ValidationException::withMessages([
+                'apple' => ['Apple profile is missing required fields.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($appleId, $email, $name, $firstName, $lastName) {
+            $user = User::where('email', $email)->first();
+
+            if (! $user) {
+                $user = User::create([
+                    'name'             => $name,
+                    'email'            => $email,
+                    'password'         => Str::random(60),
+                    'email_verified_at'=> now(),
+                    'apple_id'         => $appleId,
+                ]);
+            } else {
+                $user->forceFill(['apple_id' => $appleId])->save();
+            }
+
+            $credentials = $user->verified_credentials ?? [];
+            $credentials['apple'] = [
+                'provider' => 'apple',
+                'provider_id' => $appleId,
+                'connected_at' => now()->toISOString(),
+                'first_name' => $firstName,
+                'last_name' => $lastName,
+            ];
+            $user->forceFill(['verified_credentials' => $credentials])->save();
+
+            $user->forceFill(['last_seen_at' => now()])->save();
+
+            $token = $user->createToken('user')->plainTextToken;
+
+            $callback = config('services.apple.callback_url')
+                ?: config('app.frontend_url', 'http://localhost:5173') . '/auth/oauth-callback';
+
+            return Redirect::to($callback . '?token=' . urlencode($token) . '&user=' . urlencode(json_encode([
+                'id'       => $user->id,
+                'name'     => $user->name,
+                'email'    => $user->email,
             ])));
         });
     }

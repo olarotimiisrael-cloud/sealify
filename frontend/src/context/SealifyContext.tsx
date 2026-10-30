@@ -11,27 +11,27 @@ import { api } from '@/lib/api-client';
 import { laravelApi } from '@/lib/laravel-api';
 
 // Service imports
-import * as favoriteService from '@/services/supabaseService';
-import * as categoryService from '@/services/supabaseService';
-import * as subcategoryService from '@/services/supabaseService';
-import * as messageService from '@/services/supabaseService';
-import * as notificationService from '@/services/supabaseService';
-import * as verificationService from '@/services/supabaseService';
-import * as passwordRequestService from '@/services/supabaseService';
-import * as promotionService from '@/services/supabaseService';
-import * as disputeService from '@/services/supabaseService';
-import * as reportService from '@/services/supabaseService';
-import * as auditService from '@/services/supabaseService';
-import * as reviewService from '@/services/supabaseService';
-import * as buyerRequestService from '@/services/supabaseService';
-import * as announcementService from '@/services/supabaseService';
-import * as siteSettingsService from '@/services/supabaseService';
-import * as safeSpotService from '@/services/supabaseService';
-import * as promotionPlanService from '@/services/supabaseService';
-import * as searchAlertService from '@/services/supabaseService';
-import * as intrusionService from '@/services/supabaseService';
-import * as recentDealsService from '@/services/supabaseService';
-import * as storageService from '@/services/supabaseService';
+import { favoriteService } from '@/services/supabaseService';
+import { categoryService } from '@/services/supabaseService';
+import { subcategoryService } from '@/services/supabaseService';
+import { messageService } from '@/services/supabaseService';
+import { notificationService } from '@/services/supabaseService';
+import { verificationService } from '@/services/supabaseService';
+import { passwordRequestService } from '@/services/supabaseService';
+import { promotionService } from '@/services/supabaseService';
+import { disputeService } from '@/services/supabaseService';
+import { reportService } from '@/services/supabaseService';
+import { auditService } from '@/services/supabaseService';
+import { reviewService } from '@/services/supabaseService';
+import { buyerRequestService } from '@/services/supabaseService';
+import { announcementService } from '@/services/supabaseService';
+import { siteSettingsService } from '@/services/supabaseService';
+import { safeSpotService } from '@/services/supabaseService';
+import { promotionPlanService } from '@/services/supabaseService';
+import { searchAlertService } from '@/services/supabaseService';
+import { intrusionService } from '@/services/supabaseService';
+import { recentDealsService } from '@/services/supabaseService';
+import { storageService } from '@/services/supabaseService';
 
 const laravelData = laravelApi.data;
 
@@ -598,12 +598,11 @@ const sendPhoneOtp = async (phone: string, channel?: string) => {
      throw new Error('Phone OTP is not available on the Laravel backend. Use email and password.');
    };
 
-  const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
+    const signInWithOAuth = async (provider: 'google' | 'apple' | 'samsung'): Promise<boolean> => {
     try {
-      void provider;
-      throw new Error('OAuth is not configured for the Laravel backend. Use email and password authentication.');
-    } catch {
-      return false;
+      return api.signInWithOAuth(provider);
+    } catch (e: any) {
+      throw new Error(e?.message || 'Unable to sign in with OAuth');
     }
   };
 
