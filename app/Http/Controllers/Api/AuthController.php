@@ -125,7 +125,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function googleRedirect(Request $request): JsonResponse
+    public function googleRedirect(Request $request)
     {
         $clientId = config('services.google.client_id');
         $redirectUri = config('services.google.redirect');
@@ -147,7 +147,7 @@ class AuthController extends Controller
         return Redirect::to('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
     }
 
-    public function appleRedirect(Request $request): JsonResponse
+    public function appleRedirect(Request $request)
     {
         $clientId = config('services.apple.client_id');
         $redirectUri = config('services.apple.redirect');
