@@ -178,6 +178,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(WalletTransaction::class);
     }
 
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(Notification::class, 'user_id')->latest();
+    }
+
     // ------------------------------------------------------------------
     // Social graph (followers / following)
     // ------------------------------------------------------------------
