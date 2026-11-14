@@ -48,7 +48,17 @@ class Listing extends Model
         'featured' => 'boolean',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
     public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function seller(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }

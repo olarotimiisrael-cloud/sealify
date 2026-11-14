@@ -213,4 +213,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $user->isFollowing($this);
     }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
 }
