@@ -45,14 +45,21 @@
                 </button>
             </form>
 
-            <?php if($listings->isEmpty()): ?>
-                <div class="text-center py-16">
-                    <div class="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 text-4xl">📢</div>
-                    <h3 class="text-xl font-bold text-slate-900 mb-2">No listings match your filters.</h3>
-                    <p class="text-slate-600 mb-6">Try adjusting your search or <a href="<?php echo e(route('listings.create')); ?>" class="text-emerald-600 font-black hover:underline">post an ad</a>.</p>
-                </div>
-            <?php else: ?>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <?php if($listings->isEmpty()): ?>
+        <div class="text-center py-16">
+            <div class="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4 text-4xl">📢</div>
+            <h3 class="text-xl font-bold text-slate-900 mb-2">No listings match your filters.</h3>
+            <p class="text-slate-600 mb-6">Try adjusting your search or <a href="<?php echo e(route('listings.create')); ?>" class="text-emerald-600 font-black hover:underline">post an ad</a>.</p>
+        </div>
+    <?php else: ?>
+        <!-- Non-aggressive AdSense Ad - Listings Page Top -->
+        <?php if($settings && $settings->adsense_enabled && $settings->adsense_placement_listing_top && $settings->adsense_client_id): ?>
+            <div class="mb-6 flex justify-center">
+                <ins class="adsbygoogle" style="display:block" data-ad-client="<?php echo e($settings->adsense_client_id); ?>" data-ad-slot="<?php echo e($settings->adsense_slot_listing); ?>" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        <?php endif; ?>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <?php $__currentLoopData = $listings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $listing): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                         <a href="<?php echo e(route('listings.show', $listing)); ?>" class="block group">
                             <div class="aspect-video bg-gradient-to-br from-emerald-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-emerald-100 group-hover:border-emerald-300 transition-colors relative">

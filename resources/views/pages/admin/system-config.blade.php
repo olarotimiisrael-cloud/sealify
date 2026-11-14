@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">System Configuration</h1>
             <p class="text-slate-600">Configure marketplace settings and site preferences.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
@@ -29,3 +29,4 @@
     </div>
 </div>
 @endsection
+

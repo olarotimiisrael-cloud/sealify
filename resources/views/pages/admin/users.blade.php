@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">Manage Users</h1>
             <p class="text-slate-600">View, suspend, ban, or verify users.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <!-- Search & Filter -->
@@ -91,25 +91,25 @@
                                 <button onclick="toggleStatus({{ $user->id }}, '{{ $user->isActive() ? 'suspended' : 'active' }}')"
                                         class="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600"
                                         title="{{ $user->isActive() ? 'Suspend' : 'Activate' }}">
-                                    {{ $user->isActive() ? '⏸️' : '▶️' }}
+                                    {{ $user->isActive() ? '??' : '??' }}
                                 </button>
                                 @if (!$user->isBanned())
                                     <button onclick="toggleStatus({{ $user->id }}, 'banned')"
                                             class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Ban">
-                                        🚫
+                                        ??
                                     </button>
                                 @endif
                                 @if ($user->role !== 'admin')
                                     <button onclick="toggleRole({{ $user->id }}, '{{ $user->role === 'admin' ? 'user' : 'admin' }}')"
                                             class="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors"
                                             title="{{ $user->role === 'admin' ? 'Remove Admin' : 'Make Admin' }}">
-                                        {{ $user->role === 'admin' ? '👑' : '🛡️' }}
+                                        {{ $user->role === 'admin' ? '??' : '???' }}
                                     </button>
                                 @endif
                                 <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete">
-                                        🗑️
+                                        ???
                                     </button>
                                 </form>
                             </div>
@@ -153,3 +153,4 @@
     }
 </script>
 @endsection
+

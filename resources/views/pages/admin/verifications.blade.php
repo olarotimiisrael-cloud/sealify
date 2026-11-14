@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">KYC Verifications</h1>
             <p class="text-slate-600">Review and approve/reject seller identity verifications.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <!-- Filter -->
@@ -94,3 +94,4 @@
     </div>
 </div>
 @endsection
+

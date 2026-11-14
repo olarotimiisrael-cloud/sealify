@@ -103,6 +103,14 @@
         </div>
     </div>
 
+    <!-- Non-aggressive AdSense Ad - Home Page Top -->
+    @if($settings && $settings->adsense_enabled && $settings->adsense_placement_home_top && $settings->adsense_client_id)
+        <div class="mb-8 flex justify-center">
+            <ins class="adsbygoogle" style="display:block" data-ad-client="{{ $settings->adsense_client_id }}" data-ad-slot="{{ $settings->adsense_slot_home }}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+    @endif
+
     <!-- FEATURED LISTINGS -->
     <div class="mb-10">
         <div class="flex items-center justify-between mb-6">

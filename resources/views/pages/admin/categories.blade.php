@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">Manage Categories</h1>
             <p class="text-slate-600">Create, edit, and organize marketplace categories.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <!-- Add Category Form -->
@@ -27,7 +27,7 @@
             </div>
             <div class="sm:col-span-1">
                 <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Icon</label>
-                <input name="icon" type="text" placeholder="e.g. 📱"
+                <input name="icon" type="text" placeholder="e.g. ??"
                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
             </div>
             <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
@@ -51,7 +51,7 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($categories as $category)
-                    <?php $icon = $category->icon ?? '🏷️'; ?>
+                    <?php $icon = $category->icon ?? '???'; ?>
                     <?php $colorClass = $category->is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'; ?>
                     <?php $statusText = $category->is_active ? 'Active' : 'Inactive'; ?>
                     <tr class="group hover:bg-slate-50">
@@ -81,13 +81,13 @@
                                     <input name="sort_order" value="{{ $category->sort_order }}" hidden>
                                     <input name="is_active" value="{{ $category->is_active ? '1' : '0' }}" hidden>
                                     <button type="submit" class="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" title="Edit">
-                                        ✏️
+                                        ??
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('admin.categories.destroy', $category) }}" onsubmit="return confirm('Delete this category?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete">
-                                        🗑️
+                                        ???
                                     </button>
                                 </form>
                             </div>
@@ -103,3 +103,4 @@
     </div>
 </div>
 @endsection
+

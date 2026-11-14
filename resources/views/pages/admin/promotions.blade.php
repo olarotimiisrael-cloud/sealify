@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">Promotions</h1>
             <p class="text-slate-600">Manage listing promotions and featured ads.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
@@ -37,7 +37,7 @@
                             <form method="POST" action="{{ route('admin.promotions.destroy', $promotion) }}" onsubmit="return confirm('Delete this promotion?')" class="inline">
                                 @csrf @method('DELETE')
                                 <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete">
-                                    🗑️
+                                    ???
                                 </button>
                             </form>
                         </td>
@@ -53,3 +53,4 @@
     </div>
 </div>
 @endsection
+

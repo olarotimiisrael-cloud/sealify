@@ -1,13 +1,13 @@
-﻿@extends('layouts.admin')
+@extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-3xl font-black text-slate-900 mb-2">Manage Listings</h1>
             <p class="text-slate-600">Approve, reject, suspend, or feature listings.</p>
         </div>
-        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">← Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="text-sm text-emerald-600 font-bold hover:underline">? Back to Dashboard</a>
     </div>
 
     <!-- Search & Filter -->
@@ -61,7 +61,7 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-900">{{ $listing->user->name ?? 'Unknown' }}</td>
-                        <td class="px-6 py-4 text-sm text-emerald-600 font-bold">₦{{ number_format($listing->price, 0) }}</td>
+                        <td class="px-6 py-4 text-sm text-emerald-600 font-bold">?{{ number_format($listing->price, 0) }}</td>
                         <td class="px-6 py-4 text-sm text-slate-600">{{ $listing->category->name ?? 'N/A' }}</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold
@@ -69,23 +69,23 @@
                                 {{ ucfirst($listing->status ?? 'active') }}
                             </span>
                             @if ($listing->featured)
-                                <span class="ml-2 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-purple-100 text-purple-600">⭐ Featured</span>
+                                <span class="ml-2 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-purple-100 text-purple-600">? Featured</span>
                             @endif
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <button onclick="toggleListingStatus({{ $listing->id }}, '{{ $listing->status === 'active' ? 'suspended' : 'active' }}')"
                                         class="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600">
-                                    {{ $listing->status === 'active' ? '⏸️' : '▶️' }}
+                                    {{ $listing->status === 'active' ? '??' : '??' }}
                                 </button>
                                 <button onclick="toggleFeatured({{ $listing->id }})"
                                         class="p-2 rounded-lg hover:bg-purple-50 text-purple-600 transition-colors">
-                                    {{ $listing->featured ? '⭐' : '☆' }}
+                                    {{ $listing->featured ? '?' : '?' }}
                                 </button>
                                 <form method="POST" action="{{ route('admin.listings.destroy', $listing) }}" onsubmit="return confirm('Delete this listing?')" class="inline">
                                     @csrf @method('DELETE')
                                     <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete">
-                                        🗑️
+                                        ???
                                     </button>
                                 </form>
                             </div>
@@ -128,3 +128,4 @@
     }
 </script>
 @endsection
+

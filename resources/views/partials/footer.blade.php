@@ -55,6 +55,14 @@
                     </li>
                 </ul>
             </div>
+            <div class="space-y-4">
+                <h4 class="text-sm font-black text-slate-700 uppercase tracking-wider">Install App</h4>
+                <button id="install-app-btn" class="hidden w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2" onclick="installApp()">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L4 8m4-4v12"></path></svg>
+                    Install App
+                </button>
+                <p class="text-xs text-slate-500 text-center">Install Sealify on your device</p>
+            </div>
         </div>
         <div class="pt-8 border-t border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-800 uppercase font-black tracking-widest">
             <div class="flex items-center gap-2">

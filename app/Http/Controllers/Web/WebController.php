@@ -40,8 +40,9 @@ class WebController extends Controller
     {
         $listings = Listing::active()->latest()->paginate(12);
         $categories = Category::withCount('listings')->orderBy('name')->get();
+        $settings = SiteSetting::first();
 
-        return view('pages.home', compact('listings', 'categories'));
+        return view('pages.home', compact('listings', 'categories', 'settings'));
     }
 
     public function listings(Request $request)
@@ -57,16 +58,18 @@ class WebController extends Controller
 
         $listings = $query->latest()->paginate(12)->withQueryString();
         $categories = Category::orderBy('name')->get();
+        $settings = SiteSetting::first();
 
-        return view('pages.listings.index', compact('listings', 'categories'));
+        return view('pages.listings.index', compact('listings', 'categories', 'settings'));
     }
 
     public function listingShow(Listing $listing)
     {
         $listing->increment('views_count');
         $listing->load('seller', 'images', 'category');
+        $settings = SiteSetting::first();
 
-        return view('pages.listings.show', compact('listing'));
+        return view('pages.listings.show', compact('listing', 'settings'));
     }
 
     public function category(Category $category)
@@ -546,6 +549,51 @@ class WebController extends Controller
     public function adminAnnouncementDestroy(Announcement $announcement) {
         $announcement->delete();
         return back()->with('status', 'Announcement deleted.');
+    }
+
+    /* SEO, AdSense & Analytics */
+    public function adminSeo() {
+        $settings = SiteSetting::first() ?? new SiteSetting();
+        return view('pages.admin.seo', compact('settings'));
+    }
+
+    public function adminSeoUpdate(Request $request) {
+        $request->validate([
+            'meta_title' => 'nullable|string|max:255',
+            'meta_description' => 'nullable|string|max:500',
+            'meta_keywords' => 'nullable|string|max:500',
+            'google_analytics_id' => 'nullable|string|max:50',
+            'google_tag_manager_id' => 'nullable|string|max:50',
+            'facebook_pixel_id' => 'nullable|string|max:50',
+            'robots_txt' => 'nullable|string',
+            'adsense_enabled' => 'sometimes|boolean',
+            'adsense_client_id' => 'nullable|string|max:50',
+            'adsense_slot_home' => 'nullable|string|max:50',
+            'adsense_slot_listing' => 'nullable|string|max:50',
+            'adsense_slot_detail' => 'nullable|string|max:50',
+            'adsense_auto_ads' => 'sometimes|boolean',
+            'adsense_placement_home_top' => 'sometimes|boolean',
+            'adsense_placement_home_bottom' => 'sometimes|boolean',
+            'adsense_placement_listing_top' => 'sometimes|boolean',
+            'adsense_placement_listing_bottom' => 'sometimes|boolean',
+            'adsense_placement_detail_top' => 'sometimes|boolean',
+            'adsense_placement_detail_bottom' => 'sometimes|boolean',
+        ]);
+
+        $settings = SiteSetting::first() ?? new SiteSetting();
+        $settings->fill($request->only([
+            'meta_title', 'meta_description', 'meta_keywords',
+            'google_analytics_id', 'google_tag_manager_id', 'facebook_pixel_id',
+            'robots_txt',
+            'adsense_enabled', 'adsense_client_id', 'adsense_slot_home',
+            'adsense_slot_listing', 'adsense_slot_detail', 'adsense_auto_ads',
+            'adsense_placement_home_top', 'adsense_placement_home_bottom',
+            'adsense_placement_listing_top', 'adsense_placement_listing_bottom',
+            'adsense_placement_detail_top', 'adsense_placement_detail_bottom',
+        ]));
+        $settings->save();
+
+        return back()->with('status', 'SEO, AdSense & Analytics settings updated.');
     }
 
     /* Business Profile - User */

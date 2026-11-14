@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('content')
+@section('adminContent')
 <div class="space-y-8">
     <div class="flex items-center justify-between">
         <div>
@@ -102,3 +102,4 @@
     </div>
 </div>
 @endsection
+

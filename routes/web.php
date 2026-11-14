@@ -148,6 +148,10 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::get('/system-config', [WebController::class, 'adminSystemConfig'])->name('system-config');
     Route::post('/system-config', [WebController::class, 'adminSystemConfigUpdate'])->name('system-config.update');
 
+    /* SEO, AdSense & Analytics */
+    Route::get('/seo', [WebController::class, 'adminSeo'])->name('seo');
+    Route::post('/seo', [WebController::class, 'adminSeoUpdate'])->name('seo.update');
+
     /* Announcements */
     Route::get('/announcements', [WebController::class, 'adminAnnouncements'])->name('announcements');
     Route::post('/announcements', [WebController::class, 'adminAnnouncementStore'])->name('announcements.store');

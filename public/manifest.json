@@ -1,14 +1,14 @@
 {
-  "id": "com.sealify.app",
-  "name": "Sealify Nigeria Marketplace",
+  "name": "Sealify - Nigeria's Trusted Local Marketplace",
   "short_name": "Sealify",
-  "description": "Nigeria's Trusted Local Marketplace for Ogbomosoland & Oyo State.",
+  "description": "Buy, sell, and connect locally in Ogbomosoland, Oyo State, and across Nigeria. Verified sellers, safe meetup zones, and instant trading.",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#020617",
+  "background_color": "#ffffff",
   "theme_color": "#10b981",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "marketplace", "lifestyle"],
+  "lang": "en",
   "icons": [
     {
       "src": "/logo.png",
@@ -20,35 +20,7 @@
       "src": "/logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
-  ],
-  "categories": ["shopping", "business", "lifestyle"],
-  "shortcuts": [
-    {
-      "name": "Post Free Ad",
-      "short_name": "Post Ad",
-      "description": "Publish a new listing on Sealify",
-      "url": "/post-ad",
-      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Messages",
-      "short_name": "Inbox",
-      "description": "View buyer & seller direct chats",
-      "url": "/messages",
-      "icons": [{ "src": "/logo.png", "sizes": "192x192" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/logo.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Marketplace Homepage"
-    }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }

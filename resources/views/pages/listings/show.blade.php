@@ -61,6 +61,15 @@
                 </div>
 
                 <h1 class="text-3xl font-black text-slate-900 tracking-tight">{{ $listing->title }}</h1>
+                
+                <!-- Non-aggressive AdSense Ad - Listing Detail Top -->
+                @if($settings && $settings->adsense_enabled && $settings->adsense_placement_detail_top && $settings->adsense_client_id)
+                    <div class="mb-4 flex justify-center">
+                        <ins class="adsbygoogle" style="display:block" data-ad-client="{{ $settings->adsense_client_id }}" data-ad-slot="{{ $settings->adsense_slot_detail }}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+                        <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                    </div>
+                @endif
+                
                 <div class="text-2xl font-bold text-{{ $catColor }}-600">₦{{ number_format($listing->price, 0) }}</div>
                 <p class="text-slate-600 mb-6 leading-relaxed">{{ $listing->description }}</p>
 

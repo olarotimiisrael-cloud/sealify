@@ -17,12 +17,28 @@
                 </div>
 
                 <div class="flex items-center gap-3">
-                    <a href="<?php echo e(route('messages.index')); ?>" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
+                    <a href="<?php echo e(route('messages.index')); ?>" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <?php if(auth()->guard()->check()): ?>
+                            <?php
+                                $unreadMessages = App\Models\Message::where('receiver_id', auth()->id())->where('is_read', false)->count();
+                            ?>
+                            <?php if($unreadMessages > 0): ?>
+                                <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"><?php echo e($unreadMessages); ?></span>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </a>
-                    <button class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
-                        </button>
+                    <a href="<?php echo e(route('notifications.index')); ?>" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
+                        <?php if(auth()->guard()->check()): ?>
+                            <?php
+                                $unreadNotifications = App\Models\Notification::where('user_id', auth()->id())->where('read_at', null)->count();
+                            ?>
+                            <?php if($unreadNotifications > 0): ?>
+                                <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"><?php echo e($unreadNotifications); ?></span>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </a>
                     <?php if(auth()->guard()->check()): ?>
                         <a href="<?php echo e(route('profile.show')); ?>" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
