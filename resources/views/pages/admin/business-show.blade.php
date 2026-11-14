@@ -13,12 +13,19 @@
     <!-- Business Info -->
     <div class="bg-white rounded-2xl border border-slate-100 p-8 shadow-sm">
         <div class="flex items-center justify-between mb-6">
-            <div class="flex items-center gap-4">
+<div class="flex items-center gap-4">
                 <div class="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-2xl">
                     {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
                 </div>
                 <div>
-                    <h2 class="text-xl font-bold text-slate-900">{{ $user->business_name ?? 'Business Name' }}</h2>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-xl font-bold text-slate-900">{{ $user->business_name ?? 'Business Name' }}</h2>
+                        @if ($user->hasBadge())
+                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold bg-{{ $user->badgeColor() }}-100 text-{{ $user->badgeColor() }}-700">
+                                {{ $user->badgeLabel() }}
+                            </span>
+                        @endif
+                    </div>
                     <p class="text-sm text-slate-600">@{{ $user->username ?? $user->email }}</p>
                 </div>
             </div>

@@ -64,6 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'credential_expiry_warning_date',
         'verification_preferences',
         'referral_code',
+        'badge',
     ];
 
     protected $hidden = [
@@ -90,6 +91,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'trust_score' => 'integer',
         'credential_expiry_warning_date' => 'date',
         'verification_preferences' => 'array',
+        'badge' => 'string',
     ];
 
     // ------------------------------------------------------------------
@@ -222,5 +224,48 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    // ------------------------------------------------------------------
+    // Verified Badges
+    // ------------------------------------------------------------------
+
+    public const BADGE_BUSINESS = 'business';
+    public const BADGE_VENDOR = 'vendor';
+    public const BADGE_SEALIFY_OFFICIAL = 'sealify_official';
+    public const BADGE_SEALIFY_STAFF = 'sealify_staff';
+    public const BADGE_SEALIFY_OFFICER = 'sealify_officer';
+
+    public static function badgeOptions(): array
+    {
+        return [
+            self::BADGE_BUSINESS => 'Business',
+            self::BADGE_VENDOR => 'Vendor',
+            self::BADGE_SEALIFY_OFFICIAL => 'Sealify Official',
+            self::BADGE_SEALIFY_STAFF => 'Sealify Staff',
+            self::BADGE_SEALIFY_OFFICER => 'Sealify Officer',
+        ];
+    }
+
+    public function hasBadge(): bool
+    {
+        return !blank($this->badge);
+    }
+
+    public function badgeLabel(): ?string
+    {
+        return self::badgeOptions()[$this->badge] ?? null;
+    }
+
+    public function badgeColor(): string
+    {
+        return match ($this->badge) {
+            self::BADGE_BUSINESS => 'emerald',
+            self::BADGE_VENDOR => 'amber',
+            self::BADGE_SEALIFY_OFFICIAL => 'indigo',
+            self::BADGE_SEALIFY_STAFF => 'rose',
+            self::BADGE_SEALIFY_OFFICER => 'purple',
+            default => 'slate',
+        };
     }
 }

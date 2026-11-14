@@ -65,6 +65,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/conversations', [WebController::class, 'conversations'])->name('messages.index');
     Route::get('/conversations/{conversation}', [WebController::class, 'conversationShow'])->name('messages.show');
     Route::post('/conversations/{conversation}/messages', [WebController::class, 'messageStore'])->name('messages.store');
+    Route::post('/conversations/{conversation}/messages/attachments', [WebController::class, 'messageAttachmentStore'])->name('messages.attachments.store');
+    Route::get('/messages/attachments/{attachment}', [WebController::class, 'messageAttachmentShow'])->name('messages.attachments.show');
+    Route::post('/conversations/{conversation}/video-call', [WebController::class, 'videoCallInitiate'])->name('messages.video-call');
 
     Route::get('/bank-accounts', [WebController::class, 'bankAccounts'])->name('bank-accounts.index');
     Route::post('/bank-accounts', [WebController::class, 'bankAccountStore'])->name('bank-accounts.store');
@@ -102,8 +105,11 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
 
     /* Users */
     Route::get('/users', [WebController::class, 'adminUsers'])->name('users');
+    Route::get('/users/{user}/edit', [WebController::class, 'adminUserEdit'])->name('users.edit');
+    Route::put('/users/{user}', [WebController::class, 'adminUserUpdate'])->name('users.update');
     Route::post('/users/{user}/status', [WebController::class, 'adminUserStatus'])->name('users.status');
     Route::post('/users/{user}/role', [WebController::class, 'adminUserRole'])->name('users.role');
+    Route::post('/users/{user}/badge', [WebController::class, 'adminUserBadge'])->name('users.badge');
     Route::delete('/users/{user}', [WebController::class, 'adminUserDestroy'])->name('users.destroy');
 
     /* Listings */

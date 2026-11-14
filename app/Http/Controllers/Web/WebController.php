@@ -652,4 +652,126 @@ class WebController extends Controller
         $user->update(['is_verified_seller' => false]);
         return back()->with('status', 'Business unverified.');
     }
+
+    /* Messaging - Media Attachments */
+    public function messageAttachmentStore(Request $request, Conversation $conversation) {
+        $this->authorize('view', $conversation);
+
+        $request->validate([
+            'file' => 'required|file|max:20480', // 20MB max
+            'type' => 'required|in:image,voice,video',
+            'body' => 'nullable|string|max:5000',
+            'duration_seconds' => 'nullable|integer|min:1|max:3600',
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('messages/' . $conversation->id, 'public');
+
+        $message = $conversation->messages()->create([
+            'sender_id' => Auth::id(),
+            'receiver_id' => $conversation->participants()->where('user_id', '!=', Auth::id())->first()->user_id,
+            'body' => $request->input('body', ''),
+            'type' => match ($request->input('type')) {
+                'image' => Message::TYPE_IMAGE,
+                'voice' => Message::TYPE_VOICE,
+                'video' => Message::TYPE_VIDEO,
+                default => Message::TYPE_TEXT,
+            },
+            'duration_seconds' => $request->input('duration_seconds'),
+        ]);
+
+        MessageAttachment::create([
+            'message_id' => $message->id,
+            'path' => $path,
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType(),
+            'size_bytes' => $file->getSize(),
+            'duration_seconds' => $request->input('duration_seconds'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message->load('attachments'),
+        ]);
+    }
+
+    public function messageAttachmentShow(MessageAttachment $attachment) {
+        $message = $attachment->message;
+        $this->authorize('view', $message->conversation);
+
+        return response()->file(Storage::disk('public')->path($attachment->path), [
+            'Content-Type' => $attachment->mime_type,
+            'Content-Disposition' => 'inline; filename="' . $attachment->original_name . '"',
+        ]);
+    }
+
+    public function videoCallInitiate(Request $request, Conversation $conversation) {
+        $this->authorize('view', $conversation);
+
+        $request->validate([
+            'type' => 'required|in:video,voice',
+        ]);
+
+        // Generate a call session identifier
+        $callSessionId = 'call_' . $conversation->id . '_' . time() . '_' . Str::random(8);
+
+        // Store call session in conversation metadata or return for WebRTC signaling
+        return response()->json([
+            'success' => true,
+            'call_session_id' => $callSessionId,
+            'type' => $request->input('type'),
+            'conversation_id' => $conversation->id,
+            'initiator_id' => Auth::id(),
+            'initiator_name' => Auth::user()->name,
+        ]);
+    }
+
+    /* Users - Full Admin CRUD */
+    public function adminUserEdit(User $user) {
+        $badges = User::badgeOptions();
+        return view('pages.admin.user-edit', compact('user', 'badges'));
+    }
+
+    public function adminUserUpdate(Request $request, User $user) {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:50',
+            'status' => 'required|in:active,suspended,banned',
+            'role' => 'required|in:user,admin',
+            'badge' => 'nullable|in:' . implode(',', array_keys(User::badgeOptions())),
+            'bio' => 'nullable|string|max:1000',
+            'location' => 'nullable|string|max:255',
+            'business_name' => 'nullable|string|max:255',
+            'business_category' => 'nullable|string|max:255',
+            'business_address' => 'nullable|string|max:255',
+            'cac_number' => 'nullable|string|max:100',
+            'business_hours' => 'nullable|string|max:255',
+            'website_url' => 'nullable|url|max:255',
+            'instagram_handle' => 'nullable|string|max:100',
+            'twitter_handle' => 'nullable|string|max:100',
+            'whatsapp_number' => 'nullable|string|max:50',
+        ]);
+
+        $data = $request->only([
+            'name', 'email', 'phone', 'status', 'role', 'badge',
+            'bio', 'location', 'business_name', 'business_category',
+            'business_address', 'cac_number', 'business_hours',
+            'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',
+        ]);
+
+        $user->update($data);
+
+        return back()->with('status', 'User "' . $user->name . '" updated successfully.');
+    }
+
+    public function adminUserBadge(Request $request, User $user) {
+        $request->validate([
+            'badge' => 'required|in:' . implode(',', array_merge([null], array_keys(User::badgeOptions()))),
+        ]);
+
+        $user->update(['badge' => $request->badge === 'none' ? null : $request->badge]);
+
+        return back()->with('status', 'Badge updated for ' . $user->name . '.');
+    }
 }
