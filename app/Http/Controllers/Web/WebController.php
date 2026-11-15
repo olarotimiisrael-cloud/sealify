@@ -753,6 +753,7 @@ class WebController extends Controller
             'instagram_handle' => 'nullable|string|max:100',
             'twitter_handle' => 'nullable|string|max:100',
             'whatsapp_number' => 'nullable|string|max:50',
+            'new_password' => 'nullable|string|min:8|confirmed',
         ]);
 
         $data = $request->only([
@@ -761,6 +762,10 @@ class WebController extends Controller
             'business_address', 'cac_number', 'business_hours',
             'website_url', 'instagram_handle', 'twitter_handle', 'whatsapp_number',
         ]);
+
+        if ($request->filled('new_password')) {
+            $data['password'] = Hash::make($request->new_password);
+        }
 
         $user->update($data);
 

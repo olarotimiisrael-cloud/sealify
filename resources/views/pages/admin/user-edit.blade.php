@@ -31,6 +31,21 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Reset Password</label>
+                    <input name="new_password" type="password"
+                           placeholder="Leave blank to keep current password"
+                           class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                    <p class="text-xs text-slate-500 mt-1">Leave blank to keep the current password.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Confirm Password</label>
+                    <input name="new_password_confirmation" type="password"
+                           placeholder="Confirm new password"
+                           class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                </div>
+
+                <div>
                     <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Phone</label>
                     <input name="phone" type="tel"
                            value="{{ old('phone', $user->phone) }}"
