@@ -89,6 +89,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/notifications/{notification}/read', [WebController::class, 'markNotificationRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [WebController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
 
+    /* Phone/SMS OTP Verification (no third-party) */
+    Route::post('/phone/otp/request', [WebController::class, 'requestSmsOtp'])->name('phone.otp.request');
+    Route::post('/phone/otp/verify', [WebController::class, 'verifySmsOtp'])->name('phone.otp.verify');
+
     Route::get('/users/{user}', [WebController::class, 'userProfile'])->name('users.show');
     Route::get('/users/{user}/listings', [WebController::class, 'userListings'])->name('users.listings');
 
@@ -168,6 +172,11 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::post('/email-broadcaster/send', [WebController::class, 'adminEmailSend'])->name('email.broadcaster.send');
     Route::post('/email-broadcaster/send-individual', [WebController::class, 'adminEmailSendIndividual'])->name('email.broadcaster.send-individual');
     Route::post('/email-broadcaster/upload-image', [WebController::class, 'adminEmailUploadImage'])->name('email.broadcaster.upload-image');
+
+    /* SMS OTP Management (Admin) - No third-party */
+    Route::get('/sms-otp', [WebController::class, 'adminSmsOtp'])->name('admin.sms-otp');
+    Route::post('/sms-otp/{otp}/verify-admin', [WebController::class, 'adminVerifySmsOtp'])->name('admin.sms-otp.verify');
+    Route::delete('/sms-otp/{otp}', [WebController::class, 'adminDeleteSmsOtp'])->name('admin.sms-otp.delete');
 });
 
 Route::get('/auth/google', [WebAuthController::class, 'googleRedirect'])->name('auth.google');

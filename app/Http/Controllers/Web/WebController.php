@@ -15,6 +15,7 @@ use \App\Models\Message;
 use App\Models\Promotion;
 use App\Models\Report;
 use App\Models\SiteSetting;
+use App\Models\SmsOtp;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -800,14 +801,33 @@ class WebController extends Controller
         $sent = 0;
         $failed = 0;
 
+        $fromName = 'Sealify Nigeria';
+        $fromEmail = 'noreply@sealify.com.ng';
+        $replyTo = 'support@sealify.com.ng';
+
         foreach ($recipients as $user) {
             try {
-                \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $request) {
-                    $message->to($user->email, $user->name)
-                        ->subject($request->subject)
-                        ->html($request->content);
-                });
-                $sent++;
+                $headers = [
+                    'From: ' . $fromName . ' <' . $fromEmail . '>',
+                    'Reply-To: ' . $replyTo,
+                    'X-Mailer: PHP/' . phpversion(),
+                    'MIME-Version: 1.0',
+                    'Content-Type: text/html; charset=UTF-8',
+                ];
+
+                $success = mail(
+                    $user->email,
+                    $request->subject,
+                    $request->content,
+                    implode("\r\n", $headers),
+                    '-f ' . $fromEmail
+                );
+
+                if ($success) {
+                    $sent++;
+                } else {
+                    $failed++;
+                }
             } catch (\Exception $e) {
                 \Illuminate\Support\Facades\Log::error("Email send failed to {$user->email}: " . $e->getMessage());
                 $failed++;
@@ -830,13 +850,31 @@ class WebController extends Controller
             return back()->withErrors(['user_id' => 'User email is not verified.']);
         }
 
+        $fromName = 'Sealify Nigeria';
+        $fromEmail = 'noreply@sealify.com.ng';
+        $replyTo = 'support@sealify.com.ng';
+
+        $headers = [
+            'From: ' . $fromName . ' <' . $fromEmail . '>',
+            'Reply-To: ' . $replyTo,
+            'X-Mailer: PHP/' . phpversion(),
+            'MIME-Version: 1.0',
+            'Content-Type: text/html; charset=UTF-8',
+        ];
+
         try {
-            \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $request) {
-                $message->to($user->email, $user->name)
-                    ->subject($request->subject)
-                    ->html($request->content);
-            });
-            return back()->with('status', "Email sent to {$user->name} ({$user->email}).");
+            $success = mail(
+                $user->email,
+                $request->subject,
+                $request->content,
+                implode("\r\n", $headers),
+                '-f ' . $fromEmail
+            );
+
+            if ($success) {
+                return back()->with('status', "Email sent to {$user->name} ({$user->email}).");
+            }
+            return back()->withErrors(['email' => 'Failed to send email.']);
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error("Email send failed to {$user->email}: " . $e->getMessage());
             return back()->withErrors(['email' => 'Failed to send email.']);
@@ -854,5 +892,71 @@ class WebController extends Controller
         return response()->json([
             'location' => Storage::disk('public')->url($path),
         ]);
+    }
+
+    /* SMS OTP - No third-party, all local */
+    public function requestSmsOtp(Request $request) {
+        $request->validate([
+            'phone_number' => 'required|string|max:50',
+            'purpose' => 'sometimes|string|max:50',
+        ]);
+
+        $user = Auth::user();
+        $purpose = $request->input('purpose', 'verification');
+
+        $otp = SmsOtp::createOtp($user, $request->phone_number, $purpose, 15);
+
+        // Since no third-party SMS gateway, store OTP locally.
+        // The OTP code is shown to the user via session flash.
+        // Admin can also view all pending OTPs in the SMS OTP admin panel.
+
+        return back()->with('status', "SMS OTP code generated: <strong>{$otp->otp_code}</strong> for {$request->phone_number}. Code valid for 15 minutes. Check Admin Panel > SMS OTP to manage all codes.");
+    }
+
+    public function verifySmsOtp(Request $request) {
+        $request->validate([
+            'phone_number' => 'required|string|max:50',
+            'otp_code' => 'required|string|size:6',
+            'purpose' => 'sometimes|string|max:50',
+        ]);
+
+        $user = Auth::user();
+        $purpose = $request->input('purpose', 'verification');
+
+        $otp = SmsOtp::where('user_id', $user->id)
+            ->where('phone_number', $request->phone_number)
+            ->where('purpose', $purpose)
+            ->where('is_used', false)
+            ->where('expires_at', '>', now())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (! $otp || $otp->otp_code !== $request->otp_code) {
+            return back()->withErrors(['otp_code' => 'Invalid or expired OTP code.']);
+        }
+
+        $otp->markUsed();
+
+        // Mark phone as verified on user
+        $user->update(['phone_verified_at' => now()]);
+
+        return back()->with('status', "Phone number {$request->phone_number} verified successfully!");
+    }
+
+    /* SMS OTP Admin Management */
+    public function adminSmsOtp() {
+        $otps = SmsOtp::with('user')->orderBy('created_at', 'desc')->paginate(20);
+        return view('pages.admin.sms-otp', compact('otps'));
+    }
+
+    public function adminVerifySmsOtp(SmsOtp $otp) {
+        $otp->markUsed();
+        $otp->user->update(['phone_verified_at' => now()]);
+        return back()->with('status', "OTP for {$otp->phone_number} manually verified by admin.");
+    }
+
+    public function adminDeleteSmsOtp(SmsOtp $otp) {
+        $otp->delete();
+        return back()->with('status', "OTP record deleted.");
     }
 }

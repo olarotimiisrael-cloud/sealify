@@ -64,6 +64,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a4 4 0 004 4h10a4 4 0 004-4V3M3 7l9 1m-9 1l9-1M3 13l9 1m-9 1l9-1M3 13v10a4 4 0 004 4h10a4 4 0 004-4V13"></path></svg>
                     Email Broadcaster
                 </a>
+                <a href="{{ route('admin.sms-otp') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 011 1.453l-.986 2.89a2 2 0 011.143 1.491l1.549.773c.256.128.509.193.771.193h1.71c.756 0 .999-.256.999-.53V9a2 2 0 012-2h.002h5a2 2 0 012 2v5.093c0 .35.339.581.688.53h1.71c.262 0 .515-.065.771-.193l1.549-.773a2 2 0 011.143-1.491l-.986-2.89a1 1 0 011-1.453H19a2 2 0 012-2h6a2 2 0 012 2v3a2 2 0 01-2 2h-5.897l-.986 2.89a2 2 0 01-1.143 1.491l-1.549.773c-.256.128-.509.193-.771.193h-1.71c-.262 0-.515.065-.771.193l-1.549.773a2 2 0 01-1.143-1.491l-.986-2.89a1 1 0 011-1.453h2.285l.986-2.89a1 1 0 011-1.453h1.71c.262 0 .515-.065.771-.193l1.549-.773a2 2 0 011.143-1.491l-.986-2.89a1 1 0 011-1.453H19a2 2 0 012-2v-1a2 2 0 002-2h-6a2 2 0 00-2 2h-5.897l-.986 2.89a2 2 0 00-1.143 1.491l-1.549.773c-.256.128-.509.193-.771.193h-1.71c-.262 0-.515.065-.771.193l-1.549.773a2 2 0 01-1.143-1.491l-.986-2.89a1 1 0 011-1.453h2.285l.986-2.89a1 1 0 011-1.453H3z"></path></svg>
+                    SMS OTP
+                </a>
             </nav>
         </div>
     </aside>
