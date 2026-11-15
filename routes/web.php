@@ -104,6 +104,14 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/saved-searches', [WebController::class, 'savedSearches'])->name('saved-searches.index');
 
     Route::get('/search', [WebController::class, 'search'])->name('search');
+
+    /* Report System */
+    Route::get('/report/listing/{listing}', [WebController::class, 'reportListing'])->name('reports.listing');
+    Route::post('/report/listing/{listing}', [WebController::class, 'storeListingReport'])->name('reports.storeListing');
+    Route::get('/report/user/{user}', [WebController::class, 'reportUser'])->name('reports.user');
+    Route::post('/report/user/{user}', [WebController::class, 'storeUserReport'])->name('reports.storeUser');
+    Route::get('/report/concern', [WebController::class, 'reportConcern'])->name('reports.concern');
+    Route::post('/report/concern', [WebController::class, 'storeConcernReport'])->name('reports.storeConcern');
 });
 
 Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {

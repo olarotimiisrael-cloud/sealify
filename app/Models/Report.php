@@ -12,7 +12,16 @@ class Report extends Model
     /** @use HasFactory<ReportFactory> */
     use HasFactory;
 
-    protected $fillable = ['listing_id', 'reporter_id', 'reason', 'details', 'status'];
+    protected $fillable = [
+        'listing_id',
+        'reporter_id',
+        'reported_user_id',
+        'report_type',
+        'reason',
+        'details',
+        'evidence_file',
+        'status',
+    ];
 
     public function listing(): BelongsTo
     {
@@ -22,5 +31,10 @@ class Report extends Model
     public function reporter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reporter_id');
+    }
+
+    public function reportedUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_user_id');
     }
 }

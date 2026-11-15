@@ -3,7 +3,7 @@
 @section('content')
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-8 mb-6">
-            <div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-6">
                 <div>
                     <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-2xl font-bold mb-3">
                         {{ strtoupper(substr($user->name ?? 'U', 0, 1)) }}
@@ -11,6 +11,9 @@
                     <h2 class="text-2xl font-bold text-slate-900">{{ $user->name ?? 'Profile' }}</h2>
                     <p class="text-sm text-slate-600">{{ $user->username ?? $user->email }}</p>
                 </div>
+                <a href="{{ route('reports.user', $user) }}" class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Report User">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172l3.536 3.536m-3.536 5.656l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </a>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">

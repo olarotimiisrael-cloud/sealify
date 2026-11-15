@@ -1093,4 +1093,97 @@ class WebController extends Controller
         $otp->delete();
         return back()->with('status', "OTP record deleted.");
     }
+
+    /* Reporting System - Users can report listings, users, drugs, fraud */
+    public function reportListing(Listing $listing) {
+        return view('pages.report.listing', compact('listing'));
+    }
+
+    public function storeListingReport(Request $request, Listing $listing) {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+            'details' => 'required|string|max:2000',
+            'evidence_file' => 'nullable|file|max:10240',
+        ]);
+
+        $data = [
+            'listing_id' => $listing->id,
+            'reporter_id' => Auth::id(),
+            'report_type' => 'listing',
+            'reason' => $request->reason,
+            'details' => $request->details,
+            'status' => 'pending',
+        ];
+
+        if ($request->hasFile('evidence_file')) {
+            $path = $request->file('evidence_file')->store('reports/' . date('Y/m/d'), 'public');
+            $data['evidence_file'] = $path;
+        }
+
+        Report::create($data);
+
+        return redirect()->route('listings.show', $listing)
+            ->with('status', 'Your report has been submitted. Our team will review it.');
+    }
+
+    public function reportUser(User $user) {
+        return view('pages.report.user', compact('user'));
+    }
+
+    public function storeUserReport(Request $request, User $user) {
+        $request->validate([
+            'reason' => 'required|string|max:255',
+            'details' => 'required|string|max:2000',
+            'evidence_file' => 'nullable|file|max:10240',
+        ]);
+
+        $data = [
+            'reporter_id' => Auth::id(),
+            'reported_user_id' => $user->id,
+            'report_type' => 'user',
+            'reason' => $request->reason,
+            'details' => $request->details,
+            'status' => 'pending',
+        ];
+
+        if ($request->hasFile('evidence_file')) {
+            $path = $request->file('evidence_file')->store('reports/' . date('Y/m/d'), 'public');
+            $data['evidence_file'] = $path;
+        }
+
+        Report::create($data);
+
+        return redirect()->route('users.show', $user)
+            ->with('status', 'Your report has been submitted. Our team will review it.');
+    }
+
+    public function reportConcern() {
+        return view('pages.report.concern');
+    }
+
+    public function storeConcernReport(Request $request) {
+        $request->validate([
+            'report_type' => 'required|in:drugs,fraud,scam,other',
+            'reason' => 'required|string|max:255',
+            'details' => 'required|string|max:2000',
+            'evidence_file' => 'nullable|file|max:10240',
+        ]);
+
+        $data = [
+            'reporter_id' => Auth::id(),
+            'report_type' => $request->report_type,
+            'reason' => $request->reason,
+            'details' => $request->details,
+            'status' => 'pending',
+        ];
+
+        if ($request->hasFile('evidence_file')) {
+            $path = $request->file('evidence_file')->store('reports/' . date('Y/m/d'), 'public');
+            $data['evidence_file'] = $path;
+        }
+
+        Report::create($data);
+
+        return back()->with('status', 'Your report has been submitted. Our team will review it.');
+    }
 }

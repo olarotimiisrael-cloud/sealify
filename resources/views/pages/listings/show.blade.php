@@ -103,6 +103,9 @@
                     <a href="{{ route('listings.favorite', $listing) }}" class="w-full border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium py-3.5 rounded-xl transition-colors text-center">
                         Save to Favorites
                     </a>
+                    <a href="{{ route('reports.listing', $listing) }}" class="w-full border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold py-3.5 rounded-xl transition-colors text-center text-sm">
+                        ⚠ Report Listing
+                    </a>
                 </div>
             </div>
         </div>
