@@ -162,6 +162,12 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::get('/announcements', [WebController::class, 'adminAnnouncements'])->name('announcements');
     Route::post('/announcements', [WebController::class, 'adminAnnouncementStore'])->name('announcements.store');
     Route::delete('/announcements/{announcement}', [WebController::class, 'adminAnnouncementDestroy'])->name('announcements.destroy');
+
+    /* Email Broadcaster */
+    Route::get('/email-broadcaster', [WebController::class, 'adminEmailBroadcaster'])->name('email.broadcaster');
+    Route::post('/email-broadcaster/send', [WebController::class, 'adminEmailSend'])->name('email.broadcaster.send');
+    Route::post('/email-broadcaster/send-individual', [WebController::class, 'adminEmailSendIndividual'])->name('email.broadcaster.send-individual');
+    Route::post('/email-broadcaster/upload-image', [WebController::class, 'adminEmailUploadImage'])->name('email.broadcaster.upload-image');
 });
 
 Route::get('/auth/google', [WebAuthController::class, 'googleRedirect'])->name('auth.google');

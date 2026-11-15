@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -773,5 +774,85 @@ class WebController extends Controller
         $user->update(['badge' => $request->badge === 'none' ? null : $request->badge]);
 
         return back()->with('status', 'Badge updated for ' . $user->name . '.');
+    }
+
+    /* Email Broadcaster */
+    public function adminEmailBroadcaster() {
+        $users = User::where('email_verified_at', '!=', null)->orderBy('created_at', 'desc')->get();
+        return view('pages.admin.email-broadcaster', compact('users'));
+    }
+
+    public function adminEmailSend(Request $request) {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'content' => 'required|string',
+            'send_to' => 'required|in:all,verified,active',
+        ]);
+
+        $query = User::where('email_verified_at', '!=', null);
+
+        if ($request->send_to === 'active') {
+            $query->where('status', 'active');
+        }
+
+        $recipients = $query->get();
+
+        $sent = 0;
+        $failed = 0;
+
+        foreach ($recipients as $user) {
+            try {
+                \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $request) {
+                    $message->to($user->email, $user->name)
+                        ->subject($request->subject)
+                        ->html($request->content);
+                });
+                $sent++;
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Email send failed to {$user->email}: " . $e->getMessage());
+                $failed++;
+            }
+        }
+
+        return back()->with('status', "Email broadcast sent: {$sent} sent, {$failed} failed.");
+    }
+
+    public function adminEmailSendIndividual(Request $request) {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'subject' => 'required|string|max:255',
+            'content' => 'required|string',
+        ]);
+
+        $user = User::find($request->user_id);
+
+        if (! $user->email_verified_at) {
+            return back()->withErrors(['user_id' => 'User email is not verified.']);
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($user, $request) {
+                $message->to($user->email, $user->name)
+                    ->subject($request->subject)
+                    ->html($request->content);
+            });
+            return back()->with('status', "Email sent to {$user->name} ({$user->email}).");
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Email send failed to {$user->email}: " . $e->getMessage());
+            return back()->withErrors(['email' => 'Failed to send email.']);
+        }
+    }
+
+    public function adminEmailUploadImage(Request $request) {
+        $request->validate([
+            'file' => 'required|image|max:10240', // 10MB max for email images
+        ]);
+
+        $file = $request->file('file');
+        $path = $file->store('email-images/' . date('Y/m/d'), 'public');
+
+        return response()->json([
+            'location' => Storage::disk('public')->url($path),
+        ]);
     }
 }
