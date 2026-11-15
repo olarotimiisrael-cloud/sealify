@@ -69,6 +69,9 @@
                     deferredPrompt = null;
                     document.getElementById('install-app-btn').classList.add('hidden');
                 });
+            } else {
+                // Fallback: show download info or open app store link
+                alert('To install Sealify:\n• Chrome/Android: Tap "Add to Home Site" in browser menu\n• iPhone/iPad: Tap "Share" → "Add to Home Screen"\n• Desktop: The app is available as a PWA — use your browser\'s install option.');
             }
         }
     </script>
