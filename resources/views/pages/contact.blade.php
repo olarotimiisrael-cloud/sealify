@@ -6,13 +6,21 @@
             <h2 class="text-3xl font-bold text-slate-900 mb-6">Contact Us</h2>
             <p class="text-slate-600 mb-6">Have a question? Reach our support team.</p>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div class="space-y-4">
+<div class="space-y-4">
                     <p class="text-sm font-medium text-slate-900">Email</p>
                     <p class="text-slate-600">support@sealify.ng</p>
                     <p class="text-sm font-medium text-slate-900">Phone</p>
                     <p class="text-slate-600">+234 813 120 8468</p>
                     <p class="text-sm font-medium text-slate-900">Office</p>
                     <p class="text-slate-600">Ogbomosoland, Oyo State, Nigeria</p>
+                    <p class="text-sm font-medium text-slate-900 mt-4">WhatsApp Official Group</p>
+                    <a href="https://chat.whatsapp.com/F0iRCn1r1z2JQuKLoRhmw4?s=cl&p=a&iam=2" target="_blank" rel="noreferrer" class="block bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-3 rounded-xl transition-colors">
+                        Join WhatsApp Group
+                    </a>
+                    <p class="text-sm font-medium text-slate-900 mt-2">Official Channel</p>
+                    <a href="https://whatsapp.com/channel/0029VaqFIYEC6ZvlrPCLql1R" target="_blank" rel="noreferrer" class="block bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-3 rounded-xl transition-colors">
+                        Follow Official Channel
+                    </a>
                 </div>
                 <div>
                     <form class="space-y-4">

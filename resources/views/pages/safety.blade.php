@@ -2,25 +2,18 @@
 
 @section('content')
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-10 text-center">
-            <h2 class="text-3xl font-bold text-slate-900 mb-6">Safety Center</h2>
-            <p class="text-slate-600 mb-8">Trade safely with verified Safe Spots across Ogbomosoland.</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div class="p-6 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="w-10 h-10 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-xl">ðŸš”</div>
-                    <h4 class="font-bold text-slate-900 mb-2">Police Safe Zones</h4>
-                    <p class="text-xs text-slate-600">Ogbomoso Divisional Police HQ â€” 24/7, CCTV verified.</p>
-                </div>
-                <div class="p-6 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="w-10 h-10 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-xl">ðŸ¥</div>
-                    <h4 class="font-bold text-slate-900 mb-2">Hospital Security Posts</h4>
-                    <p class="text-xs text-slate-600">LAUTECH Teaching Hospital â€” safe, well-lit meeting area.</p>
-                </div>
-                <div class="p-6 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="w-10 h-10 rounded bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-xl">ðŸª</div>
-                    <h4 class="font-bold text-slate-900 mb-2">Shopping Malls</h4>
-                    <p class="text-xs text-slate-600">Takie Square Mall â€” public, CCTV monitored.</p>
-                </div>
+<div class="bg-white shadow-sm rounded-2xl border border-slate-100 p-10 mt-8">
+            <h2 class="text-2xl font-bold text-slate-900 mb-4">Join Our Community</h2>
+            <p class="text-slate-600 mb-6">Connect with verified buyers and sellers on WhatsApp.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <a href="https://chat.whatsapp.com/F0iRCn1r1z2JQuKLoRhmw4?s=cl&p=a&iam=2" target="_blank" rel="noreferrer" class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
+                    <svg class="w-6 h-6" fill="#25d366" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-.546-.01-1.09-7.827 1.6-9.267-3.968-9.267-3.968-.836-2.12-2.04-2.72-2.04-2.72-1.67-1.13.12-1.11.12-1.11 1.44.167 2.2 1.476 2.2 1.476 1.795 2.2 4.08 1.567 5.08 1.126.203-.875.695-1.476 1.25-1.826-2.835-.33-5.825-1.41-5.825-7.113 0-1.57.57-2.85 1.535-3.858-.143-.397-.6-.75-1.034-.978-2.75-.363-5.65 1.35-5.65 1.35 1.003.604 2.263.82 3.456.893-1.18 1.22-1.86 2.72-1.86 4.52 0 1.57.634 2.984 1.746 3.994.326.237.703.446 1.138.598-1.457-.917-2.47-2.597-1.406-4.693 0 0 1.176-.39 3.86 1.456a9.97 9.97 0 002.812.836c1.035 0 2.07-.28 3.057-.857a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56z"></path></svg>
+                    Official Group
+                </a>
+                <a href="https://whatsapp.com/channel/0029VaqFIYEC6ZvlrPCLql1R" target="_blank" rel="noreferrer" class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
+                    <svg class="w-6 h-6" fill="#25d366" viewBox="0 0 24 24"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-.546-.01-1.09-7.827 1.6-9.267-3.968-9.267-3.968-.836-2.12-2.04-2.72-2.04-2.72-1.67-1.13.12-1.11.12-1.11 1.44.167 2.2 1.476 2.2 1.476 1.795 2.2 4.08 1.567 5.08 1.126.203-.875.695-1.476 1.25-1.826-2.835-.33-5.825-1.41-5.825-7.113 0-1.57.57-2.85 1.535-3.858-.143-.397-.6-.75-1.034-.978-2.75-.363-5.65 1.35-5.65 1.35 1.003.604 2.263.82 3.456.893-1.18 1.22-1.86 2.72-1.86 4.52 0 1.57.634 2.984 1.746 3.994.326.237.703.446 1.138.598-1.457-.917-2.47-2.597-1.406-4.693 0 0 1.176-.39 3.86 1.456a9.97 9.97 0 002.812.836c1.035 0 2.07-.28 3.057-.857a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56a9.97 9.97 0 003.057-.855c1.025-.343 2.117-.56 3.26-.56 1.144 0 2.23.22 3.26.56z"></path></svg>
+                    Official Channel
+                </a>
             </div>
         </div>
     </div>
