@@ -160,6 +160,79 @@
                 </div>
             </div>
 
+            <!-- Ban Management Section -->
+            <div id="ban-section" class="pt-6 border-t border-slate-100">
+                <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.774-1.33-2.414-1.33-3.188 0L5.25 20A2.312 2.312 0 012 4.873c0-.993.576-1.834 1.48-2.167z"></path></svg>
+                    Ban Management
+                </h3>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    @if ($user->isBanned() && !$user->isBanExpired())
+                        <div class="bg-rose-50 border border-rose-100 rounded-xl p-6">
+                            <div class="flex items-start gap-3 mb-4">
+                                <svg class="w-5 h-5 text-rose-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172l3.536 3.536m-3.536 5.656l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="text-lg font-bold text-slate-900">Currently Banned</h4>
+                                    <p class="text-sm text-slate-600">
+                                        @if ($user->banned_until === null)
+                                            Ban expires: Never (Permanent)
+                                        @else
+                                            Ban expires: {{ $user->banned_until->format('F j, Y, g:i A') }}
+                                        @endif
+                                    </p>
+                                    @if ($user->ban_reason)
+                                        <p class="text-sm text-slate-600 mt-1"><strong>Reason:</strong> {{ $user->ban_reason }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('users.unban', $user) }}" class="inline-block">
+                                @csrf
+                                <button type="submit"
+                                        class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-8 py-3 rounded-xl transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
+                                    Unban User
+                                </button>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-amber-50 border border-amber-100 rounded-xl p-6">
+                            <div class="flex items-start gap-3 mb-4">
+                                <svg class="w-5 h-5 text-amber-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.774-1.33-2.414-1.33-3.188 0L5.25 20A2.312 2.312 0 012 4.873c0-.993.576-1.834 1.48-2.167z"></path></svg>
+                                <div>
+                                    <h4 class="text-lg font-bold text-slate-900">Ban User</h4>
+                                    <p class="text-sm text-slate-600">Temporarily ban this user for violating Sealify guidelines.</p>
+                                </div>
+                            </div>
+                            
+                            <form method="POST" action="{{ route('users.ban', $user) }}" class="space-y-4">
+                                @csrf
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Ban Duration</label>
+                                    <select name="duration" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                                        <option value="1_week">1 Week</option>
+                                        <option value="2_weeks">2 Weeks</option>
+                                        <option value="1_month">1 Month</option>
+                                        <option value="3_months">3 Months</option>
+                                        <option value="permanent">Permanent</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Ban Reason</label>
+                                    <textarea name="reason" rows="3" required
+                                              class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                                              placeholder="Describe why this user is being banned..."></textarea>
+                                </div>
+                                <button type="submit"
+                                        class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-8 py-3 rounded-xl transition-colors shadow-lg shadow-rose-200 hover:shadow-rose-300 w-full">
+                                    Ban User
+                                </button>
+                            </form>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             <div class="pt-6 border-t border-slate-100 flex gap-3">
                 <button type="submit"
                         class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-8 py-3 rounded-xl transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">

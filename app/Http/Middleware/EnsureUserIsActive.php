@@ -16,18 +16,12 @@ class EnsureUserIsActive
             return $next($request);
         }
 
-        if ($user->status === 'banned') {
-            return response()->json([
-                'message' => 'This account has been permanently banned. Contact support if you believe this is a mistake.',
-                'account_status' => 'banned',
-            ], 403);
+        if ($user->isBanned()) {
+            return redirect()->route('banned');
         }
 
         if ($user->status === 'suspended') {
-            return response()->json([
-                'message' => 'This account is temporarily suspended. Contact support for assistance.',
-                'account_status' => 'suspended',
-            ], 403);
+            return redirect()->route('banned');
         }
 
         return $next($request);

@@ -83,11 +83,14 @@
                                     {{ ucfirst($user->role ?? 'user') }}
                                 </span>
                             </td>
-                        <td class="px-6 py-4">
+<td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold
                                 {{ $user->isActive() ? 'bg-emerald-100 text-emerald-600' : ($user->isBanned() ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600') }}">
-                                {{ ucfirst($user->status ?? 'active') }}
+                                {{ $user->isBanned() ? 'Banned' : (ucfirst($user->status ?? 'active')) }}
                             </span>
+                            @if ($user->isBanned() && $user->banned_until)
+                                <p class="text-xs text-slate-500 mt-0.5">Expires: {{ $user->banned_until->format('M j, Y') }}</p>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold
@@ -106,11 +109,15 @@
                                         title="{{ $user->isActive() ? 'Suspend' : 'Activate' }}">
                                     {{ $user->isActive() ? '⏸️' : '▶️' }}
                                 </button>
-                                @if (!$user->isBanned())
-                                    <button onclick="toggleStatus({{ $user->id }}, 'banned')"
-                                            class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Ban">
-                                        🚫
-                                    </button>
+                                @if (!$user->isBanned() && $user->role !== 'admin')
+                                    <a href="{{ route('admin.users.edit', $user) }}#ban-section" class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Ban User">
+                                        🚫 Ban
+                                    </a>
+                                @endif
+                                @if ($user->isBanned() && $user->role !== 'admin')
+                                    <a href="{{ route('admin.users.edit', $user) }}#ban-section" class="p-2 rounded-lg hover:bg-emerald-50 text-emerald-600 transition-colors" title="Unban User">
+                                        🔓 Unban
+                                    </a>
                                 @endif
                                 @if ($user->role !== 'admin')
                                     <button onclick="toggleRole({{ $user->id }}, '{{ $user->role === 'admin' ? 'user' : 'admin' }}')"
@@ -119,9 +126,9 @@
                                         {{ $user->role === 'admin' ? '👑' : '🛡️' }}
                                     </button>
                                 @endif
-                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Delete this user?')" class="inline">
+                                <form method="POST" action="{{ route('admin.users.destroy', $user) }}" onsubmit="return confirm('Are you sure you want to delete this user?')" class="inline">
                                     @csrf @method('DELETE')
-                                    <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete">
+                                    <button class="p-2 rounded-lg hover:bg-rose-50 text-rose-600 transition-colors" title="Delete User">
                                         🗑️
                                     </button>
                                 </form>

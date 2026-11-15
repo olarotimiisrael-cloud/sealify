@@ -782,6 +782,135 @@ class WebController extends Controller
         return back()->with('status', 'Badge updated for ' . $user->name . '.');
     }
 
+    /* User Ban Management */
+    public function adminBanUser(Request $request, User $user) {
+        $request->validate([
+            'duration' => 'required|in:1_week,2_weeks,1_month,3_months,permanent',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        $now = now();
+        $bannedUntil = match ($request->duration) {
+            '1_week' => $now->copy()->addWeek(),
+            '2_weeks' => $now->copy()->addWeeks(2),
+            '1_month' => $now->copy()->addMonth(),
+            '3_months' => $now->copy()->addMonths(3),
+            'permanent' => null,
+        };
+
+        $user->update([
+            'status' => 'banned',
+            'banned_until' => $bannedUntil,
+            'ban_reason' => $request->reason,
+        ]);
+
+        // Send ban notification email
+        try {
+            $fromName = 'Sealify Nigeria';
+            $fromEmail = 'noreply@sealify.com.ng';
+            $replyTo = 'support@sealify.com.ng';
+
+            $durationText = match ($request->duration) {
+                '1_week' => '1 week',
+                '2_weeks' => '2 weeks',
+                '1_month' => '1 month',
+                '3_months' => '3 months',
+                'permanent' => 'permanently',
+            };
+
+            $headers = [
+                'From: ' . $fromName . ' <' . $fromEmail . '>',
+                'Reply-To: ' . $replyTo,
+                'X-Mailer: PHP/' . phpversion(),
+                'MIME-Version: 1.0',
+                'Content-Type: text/html; charset=UTF-8',
+            ];
+
+            $content = '
+            <h2>Sealify Account Temporarily Banned</h2>
+            <p>Dear <strong>' . $user->name . '</strong>,</p>
+            <p>Your Sealify account has been <strong>temporarily banned</strong> for the following reason:</p>
+            <p><em>' . htmlspecialchars($request->reason) . '</em></p>
+            <p><strong>Ban Duration:</strong> ' . ucfirst($durationText) . '</p>' .
+            ($bannedUntil ? '<p><strong>Ban Expires:</strong> ' . $bannedUntil->format('F j, Y, g:i A') . '</p>' : '<p><strong>Ban Type:</strong> Permanent</p>') .
+            '<p>If you believe this ban was made in error or wish to discuss this decision, please contact our support team at <strong>support@sealify.com.ng</strong>.</p>
+            <p>Thank you for your understanding.</p>
+            <p>— The Sealify Team</p>
+            ';
+
+            mail(
+                $user->email,
+                'Your Sealify Account Has Been Temporarily Banned',
+                $content,
+                implode("\r\n", $headers),
+                '-f ' . $fromEmail
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Ban email failed to {$user->email}: " . $e->getMessage());
+        }
+
+        return back()->with('status', 'User "' . $user->name . '" has been banned for ' . $request->duration . '. Notification email sent.');
+    }
+
+    public function adminUnbanUser(Request $request, User $user) {
+        $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        $user->update([
+            'status' => 'active',
+            'banned_until' => null,
+            'ban_reason' => null,
+        ]);
+
+        // Send unban notification email
+        try {
+            $fromName = 'Sealify Nigeria';
+            $fromEmail = 'noreply@sealify.com.ng';
+            $replyTo = 'support@sealify.com.ng';
+
+            $content = '
+            <h2>Sealify Account Unbanned</h2>
+            <p>Dear <strong>' . $user->name . '</strong>,</p>
+            <p>Good news! Your Sealify account has been <strong>unbanned</strong> and is now active again.</p>
+            <p>You can now log in and continue using Sealify to buy, sell, and connect locally.</p>
+            <p>If you have any questions, please contact our support team at <strong>support@sealify.com.ng</strong>.</p>
+            <p>— The Sealify Team</p>
+            ';
+
+            $headers = [
+                'From: ' . $fromName . ' <' . $fromEmail . '>',
+                'Reply-To: ' . $replyTo,
+                'X-Mailer: PHP/' . phpversion(),
+                'MIME-Version: 1.0',
+                'Content-Type: text/html; charset=UTF-8',
+            ];
+
+            mail(
+                $user->email,
+                'Your Sealify Account Has Been Unbanned',
+                $content,
+                implode("\r\n", $headers),
+                '-f ' . $fromEmail
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Unban email failed to {$user->email}: " . $e->getMessage());
+        }
+
+        return back()->with('status', 'User "' . $user->name . '" has been unbanned.');
+    }
+
+    /* Banned User Page */
+    public function bannedPage() {
+        $user = auth()->user();
+
+        if (! $user || ! $user->isBanned()) {
+            return redirect()->route('home');
+        }
+
+        return view('pages.banned', compact('user'));
+    }
+
     /* Email Broadcaster */
     public function adminEmailBroadcaster() {
         $users = User::where('email_verified_at', '!=', null)->orderBy('created_at', 'desc')->get();

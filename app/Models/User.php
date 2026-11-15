@@ -65,6 +65,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'verification_preferences',
         'referral_code',
         'badge',
+        'banned_until',
+        'ban_reason',
     ];
 
     protected $hidden = [
@@ -91,7 +93,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'trust_score' => 'integer',
         'credential_expiry_warning_date' => 'date',
         'verification_preferences' => 'array',
+        'referral_code' => 'string',
         'badge' => 'string',
+        'banned_until' => 'datetime',
     ];
 
     // ------------------------------------------------------------------
@@ -100,7 +104,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isActive(): bool
     {
-        return $this->status === 'active';
+        return $this->status === 'active' && !$this->isBanned();
     }
 
     public function isSuspended(): bool
@@ -110,7 +114,33 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isBanned(): bool
     {
-        return $this->status === 'banned';
+        if ($this->status !== 'banned') {
+            return false;
+        }
+
+        if ($this->banned_until === null) {
+            return true; // Permanent ban
+        }
+
+        return now()->before($this->banned_until);
+    }
+
+    public function isBanExpired(): bool
+    {
+        if ($this->banned_until === null) {
+            return false; // Permanent ban never expires
+        }
+
+        return now()->after($this->banned_until);
+    }
+
+    public function remainingBanTime(): ?\DateInterval
+    {
+        if (!$this->isBanned() || $this->banned_until === null) {
+            return null;
+        }
+
+        return now()->diff($this->banned_until);
     }
 
     public function isKycVerified(): bool

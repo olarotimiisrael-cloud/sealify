@@ -44,6 +44,9 @@ Route::post('/reset-password', [WebAuthController::class, 'resetPassword'])->nam
 
 Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
 
+/* Banned User Page */
+Route::get('/banned', [WebController::class, 'bannedPage'])->name('banned');
+
 /* Protected routes */
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/profile', [WebController::class, 'profile'])->name('profile.show');
@@ -177,6 +180,10 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::get('/sms-otp', [WebController::class, 'adminSmsOtp'])->name('admin.sms-otp');
     Route::post('/sms-otp/{otp}/verify-admin', [WebController::class, 'adminVerifySmsOtp'])->name('admin.sms-otp.verify');
     Route::delete('/sms-otp/{otp}', [WebController::class, 'adminDeleteSmsOtp'])->name('admin.sms-otp.delete');
+
+    /* User Ban Management (Admin) */
+    Route::post('/users/{user}/ban', [WebController::class, 'adminBanUser'])->name('users.ban');
+    Route::post('/users/{user}/unban', [WebController::class, 'adminUnbanUser'])->name('users.unban');
 });
 
 Route::get('/auth/google', [WebAuthController::class, 'googleRedirect'])->name('auth.google');
