@@ -30,9 +30,21 @@
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-500"></div>
             <div class="max-w-7xl mx-auto px-4 py-3">
                 <div class="flex items-center justify-between">
-                <a href="{{ route('home') }}" class="flex items-center gap-2">
-                    @include('partials.sealify-logo', ['size' => 'lg', 'class' => 'mr-1'])
-                </a>
+                    <a href="{{ route('home') }}" class="flex items-center gap-2">
+                        @include('partials.sealify-logo', ['size' => 'lg', 'class' => 'mr-1'])
+                    </a>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Saved Searches -->
+                        <a href="{{ route('saved-searches.index') }}" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" title="Saved Searches">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </a>
+
+                        <!-- Theme Switch -->
+                        <button type="button" onclick="toggleTheme()" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" id="theme-toggle" title="Toggle Theme">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -52,5 +64,22 @@
     @include('partials.footer')
 
     @stack('scripts')
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const isDark = html.classList.contains('dark');
+            html.classList.toggle('dark');
+            localStorage.setItem('sealify-theme', isDark ? 'light' : 'dark');
+        }
+
+        // Restore saved theme on load
+        (function () {
+            const saved = localStorage.getItem('sealify-theme');
+            if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
 </body>
 </html>
