@@ -52,7 +52,7 @@
                     <tr class="group hover:bg-slate-50">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <img src="{{ $listing->images->first()?->url ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=800&q=80' }}"
+                                <img src="{{ $listing->images->first()?->url ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80' }}"
                                      class="w-10 h-10 rounded-lg object-cover">
                                 <div>
                                     <p class="font-medium text-slate-900 line-clamp-1">{{ $listing->title }}</p>

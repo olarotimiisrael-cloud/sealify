@@ -58,12 +58,21 @@
         .dark .border-slate-300 { border-color: #475569 !important; }
         .dark .border-gray-200 { border-color: #334155 !important; }
         .dark .text-white { color: #f8fafc !important; }
+        /* Favorite (love) button */
+        .fav-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9999px;background:rgba(255,255,255,.9);backdrop-filter:blur(6px);color:#475569;box-shadow:0 2px 10px rgba(0,0,0,.15);transition:transform .18s ease,color .18s ease,background .18s ease;}
+        .fav-btn:hover{transform:scale(1.12);color:#f43f5e;background:#fff;}
+        .fav-btn:active{transform:scale(.9);}
+        .fav-btn.is-fav{color:#f43f5e;background:#fff;}
+        .fav-btn.is-fav svg{fill:#f43f5e;}
+        .fav-btn.is-fav svg path{animation:favpop .4s ease;}
+        @keyframes favpop{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.9)}100%{transform:scale(1)}}
+        .dark .fav-btn{background:rgba(15,23,42,.8);color:#e2e8f0;}
     </style>
 </head>
 <body class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
     @include('partials.navbar')
 
-    <main class="min-h-screen pb-20 lg:pb-0">
+    <main class="min-h-screen pb-20">
         @yield('content')
     </main>
 

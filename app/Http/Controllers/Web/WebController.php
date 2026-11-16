@@ -15,6 +15,7 @@ use \App\Models\Message;
 use App\Models\PaymentReceipt;
 use App\Models\Promotion;
 use App\Models\Report;
+use App\Models\Review;
 use App\Models\SiteSetting;
 use App\Models\SignalingMessage;
 use App\Models\SmsOtp;
@@ -114,12 +115,40 @@ class WebController extends Controller
         $listing->load('seller', 'images', 'category');
         $settings = SiteSetting::first();
         $activePromotion = $listing->activePromotion()->with('user')->first();
+        $reviews = $listing->reviews()->with('buyer')->latest()->get();
+        $userReview = auth()->check() ? $listing->reviews()->where('buyer_id', auth()->id())->first() : null;
 
-        return view('pages.listings.show', compact('listing', 'settings', 'activePromotion'));
+        return view('pages.listings.show', compact('listing', 'settings', 'activePromotion', 'reviews', 'userReview'));
     }
 
-    public function category(Category $category)
+    public function storeReview(Request $request, Listing $listing)
     {
+        $user = Auth::user();
+
+        if (! $user) {
+            return redirect()->route('login')->with('error', 'You must be logged in to leave a review.');
+        }
+
+        if ($user->id === $listing->user_id) {
+            return back()->with('error', 'You cannot review your own listing.');
+        }
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        Review::updateOrCreate(
+            ['seller_id' => $listing->user_id, 'buyer_id' => $user->id, 'listing_id' => $listing->id],
+            ['rating' => $validated['rating'], 'comment' => $validated['comment'] ?? null]
+        );
+
+        return back()->with('status', 'Your review has been submitted.');
+    }
+
+    public function category(string $slug)
+    {
+        $category = Category::where('slug', $slug)->firstOrFail();
         $listings = $category->listings()->active()->latest()->paginate(12);
 
         return view('pages.categories.show', compact('category', 'listings'));
@@ -314,12 +343,23 @@ class WebController extends Controller
     public function toggleFavorite(Request $request, Listing $listing)
     {
         $favorite = Favorite::where('user_id', Auth::id())->where('listing_id', $listing->id)->first();
+        $nowFavorite = false;
+
         if ($favorite) {
             $favorite->delete();
         } else {
             Favorite::create(['user_id' => Auth::id(), 'listing_id' => $listing->id]);
+            $nowFavorite = true;
         }
-        return back()->with('status', 'Favorite updated.');
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'favorited' => $nowFavorite,
+                'count' => Auth::user()->favoriteListings()->count(),
+            ]);
+        }
+
+        return back()->with('status', $nowFavorite ? 'Added to favorites.' : 'Removed from favorites.');
     }
 
     public function favorites()

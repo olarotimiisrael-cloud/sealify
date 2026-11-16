@@ -50,15 +50,20 @@
             @if ($listings->isEmpty())
                 <p class="text-slate-500 text-center py-8">No listings.</p>
             @else
+                @php $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : []; @endphp
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     @foreach ($listings as $listing)
-                        <a href="{{ route('listings.show', $listing) }}" class="block group border border-slate-100 rounded-xl p-3 hover:border-emerald-200 transition-colors">
-                            <div class="aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden mb-2">
-                                <img src="{{ optional($listing->images)->first() ?? asset('logo.png') }}" class="w-full h-full object-cover">
-                            </div>
-                            <h4 class="font-bold text-sm text-slate-900 group-hover:text-emerald-600">{{ $listing->title }}</h4>
-                            <span class="text-xs text-emerald-600 font-bold">₦{{ number_format($listing->price, 0) }}</span>
-                        </a>
+                        @php $isFav = in_array($listing->id, $favoriteIds, true); @endphp
+                        <div class="relative group border border-slate-100 rounded-xl p-3 hover:border-emerald-200 transition-colors">
+                            <a href="{{ route('listings.show', $listing) }}" class="block">
+                                <div class="aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden mb-2">
+                                    <img src="{{ optional($listing->images)->first() ?? asset('logo.png') }}" class="w-full h-full object-cover">
+                                </div>
+                                <h4 class="font-bold text-sm text-slate-900 group-hover:text-emerald-600">{{ $listing->title }}</h4>
+                                <span class="text-xs text-emerald-600 font-bold">₦{{ number_format($listing->price, 0) }}</span>
+                            </a>
+                            @include('partials.favorite-button', ['listing' => $listing, 'isFav' => $isFav])
+                        </div>
                     @endforeach
                 </div>
                 {{ $listings->links() }}

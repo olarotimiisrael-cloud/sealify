@@ -205,6 +205,26 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Promotion::class);
     }
 
+    public function reviewsReceived(): HasMany
+    {
+        return $this->hasMany(Review::class, 'seller_id');
+    }
+
+    public function reviewsGiven(): HasMany
+    {
+        return $this->hasMany(Review::class, 'buyer_id');
+    }
+
+    public function averageRating(): float
+    {
+        return (float) ($this->reviewsReceived()->avg('rating') ?? 0);
+    }
+
+    public function reviewCount(): int
+    {
+        return $this->reviewsReceived()->count();
+    }
+
     public function kycVerifications(): HasMany
     {
         return $this->hasMany(KycVerification::class);

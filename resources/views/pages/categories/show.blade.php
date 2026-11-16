@@ -41,25 +41,32 @@
             <p class="text-slate-600 mb-6">Be the first to <a href="{{ route('listings.create') }}" class="text-{{ $color }}-600 font-black hover:underline">post an ad</a>.</p>
         </div>
     @else
+        @php $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : []; @endphp
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach ($listings as $listing)
                 @php
-                    $listingImageUrl = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=800&q=80');
+                    $listingImageUrl = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80');
+                    $isFav = in_array($listing->id, $favoriteIds, true);
                 @endphp
-                <a href="{{ route('listings.show', $listing) }}" class="block group">
-                    <div class="aspect-video bg-gradient-to-br from-{{ $color }}-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-{{ $color }}-100 group-hover:border-{{ $color }}-300 transition-colors relative">
-                        <img src="{{ $listingImageUrl }}" alt="{{ $listing->title }}"
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                        <span class="absolute top-3 left-3 bg-{{ $color }}-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md">
-                            {{ $listing->condition ?? 'New' }}
-                        </span>
-                    </div>
-                    <h3 class="font-bold text-slate-900 text-sm group-hover:text-{{ $color }}-600 transition-colors mb-1">{{ $listing->title }}</h3>
-                    <div class="flex items-center gap-2 text-sm text-{{ $color }}-600 font-black">
-                        ₦{{ number_format($listing->price, 0) }}
-                    </div>
-                    <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ $listing->location ?? '' }}</p>
-                </a>
+                <div class="relative group">
+                    <a href="{{ route('listings.show', $listing) }}" class="block">
+                        <div class="aspect-video bg-gradient-to-br from-{{ $color }}-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-{{ $color }}-100 group-hover:border-{{ $color }}-300 transition-colors relative">
+                            <img src="{{ $listingImageUrl }}" alt="{{ $listing->title }}"
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <span class="absolute top-3 left-3 bg-{{ $color }}-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md">
+                                {{ $listing->condition ?? 'New' }}
+                            </span>
+                        </div>
+                    </a>
+                    @include('partials.favorite-button', ['listing' => $listing, 'isFav' => $isFav])
+                    <a href="{{ route('listings.show', $listing) }}" class="block">
+                        <h3 class="font-bold text-slate-900 text-sm group-hover:text-{{ $color }}-600 transition-colors mb-1">{{ $listing->title }}</h3>
+                        <div class="flex items-center gap-2 text-sm text-{{ $color }}-600 font-black">
+                            ₦{{ number_format($listing->price, 0) }}
+                        </div>
+                        <p class="text-xs text-slate-500 line-clamp-2 mt-1">{{ $listing->location ?? '' }}</p>
+                    </a>
+                </div>
             @endforeach
         </div>
         <div class="mt-6 flex justify-center">

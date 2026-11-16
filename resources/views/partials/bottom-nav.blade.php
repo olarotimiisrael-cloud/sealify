@@ -1,5 +1,5 @@
 <!-- MOBILE BOTTOM NAV (marketplace app style) -->
-<nav class="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 shadow-lg px-2 pb-4 md:pb-4 lg:hidden">
+<nav class="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 shadow-lg px-2 pb-4 md:pb-4">
     <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
         <a href="{{ route('home') }}"
            class="{{ request()->routeIs('home') ? 'text-emerald-600' : 'text-slate-500' }} flex flex-col items-center gap-1 px-1 py-2 rounded-xl transition-colors {{ request()->routeIs('home') ? 'bg-emerald-50' : '' }}">

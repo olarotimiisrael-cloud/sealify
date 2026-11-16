@@ -17,6 +17,7 @@ class PromotionResource extends JsonResource
             'starts_at' => $this->starts_at,
             'ends_at' => $this->ends_at,
             'is_free_trial' => $this->is_free_trial,
+            'kind' => $this->kind,
             'status' => $this->status,
             'is_active' => $this->isActive(),
             'created_at' => $this->created_at,

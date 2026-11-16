@@ -15,6 +15,7 @@ Route::get('/', [WebController::class, 'home'])->name('home');
 Route::get('/listings', [WebController::class, 'listings'])->name('listings.index');
 Route::get('/listings/create', [WebController::class, 'listingCreate'])->name('listings.create');
 Route::get('/listings/{listing}', [WebController::class, 'listingShow'])->name('listings.show');
+Route::post('/listings/{listing}/review', [WebController::class, 'storeReview'])->name('listings.review')->middleware('auth');
 Route::get('/categories/{slug}', [WebController::class, 'category'])->name('categories.show');
 Route::get('/categories', [WebController::class, 'categories'])->name('categories.index');
 
@@ -64,7 +65,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::delete('/listings/{listing}', [WebController::class, 'listingDestroy'])->name('listings.destroy');
     Route::get('/my-ads', [WebController::class, 'myListings'])->name('listings.my');
 
-    Route::get('/listings/{listing}/favorite', [WebController::class, 'toggleFavorite'])->name('listings.favorite');
+    Route::post('/listings/{listing}/favorite', [WebController::class, 'toggleFavorite'])->name('listings.favorite');
     Route::get('/favorites', [WebController::class, 'favorites'])->name('favorites.index');
 
     Route::get('/conversations', [WebController::class, 'conversations'])->name('messages.index');

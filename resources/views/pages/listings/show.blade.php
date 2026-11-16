@@ -21,7 +21,8 @@
         'Bajaj' => 'https://images.unsplash.com/photo-1558981806-ec537fa0bca3?w=800&q=80',
         'LG' => 'https://images.unsplash.com/photo-1601813177118-5de6f5222e1b?w=800&q=80',
     ];
-    $mainImage = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=800&q=80');
+    $mainImage = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80');
+    $isFav = auth()->check() && auth()->user()->favoriteListings()->where('listings.id', $listing->id)->exists();
 ?>
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -44,6 +45,7 @@
                             {{ $activePromotion->kind === 'referral' ? 'Free Promotion' : 'Featured Promotion' }}
                         </span>
                     @endif
+                    @include('partials.favorite-button', ['listing' => $listing, 'isFav' => $isFav, 'formClass' => 'absolute bottom-3 right-3 z-10'])
                 </div>
                 @if ($listing->images->count() > 1)
                     <div class="flex gap-2 overflow-x-auto pb-4">
@@ -131,6 +133,17 @@
                         @if ($listing->user->is_verified_seller)
                             <span class="text-xs text-green-600 font-bold flex items-center gap-1">✓ Verified</span>
                         @endif
+                        @php $sellerAvg = $listing->user->averageRating(); $sellerReviews = $listing->user->reviewCount(); @endphp
+                        @if ($sellerReviews > 0)
+                            <div class="flex items-center gap-1 mt-1">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <svg class="w-3.5 h-3.5 {{ $i <= round($sellerAvg) ? 'text-amber-400' : 'text-slate-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                    </svg>
+                                @endfor
+                                <span class="text-xs text-slate-500 ml-1">{{ number_format($sellerAvg, 1) }} ({{ $sellerReviews }})</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 <p class="text-slate-600 text-sm">{{ $listing->user->location ?? 'Ogbomosoland, Oyo State' }}</p>
@@ -146,6 +159,83 @@
                                 until {{ $activePromotion->ends_at->format('M d, Y') }}
                             </span>
                         </div>
+                    </div>
+                @endif
+            </div>
+
+            {{-- Seller Rating --}}
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <div class="flex items-center gap-3 mb-4">
+                    <h4 class="font-bold text-slate-900">Seller Rating</h4>
+                    <div class="flex items-center gap-1">
+                        @php
+                            $avgRating = $listing->user->averageRating();
+                            $reviewCount = $listing->user->reviewCount();
+                        @endphp
+                        @for ($i = 1; $i <= 5; $i++)
+                            <svg class="w-5 h-5 {{ $i <= round($avgRating) ? 'text-amber-400' : 'text-slate-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0z"></path>
+                            </svg>
+                        @endfor
+                        <span class="text-sm text-slate-600 ml-2">{{ number_format($avgRating, 1) }} ({{ $reviewCount }} review{{ $reviewCount === 1 ? '' : 's' }})</span>
+                    </div>
+                </div>
+
+                {{-- Review Form --}}
+                @auth
+                    @if (auth()->id() !== $listing->user_id)
+                        <form method="POST" action="{{ route('listings.review', $listing) }}" class="mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                            @csrf
+                            <p class="text-sm font-bold text-slate-700 mb-2">Rate this seller</p>
+                            <div class="flex items-center gap-2 mb-3" id="star-rating">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <label class="cursor-pointer">
+                                        <input type="radio" name="rating" value="{{ $i }}" class="hidden peer" {{ $userReview && $userReview->rating === $i ? 'checked' : '' }} required>
+                                        <svg class="w-7 h-7 text-slate-300 peer-checked:text-amber-400 hover:text-amber-300 transition-colors" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                        </svg>
+                                    </label>
+                                @endfor
+                            </div>
+                            <textarea name="comment" rows="2" placeholder="Share your experience (optional)..." class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">{{ $userReview->comment ?? '' }}</textarea>
+                            <button type="submit" class="mt-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-lg transition-colors text-sm">
+                                {{ $userReview ? 'Update Review' : 'Submit Review' }}
+                            </button>
+                        </form>
+                    @endif
+                @else
+                    <p class="text-sm text-slate-500 mb-4">
+                        <a href="{{ route('login') }}" class="text-emerald-600 font-bold hover:underline">Log in</a> to rate this seller.
+                    </p>
+                @endauth
+
+                {{-- Reviews List --}}
+                @if ($reviews->isNotEmpty())
+                    <div class="space-y-4">
+                        <h5 class="font-bold text-slate-700 text-sm">Reviews</h5>
+                        @foreach ($reviews as $review)
+                            <div class="p-4 bg-white rounded-xl border border-slate-100">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
+                                            {{ strtoupper(substr($review->buyer->name ?? 'U', 0, 1)) }}
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-900">{{ $review->buyer->name ?? 'User' }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        @for ($i = 1; $i <= 5; $i++)
+                                            <svg class="w-4 h-4 {{ $i <= $review->rating ? 'text-amber-400' : 'text-slate-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+                                            </svg>
+                                        @endfor
+                                    </div>
+                                </div>
+                                @if ($review->comment)
+                                    <p class="text-sm text-slate-600">{{ $review->comment }}</p>
+                                @endif
+                                <p class="text-xs text-slate-400 mt-2">{{ $review->created_at->diffForHumans() }}</p>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
             </div>

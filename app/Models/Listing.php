@@ -83,6 +83,11 @@ class Listing extends Model
         return $this->hasMany(Promotion::class);
     }
 
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function activePromotion(): HasOne
     {
         return $this->hasOne(Promotion::class)
