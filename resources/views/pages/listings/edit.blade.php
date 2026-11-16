@@ -111,6 +111,22 @@
                     <input type="hidden" name="images_to_remove" id="images_to_remove">
                 </div>
 
+                <div>
+                    <label for="video" class="block text-sm font-medium text-slate-700">Short Item Video <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input id="video" name="video" type="file" accept="video/*"
+                           class="mt-1 block w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    <p class="text-xs text-slate-400 mt-1">Upload 1 short video of the actual item (MP4, MOV). Max 50MB.</p>
+                </div>
+
+                <div>
+                    <label for="youtube_url" class="block text-sm font-medium text-slate-700">YouTube Video URL <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input id="youtube_url" name="youtube_url" type="url"
+                           placeholder="https://www.youtube.com/watch?v=..."
+                           value="{{ old('youtube_url', $listing->video_url ?? '') }}"
+                           class="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                    <p class="text-xs text-slate-400 mt-1">Paste a YouTube video URL to embed it in this ad.</p>
+                </div>
+
                 <button type="submit"
                         class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3.5 rounded-xl transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
                     Update Ad

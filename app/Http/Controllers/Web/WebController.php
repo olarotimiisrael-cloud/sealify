@@ -94,23 +94,27 @@ class WebController extends Controller
 
     private function neighborhoodHubs(): array
     {
-        return NeighborhoodHub::active()->get()->map(function ($hub) {
-            return [
-                'key' => $hub->key,
-                'label' => $hub->label,
-                'icon' => $hub->icon,
-                'query' => $hub->query,
-            ];
-        })->toArray();
+        return \Illuminate\Support\Facades\Cache::remember('neighborhood_hubs', 300, function () {
+            return NeighborhoodHub::active()->get()->map(function ($hub) {
+                return [
+                    'key' => $hub->key,
+                    'label' => $hub->label,
+                    'icon' => $hub->icon,
+                    'query' => $hub->query,
+                ];
+            })->toArray();
+        });
     }
 
     private function marketStats(): array
     {
-        return [
-            'community' => User::count(),
-            'impressions' => (int) Listing::sum('views_count'),
-            'volume' => Listing::active()->count(),
-        ];
+        return \Illuminate\Support\Facades\Cache::remember('market_stats', 300, function () {
+            return [
+                'community' => User::count(),
+                'impressions' => (int) Listing::sum('views_count'),
+                'volume' => Listing::active()->count(),
+            ];
+        });
     }
 
     public function listingShow(Listing $listing)

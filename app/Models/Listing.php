@@ -36,6 +36,7 @@ class Listing extends Model
         'expires_at',
         'original_price',
         'video_url',
+        'youtube_url',
         'specifications',
         'featured',
     ];
