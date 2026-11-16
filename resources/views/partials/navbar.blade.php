@@ -23,12 +23,12 @@
 
                 <div class="flex items-center gap-3">
                     @auth
-                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" title="Notifications">
+                        <button id="notif-btn" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" onclick="toggleNotifDrawer()" title="Notifications">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
                             @if ($unreadNotifications > 0)
                                 <span class="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
                             @endif
-                        </a>
+                        </button>
                     @endauth
                     <button type="button" onclick="toggleTheme()" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" title="Toggle Theme" id="theme-toggle">
                         <span data-theme-icon>🌙</span>
@@ -41,14 +41,6 @@
                             @endif
                         @endauth
                     </a>
-                    @auth
-                        <button id="notif-btn" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" onclick="toggleNotifDrawer()" title="Notifications">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
-                            @if ($unreadNotifications > 0)
-                                <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{{ $unreadNotifications }}</span>
-                            @endif
-                        </button>
-                    @endauth
                     @auth
                         <a href="{{ route('profile.show') }}" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
