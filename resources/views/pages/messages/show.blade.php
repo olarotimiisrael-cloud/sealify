@@ -97,18 +97,51 @@ if ($badgeColor && $badgeLabel) {
         <div class="border-t border-slate-100 p-4 bg-white">
             <form id="message-form" enctype="multipart/form-data" class="flex gap-3 items-end">
                 @csrf
-                <input type="hidden" name="content" value="">
                 <div class="flex-1 relative">
-                    <input name="message_text" type="text" placeholder="Type a message..." id="message-text-input"
-                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 pl-14">
+                    <input name="body" type="text" placeholder="Type a message..." id="message-text-input"
+                           class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 pl-14 pr-20">
                     <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        <button type="button" onclick="toggleEmojiPicker()" class="p-1 hover:text-emerald-600 transition-colors" title="Emoji">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        </button>
+                    </div>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2">
+                        <button type="button" id="emoji-toggle-btn" onclick="toggleEmojiPicker()" class="p-1 hover:text-emerald-600 transition-colors" title="Emoji">
+                            <span class="text-lg">😊</span>
+                        </button>
+                    </div>
+                    <div id="emoji-picker" class="hidden absolute bottom-12 right-0 w-80 bg-white border border-slate-200 rounded-xl shadow-xl p-4 z-50 grid grid-cols-8 gap-1 text-xl">
+                        <button type="button" onclick="insertEmoji('😊')" class="p-1 hover:bg-slate-100 rounded">😊</button>
+                        <button type="button" onclick="insertEmoji('❤️')" class="p-1 hover:bg-slate-100 rounded">❤️</button>
+                        <button type="button" onclick="insertEmoji('👍')" class="p-1 hover:bg-slate-100 rounded">👍</button>
+                        <button type="button" onclick="insertEmoji('😂')" class="p-1 hover:bg-slate-100 rounded">😂</button>
+                        <button type="button" onclick="insertEmoji('🎉')" class="p-1 hover:bg-slate-100 rounded">🎉</button>
+                        <button type="button" onclick="insertEmoji('🔥')" class="p-1 hover:bg-slate-100 rounded">🔥</button>
+                        <button type="button" onclick="insertEmoji('💯')" class="p-1 hover:bg-slate-100 rounded">💯</button>
+                        <button type="button" onclick="insertEmoji('🤔')" class="p-1 hover:bg-slate-100 rounded">🤔</button>
+                        <button type="button" onclick="insertEmoji('😍')" class="p-1 hover:bg-slate-100 rounded">😍</button>
+                        <button type="button" onclick="insertEmoji('😎')" class="p-1 hover:bg-slate-100 rounded">😎</button>
+                        <button type="button" onclick="insertEmoji('🙏')" class="p-1 hover:bg-slate-100 rounded">🙏</button>
+                        <button type="button" onclick="insertEmoji('👌')" class="p-1 hover:bg-slate-100 rounded">👌</button>
+                        <button type="button" onclick="insertEmoji('👋')" class="p-1 hover:bg-slate-100 rounded">👋</button>
+                        <button type="button" onclick="insertEmoji('💪')" class="p-1 hover:bg-slate-100 rounded">💪</button>
+                        <button type="button" onclick="insertEmoji('✅')" class="p-1 hover:bg-slate-100 rounded">✅</button>
+                        <button type="button" onclick="insertEmoji('❌')" class="p-1 hover:bg-slate-100 rounded">❌</button>
+                        <button type="button" onclick="insertEmoji('⭐')" class="p-1 hover:bg-slate-100 rounded">⭐</button>
+                        <button type="button" onclick="insertEmoji('📦')" class="p-1 hover:bg-slate-100 rounded">📦</button>
+                        <button type="button" onclick="insertEmoji('🚚')" class="p-1 hover:bg-slate-100 rounded">🚚</button>
+                        <button type="button" onclick="insertEmoji('💰')" class="p-1 hover:bg-slate-100 rounded">💰</button>
+                        <button type="button" onclick="insertEmoji('🏠')" class="p-1 hover:bg-slate-100 rounded">🏠</button>
+                        <button type="button" onclick="insertEmoji('📱')" class="p-1 hover:bg-slate-100 rounded">📱</button>
+                        <button type="button" onclick="insertEmoji('💻')" class="p-1 hover:bg-slate-100 rounded">💻</button>
+                        <button type="button" onclick="insertEmoji('🚗')" class="p-1 hover:bg-slate-100 rounded">🚗</button>
+                        <button type="button" onclick="insertEmoji('✅')" class="p-1 hover:bg-slate-100 rounded">✅</button>
                     </div>
                 </div>
 
-                <label for="media-input" class="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors" title="Attach media">
+                <label for="media-input" class="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-emerald-600 transition-colors cursor-pointer" title="Attach media">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <input type="file" id="media-input" accept="image/*,audio/*,video/*" class="hidden" multiple>
+                    <input type="file" id="media-input" name="attachments[]" accept="image/*,audio/*,video/*" class="hidden" multiple>
                 </label>
 
                 <button type="submit" id="send-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-2.5 rounded-xl font-bold transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300 flex items-center gap-2">
@@ -119,7 +152,7 @@ if ($badgeColor && $badgeLabel) {
             <div class="mt-3 flex items-center gap-3">
                 <button id="voice-record-btn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-medium transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 3a3 3 0 00-3 3v5a3 3 0 006 0V6a3 3 0 00-3-3z"/></svg>
-                    <span id="voice-record-label">Record</span>
+                    <span id="voice-record-label">Record Voice Note</span>
                 </button>
                 <span id="voice-record-status" class="text-xs text-slate-500 hidden">Recording…</span>
             </div>
@@ -238,7 +271,7 @@ async function sendSignaling(message) {
 }
 
 async function startVideoCall(type) {
-    if (!confirm('Start ' + type + ' call with this user?')) return;
+    if (!confirm('Start ' + (type === 'voice' ? 'voice' : 'video') + ' call with this user?')) return;
 
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
@@ -246,135 +279,212 @@ async function startVideoCall(type) {
             audio: true
         });
 
-        document.getElementById('local-video').srcObject = localStream;
+        const localVideoEl = document.getElementById('local-video');
+        if (localVideoEl && type === 'video') {
+            localVideoEl.srcObject = localStream;
+            localVideoEl.style.display = '';
+        } else if (localVideoEl) {
+            localVideoEl.style.display = 'none';
+        }
 
         if (!callInProgress) {
             await initWebRTC();
             callInProgress = true;
         }
 
-        if (type === 'video') {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            sendSignaling({ type: 'offer', payload: { sdp: pc.localDescription.sdp } });
-        }
+        // Always create and send an offer for the first caller
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        sendSignaling({ type: 'offer', payload: { sdp: pc.localDescription.sdp, callType: type } });
 
-        showCallModal(true);
+        showCallModal(true, type);
     } catch (err) {
         console.error('WebRTC error:', err);
-        alert('Failed to access camera/microphone: ' + err.message);
+        alert('Failed to access ' + (type === 'video' ? 'camera/microphone' : 'microphone') + ': ' + err.message);
     }
 }
 
-function showCallModal(show) {
+function showCallModal(show, type) {
     const modal = document.getElementById('call-modal');
+    if (!modal) return;
     modal.classList.toggle('hidden', !show);
-    modal.classList.toggle('block', show);
 
     if (show) {
-        document.getElementById('call-title').textContent = 'Video Call';
+        document.getElementById('call-title').textContent = type === 'voice' ? 'Voice Call' : 'Video Call';
         document.getElementById('call-status').textContent = 'Connecting…';
+        // Hide video element for voice calls
+        const remoteVideo = document.getElementById('remote-video');
+        if (remoteVideo && type === 'voice') {
+            remoteVideo.style.display = 'none';
+        }
         startTimer();
+    } else {
+        const remoteVideo = document.getElementById('remote-video');
+        if (remoteVideo) {
+            remoteVideo.style.display = '';
+        }
+        stopTimer();
     }
 }
 
+let callTimerInterval = null;
+let callSeconds = 0;
+
 function startTimer() {
+    stopTimer();
+    callSeconds = 0;
     const timerEl = document.getElementById('call-timer');
-    let seconds = 0;
-    setInterval(() => {
-        seconds++;
-        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-        const s = String(seconds % 60).padStart(2, '0');
-        timerEl.textContent = `${m}:${s}`;
+    if (timerEl) timerEl.textContent = '00:00';
+    callTimerInterval = setInterval(() => {
+        callSeconds++;
+        const m = String(Math.floor(callSeconds / 60)).padStart(2, '0');
+        const s = String(callSeconds % 60).padStart(2, '0');
+        if (timerEl) timerEl.textContent = `${m}:${s}`;
     }, 1000);
+}
+
+function stopTimer() {
+    if (callTimerInterval) {
+        clearInterval(callTimerInterval);
+        callTimerInterval = null;
+    }
 }
 
 function hangUp() {
     callInProgress = false;
+    stopTimer();
     if (pc) {
         pc.close();
         pc = null;
     }
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
+        localStream = null;
     }
     if (signalingChannel) {
         clearInterval(signalingChannel);
         signalingChannel = null;
     }
     showCallModal(false);
-    alert('Call ended.');
+    // No alert — silent cleanup
 }
 
-document.getElementById('end-call').addEventListener('click', hangUp);
-document.getElementById('toggle-mic').addEventListener('click', () => {
-    const btn = document.getElementById('toggle-mic');
-    const muted = btn.getAttribute('data-muted') === 'true';
-    if (localStream) {
-        localStream.getAudioTracks().forEach(track => track.enabled = !muted);
-    }
-    btn.setAttribute('data-muted', String(!muted));
-    btn.innerHTML = !muted
-        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 3a3 3 0 00-3 3v5a3 3 0 006 0V6a3 3 0 00-3-3z"/></svg>'
-        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l-4 4m0 0l-4-4m4 4V3"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12a9 9 0 0118 0"/></svg>';
-});
+// Listen for incoming call signals (poll detects offer/answer)
+function handleIncomingCall() {
+    // Poll is already running; incoming offer handled in handleRemoteSignal
+}
 
-document.getElementById('toggle-cam').addEventListener('click', () => {
-    const btn = document.getElementById('toggle-cam');
-    const off = btn.getAttribute('data-off') === 'true';
-    if (localStream) {
-        localStream.getVideoTracks().forEach(track => track.enabled = !off);
+// Improve ICE candidate handling — buffer until remote description is set
+let pendingIceCandidates = [];
+
+function handleRemoteSignal(signal) {
+    const data = signal.payload || {};
+    if (signal.type === 'offer') {
+        const callType = data.callType || 'video';
+        // Show incoming call prompt
+        if (!callInProgress) {
+            if (confirm('Incoming ' + (callType === 'voice' ? 'voice' : 'video') + ' call. Accept?')) {
+                acceptIncomingCall(callType);
+            }
+            return;
+        }
+        pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }))
+            .then(() => pc.createAnswer())
+            .then(answer => pc.setLocalDescription(answer))
+            .then(() => {
+                sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
+                // Flush buffered ICE candidates
+                pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
+                pendingIceCandidates = [];
+            })
+            .catch(err => console.error('Handle offer error:', err));
+    } else if (signal.type === 'answer') {
+        pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
+            .then(() => {
+                pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
+                pendingIceCandidates = [];
+            })
+            .catch(err => console.error('Handle answer error:', err));
+    } else if (signal.type === 'ice-candidate') {
+        if (pc && pc.remoteDescription) {
+            pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(e => console.error('ICE error:', e));
+        } else {
+            // Buffer until remote description is set
+            pendingIceCandidates.push(new RTCIceCandidate(data.candidate));
+        }
+    } else if (signal.type === 'hangup') {
+        hangUp();
     }
-    btn.setAttribute('data-off', String(!off));
-    btn.innerHTML = !off
-        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
-        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>';
-});
+}
+
+async function acceptIncomingCall(type) {
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: type === 'video',
+            audio: true
+        });
+        const localVideoEl = document.getElementById('local-video');
+        if (localVideoEl && type === 'video') {
+            localVideoEl.srcObject = localStream;
+            localVideoEl.style.display = '';
+        } else if (localVideoEl) {
+            localVideoEl.style.display = 'none';
+        }
+        await initWebRTC();
+        callInProgress = true;
+        showCallModal(true, type);
+    } catch (err) {
+        console.error('Accept call error:', err);
+        alert('Failed to accept call: ' + err.message);
+    }
+}
 
 /* --- Media attachment upload (image/voice/video) --- */
 function handleMediaUpload(e) {
     const files = e.target.files;
-    if (files.length === 0) return;
+    if (!files || files.length === 0) return;
 
     const formData = new FormData();
     for (let file of files) {
-        formData.append('file', file);
+        formData.append('attachments[]', file);
     }
 
     const firstFile = files[0];
     let type = 'image';
     if (firstFile.type.startsWith('audio/')) type = 'voice';
     if (firstFile.type.startsWith('video/')) type = 'video';
-    formData.append('type', type);
 
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
+    const orig = btn.innerHTML;
     btn.innerHTML = '<svg class="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l-2.647 2.647a.5.5 0 01-.708-.708L3.057 13H4c1.257 0 2.343-.904 2.674-2.196A7.962 7.962 0 0112 4a7.962 7.962 0 017.938 7c0 2.373-.905 4.36-2.374 5.878l-2.647 2.647a.5.5 0 01-.708-.708L11.943 13H14c.373 0 .741-.042 1.09-.305A7.98 7.98 0 0022 12c0-2.072-.797-3.94-2.196-5.392z"></path></svg> Uploading...';
 
-    fetch('{{ route('messages.attachments.store', $conversation) }}', {
+    fetch('{{ route('messages.store', $conversation) }}', {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value,
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json',
         },
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success) {
+        if (data.success || data.data || data) {
             location.reload();
         } else {
-            alert('Upload failed.');
-            btn.disabled = false;
-            btn.innerHTML = 'Send';
+            throw new Error(data.message || 'Upload failed');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Upload failed.');
+        alert('Upload failed: ' + error.message);
         btn.disabled = false;
-        btn.innerHTML = 'Send';
+        btn.innerHTML = orig;
     });
+
+    // Reset file input so same file can be re-selected
+    e.target.value = '';
 }
 
 document.getElementById('media-input').addEventListener('change', handleMediaUpload);
@@ -389,37 +499,35 @@ let voiceRecording = false;
 async function uploadVoiceBlob(blob) {
     const file = new File([blob], 'voice-note.webm', { type: 'audio/webm' });
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', 'voice');
+    formData.append('attachments[]', file);
 
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
+    const orig = btn.innerHTML;
     btn.innerHTML = 'Sending…';
 
-    await fetch('{{ route('messages.attachments.store', $conversation) }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+    try {
+        const response = await fetch('{{ route('messages.store', $conversation) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: formData
+        });
+        const data = await response.json();
+        if (data.success || data.data || response.ok) {
             location.reload();
         } else {
-            alert('Voice upload failed.');
-            btn.disabled = false;
-            btn.innerHTML = 'Send';
+            throw new Error(data.message || 'Voice upload failed');
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Voice upload error:', error);
-        alert('Voice upload failed.');
+        alert('Voice upload failed: ' + error.message);
         btn.disabled = false;
-        btn.innerHTML = 'Send';
-    });
+        btn.innerHTML = orig;
+    }
 }
 
 const voiceRecordBtn = document.getElementById('voice-record-btn');
@@ -458,15 +566,88 @@ voiceRecordBtn.addEventListener('click', async () => {
     }
 });
 
-/* --- Message form submit --- */
-document.getElementById('message-form').addEventListener('submit', function(e) {
-    const textInput = document.getElementById('message-text-input');
-    const contentInput = document.querySelector('input[name="content"]');
-    if (textInput.value.trim()) {
-        contentInput.value = textInput.value;
-        return true;
-    }
+/* --- Message form submit (AJAX) --- */
+document.getElementById('message-form').addEventListener('submit', async function(e) {
     e.preventDefault();
+    const form = e.target;
+    const textInput = document.getElementById('message-text-input');
+    const mediaInput = document.getElementById('media-input');
+    const sendBtn = document.getElementById('send-btn');
+    const body = textInput.value.trim();
+
+    if (!body && (!mediaInput.files || mediaInput.files.length === 0)) {
+        return;
+    }
+
+    sendBtn.disabled = true;
+    const originalBtnHtml = sendBtn.innerHTML;
+    sendBtn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l-2.647 2.647a.5.5 0 01-.708-.708L3.057 13H4c1.257 0 2.343-.904 2.674-2.196A7.962 7.962 0 0112 4a7.962 7.962 0 017.938 7c0 2.373-.905 4.36-2.374 5.878l-2.647 2.647a.5.5 0 01-.708-.708L11.943 13H14c.373 0 .741-.042 1.09-.305A7.98 7.98 0 0022 12c0-2.072-.797-3.94-2.196-5.392z"></path></svg> Sending...';
+
+    try {
+        const formData = new FormData();
+        if (body) formData.append('body', body);
+        if (mediaInput.files && mediaInput.files.length > 0) {
+            for (let file of mediaInput.files) {
+                formData.append('attachments[]', file);
+            }
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || document.querySelector('input[name="_token"]')?.value;
+
+        const response = await fetch('{{ route('messages.store', $conversation) }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success || data.data || response.ok) {
+            // Reload to show the new message
+            location.reload();
+        } else {
+            throw new Error(data.message || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Send error:', error);
+        alert('Failed to send message: ' + error.message);
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = originalBtnHtml;
+    }
+});
+
+/* --- Emoji picker --- */
+function toggleEmojiPicker() {
+    const picker = document.getElementById('emoji-picker');
+    if (picker) {
+        picker.classList.toggle('hidden');
+    }
+}
+
+function insertEmoji(emoji) {
+    const input = document.getElementById('message-text-input');
+    if (input) {
+        const start = input.selectionStart || 0;
+        const end = input.selectionEnd || 0;
+        const value = input.value;
+        input.value = value.substring(0, start) + emoji + value.substring(end);
+        input.focus();
+        input.setSelectionRange(start + emoji.length, start + emoji.length);
+        // Close picker after insert
+        document.getElementById('emoji-picker')?.classList.add('hidden');
+    }
+}
+
+// Close emoji picker when clicking outside
+document.addEventListener('click', function(e) {
+    const picker = document.getElementById('emoji-picker');
+    if (picker && !picker.contains(e.target) && !e.target.closest('button[title="Emoji"]') && !e.target.closest('#emoji-toggle-btn')) {
+        picker.classList.add('hidden');
+    }
 });
 </script>
 @endsection

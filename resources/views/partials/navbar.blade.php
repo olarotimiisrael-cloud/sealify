@@ -17,6 +17,17 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    @auth
+                        <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" title="Notifications">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
+                            @php
+                                $unreadNotifications = App\Models\Notification::where('user_id', auth()->id())->where('read_at', null)->count();
+                            @endphp
+                            @if ($unreadNotifications > 0)
+                                <span class="absolute -top-0.5 -right-0.5 bg-rose-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
+                            @endif
+                        </a>
+                    @endauth
                     <button type="button" onclick="toggleTheme()" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl" title="Toggle Theme" id="theme-toggle">
                         <span data-theme-icon>🌙</span>
                     </button>

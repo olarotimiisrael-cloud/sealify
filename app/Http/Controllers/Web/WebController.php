@@ -464,14 +464,62 @@ class WebController extends Controller
     {
         $this->authorize('view', $conversation);
         $data = $request->validate([
-            'content' => 'required|string|max:5000',
+            'body' => 'nullable|string|max:5000',
+            'attachments' => 'nullable|array|max:10',
+            'attachments.*' => 'file|max:20480',
         ]);
-        $conversation->messages()->create([
+
+        $body = $data['body'] ?? '';
+        $files = $request->file('attachments', []);
+
+        $message = $conversation->messages()->create([
             'sender_id' => Auth::id(),
             'receiver_id' => $conversation->participants()->where('user_id', '!=', Auth::id())->first()->user_id,
-            'content' => $data['content'],
+            'body' => $body,
+            'type' => $this->detectMessageType($files),
         ]);
+
+        foreach ($files as $file) {
+            $path = $file->store('messages/' . $conversation->id, 'public');
+            MessageAttachment::create([
+                'message_id' => $message->id,
+                'path' => $path,
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType() ?: 'application/octet-stream',
+                'size_bytes' => $file->getSize(),
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'success' => true,
+                'data' => $message->load('attachments'),
+            ], 201);
+        }
+
         return back()->with('status', 'Message sent.');
+    }
+
+    private function detectMessageType(array $files): string
+    {
+        if (empty($files)) {
+            return Message::TYPE_TEXT;
+        }
+
+        foreach ($files as $file) {
+            $mime = $file->getMimeType() ?: '';
+            if (str_starts_with($mime, 'image/')) {
+                return Message::TYPE_IMAGE;
+            }
+            if (str_starts_with($mime, 'audio/')) {
+                return Message::TYPE_VOICE;
+            }
+            if (str_starts_with($mime, 'video/')) {
+                return Message::TYPE_VIDEO;
+            }
+        }
+
+        return Message::TYPE_TEXT;
     }
 
     public function bankAccounts() { return view('pages.bank-accounts.index'); }
