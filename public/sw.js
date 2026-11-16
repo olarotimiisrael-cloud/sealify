@@ -1,5 +1,5 @@
 // Sealify Service Worker for PWA install and offline support
-const CACHE_NAME = 'sealify-v3';
+const CACHE_NAME = 'sealify-v4';
 // Only cache immutable static assets up front — never HTML pages.
 const STATIC_ASSETS = [
     '/logo.png',
