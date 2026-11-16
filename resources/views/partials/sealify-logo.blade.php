@@ -20,8 +20,8 @@
 <div class="sealify-logo inline-flex items-center gap-1.5 {{ $class }}">
     <img src="{{ asset('logo-small.png') }}" alt="Sealify" class="{{ $iconSize }} shrink-0 drop-shadow-sm">
     <span class="sealify-wordmark inline-flex items-center gap-0">
-        <span class="{{ $textSize }} font-black tracking-tight sealify-seal" style="color:#0f172a;">Seal</span>
-        <span class="{{ $textSize }} font-black tracking-tight sealify-ify" style="color:#f59e0b;">ify</span>
+        <span class="{{ $textSize }} font-black tracking-tight sealify-seal">Seal</span>
+        <span class="{{ $textSize }} font-black tracking-tight sealify-ify">ify</span>
     </span>
 </div>
 
@@ -35,11 +35,8 @@
         0%, 100% { filter: drop-shadow(0 0 4px rgba(245,158,11,0.4)); }
         50% { filter: drop-shadow(0 0 12px rgba(245,158,11,0.8)); }
     }
-    .sealify-logo .sealify-seal {
-        animation: sealifyFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-    }
-    .sealify-logo .sealify-ify {
-        animation: sealifyFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both,
-                   sealifyGlow 2s ease-in-out 0.8s infinite;
-    }
+    .sealify-logo .sealify-seal { color: #0f172a; animation: sealifyFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+    .sealify-logo .sealify-ify { color: #f59e0b; animation: sealifyFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both, sealifyGlow 2s ease-in-out 0.8s infinite; }
+    .dark .sealify-logo .sealify-seal { color: #ffffff; }
+    .dark .sealify-logo .sealify-ify { color: #fbbf24; }
 </style>
