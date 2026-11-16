@@ -26,69 +26,13 @@
     </form>
     </div>
 
-    <!-- QUICK ACTION CHIPS -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 max-w-lg lg:max-w-2xl mx-auto">
-        <button type="button" onclick="openAllCategoriesModal()"
-           class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white text-slate-700 text-sm font-medium shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all">
-            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 114 0v11a2 2 0 11-4 0V6zm16 13a2 2 0 10-4 0v-4a2 2 0 114 0v4zm-6-5a2 2 0 10-4 0v3a2 2 0 004 0v-3zm0 0l4 4m0 0l-4-4m4 4V9h4v12"/></svg>
-            All Categories
-        </button>
+    <!-- QUICK ACTION -->
+    <div class="flex justify-center">
         <a href="{{ route('listings.create') }}"
-           class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-300 hover:shadow-emerald-400 transition-all active:scale-95">
+           class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-300 hover:shadow-emerald-400 hover:bg-emerald-600 transition-all active:scale-95">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Post Ad
         </a>
-    </div>
-
-        <!-- RECOMMENDED (horizontal scroll mobile, grid tablet+) -->
-        <div class="space-y-3">
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-black text-slate-900 tracking-tight">Recommended for you</h2>
-                <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                @foreach ($topCategories->take(8) as $category)
-                    @php
-                        $iconMap = [
-                            'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
-                            'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
-                            'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
-                        ];
-                        $icon = $iconMap[$category->icon] ?? '🏷️';
-                    @endphp
-                    <a href="{{ route('categories.show', $category->slug) }}"
-                       class="flex-shrink-0 rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col items-center gap-2 text-center">
-                        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-xl">{{ $icon }}</div>
-                        <span class="text-xs font-bold text-slate-900 leading-tight line-clamp-2">{{ $category->name }}</span>
-                        <span class="text-[10px] text-emerald-500 font-medium">{{ $category->listings_count ?? 0 }} items</span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-
-    <!-- CATEGORY TILES (compact grid) -->
-    <div class="space-y-3">
-        <div class="flex items-center justify-between">
-            <h2 class="text-lg font-black text-slate-900 tracking-tight">All Categories</h2>
-            <button type="button" onclick="openAllCategoriesModal()" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">See All →</button>
-        </div>
-        <div class="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
-            @foreach ($topCategories->take(12) as $category)
-                @php
-                    $iconMap = [
-                        'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
-                        'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
-                        'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
-                    ];
-                    $icon = $iconMap[$category->icon] ?? '🏷️';
-                @endphp
-                <a href="{{ route('categories.show', $category->slug) }}"
-                   class="rounded-2xl border border-emerald-100 bg-white p-2.5 shadow-sm flex flex-col items-center gap-1 text-center transition-all hover:border-emerald-300 hover:shadow-md hover:scale-[1.02]">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-lg">{{ $icon }}</div>
-                    <span class="text-[10px] font-bold text-slate-800 leading-tight line-clamp-2">{{ $category->name }}</span>
-                </a>
-            @endforeach
-        </div>
     </div>
 
     <!-- FEATURED LISTINGS (compact grid) -->
@@ -138,88 +82,5 @@
             </div>
         @endif
     </div>
-
-    <!-- ALL CATEGORIES MODAL SHEET -->
-    <div id="allCategoriesModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeAllCategoriesModal()"></div>
-        <div class="fixed inset-0 flex items-end justify-center p-2 sm:p-0">
-            <div class="relative w-full max-w-md max-h-[85vh] bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
-                <div class="flex items-center justify-between p-4 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <h2 id="modal-title" class="text-lg font-black text-slate-900">All Categories</h2>
-                    <button onclick="closeAllCategoriesModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Close">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <div class="flex-1 overflow-y-auto p-4">
-                    @php
-                        $parentCategories = $categories->where('parent_id', null)->sortBy('sort_order');
-                        $childCategories = $categories->where('parent_id', '!=', null)->groupBy('parent_id');
-                        $iconMap = [
-                            'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
-                            'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
-                            'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
-                        ];
-                    @endphp
-                    @foreach ($parentCategories as $parent)
-                        <div class="mb-6">
-                            <h3 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
-                                @php $pIcon = $iconMap[$parent->icon] ?? '🏷️'; @endphp
-                                <span class="text-xl">{{ $pIcon }}</span>
-                                {{ $parent->name }}
-                                <span class="text-xs font-normal text-slate-400 ml-auto">{{ ($parent->listings_count ?? 0) }} listings</span>
-                            </h3>
-                            @if ($childCategories->has($parent->id))
-                                <div class="grid grid-cols-3 gap-1">
-                                    @foreach ($childCategories[$parent->id] as $child)
-                                        <a href="{{ route('categories.show', $child->slug) }}"
-                                           class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white text-slate-700 text-sm font-medium shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all"
-                                           onclick="closeAllCategoriesModal()">
-                                            {{ $child->name }}
-                                        </a>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-
 </div>
-@push('styles')
-<style>
-    @keyframes slide-up {
-        from { transform: translateY(100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-    .animate-slide-up { animation: slide-up 0.3s ease-out; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-</style>
-@endpush
-@push('scripts')
-<script>
-    function openAllCategoriesModal() {
-        const modal = document.getElementById('allCategoriesModal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    function closeAllCategoriesModal() {
-        const modal = document.getElementById('allCategoriesModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            document.body.style.overflow = '';
-        }
-    }
-    document.getElementById('allCategoriesModal')?.addEventListener('click', function(e) {
-        if (e.target === this) closeAllCategoriesModal();
-    });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') closeAllCategoriesModal();
-    });
-</script>
-@endpush
 @endsection
