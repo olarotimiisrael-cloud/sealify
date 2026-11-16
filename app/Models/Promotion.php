@@ -11,6 +11,7 @@ class Promotion extends Model
         'listing_id',
         'user_id',
         'transaction_id',
+        'kind',
         'starts_at',
         'ends_at',
         'is_free_trial',

@@ -24,6 +24,13 @@
         <form method="POST" action="{{ route('register.submit') }}" class="space-y-4">
             @csrf
 
+            @isset($referralCode)
+                <input type="hidden" name="referral_code" value="{{ $referralCode }}">
+                <div class="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl text-sm text-amber-800">
+                    <strong>Referred by:</strong> This account will be linked to referral code <code class="bg-amber-100 px-1 rounded">{{ $referralCode }}</code>
+                </div>
+            @endisset
+
             <div>
                 <label for="name" class="block text-sm font-medium text-slate-700">Full Name</label>
                 <input id="name" name="name" type="text" required

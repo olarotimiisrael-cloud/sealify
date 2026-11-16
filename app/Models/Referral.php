@@ -13,8 +13,18 @@ class Referral extends Model
 
     protected $fillable = ['referrer_id', 'referee_id', 'code', 'reward_amount', 'status', 'rewarded_at'];
 
-    protected function casts(): array
-    {
-        return ['reward_amount' => 'decimal:2', 'rewarded_at' => 'datetime'];
-    }
+protected function casts(): array
+{
+    return ['reward_amount' => 'decimal:2', 'rewarded_at' => 'datetime', 'status' => 'string'];
+}
+
+public function isRewarded(): bool
+{
+    return $this->status === 'rewarded';
+}
+
+public function isPending(): bool
+{
+    return $this->status === 'pending';
+}
 }

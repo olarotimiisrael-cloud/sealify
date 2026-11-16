@@ -19,6 +19,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'status' => 'active',
         'is_verified_seller' => false,
         'has_used_free_promotion' => false,
+        'has_referred_10_referrals' => false,
+        'has_referred_20_referrals' => false,
         'balance' => 0,
     ];
 
@@ -34,6 +36,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'bio',
         'is_verified_seller',
         'has_used_free_promotion',
+        'has_referred_10_referrals',
+        'has_referred_20_referrals',
+        'promotion_credits',
+        'credits_used',
         'balance',
         'kyc_verified_at',
         'kyc_type',
@@ -81,6 +87,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'kyc_verified_at' => 'datetime',
         'is_verified_seller' => 'boolean',
         'has_used_free_promotion' => 'boolean',
+        'has_referred_10_referrals' => 'boolean',
+        'has_referred_20_referrals' => 'boolean',
+        'promotion_credits' => 'integer',
+        'credits_used' => 'integer',
         'balance' => 'decimal:2',
         'password' => 'hashed',
         'email_notifications' => 'boolean',
@@ -249,6 +259,109 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isFollowedBy(User $user): bool
     {
         return $user->isFollowing($this);
+    }
+
+    // ------------------------------------------------------------------
+    // Referrals
+    // ------------------------------------------------------------------
+
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referrer_id');
+    }
+
+    public function referee(): HasMany
+    {
+        return $this->hasMany(Referral::class, 'referee_id');
+    }
+
+    public function successfulReferrals(): HasMany
+    {
+        return $this->referrals()->where('status', 'rewarded');
+    }
+
+    public function referralCount(): int
+    {
+        return $this->successfulReferrals()->count();
+    }
+
+    /**
+     * Total 1-week promotion credits earned: floor(referralCount / 10).
+     * Each 10 rewarded referrals = 1 free 1-week promotion credit.
+     */
+    public function totalReferralCredits(): int
+    {
+        return intdiv($this->referralCount(), 10);
+    }
+
+    /**
+     * Available 1-week promotion credits after accounting for already-used credits.
+     */
+    public function availablePromotionCredits(): int
+    {
+        return max(0, $this->totalReferralCredits() - (int) $this->credits_used);
+    }
+
+    /**
+     * Minimum referral credits needed to claim a $weeks-week free promotion.
+     */
+    public function promotionCreditsFor(int $weeks = 1): int
+    {
+        return max(1, (int) $weeks) * 10;
+    }
+
+    /**
+     * Check if the user has enough available credits to claim a free promotion.
+     *
+     * @param int $weeks Number of weeks (1 for 1-week, 2 for 2-week)
+     * @return bool
+     */
+    public function canClaimPromotion(int $weeks = 1): bool
+    {
+        return $this->availablePromotionCredits() >= $this->promotionCreditsFor($weeks);
+    }
+
+    /**
+     * Mark promotion credits as used.
+     *
+     * @param int $weeks Number of weeks claimed
+     * @return void
+     */
+    public function usePromotionCredits(int $weeks = 1): void
+    {
+        $this->forceFill([
+            'credits_used' => (int) $this->credits_used + $this->promotionCreditsFor($weeks),
+        ])->save();
+    }
+
+    public function canClaimFreePromotion(): bool
+    {
+        return $this->canClaimPromotion(1);
+    }
+
+    public function canClaimDoubleFreePromotion(): bool
+    {
+        return $this->canClaimPromotion(2);
+    }
+
+    public function getReferralPromotionStatus(): array
+    {
+        $count = $this->referralCount();
+        $totalCredits = $this->totalReferralCredits();
+        $availableCredits = $this->availablePromotionCredits();
+
+        return [
+            'count' => $count,
+            'total_credits_earned' => $totalCredits,
+            'available_credits' => $availableCredits,
+            'can_claim_1_week' => $this->canClaimFreePromotion(),
+            'can_claim_2_weeks' => $this->canClaimDoubleFreePromotion(),
+            'max_promotable_weeks' => $availableCredits,
+            'next_milestone' => $totalCredits > 0 ? null : 10, // next threshold after 0 referrals
+            'progress' => $count > 0 ? min(100, (int) (($count % 10) / 10 * 100)) : 0,
+            'claimed_1_week' => false, // replaced by credits_used tracking
+            'claimed_2_weeks' => false,
+        ];
     }
 
     public function isAdmin(): bool

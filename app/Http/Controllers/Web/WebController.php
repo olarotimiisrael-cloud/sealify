@@ -46,11 +46,19 @@ class WebController extends Controller
         $topCategories = Category::topLevel()->active()->withCount('listings')->orderBy('sort_order')->get();
         $settings = SiteSetting::first();
 
+        // Fetch active promotions (promoted listings)
+        $promotedListings = Listing::active()
+            ->whereHas('activePromotion')
+            ->with(['images', 'activePromotion'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
         $userLocation = auth()->check() ? auth()->user()->location : null;
         $neighborhoodHubs = $this->neighborhoodHubs();
         $stats = $this->marketStats();
 
-        return view('pages.home', compact('listings', 'categories', 'topCategories', 'settings', 'userLocation', 'neighborhoodHubs', 'stats'));
+        return view('pages.home', compact('listings', 'categories', 'topCategories', 'settings', 'userLocation', 'neighborhoodHubs', 'stats', 'promotedListings'));
     }
 
     public function listings(Request $request)
@@ -104,8 +112,9 @@ class WebController extends Controller
         $listing->increment('views_count');
         $listing->load('seller', 'images', 'category');
         $settings = SiteSetting::first();
+        $activePromotion = $listing->activePromotion()->with('user')->first();
 
-        return view('pages.listings.show', compact('listing', 'settings'));
+        return view('pages.listings.show', compact('listing', 'settings', 'activePromotion'));
     }
 
     public function category(Category $category)
@@ -138,7 +147,8 @@ class WebController extends Controller
     public function profile()
     {
         $user = Auth::user()->load('listings');
-        return view('pages.profile.show', compact('user'));
+        $referralStatus = $user->getReferralPromotionStatus();
+        return view('pages.profile.show', compact('user', 'referralStatus'));
     }
 
     public function settings() { return view('pages.settings'); }
@@ -350,11 +360,139 @@ class WebController extends Controller
     public function payments() { return view('pages.payments.index'); }
     public function paymentInitiate(Request $request) { return back()->with('status', 'Payment initiated.'); }
 
-    public function promotions() { return view('pages.promotions.index'); }
-    public function promote(Request $request, Listing $listing) { return back()->with('status', 'Promotion requested.'); }
+    public function promotions()
+    {
+        $user = Auth::user();
+        $listings = $user->listings()->active()->latest()->get();
+        $referralStatus = $user->getReferralPromotionStatus();
+        return view('pages.promotions.index', compact('user', 'listings', 'referralStatus'));
+    }
 
-    public function kyc() { return view('pages.kyc.index'); }
-    public function kycSubmit(Request $request) { return back()->with('status', 'KYC submitted.'); }
+    public function promote(Request $request, Listing $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            return back()->with('error', 'You can only promote your own listings.');
+        }
+
+        if ($listing->status !== 'active') {
+            return back()->with('error', 'Only active listings can be promoted.');
+        }
+
+        $alreadyActive = Promotion::active()
+            ->where('listing_id', $listing->id)
+            ->exists();
+
+        if ($alreadyActive) {
+            return back()->with('error', 'This listing is already promoted.');
+        }
+
+        // Requested duration in weeks (1 = 1 week, 2 = 2 weeks, etc.)
+        $weeks = max(1, (int) $request->input('weeks', 1));
+
+        // --- Referral-based free promotion (credit-based) ---
+        if ($user->canClaimPromotion($weeks)) {
+            $days = $weeks * 7;
+
+            $promotion = DB::transaction(function () use ($user, $listing, $days, $weeks) {
+                $locked = User::lockForUpdate()->find($user->id);
+
+                if (! $locked->canClaimPromotion($weeks)) {
+                    return null;
+                }
+
+                $promotion = Promotion::create([
+                    'listing_id' => $listing->id,
+                    'user_id' => $user->id,
+                    'transaction_id' => null,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays($days),
+                    'is_free_trial' => true,
+                    'kind' => 'referral',
+                    'status' => 'active',
+                ]);
+
+                $locked->usePromotionCredits($weeks);
+
+                return $promotion;
+            });
+
+            if ($promotion === null) {
+                return back()->with('error', 'Not enough referral credits for a '.$weeks.'-week promotion.');
+            }
+
+            return back()->with('status', 'Your '.$weeks.'-week promotion is now active! (Referral credits used)');
+        }
+
+        // --- Paid promotion ---
+        try {
+            $result = $this->payments->initiate(
+                user: $user,
+                amount: config('promotions.price', 500),
+                purpose: 'promotion_boost',
+                metadata: [
+                    'listing_id' => $listing->id,
+                    'days' => $weeks * 7,
+                    'kind' => 'paid',
+                ],
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', 'Payment initiated. Complete payment to activate your promotion.');
+    }
+
+    public function kyc()
+    {
+        $user = Auth::user();
+        $latest = $user->kycVerifications()->latest('id')->first();
+        $badges = User::badgeOptions();
+        return view('pages.kyc.index', compact('user', 'latest', 'badges'));
+    }
+
+    public function kycSubmit(Request $request)
+    {
+        $user = Auth::user();
+
+        if ($user->isKycVerified()) {
+            return back()->with('status', 'Your identity is already verified.');
+        }
+
+        $data = $request->validate([
+            'type' => ['required', 'in:nin,bvn,cac,drivers_license,voters_card'],
+            'id_number' => ['required', 'string', 'min:8', 'max:20'],
+            'first_name' => ['required_unless:type,cac', 'string', 'max:100'],
+            'last_name' => ['required_unless:type,cac', 'string', 'max:100'],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'document' => ['required', 'image', 'mimes:jpeg,png,jpg,pdf,heic,heic|max:5120'],
+        ]);
+
+        $file = $request->file('document');
+        $extension = $file->getClientOriginalExtension();
+        $filename = 'kyc-'.strtolower($data['type']).'-'.$user->id.'-'.now()->timestamp.'.'.$extension;
+        $path = $file->storeAs('kyc', $filename, 'public');
+
+        // Create pending KYC verification (manual review, no Bytid call)
+        $verification = KycVerification::create([
+            'user_id' => $user->id,
+            'type' => $data['type'],
+            'id_number_last4' => substr($data['id_number'], -4),
+            'id_number_hash' => hash('sha256', $data['id_number']),
+            'first_name' => $data['first_name'] ?? null,
+            'last_name' => $data['last_name'] ?? null,
+            'date_of_birth' => $data['date_of_birth'] ?? null,
+            'status' => KycVerification::STATUS_PENDING,
+            'provider' => 'manual',
+            'provider_reference' => 'manual-submission-'.now()->timestamp,
+            'document_path' => $path,
+        ]);
+
+        return redirect()
+            ->route('kyc.index')
+            ->with('status', 'KYC submission pending admin review. You will be notified once reviewed.');
+    }
 
     public function notifications()
     {
@@ -365,7 +503,13 @@ class WebController extends Controller
     public function markNotificationRead($id) { return back()->with('status', 'Marked read.'); }
     public function markAllNotificationsRead() { return back()->with('status', 'All marked read.'); }
 
-    public function userProfile(User $user) { return view('pages.users.show', compact('user')); }
+    public function userProfile(User $user)
+    {
+        $listings = $user->listings()->active()->latest()->paginate(12);
+        $referralStatus = $user->getReferralPromotionStatus();
+        return view('pages.users.show', compact('user', 'listings', 'referralStatus'));
+    }
+
     public function userListings(User $user)
     {
         $listings = $user->listings()->active()->latest()->paginate(12);
@@ -373,7 +517,17 @@ class WebController extends Controller
     }
 
     public function toggleFollow(User $user) { return back()->with('status', 'Follow updated.'); }
-    public function referrals() { return view('pages.referrals.index'); }
+
+    public function referrals()
+    {
+        $user = Auth::user();
+        $referralStatus = $user->getReferralPromotionStatus();
+        $referrals = $user->successfulReferrals()->with('referee')->latest()->paginate(20);
+        $referralLink = route('register.referral', $user->referral_code);
+
+        return view('pages.referrals.index', compact('user', 'referralStatus', 'referrals', 'referralLink'));
+    }
+
     public function savedSearches() { return view('pages.saved-searches.index'); }
 
     public function search(Request $request)
@@ -504,23 +658,72 @@ class WebController extends Controller
     }
 
     public function adminVerifications(Request $request) {
-        $query = KycVerification::with('user')->orderBy('created_at', 'desc');
+        $query = KycVerification::with(['user', 'reviewer'])
+            ->orderBy('created_at', 'desc');
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
         $verifications = $query->paginate(20)->withQueryString();
-        return view('pages.admin.verifications', compact('verifications', 'request'));
+        $badges = User::badgeOptions();
+        return view('pages.admin.verifications', compact('verifications', 'request', 'badges'));
     }
 
-    public function adminKycApprove(KycVerification $verification) {
-        $verification->update(['status' => 'approved', 'reviewed_at' => now()]);
-        $verification->user->update(['kyc_verified_at' => now(), 'is_verified_seller' => true]);
+    public function adminKycApprove(Request $request, KycVerification $verification) {
+        $data = $request->validate([
+            'badge' => ['nullable', 'string', 'in:'.implode(',', array_keys(User::badgeOptions()))],
+            'review_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $verification->update([
+            'status' => KycVerification::STATUS_VERIFIED,
+            'verified_at' => now(),
+            'rejected_at' => null,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_notes' => $data['review_notes'] ?? null,
+            'badge_awarded' => $data['badge'] ?? null,
+        ]);
+
+        if ($verification->badge_awarded) {
+            $verification->user->update([
+                'kyc_verified_at' => now(),
+                'kyc_type' => $verification->type,
+                'is_verified_seller' => true,
+                'badge' => $verification->badge_awarded,
+            ]);
+        }
+
         return back()->with('status', 'KYC approved.');
     }
 
-    public function adminKycReject(KycVerification $verification) {
-        $verification->update(['status' => 'rejected', 'reviewed_at' => now()]);
+    public function adminKycReject(Request $request, KycVerification $verification) {
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $verification->update([
+            'status' => KycVerification::STATUS_REJECTED,
+            'rejected_at' => now(),
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => $data['rejection_reason'],
+            'verified_at' => null,
+        ]);
+
         return back()->with('status', 'KYC rejected.');
+    }
+
+    public function adminKycDocument(KycVerification $verification) {
+        $verification->load('user');
+        if (! $verification->hasDocument()) {
+            abort(404);
+        }
+
+        $path = Storage::disk('public')->path($verification->document_path);
+
+        return response()->file($path, [
+            'Content-Type' => Storage::disk('public')->mimeType($verification->document_path),
+        ]);
     }
 
     public function adminPromotions() {

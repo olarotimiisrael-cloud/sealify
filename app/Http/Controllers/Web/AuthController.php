@@ -51,18 +51,44 @@ class AuthController extends Controller
         return redirect()->intended(route('home'))->with('status', 'Welcome back, '.$user->name.'!');
     }
 
-    public function showRegister() { return view('auth.register'); }
+    public function showRegister(Request $request, ?string $referral_code = null)
+    {
+        $code = $referral_code ?? $request->query('ref');
+
+        return view('auth.register', ['referralCode' => $code]);
+    }
 
     public function register(RegisterRequest $request)
     {
-        $user = User::create(array_merge($request->validated(), [
-            'password' => Hash::make($request->password),
+        $data = $request->validated();
+
+        $referrer = null;
+        if (! empty($data['referral_code'])) {
+            $referrer = User::where('referral_code', $data['referral_code'])->first();
+        }
+
+        $user = User::create(array_merge($data, [
+            'password' => Hash::make($data['password']),
         ]));
+
+        if ($referrer) {
+            $user->referrals()->create([
+                'referrer_id' => $referrer->id,
+                'code' => $referrer->referral_code,
+                'status' => 'pending',
+                'reward_amount' => 0,
+            ]);
+        }
+
         $user->refresh();
 
         $this->otp->issue($user, OtpService::PURPOSE_EMAIL_VERIFICATION);
 
-        return redirect()->route('verify')->with('status', 'Registration successful. Check your email for a 6-digit verification code.');
+        $referralMessage = $referrer
+            ? 'Registration successful via referral. Check your email for a 6-digit verification code.'
+            : 'Registration successful. Check your email for a 6-digit verification code.';
+
+        return redirect()->route('verify')->with('status', $referralMessage);
     }
 
     public function showVerify() { return view('auth.verify'); }

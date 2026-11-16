@@ -74,8 +74,8 @@
         <!-- Install App -->
         <div class="max-w-xs">
             <h4 class="text-sm font-black text-slate-700 uppercase tracking-wider mb-3">Install App</h4>
-            <button id="install-app-btn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold py-3 rounded-xl transition-colors flex items-center justify-center gap-2" onclick="installApp()">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L4 8m4-4v12"></path></svg>
+            <button id="install-app-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-5 py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/40 animate-pulse hover:animate-none hover:shadow-emerald-500/60 hover:-translate-y-0.5" onclick="installApp()" style="animation-duration: 2s;">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L4 8m4-4v12"></path></svg>
                 Install App
             </button>
             <p class="text-xs text-slate-500 text-center mt-2">Install Sealify on your device</p>

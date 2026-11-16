@@ -26,14 +26,67 @@
     </form>
     </div>
 
-    <!-- QUICK ACTION -->
-    <div class="flex justify-center">
-        <a href="{{ route('listings.create') }}"
-           class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-300 hover:shadow-emerald-400 hover:bg-emerald-600 transition-all active:scale-95">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Post Ad
-        </a>
+    <!-- SPECIAL PROMOTIONS CAROUSEL -->
+    @if ($promotedListings && $promotedListings->isNotEmpty())
+    <div class="mb-6">
+        <h2 class="text-lg font-black text-slate-900 tracking-tight mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            Special Promotions
+        </h2>
+        <div class="promotion-carousel relative overflow-hidden rounded-3xl bg-white border border-emerald-100 shadow-2xl shadow-emerald-100/50 p-3 md:p-4 mb-3">
+            <div class="promotion-track flex transition-transform duration-500 ease-in-out" id="promotionTrack">
+                @foreach ($promotedListings as $promoListing)
+                @php
+                    $imageUrl = $promoListing->images->first()?->url ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=600&q=80';
+                    $promoDays = $promoListing->activePromotion?->ends_at?->diffForHumans() ?? '';
+                @endphp
+                <div class="promotion-slide shrink-0 w-full flex flex-col items-center justify-center p-4 md:p-6 cursor-pointer hover:scale-105 transition-transform duration-300 group/card" onclick="location.href='{{ route('listings.show', $promoListing) }}'">
+                    <div class="w-full rounded-2xl overflow-hidden relative bg-white border border-emerald-100 shadow-xl group-hover:shadow-emerald-200/60 transition-shadow">
+                        <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">Featured</span>
+                        <img src="{{ $imageUrl }}" alt="{{ $promoListing->title }}"
+                             class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
+                        <div class="p-3 md:p-4 flex-1">
+                            <h3 class="font-bold text-slate-900 text-base mb-1 line-clamp-1">{{ $promoListing->title }}</h3>
+                            <div class="text-emerald-600 font-black text-lg mb-2">₦{{ number_format($promoListing->price, 0) }}</div>
+                            <p class="text-xs text-slate-500 mt-1 line-clamp-1">{{ $promoListing->location }}</p>
+                            @if ($promoListing->activePromotion)
+                            <span class="inline-block text-[10px] text-emerald-600 font-bold uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded">
+                                Promoted {{ $promoDays }}
+                            </span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
     </div>
+    <script>
+        // Auto-slide promotion carousel every 5 seconds
+        const track = document.getElementById('promotionTrack');
+        if (track) {
+            const slides = track.querySelectorAll('.promotion-slide');
+            const totalSlides = slides.length;
+            if (totalSlides > 1) {
+                let currentIndex = 0;
+                const slideWidth = slides[0].offsetWidth;
+                
+                function goToSlide(index) {
+                    currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
+                    const translateX = -currentIndex * slideWidth;
+                    track.style.transform = `translateX(${translateX}px)`;
+                }
+                
+                setInterval(() => {
+                    currentIndex = (currentIndex + 1) % totalSlides;
+                    goToSlide(currentIndex);
+                }, 5000);
+                
+                goToSlide(0);
+            }
+        }
+    </script>
+    @endif
 
     <!-- MARKETPLACE FEEDS (compact grid) -->
     <div class="space-y-3">

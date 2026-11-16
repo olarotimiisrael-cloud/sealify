@@ -38,6 +38,12 @@
                             Verified
                         </span>
                     @endif
+                    @if ($activePromotion)
+                        <span class="absolute top-3 right-3 bg-amber-100 text-amber-700 text-xs font-bold px-2 py-1 rounded-lg shadow-md flex items-center gap-1 mt-2 ml-auto">
+                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L2 7l8 5 8-5-8-5zM2 17l8 5 8-5M2 12l8 5 8-5"></path></svg>
+                            {{ $activePromotion->kind === 'referral' ? 'Free Promotion' : 'Featured Promotion' }}
+                        </span>
+                    @endif
                 </div>
                 @if ($listing->images->count() > 1)
                     <div class="flex gap-2 overflow-x-auto pb-4">
@@ -128,6 +134,20 @@
                     </div>
                 </div>
                 <p class="text-slate-600 text-sm">{{ $listing->user->location ?? 'Ogbomosoland, Oyo State' }}</p>
+                @if ($activePromotion)
+                    <div class="mt-4 pt-4 border-t border-slate-200">
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                            <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L2 7l8 5 8-5-8-5zM2 17l8 5 8-5M2 12l8 5 8-5"></path></svg>
+                            <span>
+                                Promoted by <strong class="font-bold text-slate-700">{{ $activePromotion->user->name ?? 'Seller' }}</strong>
+                                @if ($activePromotion->kind === 'referral')
+                                    via referral
+                                @endif
+                                until {{ $activePromotion->ends_at->format('M d, Y') }}
+                            </span>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>

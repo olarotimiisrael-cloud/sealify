@@ -34,6 +34,7 @@ Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login')->mi
 Route::post('/login', [WebAuthController::class, 'login'])->name('login.submit')->middleware('guest');
 Route::get('/register', [WebAuthController::class, 'showRegister'])->name('register')->middleware('guest');
 Route::post('/register', [WebAuthController::class, 'register'])->name('register.submit')->middleware('guest');
+Route::get('/ref/{referral_code}', [WebAuthController::class, 'showRegister'])->name('register.referral')->middleware('guest');
 Route::get('/verify-email', [WebAuthController::class, 'showVerify'])->name('verify')->middleware('guest');
 Route::post('/verify-email', [WebAuthController::class, 'verifyEmail'])->name('verify.submit')->middleware('guest');
 Route::get('/resend-verification', [WebAuthController::class, 'showResend'])->name('resend')->middleware('guest');
@@ -144,6 +145,7 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
 
     /* KYC Verifications */
     Route::get('/kyc', [WebController::class, 'adminVerifications'])->name('verifications');
+    Route::get('/kyc/{verification}/document', [WebController::class, 'adminKycDocument'])->name('kyc.document');
     Route::post('/kyc/{verification}/approve', [WebController::class, 'adminKycApprove'])->name('kyc.approve');
     Route::post('/kyc/{verification}/reject', [WebController::class, 'adminKycReject'])->name('kyc.reject');
 

@@ -194,6 +194,7 @@ class PaymentService
     protected function activatePromotion(Transaction $transaction): void
     {
         $listingId = $transaction->metadata['listing_id'] ?? null;
+        $kind = $transaction->metadata['kind'] ?? 'paid';
         $days = (int) ($transaction->metadata['days'] ?? config('promotions.duration_days', 7));
 
         if (! $listingId) {
@@ -226,6 +227,7 @@ class PaymentService
             'starts_at' => now(),
             'ends_at' => now()->addDays($days),
             'is_free_trial' => false,
+            'kind' => $kind,
             'status' => 'active',
         ]);
     }

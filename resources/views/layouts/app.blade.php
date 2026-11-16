@@ -43,6 +43,22 @@
         })();
     </script>
     @stack('styles')
+    <style>
+        .dark .text-slate-900 { color: #e2e8f0 !important; }
+        .dark .text-slate-800 { color: #cbd5e1 !important; }
+        .dark .text-slate-700 { color: #94a3b8 !important; }
+        .dark .text-slate-600 { color: #64748b !important; }
+        .dark .text-slate-500 { color: #94a3b8 !important; }
+        .dark .text-slate-400 { color: #64748b !important; }
+        .dark .text-slate-300 { color: #94a3b8 !important; }
+        .dark .bg-white { background-color: #0f172a !important; }
+        .dark .bg-gray-50 { background-color: #0f172a !important; }
+        .dark .bg-gray-100 { background-color: #1e293b !important; }
+        .dark .border-slate-200 { border-color: #334155 !important; }
+        .dark .border-slate-300 { border-color: #475569 !important; }
+        .dark .border-gray-200 { border-color: #334155 !important; }
+        .dark .text-white { color: #f8fafc !important; }
+    </style>
 </head>
 <body class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
     @include('partials.navbar')

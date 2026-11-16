@@ -25,9 +25,13 @@ class PromotionController extends Controller
             ->where('user_id', $user->id)
             ->count();
 
+        $referralStatus = $user->getReferralPromotionStatus();
+
         return response()->json([
             'data' => [
                 'has_free_trial' => ! $user->has_used_free_promotion,
+                'has_referral_free_promotion' => $referralStatus['can_claim_1_week'] || $referralStatus['can_claim_2_weeks'],
+                'referral_status' => $referralStatus,
                 'active_promotions' => $activePromotions,
                 'price' => (float) config('promotions.price', 500),
                 'duration_days' => (int) config('promotions.duration_days', 7),
@@ -86,6 +90,52 @@ class PromotionController extends Controller
 
         $days = (int) config('promotions.duration_days', 7);
         $price = (float) config('promotions.price', 500);
+
+        // --- Referral-based free promotion (credit-based) ---
+        $referralStatus = $user->getReferralPromotionStatus();
+        $weeks = max(1, (int) $request->input('weeks', 1));
+        if ($user->canClaimPromotion($weeks)) {
+            $freeDays = $weeks * 7;
+
+            $promotion = DB::transaction(function () use ($user, $listing, $freeDays, $weeks) {
+                $locked = User::lockForUpdate()->find($user->id);
+
+                if (! $locked->canClaimPromotion($weeks)) {
+                    return null;
+                }
+
+                $promotion = Promotion::create([
+                    'listing_id' => $listing->id,
+                    'user_id' => $user->id,
+                    'transaction_id' => null,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays($freeDays),
+                    'is_free_trial' => true,
+                    'kind' => 'referral',
+                    'status' => 'active',
+                ]);
+
+                $locked->usePromotionCredits($weeks);
+
+                return $promotion;
+            });
+
+            if ($promotion === null) {
+                return response()->json([
+                    'message' => 'Not enough referral credits for a '.$weeks.'-week promotion.',
+                ], 422);
+            }
+
+            $promotion->load('listing');
+
+            return response()->json([
+                'data' => [
+                    'activated' => true,
+                    'promotion' => new PromotionResource($promotion),
+                ],
+                'message' => 'Your free promotion is now active for '.$freeDays.' days! (Referral credits used)',
+            ], 201);
+        }
 
         // --- Free trial path ---
         if (! $user->has_used_free_promotion) {
