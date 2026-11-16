@@ -30,3 +30,83 @@
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ===== Premium global form controls ===== */
+:is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], input[type="date"],
+    input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"],
+    textarea, select
+) {
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    background-color: #f8fafc;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    transition: border-color .18s ease, box-shadow .18s ease, background-color .18s ease;
+}
+:is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], input[type="date"],
+    input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"],
+    textarea, select
+)::placeholder { color: #94a3b8; }
+:is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], input[type="date"],
+    input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"],
+    textarea, select
+):focus {
+    outline: none;
+    border-color: #10b981;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 1px 2px rgba(16, 185, 129, 0.1);
+}
+/* Dark mode variants */
+.dark :is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], input[type="date"],
+    input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"],
+    textarea, select
+) {
+    background-color: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+    box-shadow: none;
+}
+.dark :is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], input[type="date"],
+    input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"],
+    textarea, select
+):focus {
+    background-color: #0f172a;
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+.dark :is(
+    input[type="email"], input[type="password"], input[type="text"], input[type="tel"],
+    input[type="url"], input[type="number"], input[type="search"], textarea, select
+)::placeholder { color: #64748b; }
+
+/* Nicer checkboxes / radios */
+input[type="checkbox"], input[type="radio"] {
+    accent-color: #10b981;
+    width: 1.1rem;
+    height: 1.1rem;
+    cursor: pointer;
+    transition: transform .12s ease;
+}
+input[type="checkbox"]:active, input[type="radio"]:active { transform: scale(0.9); }
+
+/* Custom select arrow */
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.9rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+}
