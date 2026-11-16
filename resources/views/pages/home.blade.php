@@ -30,13 +30,21 @@
 
     <!-- SEARCH BAR (prominent, centered) -->
     <div class="flex justify-center">
-        <form method="GET" action="{{ route('listings.index') }}" class="relative w-full max-w-lg lg:max-w-xl">
-            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-emerald-200 bg-white shadow-sm">
-                <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <form method="GET" action="{{ route('listings.index') }}" class="relative w-full max-w-lg lg:max-w-xl group">
+            <!-- Glow effect behind search -->
+            <div class="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-400 rounded-3xl blur-lg opacity-30 group-focus-within:opacity-60 transition-opacity duration-300"></div>
+            <div class="relative flex items-center gap-2 pl-4 pr-1.5 py-1.5 rounded-2xl border-2 border-emerald-100 bg-white shadow-lg shadow-emerald-100/50 group-focus-within:border-emerald-400 group-focus-within:shadow-emerald-200/70 transition-all duration-300">
+                <svg class="w-5 h-5 text-emerald-500 shrink-0 group-focus-within:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 <input name="q" value="{{ request('q') }}" placeholder="What are you looking for? (e.g. iPhone, Toyota, Ankara)"
-                       class="flex-1 rounded-xl border-0 bg-transparent py-2 text-sm outline-none placeholder-slate-400">
-                <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 text-sm active:scale-95">
-                    Search
+                       class="flex-1 border-0 bg-transparent py-2.5 text-sm text-slate-900 font-medium outline-none placeholder-slate-400 placeholder:font-normal">
+                @if(request('q'))
+                    <a href="{{ route('home') }}" class="p-1.5 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors" title="Clear search">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </a>
+                @endif
+                <button type="submit" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-emerald-300/50 hover:shadow-lg hover:shadow-emerald-400/60 text-sm active:scale-95 flex items-center gap-1.5 shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <span class="hidden sm:inline">Search</span>
                 </button>
             </div>
         </form>
