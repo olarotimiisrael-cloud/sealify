@@ -141,7 +141,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
 Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [WebController::class, 'adminDashboard'])->name('dashboard');
-    Route::get('/dashboard', [WebController::class, 'adminDashboard'])->name('dashboard');
+    Route::get('/dashboard', [WebController::class, 'adminDashboard']);
 
     /* Users */
     Route::get('/users', [WebController::class, 'adminUsers'])->name('users');
