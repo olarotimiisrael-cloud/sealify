@@ -668,6 +668,30 @@ class WebController extends Controller
             'status' => PaymentReceipt::STATUS_PENDING,
         ]);
 
+        // Notify admin via email
+        try {
+            $adminEmail = config('mail.admin_email', 'admin@sealify.com.ng');
+            $subject = 'New Payment Receipt Submitted - Sealify';
+            $content = '<h2>New Payment Receipt</h2>' .
+                       '<p>A user has submitted a payment receipt for review.</p>' .
+                       '<p><strong>User:</strong> ' . e($user->name) . ' (' . e($user->email) . ')</p>' .
+                       '<p><strong>Amount:</strong> ₦' . number_format($data['amount_paid'], 0) . '</p>' .
+                       '<p><strong>Payment Method:</strong> ' . e($data['payment_method'] ?? 'bank_transfer') . '</p>' .
+                       '<p><strong>Listing:</strong> ' . e($transaction->metadata['listing_id'] ?? 'N/A') . '</p>' .
+                       '<p>Please review this receipt in the admin dashboard.</p>';
+            
+            $headers = [
+                'From: Sealify Nigeria <noreply@sealify.com.ng>',
+                'Reply-To: support@sealify.com.ng',
+                'MIME-Version: 1.0',
+                'Content-Type: text/html; charset=UTF-8',
+            ];
+            
+            mail($adminEmail, $subject, $content, implode("\r\n", $headers), '-f noreply@sealify.com.ng');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to notify admin of payment receipt: ' . $e->getMessage());
+        }
+
         return redirect()->route('payments.index')
             ->with('status', 'Receipt uploaded. Admin will review and activate your promotion.');
     }

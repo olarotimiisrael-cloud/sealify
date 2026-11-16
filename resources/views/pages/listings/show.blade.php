@@ -28,9 +28,13 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <div class="lg:col-span-8">
                 <div class="aspect-video bg-gradient-to-br from-{{ $catColor }}-50 to-slate-50 rounded-2xl overflow-hidden mb-6 border border-{{ $catColor }}-100 relative">
-                    <img src="{{ $mainImage }}" alt="{{ $listing->title }}"
-                         class="w-full h-full object-cover">
-                    <span class="absolute top-3 left-3 bg-white text-{{ $catColor }}-600 text-xs font-bold px-2 py-1 rounded-lg shadow-md">
+                    @include('partials.watermark-image', [
+                        'src' => $mainImage,
+                        'alt' => $listing->title,
+                        'class' => 'w-full h-full object-cover',
+                        'download' => false,
+                    ])
+                    <span class="absolute top-3 left-3 bg-white text-{{ $catColor }}-600 text-xs font-bold px-2 py-1 rounded-lg shadow-md z-20">
                         {{ $listing->condition_label }}
                     </span>
                     @if ($listing->user->is_verified_seller)
@@ -50,7 +54,14 @@
                 @if ($listing->images->count() > 1)
                     <div class="flex gap-2 overflow-x-auto pb-4">
                         @foreach ($listing->images as $img)
-                            <img src="{{ $img->url }}" class="w-16 h-16 rounded-lg object-cover border border-slate-200 hover:border-{{ $catColor }}-500 cursor-pointer flex-shrink-0 transition-colors">
+                            <div class="w-16 h-16 rounded-lg object-cover border border-slate-200 hover:border-{{ $catColor }}-500 cursor-pointer flex-shrink-0 transition-colors relative overflow-hidden">
+                                @include('partials.watermark-image', [
+                                    'src' => $img->url,
+                                    'alt' => $listing->title,
+                                    'class' => 'w-full h-full object-cover',
+                                    'download' => false,
+                                ])
+                            </div>
                         @endforeach
                     </div>
                 @endif

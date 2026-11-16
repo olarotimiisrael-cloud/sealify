@@ -405,22 +405,26 @@ function handleRemoteSignal(signal) {
     const data = signal.payload || {};
     if (signal.type === 'offer') {
         const callType = data.callType || 'video';
-        // Incoming call — show accept prompt if not already in a call
+        // Incoming call — ask user to accept or decline
         if (!callInProgress) {
-            // Accept automatically for now (can add ringtone/accept UI later)
-            acceptIncomingCall(callType).then(() => {
-                // After setting up local stream and pc, handle the offer
-                pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }))
-                    .then(() => pc.createAnswer())
-                    .then(answer => pc.setLocalDescription(answer))
-                    .then(() => {
-                        sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
-                        // Flush buffered ICE candidates
-                        pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
-                        pendingIceCandidates = [];
-                    })
-                    .catch(err => console.error('Handle offer error:', err));
-            });
+            const callTypeLabel = callType === 'voice' ? 'Voice' : 'Video';
+            if (confirm(`Incoming ${callTypeLabel.toLowerCase()} call. Accept?`)) {
+                // User accepted — set up call and send answer
+                acceptIncomingCall(callType).then(() => {
+                    pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }))
+                        .then(() => pc.createAnswer())
+                        .then(answer => pc.setLocalDescription(answer))
+                        .then(() => {
+                            sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
+                            pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
+                            pendingIceCandidates = [];
+                        })
+                        .catch(err => console.error('Handle offer error:', err));
+                });
+            } else {
+                // User declined — send hangup signal
+                sendSignaling({ type: 'hangup', payload: {} });
+            }
             return;
         }
         // Already in a call — handle the offer

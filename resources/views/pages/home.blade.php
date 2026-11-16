@@ -42,11 +42,15 @@
                     $promoDays = $promoListing->activePromotion?->ends_at?->diffForHumans() ?? '';
                 @endphp
                 <div class="promotion-slide shrink-0 w-full flex flex-col items-center justify-center p-4 md:p-6 cursor-pointer hover:scale-105 transition-transform duration-300 group/card" onclick="location.href='{{ route('listings.show', $promoListing) }}'">
-                    <div class="w-full rounded-2xl overflow-hidden relative bg-white border border-emerald-100 shadow-xl group-hover:shadow-emerald-200/60 transition-shadow">
-                        <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">Featured</span>
-                        <img src="{{ $imageUrl }}" alt="{{ $promoListing->title }}"
-                             class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
-                        <div class="absolute top-12 right-3 z-20" onclick="event.stopPropagation()">
+                        <div class="w-full rounded-2xl overflow-hidden relative bg-white border border-emerald-100 shadow-xl group-hover:shadow-emerald-200/60 transition-shadow">
+                            <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">Featured</span>
+                            @include('partials.watermark-image', [
+                                'src' => $imageUrl,
+                                'alt' => $promoListing->title,
+                                'class' => 'w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300',
+                                'download' => false,
+                            ])
+                            <div class="absolute top-12 right-3 z-20" onclick="event.stopPropagation()">
                             @include('partials.favorite-button', ['listing' => $promoListing, 'isFav' => in_array($promoListing->id, $favoriteIds, true), 'formClass' => 'static'])
                         </div>
                         <div class="p-3 md:p-4 flex-1">

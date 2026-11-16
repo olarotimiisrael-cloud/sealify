@@ -95,6 +95,15 @@
                 </div>
                 
                 <p class="text-xs text-slate-400 mt-4">All payments are processed and verified by admin. After payment, your promotion will be activated.</p>
+
+                {{-- Payment Proof Prompt --}}
+                <div class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                    <p class="text-sm font-bold text-blue-800 mb-2">📸 Already made a payment?</p>
+                    <p class="text-xs text-blue-600 mb-3">Upload your payment proof so admin can verify and activate your promotion.</p>
+                    <a href="{{ route('payments.receipts.mine') }}" class="inline-block bg-blue-500 hover:bg-blue-400 text-white font-bold px-4 py-2 rounded-lg transition-colors text-sm">
+                        Upload Payment Proof
+                    </a>
+                </div>
             </div>
             <div class="mb-6 bg-slate-50 rounded-xl p-6">
                 <div class="flex items-center justify-between mb-3">
