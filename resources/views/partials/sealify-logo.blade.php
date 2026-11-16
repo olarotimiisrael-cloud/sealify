@@ -7,12 +7,22 @@
         'lg' => 'text-xl',
         'xl' => 'text-2xl',
     ];
+    $iconMap = [
+        'sm' => 'h-6 w-auto',
+        'md' => 'h-7 w-auto',
+        'lg' => 'h-8 w-auto',
+        'xl' => 'h-10 w-auto',
+    ];
     $textSize = $sizeMap[$size] ?? 'text-xl';
+    $iconSize = $iconMap[$size] ?? 'h-8 w-auto';
 @endphp
 
-<div class="sealify-logo inline-flex items-center gap-0 {{ $class }}">
-    <span class="{{ $textSize }} font-black tracking-tight sealify-seal" style="color:#0f172a;">Seal</span>
-    <span class="{{ $textSize }} font-black tracking-tight sealify-ify" style="color:#f59e0b;">ify</span>
+<div class="sealify-logo inline-flex items-center gap-1.5 {{ $class }}">
+    <img src="{{ asset('logo-small.png') }}" alt="Sealify" class="{{ $iconSize }} shrink-0 drop-shadow-sm">
+    <span class="sealify-wordmark inline-flex items-center gap-0">
+        <span class="{{ $textSize }} font-black tracking-tight sealify-seal" style="color:#0f172a;">Seal</span>
+        <span class="{{ $textSize }} font-black tracking-tight sealify-ify" style="color:#f59e0b;">ify</span>
+    </span>
 </div>
 
 <style>
