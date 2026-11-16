@@ -34,10 +34,9 @@
             <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-500"></div>
             <div class="max-w-7xl mx-auto px-4 py-3">
                 <div class="flex items-center justify-between">
-                    <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-                        <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-8 w-auto">
-                        <span class="font-black text-xl tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
-                    </a>
+                <a href="{{ route('home') }}" class="flex items-center gap-2 group">
+                    @include('partials.sealify-logo', ['size' => 'lg', 'class' => 'mr-1'])
+                </a>
 
                     <div class="hidden md:flex items-center gap-4">
                         <a href="{{ route('home') }}" class="text-slate-800 hover:text-emerald-600 transition-colors font-bold">Home</a>
@@ -97,8 +96,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
                     <div class="flex items-center gap-2 mb-3">
-                        <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-6 w-auto">
-                        <span class="font-black text-lg tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
+                        @include('partials.sealify-logo', ['size' => 'md', 'class' => 'mr-1'])
                     </div>
                     <p class="text-xs text-slate-800 leading-relaxed">
                         Nigeria's most trusted local marketplace. Connecting verified buyers and sellers in Ogbomosoland, Oyo State, and across Nigeria.

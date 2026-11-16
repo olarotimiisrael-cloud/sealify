@@ -10,8 +10,7 @@
         <div class="max-w-7xl mx-auto px-4 py-3">
             <div class="flex items-center justify-between">
                 <a href="{{ route('home') }}" class="flex items-center gap-2 group">
-                    <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-8 w-auto">
-                    <span class="font-black text-xl tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
+                    @include('partials.sealify-logo', ['size' => 'lg', 'class' => 'mr-1'])
                 </a>
 
                 <div class="hidden md:flex items-center gap-4">
