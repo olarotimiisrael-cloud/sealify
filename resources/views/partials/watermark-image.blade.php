@@ -11,6 +11,7 @@
 $style = '';
 if ($width)  $style .= "width:{$width}px;";
 if ($height) $style .= "height:{$height}px;";
+$logoUrl = asset('logo.png');
 ?>
 
 <div class="relative inline-block overflow-hidden rounded-2xl shadow-sm border border-slate-200 {{ $class }}"
@@ -23,13 +24,14 @@ if ($height) $style .= "height:{$height}px;";
          loading="lazy"
          decoding="async">
 
-    {{-- Always-visible Sealify watermark — captured by screenshots and screen-shares --}}
+    {{-- Transparent Sealify watermark using original logo --}}
     <div class="absolute bottom-3 right-3 z-20 pointer-events-none">
-        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900/85 backdrop-blur-md border border-white/20 shadow-xl text-white">
-            <div class="w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center text-[9px] font-black text-white shadow-lg border border-white/30">
-                S
-            </div>
-            <span class="text-[10px] font-black text-white tracking-widest uppercase shadow-lg leading-none">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/45 backdrop-blur-sm border border-white/20 shadow-xl text-white">
+            <img src="{{ $logoUrl }}"
+                 alt="Sealify"
+                 class="w-5 h-5 object-contain"
+                 onerror="this.style.display='none'">
+            <span class="text-[10px] font-black text-white tracking-widest uppercase shadow-lg leading-none opacity-95">
                 SEALIFY
             </span>
         </div>
@@ -38,7 +40,7 @@ if ($height) $style .= "height:{$height}px;";
     {{-- Download with canvas-burned Sealify watermark --}}
     @if ($download)
         <button type="button"
-                class="absolute bottom-3 left-3 z-20 p-1.5 bg-slate-900/80 backdrop-blur-md hover:bg-slate-900 text-white rounded-lg transition-colors"
+                class="absolute bottom-3 left-3 z-20 p-1.5 bg-black/45 backdrop-blur-sm hover:bg-black/60 text-white rounded-lg transition-colors"
                 onclick="sealifyDownloadImage(this, '{{ addslashes($src) }}', '{{ addslashes($alt) }}')"
                 aria-label="Download image with Sealify watermark"
                 title="Download image — Sealify watermark included">
@@ -68,58 +70,80 @@ function sealifyDownloadImage(btn, src, alt) {
         // Draw source image
         ctx.drawImage(img, 0, 0, w, h);
 
-        // Bottom-right watermark band
+        // Transparent bottom-right watermark band
         const bandH = Math.round(h * 0.13);
         const bandY = h - bandH;
         const grad = ctx.createLinearGradient(0, bandY, 0, h);
-        grad.addColorStop(0, 'rgba(15, 23, 42, 0)');
-        grad.addColorStop(1, 'rgba(15, 23, 42, 0.9)');
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.45)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, bandY, w, bandH);
 
-        // Sealify logo mark (circle with S)
-        const logoR = Math.round(Math.min(w, h) * 0.055);
-        const logoX = Math.round(w * 0.05);
+        // Sealify logo mark (circle)
+        const logoR = Math.round(Math.min(w, h) * 0.05);
+        const logoX = Math.round(w * 0.045);
         const logoY = bandY + bandH / 2;
         ctx.beginPath();
         ctx.arc(logoX, logoY, logoR, 0, Math.PI * 2);
-        ctx.fillStyle = '#f59e0b';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
         ctx.fill();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${logoR * 0.9}px system-ui, -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('S', logoX, logoY);
 
-        // Sealify name
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `bold ${Math.round(w * 0.04)}px system-ui, -apple-system, sans-serif`;
-        ctx.textAlign = 'start';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('SEALIFY', logoX + logoR * 1.5, logoY);
+        // Load and draw actual Sealify logo
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+        logoImg.src = '{{ addslashes(asset('logo.png')) }}';
+        logoImg.onload = function () {
+            const logoW = logoR * 1.8;
+            const logoH = logoR * 1.8;
+            ctx.drawImage(logoImg, logoX - logoW / 2, logoY - logoH / 2, logoW, logoH);
 
-        // Diagonal repeating watermark across whole image
-        ctx.save();
-        ctx.translate(w * 0.2, h * 0.45);
-        ctx.rotate(-22);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.09)';
-        ctx.font = `bold ${Math.round(w * 0.10)}px system-ui, -apple-system, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        for (let i = -3; i <= 3; i++) {
-            ctx.fillText('SEALIFY', i * w * 0.5, 0);
-        }
-        ctx.restore();
+            // Sealify name next to logo
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.round(w * 0.036)}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'start';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SEALIFY', logoX + logoR * 1.3, logoY);
 
-        const link = document.createElement('a');
-        link.download = 'sealify-' + Date.now() + '.png';
-        link.href = canvas.toDataURL('image/png');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            // Subtle diagonal repeating watermark across whole image
+            ctx.save();
+            ctx.translate(w * 0.18, h * 0.45);
+            ctx.rotate(-20);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+            ctx.font = `bold ${Math.round(w * 0.09)}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = -3; i <= 3; i++) {
+                ctx.fillText('SEALIFY', i * w * 0.5, 0);
+            }
+            ctx.restore();
+
+            const link = document.createElement('a');
+            link.download = 'sealify-' + Date.now() + '.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        logoImg.onerror = function () {
+            // Fallback: draw text S if logo fails
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${logoR * 0.9}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('S', logoX, logoY);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${Math.round(w * 0.036)}px system-ui, -apple-system, sans-serif`;
+            ctx.textAlign = 'start';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SEALIFY', logoX + logoR * 1.3, logoY);
+
+            const link = document.createElement('a');
+            link.download = 'sealify-' + Date.now() + '.png';
+            link.href = canvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
     };
     img.onerror = function () {
         window.location.href = src;

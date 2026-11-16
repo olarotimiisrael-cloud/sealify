@@ -1,30 +1,54 @@
 @extends('layouts.app')
 
 @section('content')
-@php $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : []; @endphp
-<div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 space-y-5 lg:space-y-6">
+@php
+    $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : [];
+    $locationChips = [
+        ['label' => 'All Ogbomoso', 'query' => null],
+        ['label' => 'LAUTECH Gate', 'query' => 'LAUTECH Gate'],
+        ['label' => 'Takie Square', 'query' => 'Takie Square'],
+        ['label' => 'Sabo Market', 'query' => 'Sabo Market'],
+        ['label' => 'Adenike Area', 'query' => 'Adenike Area'],
+        ['label' => 'Aroje & Akala Way', 'query' => 'Aroje & Akala Way'],
+        ['label' => 'Under G', 'query' => 'Under G'],
+    ];
+@endphp
+<div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 space-y-6">
 
-    <!-- LOCATION CHIP -->
-    <div class="mt-2 flex items-center justify-center gap-2">
-        <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-medium shadow-sm hover:bg-slate-50 transition-colors">
-            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-            <span>Ogbomosoland</span>
-            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-        </button>
+    <!-- NEIGHBORHOOD HUBS (location chips) -->
+    <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-5 mb-6">
+        <h3 class="text-lg font-black text-slate-900 tracking-tight mb-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+            Neighborhood Hubs
+        </h3>
+        <p class="text-slate-600 text-sm mb-3">Filter by campus zones in Ogbomosoland</p>
+        <div class="flex flex-wrap gap-2 overflow-x-auto pb-2 no-scrollbar">
+            @foreach ($locationChips as $chip)
+                <?php $isActive = request('location') === $chip['query']; ?>
+                <a href="{{ route('listings.index', array_merge(request()->only(['q', 'category']), $chip['query'] ? ['location' => $chip['query']] : [])) }}"
+                   class="inline-flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full border text-sm font-medium transition-all
+                          {{ $isActive ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300' }}">
+                    <span class="w-2.5 h-2.5 rounded-full {{ $isActive ? 'bg-white' : 'bg-emerald-100' }} flex items-center justify-center text-[9px] font-bold">
+                        {{ strtoupper(substr($chip['label'], 0, 1)) }}
+                    </span>
+                    <span>{{ $chip['label'] }}</span>
+                </a>
+            @endforeach
+        </div>
     </div>
 
     <!-- SEARCH BAR (prominent, centered) -->
     <div class="flex justify-center">
-    <form method="GET" action="{{ route('listings.index') }}" class="relative w-full max-w-lg lg:max-w-xl">
-        <div class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-emerald-200 bg-white shadow-sm">
-            <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input name="q" value="{{ request('q') }}" placeholder="What are you looking for? (e.g. iPhone, Toyota, Ankara)"
-                   class="flex-1 rounded-xl border-0 bg-transparent py-2 text-sm outline-none placeholder-slate-400">
-            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 text-sm active:scale-95">
-                Search
-            </button>
-        </div>
-    </form>
+        <form method="GET" action="{{ route('listings.index') }}" class="relative w-full max-w-lg lg:max-w-xl">
+            <div class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-emerald-200 bg-white shadow-sm">
+                <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <input name="q" value="{{ request('q') }}" placeholder="What are you looking for? (e.g. iPhone, Toyota, Ankara)"
+                       class="flex-1 rounded-xl border-0 bg-transparent py-2 text-sm outline-none placeholder-slate-400">
+                <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 text-sm active:scale-95">
+                    Search
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- SPECIAL PROMOTIONS CAROUSEL -->
@@ -78,37 +102,37 @@
             if (totalSlides > 1) {
                 let currentIndex = 0;
                 let isPaused = false;
-                
+
                 function getSlideWidth() {
                     return slides[0].offsetWidth;
                 }
-                
+
                 function goToSlide(index) {
                     currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
                     const translateX = -currentIndex * getSlideWidth();
                     track.style.transform = `translateX(${translateX}px)`;
                 }
-                
+
                 const intervalId = setInterval(() => {
                     if (isPaused) return;
                     currentIndex = (currentIndex + 1) % totalSlides;
                     goToSlide(currentIndex);
                 }, 5000);
-                
+
                 // Pause on hover
                 track.parentElement?.addEventListener('mouseenter', () => { isPaused = true; });
                 track.parentElement?.addEventListener('mouseleave', () => { isPaused = false; });
-                
+
                 // Recompute on resize
                 window.addEventListener('resize', () => goToSlide(currentIndex));
-                
+
                 goToSlide(0);
             }
         }
     </script>
     @endif
 
-    <!-- MARKETPLACE FEEDS (compact grid) -->
+    <!-- MARKETPLACE FEEDS (grid only, map removed) -->
     <div class="space-y-3">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-black text-slate-900 tracking-tight">Marketplace Feeds</h2>
