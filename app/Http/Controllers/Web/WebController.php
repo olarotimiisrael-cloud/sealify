@@ -213,7 +213,86 @@ class WebController extends Controller
     public function services() { return view('pages.services'); }
     public function howItWorks() { return view('pages.how-it-works'); }
     public function contact() { return view('pages.contact'); }
-    public function dispute() { return view('pages.dispute'); }
+    public function dispute()
+    {
+        $user = Auth::user();
+        $transactions = Transaction::where('user_id', $user->id)
+            ->whereIn('status', ['success', 'paid'])
+            ->latest()
+            ->take(50)
+            ->get();
+        $categories = Category::orderBy('name')->get();
+        $disputes = Dispute::with('listing')
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return view('pages.dispute', compact('transactions', 'categories', 'disputes', 'user'));
+    }
+
+    public function disputeStore(Request $request)
+    {
+        $user = Auth::user();
+        $data = $request->validate([
+            'transaction_id' => 'nullable|exists:transactions,id',
+            'item_title' => 'required|string|max:255',
+            'category' => 'nullable|string|max:100',
+            'reason' => 'required|in:item_not_received,not_as_described,damaged_or_defective,refund_not_received,other',
+            'details' => 'required|string|min:10|max:3000',
+            'evidence_url' => 'nullable|url|max:2048',
+            'receipt_reference' => 'nullable|string|max:255',
+        ]);
+
+        $transaction = null;
+        $receiptReference = $data['receipt_reference'] ?? null;
+        $listingId = null;
+        $counterpartyId = null;
+
+        if (!empty($data['transaction_id'])) {
+            $transaction = Transaction::where('user_id', $user->id)->find($data['transaction_id']);
+            if ($transaction) {
+                $receiptReference = $receiptReference ?: $transaction->reference;
+                $meta = $transaction->metadata ?? [];
+                $listingId = $meta['listing_id'] ?? null;
+                $counterpartyId = $meta['seller_id'] ?? $meta['counterparty_id'] ?? null;
+            }
+        }
+
+        $dispute = Dispute::create([
+            'user_id' => $user->id,
+            'counterparty_id' => $counterpartyId,
+            'listing_id' => $listingId,
+            'receipt_reference' => $receiptReference,
+            'item_title' => $data['item_title'],
+            'category' => $data['category'] ?? null,
+            'reason' => $data['reason'],
+            'details' => $data['details'],
+            'evidence_url' => $data['evidence_url'] ?? null,
+            'status' => 'pending',
+        ]);
+
+        // Notify all admins in-app
+        try {
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id' => $admin->id,
+                    'type' => 'dispute',
+                    'title' => 'New trade dispute filed',
+                    'description' => $user->name . ' filed a dispute: ' . $data['item_title'] . ' (' . ucfirst(str_replace('_', ' ', $data['reason'])) . ').',
+                    'link_url' => route('admin.disputes'),
+                    'data' => [
+                        'dispute_id' => $dispute->id,
+                        'filed_by' => $user->name,
+                    ],
+                ]);
+            }
+        } catch (\Throwable $e) {
+            logger()->warning('Dispute admin notification failed: ' . $e->getMessage());
+        }
+
+        return redirect()->route('dispute')->with('status', 'Your dispute has been submitted. Our team will review it shortly.');
+    }
     public function faq() { return view('pages.faq'); }
     public function helpCenter() { return view('pages.help-center'); }
     public function marketInsights() { return view('pages.market-insights'); }

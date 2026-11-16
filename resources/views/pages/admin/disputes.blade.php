@@ -15,7 +15,7 @@
             <thead>
                 <tr class="border-b border-slate-100">
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">Dispute #</th>
-                    <th class="px-6 py-4 font-bold text-slate-900 text-sm">Listing</th>
+                    <th class="px-6 py-4 font-bold text-slate-900 text-sm">Item / Details</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">Filed By</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">Status</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm text-right">Actions</th>
@@ -23,18 +23,31 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($disputes as $dispute)
-                    <tr class="group hover:bg-slate-50">
+                    <tr class="group hover:bg-slate-50 align-top">
                         <td class="px-6 py-4 font-medium text-slate-900">#{{ $dispute->id }}</td>
-                        <td class="px-6 py-4 text-sm text-slate-600">{{ $dispute->listing->title ?? 'N/A' }}</td>
+                        <td class="px-6 py-4">
+                            <p class="font-bold text-slate-900 text-sm">{{ $dispute->item_title }}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">{{ ucfirst(str_replace('_', ' ', $dispute->reason)) }}{{ $dispute->category ? ' · '.$dispute->category : '' }}</p>
+                            <p class="text-xs text-slate-600 mt-1 max-w-md line-clamp-3">{{ $dispute->details }}</p>
+                            @if($dispute->evidence_url)
+                                <a href="{{ $dispute->evidence_url }}" target="_blank" rel="noreferrer" class="text-xs text-emerald-600 font-bold hover:underline mt-1 inline-block">View evidence →</a>
+                            @endif
+                            @if($dispute->receipt_reference)
+                                <p class="text-[11px] text-slate-400 mt-1">Receipt: {{ $dispute->receipt_reference }}</p>
+                            @endif
+                        </td>
                         <td class="px-6 py-4 text-sm text-slate-900">{{ $dispute->user->name ?? 'Unknown' }}</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold
-                                {{ $dispute->status === 'open' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600' }}">
-                                {{ ucfirst($dispute->status ?? 'open') }}
+                                {{ $dispute->status === 'resolved' ? 'bg-emerald-100 text-emerald-600' : (in_array($dispute->status, ['rejected']) ? 'bg-rose-100 text-rose-600' : (in_array($dispute->status, ['escalated']) ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-600')) }}">
+                                {{ ucfirst($dispute->status ?? 'pending') }}
                             </span>
+                            @if($dispute->resolved_at)
+                                <p class="text-[11px] text-slate-400 mt-1">{{ $dispute->resolved_at->diffForHumans() }}</p>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-right">
-                            @if ($dispute->status === 'open')
+                            @if (in_array($dispute->status, ['open', 'pending']))
                                 <form method="POST" action="{{ route('admin.disputes.resolve', $dispute) }}" class="inline">
                                     @csrf
                                     <input name="status" value="resolved" hidden>

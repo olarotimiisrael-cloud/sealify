@@ -24,7 +24,6 @@ Route::get('/categories', [WebController::class, 'categories'])->name('categorie
 Route::get('/services', [WebController::class, 'services'])->name('services');
 Route::get('/how-it-works', [WebController::class, 'howItWorks'])->name('how-it-works');
 Route::get('/contact', [WebController::class, 'contact'])->name('contact');
-Route::get('/dispute', [WebController::class, 'dispute'])->name('dispute');
 Route::get('/faq', [WebController::class, 'faq'])->name('faq');
 Route::get('/help-center', [WebController::class, 'helpCenter'])->name('help-center');
 Route::get('/market-insights', [WebController::class, 'marketInsights'])->name('market-insights');
@@ -106,6 +105,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     /* Verified Badge Application */
     Route::post('/verified-badge/apply', [WebController::class, 'applyForVerifiedBadge'])->name('verified-badge.apply');
+
+    /* Trade Disputes */
+    Route::get('/dispute', [WebController::class, 'dispute'])->name('dispute');
+    Route::post('/dispute', [WebController::class, 'disputeStore'])->name('dispute.store');
 
     /* User Dashboard */
     Route::get('/dashboard', [WebController::class, 'userDashboard'])->name('dashboard');

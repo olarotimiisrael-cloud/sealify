@@ -14,7 +14,11 @@ class Dispute extends Model
 
     protected $fillable = [
         'user_id', 'counterparty_id', 'listing_id', 'receipt_reference', 'item_title',
-        'category', 'reason', 'details', 'evidence_url', 'status',
+        'category', 'reason', 'details', 'evidence_url', 'status', 'resolved_at',
+    ];
+
+    protected $casts = [
+        'resolved_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
