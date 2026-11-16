@@ -16,6 +16,7 @@ Route::get('/listings', [WebController::class, 'listings'])->name('listings.inde
 Route::get('/listings/create', [WebController::class, 'listingCreate'])->name('listings.create');
 Route::get('/listings/{listing}', [WebController::class, 'listingShow'])->name('listings.show');
 Route::get('/categories/{slug}', [WebController::class, 'category'])->name('categories.show');
+Route::get('/categories', [WebController::class, 'categories'])->name('categories.index');
 
 Route::get('/services', [WebController::class, 'services'])->name('services');
 Route::get('/how-it-works', [WebController::class, 'howItWorks'])->name('how-it-works');

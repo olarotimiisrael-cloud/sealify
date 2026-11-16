@@ -17,6 +17,10 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <button type="button" onclick="toggleTheme()" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" title="Toggle Theme" id="theme-toggle">
+                        <span data-theme-icon>🌙</span>
+                        <span class="absolute -right-4 top-2 text-[10px] font-bold text-slate-500 group-hover:text-emerald-600 transition-colors" data-theme-label>Dark</span>
+                    </button>
                     <a href="{{ route('messages.index') }}" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" title="Messages">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
                         @auth

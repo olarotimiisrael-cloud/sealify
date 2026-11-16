@@ -115,6 +115,15 @@ class WebController extends Controller
         return view('pages.categories.show', compact('category', 'listings'));
     }
 
+    public function categories()
+    {
+        $categories = Category::topLevel()->active()->with(['children' => function ($q) {
+            $q->withCount('listings');
+        }])->withCount('listings')->orderBy('sort_order')->get();
+        $settings = SiteSetting::first();
+        return view('pages.categories.index', compact('categories', 'settings'));
+    }
+
     public function services() { return view('pages.services'); }
     public function howItWorks() { return view('pages.how-it-works'); }
     public function contact() { return view('pages.contact'); }

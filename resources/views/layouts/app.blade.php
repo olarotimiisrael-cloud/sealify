@@ -25,9 +25,26 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {} },
+        }
+    </script>
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('sealify-theme');
+                var prefers = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (saved === 'dark' || (!saved && prefers)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
     @stack('styles')
 </head>
-<body class="bg-white text-slate-900 font-sans antialiased">
+<body class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans antialiased transition-colors duration-200">
     @include('partials.navbar')
 
     <main class="min-h-screen pb-20 lg:pb-0">
@@ -138,5 +155,29 @@
         @endif
     @endif
     @stack('scripts')
+    <script>
+        function toggleTheme() {
+            var html = document.documentElement;
+            var isDark = html.classList.toggle('dark');
+            try { localStorage.setItem('sealify-theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            syncThemeUI(isDark);
+        }
+
+        function syncThemeUI(isDark) {
+            document.querySelectorAll('[data-theme-icon]').forEach(function (el) {
+                el.textContent = isDark ? '☀️' : '🌙';
+            });
+            document.querySelectorAll('[data-theme-label]').forEach(function (el) {
+                el.textContent = isDark ? 'Light' : 'Dark';
+            });
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', isDark ? '#0f172a' : '#10b981');
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            syncThemeUI(document.documentElement.classList.contains('dark'));
+        });
+        syncThemeUI(document.documentElement.classList.contains('dark'));
+    </script>
 </body>
 </html>

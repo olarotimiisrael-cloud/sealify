@@ -35,10 +35,10 @@
         </a>
     </div>
 
-    <!-- FEATURED LISTINGS (compact grid) -->
+    <!-- MARKETPLACE FEEDS (compact grid) -->
     <div class="space-y-3">
         <div class="flex items-center justify-between">
-            <h2 class="text-lg font-black text-slate-900 tracking-tight">Featured Listings</h2>
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">Marketplace Feeds</h2>
             <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
         </div>
 
