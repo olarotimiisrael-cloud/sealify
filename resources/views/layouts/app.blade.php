@@ -35,6 +35,7 @@
     </main>
 
     @include('partials.footer')
+    @include('partials.bottom-nav')
 
     <!-- PWA Install Script -->
     <script>

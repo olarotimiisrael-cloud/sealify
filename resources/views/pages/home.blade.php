@@ -1,75 +1,52 @@
 ﻿@extends('layouts.app')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="max-w-md mx-auto px-3 sm:px-4 space-y-4">
 
-    <!-- HERO SECTION -->
-    <div class="mb-8">
-        <div class="flex flex-col sm:flex-row gap-4 items-center md:items-start">
-            <div class="flex-1">
-                <h1 class="text-4xl font-black text-slate-900 tracking-tight mb-2">Welcome to Sealify</h1>
-                <p class="text-slate-600 text-sm">Buy & sell verified items & local services in Ogbomosoland</p>
-            </div>
-            <div class="w-full md:w-auto">
-                <form method="GET" action="{{ route('listings.index') }}" class="w-full">
-                    <div class="flex items-center gap-2 px-4 py-3 rounded-xl border border-emerald-200 bg-slate-50">
-                        <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                        <input name="q" value="{{ request('q') }}" placeholder="Search for products, services, or keywords…"
-                               class="flex-1 rounded-xl border-0 bg-transparent py-2 text-sm outline-none placeholder-slate-400">
-                        <button type="submit" class="bg-emerald-500 hover:bg-emerald-400 text-white font-medium px-4 py-2 rounded-xl transition-colors text-sm">
-                            Search
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <!-- LOCATION CHIP -->
+    <div class="mt-2 flex items-center justify-center gap-2">
+        <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600 text-sm font-medium shadow-sm hover:bg-slate-50 transition-colors">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+            <span>Ogbomosoland</span>
+            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
     </div>
 
-    <!-- MARKET PULSE / COMMUNITY / IMPRESSIONS / VOLUME STATS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 flex flex-col items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4l3-8 4 16 3-8h4"/></svg>
-            </div>
-            <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Market Pulse</h3>
-            <p class="text-3xl font-black text-emerald-600">Live</p>
-            <p class="text-xs text-slate-500">Active Node Trading</p>
+    <!-- SEARCH BAR (prominent, centered) -->
+    <form method="GET" action="{{ route('listings.index') }}" class="relative w-full">
+        <div class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-emerald-200 bg-white shadow-sm">
+            <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input name="q" value="{{ request('q') }}" placeholder="What are you looking for? (e.g. iPhone, Toyota, Ankara)"
+                   class="flex-1 rounded-xl border-0 bg-transparent py-2 text-sm outline-none placeholder-slate-400">
+            <button type="submit" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 text-sm active:scale-95">
+                Search
+            </button>
         </div>
-        <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 flex flex-col items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"/></svg>
-            </div>
-            <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Community</h3>
-            <p class="text-3xl font-black text-emerald-600">0</p>
-            <p class="text-xs text-slate-500">Registered Members</p>
-        </div>
-        <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 flex flex-col items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            </div>
-            <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Impressions</h3>
-            <p class="text-3xl font-black text-emerald-600">0.0k</p>
-            <p class="text-xs text-slate-500">Cumulative Ad Views</p>
-        </div>
-        <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 flex flex-col items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 9h.01m-6.993 9h.01m6.993 9h.01M3 9V5a2 2 0 012-2h.32m-1.68-5.a2 2 0 012 1.23v.95m-.42 1.272a6 6 0 01-.84 1.255l-3.35 2.07a6 6 0 01-1.015.559l-.082.035l-.053-.079a6 6 0 01-1.13-.093l-3.35-2.07a6 6 0 01-.841-.559l-.082-.035a6 6 0 01-.053.079l-3.35 2.07M8.35 5.25a2.5 2.5 0 100 5h.01m0-5H.01c-.621 0-1.127.48-1.23.998m14.482 5.389a2.5 2.5 0 100 5h.01m0-5h-.01c.621 0 1.127-.48 1.23-.998m-6.787-5.389a2.5 2.5 0 100 5h.01m0 5H.01c-.621 0-1.127.48-1.23.998"/></svg>
-            </div>
-            <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Volume</h3>
-            <p class="text-3xl font-black text-emerald-600">0</p>
-            <p class="text-xs text-slate-500">Verified Classifieds</p>
-        </div>
+    </form>
+
+    <!-- QUICK ACTION CHIPS -->
+    <div class="grid grid-cols-2 gap-2">
+        <button type="button" onclick="openAllCategoriesModal()"
+           class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white text-slate-700 text-sm font-medium shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 114 0v11a2 2 0 11-4 0V6zm16 13a2 2 0 10-4 0v-4a2 2 0 114 0v4zm-6-5a2 2 0 10-4 0v3a2 2 0 004 0v-3zm0 0l4 4m0 0l-4-4m4 4V9h4v12"/></svg>
+            All Categories
+        </button>
+        <a href="{{ route('listings.create') }}"
+           class="flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500 text-white text-sm font-bold shadow-lg shadow-emerald-300 hover:shadow-emerald-400 transition-all active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Post Ad
+        </a>
     </div>
 
-    <!-- BROWSE CATEGORIES -->
-    <div class="mb-8">
-        <h2 class="text-2xl font-black text-slate-900 tracking-tight mb-6">Browse Categories</h2>
-        <p class="text-slate-600 mb-8">Discover verified items & local services in Ogbomosoland</p>
-
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-6">
-            @foreach ($topCategories as $category)
+    <!-- RECOMMENDED (horizontal scroll category cards) -->
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">Recommended for you</h2>
+            <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+        </div>
+        <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+            @foreach ($topCategories->take(8) as $category)
                 @php
-                    $color = $category->color ?? 'emerald';
                     $iconMap = [
                         'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
                         'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
@@ -77,43 +54,101 @@
                     ];
                     $icon = $iconMap[$category->icon] ?? '🏷️';
                 @endphp
-                    <a href="{{ route('categories.show', $category->slug) }}"
-                       class="flex flex-col items-center gap-2 p-3 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100 transition-all text-xs font-medium">
-                    <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-lg border border-emerald-200">{{ $icon }}</div>
-                    <span class="font-medium leading-tight">{{ $category->name }}</span>
-                    <span class="text-emerald-400 text-xs mt-1">{{ $category->listings_count ?? 0 }}</span>
+                <a href="{{ route('categories.show', $category->slug) }}"
+                   class="flex-shrink-0 w-[90px] rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col items-center gap-2 text-center">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-xl">{{ $icon }}</div>
+                    <span class="text-xs font-bold text-slate-900 leading-tight line-clamp-2">{{ $category->name }}</span>
+                    <span class="text-[10px] text-emerald-500 font-medium">{{ $category->listings_count ?? 0 }} items</span>
                 </a>
             @endforeach
         </div>
+    </div>
 
-        <!-- SEE ALL CATEGORIES BUTTON -->
-        <div class="flex justify-center mb-10">
-            <button id="seeAllCategoriesBtn"
-                    class="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-emerald-200 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                    aria-label="See all categories">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                </svg>
-                <span>See All Categories</span>
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
+    <!-- CATEGORY TILES (compact grid) -->
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">All Categories</h2>
+            <a href="#" onclick="openAllCategoriesModal()" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">See All →</a>
         </div>
+        <div class="grid grid-cols-4 gap-2">
+            @foreach ($topCategories->take(12) as $category)
+                @php
+                    $iconMap = [
+                        'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
+                        'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
+                        'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
+                    ];
+                    $icon = $iconMap[$category->icon] ?? '🏷️';
+                @endphp
+                <a href="{{ route('categories.show', $category->slug) }}"
+                   class="rounded-2xl border border-emerald-100 bg-white p-2.5 shadow-sm flex flex-col items-center gap-1 text-center transition-all hover:border-emerald-300 hover:shadow-md hover:scale-[1.02]">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-lg">{{ $icon }}</div>
+                    <span class="text-[10px] font-bold text-slate-800 leading-tight line-clamp-2">{{ $category->name }}</span>
+                </a>
+            @endforeach
+        </div>
+    </div>
+
+    <!-- FEATURED LISTINGS (compact grid) -->
+    <div class="space-y-3">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-black text-slate-900 tracking-tight">Featured Listings</h2>
+            <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+        </div>
+
+        @if ($listings->isEmpty())
+            <div class="text-center py-10">
+                <div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4 text-2xl">📢</div>
+                <p class="text-xs text-slate-600">No listings yet. Be the first to post an ad.</p>
+                <a href="{{ route('listings.create') }}" class="mt-3 inline-block bg-emerald-500 text-white font-bold py-2 px-5 rounded-xl text-xs shadow-md shadow-emerald-200 hover:bg-emerald-600">
+                    Post Your First Ad →
+                </a>
+            </div>
+        @else
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @foreach ($listings as $listing)
+                    @php
+                        $placeholderMap = [
+                            'iPhone' => 'https://images.unsplash.com/photo-1575745234279-3a74b6e0e514?w=400&q=80',
+                            'Toyota' => 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=400&q=80',
+                            'MacBook' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400&q=80',
+                            'Dining' => 'https://images.unsplash.com/photo-1533770270245-0e4cbf2565d3?w=400&q=80',
+                            'Ankara' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400&q=80',
+                            'Samsung' => 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400&q=80',
+                            'Bajaj' => 'https://images.unsplash.com/photo-1558981806-ec537fa0bca3?w=400&q=80',
+                            'LG' => 'https://images.unsplash.com/photo-1601813177118-5de6f5222e1b?w=400&q=80',
+                        ];
+                        $imageUrl = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=400&q=80');
+                    @endphp
+                    <a href="{{ route('listings.show', $listing) }}" class="block group">
+                        <div class="aspect-video rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 group-hover:border-emerald-200 transition-all">
+                            <img src="{{ $imageUrl }}" alt=""
+                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                            <span class="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                                {{ $listing->condition ?? 'New' }}
+                            </span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-sm mt-2 group-hover:text-emerald-600 transition-colors mb-1 line-clamp-1">{{ $listing->title }}</h3>
+                        <div class="flex items-center gap-1 text-emerald-600 font-black text-sm mb-1">₦{{ number_format($listing->price, 0) }}</div>
+                        <p class="text-[10px] text-slate-500 line-clamp-1">{{ $listing->location ?? '' }}</p>
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </div>
 
     <!-- ALL CATEGORIES MODAL SHEET -->
     <div id="allCategoriesModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeAllCategoriesModal()"></div>
-        <div class="fixed inset-0 flex items-end justify-center p-4 sm:p-0">
-            <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
-                <div class="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
-                    <h2 id="modal-title" class="text-xl sm:text-2xl font-black text-slate-900">All Categories</h2>
-                    <button onclick="closeAllCategoriesModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors" aria-label="Close">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        <div class="fixed inset-0 flex items-end justify-center p-2 sm:p-0">
+            <div class="relative w-full max-w-md max-h-[85vh] bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <h2 id="modal-title" class="text-lg font-black text-slate-900">All Categories</h2>
+                    <button onclick="closeAllCategoriesModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors" aria-label="Close">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+                <div class="flex-1 overflow-y-auto p-4">
                     @php
                         $parentCategories = $categories->where('parent_id', null)->sortBy('sort_order');
                         $childCategories = $categories->where('parent_id', '!=', null)->groupBy('parent_id');
@@ -124,21 +159,20 @@
                         ];
                     @endphp
                     @foreach ($parentCategories as $parent)
-                        <div class="mb-8">
-                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 pb-2 border-b border-slate-100">
+                        <div class="mb-6">
+                            <h3 class="text-sm font-black text-slate-900 mb-3 flex items-center gap-2 pb-1 border-b border-slate-100">
                                 @php $pIcon = $iconMap[$parent->icon] ?? '🏷️'; @endphp
-                                <span class="text-2xl">{{ $pIcon }}</span>
+                                <span class="text-xl">{{ $pIcon }}</span>
                                 {{ $parent->name }}
-                                <span class="text-sm font-normal text-slate-500 ml-auto">{{ ($parent->listings_count ?? 0) }} listings</span>
+                                <span class="text-xs font-normal text-slate-400 ml-auto">{{ ($parent->listings_count ?? 0) }} listings</span>
                             </h3>
                             @if ($childCategories->has($parent->id))
-                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                <div class="grid grid-cols-3 gap-1">
                                     @foreach ($childCategories[$parent->id] as $child)
                                         <a href="{{ route('categories.show', $child->slug) }}"
-                                           class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 text-slate-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-md hover:shadow-emerald-100 transition-all duration-200 text-sm font-medium"
+                                           class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white text-slate-700 text-sm font-medium shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all"
                                            onclick="closeAllCategoriesModal()">
                                             {{ $child->name }}
-                                            <span class="text-slate-400 font-normal">{{ $child->listings_count ?? 0 }}</span>
                                         </a>
                                     @endforeach
                                 </div>
@@ -150,112 +184,16 @@
         </div>
     </div>
 
-    <!-- NEIGHBORHOOD HUBS -->
-    <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 mb-10">
-        <h3 class="text-xl font-black text-slate-900 tracking-tight mb-4">Neighborhood Hubs</h3>
-        <p class="text-slate-600 text-sm mb-6">Filter by campus zones in Ogbomosoland</p>
-
-        <div class="flex flex-wrap gap-2">
-            @foreach ($neighborhoodHubs as $hub)
-                <a href="{{ $hub['query'] ? route('listings.index', ['location' => $hub['query']]) : route('home') }}"
-                   class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200 hover:bg-emerald-100 hover:text-emerald-900 transition-all">
-                    <span class="w-3 h-3 rounded-full bg-emerald-100 flex items-center justify-center text-[10px] font-bold">{{ strtoupper(substr($hub['label'], 0, 1)) }}</span>
-                    <span class="text-emerald-700">{{ $hub['label'] }}</span>
-                </a>
-            @endforeach
-            <a href="{{ route('home') }}"
-               class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-900 text-sm font-medium border border-emerald-300 hover:bg-emerald-50 hover:text-emerald-950 transition-all">
-                <span>All Ogbomoso</span>
-            </a>
-        </div>
-    </div>
-
-    <!-- MARKETPLACE FEED -->
-    <div class="mb-10">
-        <div class="flex items-center justify-between mb-6">
-            <div>
-                <h2 class="text-2xl font-black text-slate-900 tracking-tight">Marketplace Feed</h2>
-                <p class="text-slate-600">{{ $listings->total() }} ads</p>
-            </div>
-            <div class="flex items-center gap-2 text-sm text-emerald-600">
-                <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1 rounded-full transition-all border border-emerald-200 hover:border-emerald-300">
-                    Grid
-                </button>
-                <button class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium px-3 py-1 rounded-full transition-all border border-emerald-200 hover:border-emerald-300">
-                    Map
-                </button>
-            </div>
-        </div>
-
-        @if ($listings->isEmpty())
-            <div class="text-center py-16">
-                <div class="w-24 h-24 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-6 text-4xl">📢</div>
-                <h3 class="text-xl font-bold text-slate-900 mb-2">No ads found matching your criteria</h3>
-                <p class="text-slate-600 mb-6 max-w-sm mx-auto">Try clearing your search keyword, category, or location filters to view all listings.</p>
-                <a href="{{ route('listings.create') }}" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-emerald-200 hover:shadow-emerald-300 text-sm">
-                    Post Your First Ad →
-                </a>
-                <button class="bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-medium px-6 py-3 rounded-xl mt-4 transition-all border border-emerald-200">
-                    Reset All Filters
-                </button>
-            </div>
-        @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach ($listings as $listing)
-                    @php
-                        $placeholderMap = [
-                            'iPhone' => 'https://images.unsplash.com/photo-1575745234279-3a74b6e0e514?w=800&q=80',
-                            'Toyota' => 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80',
-                            'MacBook' => 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&q=80',
-                            'Dining' => 'https://images.unsplash.com/photo-1533770270245-0e4cbf2565d3?w=800&q=80',
-                            'Ankara' => 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=800&q=80',
-                            'Samsung' => 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&q=80',
-                            'Bajaj' => 'https://images.unsplash.com/photo-1558981806-ec537fa0bca3?w=800&q=80',
-                            'LG' => 'https://images.unsplash.com/photo-1601813177118-5de6f5222e1b?w=800&q=80',
-                        ];
-                        $imageUrl = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=800&q=80');
-                    @endphp
-                    <a href="{{ route('listings.show', $listing) }}" class="block group">
-                        <div class="aspect-[4/3] bg-gradient-to-br from-emerald-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-emerald-100 shadow-lg shadow-emerald-100/50 group-hover:border-emerald-300 group-hover:shadow-xl group-hover:shadow-emerald-200 transition-all duration-300 relative">
-                            <img src="{{ $imageUrl }}" alt="" title=""
-                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                            <span class="absolute top-3 left-3 bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md">
-                                {{ $listing->condition ?? 'New' }}
-                            </span>
-                        </div>
-                        <div class="px-1">
-                            <h3 class="font-bold text-slate-900 text-sm group-hover:text-emerald-600 transition-colors mb-1 line-clamp-1">{{ $listing->title }}</h3>
-                            <div class="flex items-center gap-1.5 text-sm text-emerald-600 font-black mb-1">
-                                ₦{{ number_format($listing->price, 0) }}
-                            </div>
-                            <p class="text-xs text-slate-500 line-clamp-1">{{ $listing->location ?? '' }}</p>
-                        </div>
-                    </a>
-                @endforeach
-            </div>
-            <div class="mt-6 flex justify-center">
-                <div class="flex gap-1">
-                    {{ $listings->links() }}
-                </div>
-            </div>
-        @endif
-    </div>
 </div>
 @push('styles')
 <style>
     @keyframes slide-up {
-        from {
-            transform: translateY(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateY(0);
-            opacity: 1;
-        }
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
     }
-    .animate-slide-up {
-        animation: slide-up 0.3s ease-out;
-    }
+    .animate-slide-up { animation: slide-up 0.3s ease-out; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
 </style>
 @endpush
 @push('scripts')
@@ -267,7 +205,6 @@
             document.body.style.overflow = 'hidden';
         }
     }
-
     function closeAllCategoriesModal() {
         const modal = document.getElementById('allCategoriesModal');
         if (modal) {
@@ -275,17 +212,11 @@
             document.body.style.overflow = '';
         }
     }
-
-    document.getElementById('seeAllCategoriesBtn')?.addEventListener('click', openAllCategoriesModal);
-
     document.getElementById('allCategoriesModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeAllCategoriesModal();
     });
-
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closeAllCategoriesModal();
-        }
+        if (e.key === 'Escape') closeAllCategoriesModal();
     });
 </script>
 @endpush
