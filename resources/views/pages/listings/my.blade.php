@@ -45,45 +45,40 @@
                         </div>
 
                         {{-- Promotion form for each listing --}}
-                        <form method="POST" action="{{ route('listings.promote', $listing) }}" class="mt-2">
-                            @csrf
+                        @php
+                            $already = \App\Models\Promotion::active()->where('listing_id', $listing->id)->exists();
+                            $weekPrice = (float) config('promotions.price', 500);
+                        @endphp
+                        @if ($already)
+                            <p class="mt-2 text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 inline-block">🚀 Promoted</p>
+                        @else
+                            <form method="POST" action="{{ route('listings.promote', $listing) }}" class="mt-2 space-y-1">
+                                @csrf
 
-                            {{-- Select promotion duration --}}
-                            <div class="grid grid-cols-2 gap-2 mb-2">
-                                {{-- 1-week option --}}
-                                @if ($user->canClaimFreePromotion())
-                                    <label class="border rounded border-emerald-400 p-1 cursor-pointer select-none">
-                                        <input type="radio" name="weeks" value="1" required
-                                               class="w-3 h-3 rounded-emerald-500 cursor-pointer">
-                                        1 week free
-                                    </label>
-                                @else
-                                    <label class="border rounded p-1 text-slate-300 cursor-not-allowed select-none">
-                                        <input type="radio" name="weeks" value="1" disabled class="w-3 h-3">
-                                        1 week
+                                @if ($user->availablePromotionCredits() > 0)
+                                    <label class="flex items-center gap-1 text-[11px]">
+                                        <input type="radio" name="payment_choice" value="referral" required>
+                                        <span class="text-emerald-600 font-bold">Free ({{ $user->availablePromotionCredits() }} credits)</span>
                                     </label>
                                 @endif
 
-                                {{-- 2-week option --}}
-                                @if ($user->canClaimDoubleFreePromotion())
-                                    <label class="border rounded border-emerald-400 p-1 cursor-pointer select-none">
-                                        <input type="radio" name="weeks" value="2" required
-                                               class="w-3 h-3 rounded-emerald-500 cursor-pointer">
-                                        2 weeks free
-                                    </label>
-                                @else
-                                    <label class="border rounded p-2 text-slate-300 cursor-not-allowed select-none">
-                                        <input type="radio" name="weeks" value="2" disabled class="w-3 h-3">
-                                        2 weeks
-                                    </label>
-                                @endif
-                            </div>
+                                <label class="flex items-center gap-1 text-[11px]">
+                                    <input type="radio" name="payment_choice" value="paid" required>
+                                    <span class="text-slate-700 font-bold">Pay + upload receipt</span>
+                                </label>
 
-                            <button type="submit"
-                                    class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-1 rounded-sm transition-colors shadow-lg shadow-emerald-200 hover:shadow-emerald-300">
-                                Promote Ad
-                            </button>
-                        </form>
+                                <select name="weeks" class="w-full rounded border border-slate-200 bg-slate-50 px-1 py-1 text-[11px]">
+                                    @for ($w = 1; $w <= 12; $w++)
+                                        <option value="{{ $w }}">{{ $w }} week{{ $w > 1 ? 's' : '' }} — ₦{{ number_format($weekPrice * $w, 0) }}</option>
+                                    @endfor
+                                </select>
+
+                                <button type="submit"
+                                        class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-1 rounded-sm transition-colors">
+                                    Promote Ad
+                                </button>
+                            </form>
+                        @endif
                     @endforeach
                 </div>
                 <div class="mt-6">{{ $listings->links() }}</div>

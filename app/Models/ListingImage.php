@@ -25,6 +25,9 @@ class ListingImage extends Model
 
     public function getUrlAttribute(): string
     {
+        if (str_starts_with($this->path, 'http://') || str_starts_with($this->path, 'https://')) {
+            return $this->path;
+        }
         return Storage::disk('public')->url($this->path);
     }
 }

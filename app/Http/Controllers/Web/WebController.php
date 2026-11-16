@@ -12,6 +12,7 @@ use App\Models\KycVerification;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use \App\Models\Message;
+use App\Models\PaymentReceipt;
 use App\Models\Promotion;
 use App\Models\Report;
 use App\Models\SiteSetting;
@@ -357,8 +358,249 @@ class WebController extends Controller
     public function bankAccounts() { return view('pages.bank-accounts.index'); }
     public function bankAccountStore(Request $request) { return back()->with('status', 'Bank account added.'); }
 
-    public function payments() { return view('pages.payments.index'); }
-    public function paymentInitiate(Request $request) { return back()->with('status', 'Payment initiated.'); }
+    public function payments()
+    {
+        $user = Auth::user();
+        $transactions = $user->transactions()->latest()->paginate(20);
+        $receipts = $user->paymentReceipts()->with('listing')->latest()->limit(50)->get();
+        return view('pages.payments.index', compact('user', 'transactions', 'receipts'));
+    }
+
+    public function paymentInitiate(Request $request)
+    {
+        $user = Auth::user();
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:1'],
+            'purpose' => ['required', 'string', 'max:50'],
+            'metadata' => ['sometimes', 'array'],
+        ]);
+
+        try {
+            $result = $this->payments->initiate(
+                user: $user,
+                amount: (float) $data['amount'],
+                purpose: $data['purpose'],
+                metadata: $data['metadata'] ?? [],
+            );
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->away($result['authorization_url']);
+    }
+
+    /**
+     * Create a unique payment reference for promoting a specific listing.
+     * The user then pays (bank transfer etc.) and uploads a receipt for admin review.
+     */
+    public function paymentInitiatePromotion(Request $request, Listing $listing)
+    {
+        $user = Auth::user();
+
+        if ($listing->user_id !== $user->id) {
+            return back()->with('error', 'You can only promote your own listings.');
+        }
+
+        if ($listing->status !== 'active') {
+            return back()->with('error', 'Only active listings can be promoted.');
+        }
+
+        if (Promotion::active()->where('listing_id', $listing->id)->exists()) {
+            return back()->with('error', 'This listing is already promoted.');
+        }
+
+        $data = $request->validate([
+            'weeks' => ['required', 'integer', 'min:1', 'max:12'],
+        ]);
+
+        $weeks = (int) $data['weeks'];
+        $days = $weeks * 7;
+        $price = (float) config('promotions.price', 500) * $weeks;
+
+        $reference = 'PROMO-'.$listing->id.'-'.$user->id.'-'.now()->format('YmdHis').'-'.strtoupper(\Illuminate\Support\Str::random(4));
+
+        $transaction = Transaction::create([
+            'reference' => $reference,
+            'provider' => 'manual',
+            'user_id' => $user->id,
+            'amount' => $price,
+            'currency' => 'NGN',
+            'purpose' => 'promotion_boost',
+            'status' => 'pending',
+            'metadata' => [
+                'listing_id' => $listing->id,
+                'listing_title' => $listing->title,
+                'days' => $days,
+                'weeks' => $weeks,
+                'kind' => 'paid',
+                'unique_payment_id' => $reference,
+            ],
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return back()->with('promotion_payment', [
+            'reference' => $transaction->reference,
+            'listing_id' => $listing->id,
+            'listing_title' => $listing->title,
+            'weeks' => $weeks,
+            'days' => $days,
+            'amount' => $price,
+        ])->with('status', 'Payment reference '.$transaction->reference.' generated for "'.$listing->title.'". Make payment and upload your receipt below.');
+    }
+
+    public function myPaymentReceipts()
+    {
+        $user = Auth::user();
+        $receipts = $user->paymentReceipts()->with(['transaction', 'listing'])->latest()->paginate(20);
+        return view('pages.payments.receipts', compact('user', 'receipts'));
+    }
+
+    public function uploadPaymentReceipt(Request $request)
+    {
+        $user = Auth::user();
+
+        $data = $request->validate([
+            'transaction_reference' => ['required', 'string', 'max:64'],
+            'receipt' => ['required', 'file', 'mimes:jpeg,png,jpg,pdf', 'max:5120'],
+            'payment_method' => ['nullable', 'string', 'max:50'],
+            'payer_name' => ['nullable', 'string', 'max:255'],
+            'payer_account' => ['nullable', 'string', 'max:50'],
+            'amount_paid' => ['required', 'numeric', 'min:1'],
+            'paid_at' => ['nullable', 'date'],
+        ]);
+
+        $transaction = Transaction::where('reference', $data['transaction_reference'])
+            ->where('user_id', $user->id)
+            ->where('purpose', 'promotion_boost')
+            ->first();
+
+        if (! $transaction) {
+            return back()->with('error', 'Payment reference not found.');
+        }
+
+        $listingId = $transaction->metadata['listing_id'] ?? null;
+        if (! $listingId) {
+            return back()->with('error', 'This transaction is not linked to an ad.');
+        }
+
+        $file = $request->file('receipt');
+        $filename = 'receipt-'.now()->format('YmdHis').'-'.strtoupper(\Illuminate\Support\Str::random(6)).'.'.$file->getClientOriginalExtension();
+        $path = $file->storeAs('payment-receipts', $filename, 'public');
+
+        PaymentReceipt::create([
+            'transaction_id' => $transaction->id,
+            'listing_id' => $listingId,
+            'user_id' => $user->id,
+            'receipt_path' => $path,
+            'original_filename' => $file->getClientOriginalName(),
+            'payment_method' => $data['payment_method'] ?? 'bank_transfer',
+            'payer_name' => $data['payer_name'] ?? null,
+            'payer_account' => $data['payer_account'] ?? null,
+            'amount_paid' => $data['amount_paid'],
+            'paid_at' => $data['paid_at'] ?? now(),
+            'status' => PaymentReceipt::STATUS_PENDING,
+        ]);
+
+        return redirect()->route('payments.index')
+            ->with('status', 'Receipt uploaded. Admin will review and activate your promotion.');
+    }
+
+    public function adminPaymentReceipts(Request $request)
+    {
+        $query = PaymentReceipt::with(['transaction', 'listing.user', 'user', 'reviewer'])->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $receipts = $query->paginate(20)->withQueryString();
+        $pendingCount = PaymentReceipt::where('status', PaymentReceipt::STATUS_PENDING)->count();
+
+        return view('pages.admin.payment-receipts', compact('receipts', 'request', 'pendingCount'));
+    }
+
+    public function adminReceiptApprove(Request $request, PaymentReceipt $receipt)
+    {
+        $data = $request->validate([
+            'weeks' => ['required', 'integer', 'min:1', 'max:12'],
+            'review_notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $weeks = (int) $data['weeks'];
+        $days = $weeks * 7;
+
+        DB::transaction(function () use ($receipt, $request, $weeks, $days, $data) {
+            $receipt->update([
+                'status' => PaymentReceipt::STATUS_APPROVED,
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'review_notes' => $data['review_notes'] ?? null,
+            ]);
+
+            $transaction = $receipt->transaction;
+
+            if ($transaction) {
+                $transaction->forceFill([
+                    'status' => 'success',
+                    'paid_at' => now(),
+                    'failed_at' => null,
+                ])->save();
+
+                $transaction->metadata = array_merge($transaction->metadata ?? [], [
+                    'days' => $days,
+                    'weeks' => $weeks,
+                ]);
+                $transaction->save();
+            }
+
+            // Activate (or extend) the promotion for the ad
+            $existing = Promotion::active()->where('listing_id', $receipt->listing_id)->first();
+
+            if ($existing) {
+                $existing->forceFill([
+                    'ends_at' => $existing->ends_at->copy()->addDays($days),
+                    'transaction_id' => $transaction?->id ?? $existing->transaction_id,
+                ])->save();
+            } else {
+                Promotion::create([
+                    'listing_id' => $receipt->listing_id,
+                    'user_id' => $receipt->user_id,
+                    'transaction_id' => $transaction?->id,
+                    'starts_at' => now(),
+                    'ends_at' => now()->addDays($days),
+                    'is_free_trial' => false,
+                    'kind' => 'paid',
+                    'status' => 'active',
+                ]);
+            }
+        });
+
+        return back()->with('status', 'Receipt approved. The ad is now promoted for '.$weeks.' week(s).');
+    }
+
+    public function adminReceiptReject(Request $request, PaymentReceipt $receipt)
+    {
+        $data = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $receipt->update([
+            'status' => PaymentReceipt::STATUS_REJECTED,
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+            'review_notes' => $data['rejection_reason'],
+        ]);
+
+        if ($receipt->transaction) {
+            $receipt->transaction->forceFill([
+                'status' => 'failed',
+                'failed_at' => now(),
+                'error_message' => $data['rejection_reason'],
+            ])->save();
+        }
+
+        return back()->with('status', 'Receipt rejected.');
+    }
 
     public function promotions()
     {
@@ -390,9 +632,16 @@ class WebController extends Controller
 
         // Requested duration in weeks (1 = 1 week, 2 = 2 weeks, etc.)
         $weeks = max(1, (int) $request->input('weeks', 1));
+        $choice = $request->input('payment_choice'); // 'referral' | 'paid' | null
 
         // --- Referral-based free promotion (credit-based) ---
-        if ($user->canClaimPromotion($weeks)) {
+        $useReferral = $choice === 'referral' || ($choice === null && $user->canClaimPromotion($weeks));
+
+        if ($useReferral) {
+            if (! $user->canClaimPromotion($weeks)) {
+                return back()->with('error', 'Not enough referral credits for a '.$weeks.'-week promotion.');
+            }
+
             $days = $weeks * 7;
 
             $promotion = DB::transaction(function () use ($user, $listing, $days, $weeks) {
@@ -425,23 +674,31 @@ class WebController extends Controller
             return back()->with('status', 'Your '.$weeks.'-week promotion is now active! (Referral credits used)');
         }
 
-        // --- Paid promotion ---
-        try {
-            $result = $this->payments->initiate(
-                user: $user,
-                amount: config('promotions.price', 500),
-                purpose: 'promotion_boost',
-                metadata: [
-                    'listing_id' => $listing->id,
-                    'days' => $weeks * 7,
-                    'kind' => 'paid',
-                ],
-            );
-        } catch (\RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
-        }
+        // --- Paid promotion: generate unique payment reference for this ad ---
+        $days = $weeks * 7;
+        $price = (float) config('promotions.price', 500) * $weeks;
+        $reference = 'PROMO-'.$listing->id.'-'.$user->id.'-'.now()->format('YmdHis').'-'.strtoupper(\Illuminate\Support\Str::random(4));
 
-        return back()->with('status', 'Payment initiated. Complete payment to activate your promotion.');
+        Transaction::create([
+            'reference' => $reference,
+            'provider' => 'manual',
+            'user_id' => $user->id,
+            'amount' => $price,
+            'currency' => 'NGN',
+            'purpose' => 'promotion_boost',
+            'status' => 'pending',
+            'metadata' => [
+                'listing_id' => $listing->id,
+                'listing_title' => $listing->title,
+                'days' => $days,
+                'weeks' => $weeks,
+                'kind' => 'paid',
+                'unique_payment_id' => $reference,
+            ],
+            'expires_at' => now()->addDays(7),
+        ]);
+
+        return redirect()->route('payments.index')->with('status', 'Payment reference '.$reference.' generated for "'.$listing->title.'". Pay and upload your receipt for admin approval.');
     }
 
     public function kyc()
@@ -729,6 +986,75 @@ class WebController extends Controller
     public function adminPromotions() {
         $promotions = Promotion::with('listing.user')->orderBy('created_at', 'desc')->paginate(20);
         return view('pages.admin.promotions', compact('promotions'));
+    }
+
+    public function adminPromotionStop(Promotion $promotion) {
+        $promotion->update([
+            'status' => 'stopped',
+            'ends_at' => now(),
+        ]);
+        return back()->with('status', 'Promotion stopped.');
+    }
+
+    public function adminPromotionEmail(Request $request, Promotion $promotion) {
+        $promotion->load('listing.user');
+
+        $listing = $promotion->listing;
+        if (! $listing) {
+            return back()->withErrors(['email' => 'Listing not found for this promotion.']);
+        }
+
+        $users = User::where('email_verified_at', '!=', null)->get();
+
+        $subject = $request->input('subject', 'Featured Ad: ' . $listing->title);
+
+        $content = $request->input('content', '');
+        if (empty($content)) {
+            $url = route('listings.show', $listing);
+            $content = '<p>Check out this featured listing:</p>' .
+                       '<h2>' . e($listing->title) . '</h2>' .
+                       '<p>Price: ₦' . number_format($listing->price, 0) . '</p>' .
+                       '<p>Location: ' . e($listing->location) . '</p>' .
+                       '<p><a href="' . $url . '">View listing</a></p>';
+        }
+
+        $fromName = 'Sealify Nigeria';
+        $fromEmail = 'noreply@sealify.com.ng';
+        $replyTo = 'support@sealify.com.ng';
+
+        $sent = 0;
+        $failed = 0;
+
+        foreach ($users as $user) {
+            try {
+                $headers = [
+                    'From: ' . $fromName . ' <' . $fromEmail . '>',
+                    'Reply-To: ' . $replyTo,
+                    'X-Mailer: PHP/' . phpversion(),
+                    'MIME-Version: 1.0',
+                    'Content-Type: text/html; charset=UTF-8',
+                ];
+
+                $success = mail(
+                    $user->email,
+                    $subject,
+                    $content,
+                    implode("\r\n", $headers),
+                    '-f ' . $fromEmail
+                );
+
+                if ($success) {
+                    $sent++;
+                } else {
+                    $failed++;
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Email send failed to {$user->email}: " . $e->getMessage());
+                $failed++;
+            }
+        }
+
+        return back()->with('status', "Promotion email sent to {$sent} users ({$failed} failed).");
     }
 
     public function adminPromotionDestroy(Promotion $promotion) {

@@ -215,6 +215,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Withdrawal::class);
     }
 
+    public function paymentReceipts(): HasMany
+    {
+        return $this->hasMany(PaymentReceipt::class);
+    }
+
     public function walletTransactions(): HasMany
     {
         return $this->hasMany(WalletTransaction::class);
@@ -304,10 +309,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Minimum referral credits needed to claim a $weeks-week free promotion.
+     * 1 week = 1 credit (10 referrals), 2 weeks = 2 credits (20 referrals), etc.
      */
     public function promotionCreditsFor(int $weeks = 1): int
     {
-        return max(1, (int) $weeks) * 10;
+        return max(1, (int) $weeks);
     }
 
     /**
@@ -357,9 +363,9 @@ class User extends Authenticatable implements MustVerifyEmail
             'can_claim_1_week' => $this->canClaimFreePromotion(),
             'can_claim_2_weeks' => $this->canClaimDoubleFreePromotion(),
             'max_promotable_weeks' => $availableCredits,
-            'next_milestone' => $totalCredits > 0 ? null : 10, // next threshold after 0 referrals
+            'next_milestone' => $count < 10 ? 10 : (($count % 10 === 0) ? $count + 10 : (int) (ceil($count / 10) * 10)),
             'progress' => $count > 0 ? min(100, (int) (($count % 10) / 10 * 100)) : 0,
-            'claimed_1_week' => false, // replaced by credits_used tracking
+            'claimed_1_week' => false,
             'claimed_2_weeks' => false,
         ];
     }

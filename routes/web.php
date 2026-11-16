@@ -84,6 +84,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/promotions', [WebController::class, 'promotions'])->name('promotions.index');
     Route::post('/listings/{listing}/promote', [WebController::class, 'promote'])->name('listings.promote');
+    Route::post('/listings/{listing}/payment', [WebController::class, 'paymentInitiatePromotion'])->name('listings.promotion.payment');
+    Route::get('/payments/receipts/mine', [WebController::class, 'myPaymentReceipts'])->name('payments.receipts.mine');
+    Route::post('/payments/receipts/upload', [WebController::class, 'uploadPaymentReceipt'])->name('payments.receipts.upload');
 
     Route::get('/kyc', [WebController::class, 'kyc'])->name('kyc.index');
     Route::post('/kyc/submit', [WebController::class, 'kycSubmit'])->name('kyc.submit');
@@ -155,9 +158,16 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::post('/businesses/{user}/verify', [WebController::class, 'adminBusinessVerify'])->name('businesses.verify');
     Route::post('/businesses/{user}/unverify', [WebController::class, 'adminBusinessUnverify'])->name('businesses.unverify');
 
-    /* Promotions */
-    Route::get('/promotions', [WebController::class, 'adminPromotions'])->name('promotions');
-    Route::delete('/promotions/{promotion}', [WebController::class, 'adminPromotionDestroy'])->name('promotions.destroy');
+/* Promotions */
+Route::get('/promotions', [WebController::class, 'adminPromotions'])->name('promotions');
+Route::post('/promotions/{promotion}/stop', [WebController::class, 'adminPromotionStop'])->name('promotions.stop');
+Route::post('/promotions/{promotion}/email', [WebController::class, 'adminPromotionEmail'])->name('promotions.email');
+Route::delete('/promotions/{promotion}', [WebController::class, 'adminPromotionDestroy'])->name('promotions.destroy');
+
+    /* Payment Receipts (Admin) - review user-uploaded payment proofs */
+    Route::get('/payments/receipts', [WebController::class, 'adminPaymentReceipts'])->name('payments.receipts');
+    Route::post('/payments/receipts/{receipt}/approve', [WebController::class, 'adminReceiptApprove'])->name('payments.receipts.approve');
+    Route::post('/payments/receipts/{receipt}/reject', [WebController::class, 'adminReceiptReject'])->name('payments.receipts.reject');
 
     /* Disputes */
     Route::get('/disputes', [WebController::class, 'adminDisputes'])->name('disputes');

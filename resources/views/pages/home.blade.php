@@ -69,18 +69,30 @@
             const totalSlides = slides.length;
             if (totalSlides > 1) {
                 let currentIndex = 0;
-                const slideWidth = slides[0].offsetWidth;
+                let isPaused = false;
+                
+                function getSlideWidth() {
+                    return slides[0].offsetWidth;
+                }
                 
                 function goToSlide(index) {
                     currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
-                    const translateX = -currentIndex * slideWidth;
+                    const translateX = -currentIndex * getSlideWidth();
                     track.style.transform = `translateX(${translateX}px)`;
                 }
                 
-                setInterval(() => {
+                const intervalId = setInterval(() => {
+                    if (isPaused) return;
                     currentIndex = (currentIndex + 1) % totalSlides;
                     goToSlide(currentIndex);
                 }, 5000);
+                
+                // Pause on hover
+                track.parentElement?.addEventListener('mouseenter', () => { isPaused = true; });
+                track.parentElement?.addEventListener('mouseleave', () => { isPaused = false; });
+                
+                // Recompute on resize
+                window.addEventListener('resize', () => goToSlide(currentIndex));
                 
                 goToSlide(0);
             }

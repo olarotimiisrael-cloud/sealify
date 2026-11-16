@@ -1,5 +1,6 @@
 <?php
 
+use App\Console\Commands\ExpirePromotions;
 use App\Console\Commands\PruneConversations;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -11,4 +12,8 @@ Artisan::command('inspire', function () {
 
 Schedule::command(PruneConversations::class, ['--days' => 30])
     ->daily()
+    ->withoutOverlapping();
+
+Schedule::command(ExpirePromotions::class)
+    ->hourly()
     ->withoutOverlapping();

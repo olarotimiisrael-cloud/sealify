@@ -22,6 +22,7 @@ class Promotion extends Model
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
         'is_free_trial' => 'boolean',
+        'kind' => 'string',
     ];
 
     public function listing(): BelongsTo
