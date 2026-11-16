@@ -1,8 +1,7 @@
 ﻿<x-guest-layout>
     <x-form-card title="Complete Your Profile" subtitle="Add your name and phone number to finish setup.">
         <div class="flex items-center justify-center mb-6">
-            <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-8 w-auto">
-            <span class="text-emerald-600 font-black text-xl tracking-tight">Sealify</span>
+            @include('partials.sealify-logo', ['size' => 'xl', 'class' => ''])
         </div>
 
         <form method="POST" action="{{ route('profile.complete.submit') }}" class="space-y-4">
