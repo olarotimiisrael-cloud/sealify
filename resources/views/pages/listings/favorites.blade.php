@@ -40,7 +40,7 @@
                         <a href="{{ route('listings.show', $listing) }}" class="block">
                             <div class="aspect-video bg-slate-100 overflow-hidden relative">
                                 @include('partials.watermark-image', [
-                                    'src' => optional($listing->images)->first()?->url ?? asset('images/sealify-placeholder.png'),
+                                    'src' => optional($listing->images)->first()?->url ?? asset('logo.png'),
                                     'alt' => $listing->title,
                                     'class' => 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300',
                                 ])
