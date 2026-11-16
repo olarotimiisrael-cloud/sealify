@@ -98,6 +98,18 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/business/profile', [WebController::class, 'businessProfile'])->name('business.profile');
     Route::post('/business/profile', [WebController::class, 'businessProfileUpdate'])->name('business.profile.update');
 
+    /* Biometric / Face ID Lock */
+    Route::post('/settings/biometric/toggle', [WebController::class, 'toggleBiometric'])->name('settings.biometric.toggle');
+    Route::post('/settings/face-id/toggle', [WebController::class, 'toggleFaceId'])->name('settings.face-id.toggle');
+    Route::post('/settings/biometric/register', [WebController::class, 'registerBiometric'])->name('settings.biometric.register');
+    Route::post('/settings/face-id/register', [WebController::class, 'registerFaceId'])->name('settings.face-id.register');
+
+    /* Verified Badge Application */
+    Route::post('/verified-badge/apply', [WebController::class, 'applyForVerifiedBadge'])->name('verified-badge.apply');
+
+    /* User Dashboard */
+    Route::get('/dashboard', [WebController::class, 'userDashboard'])->name('dashboard');
+
     Route::get('/notifications', [WebController::class, 'notifications'])->name('notifications.index');
     Route::post('/notifications/{notification}/read', [WebController::class, 'markNotificationRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [WebController::class, 'markAllNotificationsRead'])->name('notifications.read-all');
@@ -160,6 +172,11 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::get('/businesses/{user}', [WebController::class, 'adminBusinessShow'])->name('businesses.show');
     Route::post('/businesses/{user}/verify', [WebController::class, 'adminBusinessVerify'])->name('businesses.verify');
     Route::post('/businesses/{user}/unverify', [WebController::class, 'adminBusinessUnverify'])->name('businesses.unverify');
+
+    /* Verified Badge Applications */
+    Route::get('/verified-badge-applications', [WebController::class, 'adminVerifyBadgeApplications'])->name('badge-applications');
+    Route::post('/verified-badge-applications/{user}/approve', [WebController::class, 'adminApproveBadge'])->name('badge.approve');
+    Route::post('/verified-badge-applications/{user}/reject', [WebController::class, 'adminRejectBadge'])->name('badge.reject');
 
 /* Promotions */
 Route::get('/promotions', [WebController::class, 'adminPromotions'])->name('promotions');

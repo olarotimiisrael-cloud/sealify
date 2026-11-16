@@ -220,7 +220,10 @@ class WebController extends Controller
         return view('pages.profile.show', compact('user', 'referralStatus'));
     }
 
-    public function settings() { return view('pages.settings'); }
+    public function settings() {
+        $user = Auth::user();
+        return view('pages.settings', compact('user'));
+    }
 
     public function updateProfile(Request $request)
     {
@@ -234,6 +237,7 @@ class WebController extends Controller
             'avatar_url' => 'sometimes|nullable|url',
         ]);
         $user->update($data);
+        $user->update(['profile_completed' => true, 'profile_completed_at' => now()]);
 
         return back()->with('status', 'Profile updated.');
     }
@@ -260,12 +264,92 @@ class WebController extends Controller
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
             'phone_number' => 'required|string|max:50',
+            'location' => 'nullable|string|max:255',
+            'bio' => 'nullable|string|max:1000',
         ]);
         $user->update([
             'name' => $data['full_name'],
             'phone' => $data['phone_number'],
+            'location' => $data['location'] ?? $user->location,
+            'bio' => $data['bio'] ?? $user->bio,
+            'profile_completed' => true,
+            'profile_completed_at' => now(),
         ]);
-        return redirect()->route('profile.show')->with('status', 'Profile completed.');
+        return redirect()->route('dashboard')->with('status', 'Profile completed successfully!');
+    }
+
+    public function userDashboard()
+    {
+        $user = Auth::user()->load(['listings', 'favorites', 'sentReviews', 'receivedReviews', 'transactions', 'paymentReceipts']);
+        $stats = [
+            'listings' => $user->listings()->count(),
+            'active_listings' => $user->listings()->active()->count(),
+            'favorites' => $user->favorites()->count(),
+            'unread_notifications' => $user->notifications()->whereNull('read_at')->count(),
+            'unread_messages' => \App\Models\ConversationParticipant::where('user_id', $user->id)->whereColumn('last_read_at', '<', \App\Models\Conversation::select('last_message_at')->whereColumn('conversations.id', 'conversation_participants.conversation_id'))->count(),
+            'wallet_balance' => $user->walletBalance(),
+            'average_rating' => $user->averageRating(),
+            'review_count' => $user->reviewCount(),
+            'referral_count' => $user->successfulReferrals()->count(),
+        ];
+        return view('pages.dashboard', compact('user', 'stats'));
+    }
+
+    /* Biometric / Face ID Lock */
+    public function toggleBiometric(Request $request)
+    {
+        $user = Auth::user();
+        $user->biometric_lock_enabled = !$user->biometric_lock_enabled;
+        $user->save();
+        return back()->with('status', 'Biometric lock ' . ($user->biometric_lock_enabled ? 'enabled' : 'disabled') . '.');
+    }
+
+    public function toggleFaceId(Request $request)
+    {
+        $user = Auth::user();
+        $user->face_id_lock_enabled = !$user->face_id_lock_enabled;
+        $user->save();
+        return back()->with('status', 'Face ID lock ' . ($user->face_id_lock_enabled ? 'enabled' : 'disabled') . '.');
+    }
+
+    public function registerBiometric(Request $request)
+    {
+        $request->validate(['public_key' => 'required|string|max:512']);
+        Auth::user()->update([
+            'biometric_public_key' => $request->public_key,
+            'biometric_registered_at' => now(),
+        ]);
+        return back()->with('status', 'Biometric key registered successfully.');
+    }
+
+    public function registerFaceId(Request $request)
+    {
+        $request->validate(['public_key' => 'required|string|max:512']);
+        Auth::user()->update([
+            'face_id_public_key' => $request->public_key,
+            'face_id_registered_at' => now(),
+        ]);
+        return back()->with('status', 'Face ID key registered successfully.');
+    }
+
+    /* Verified Badge Application */
+    public function applyForVerifiedBadge(Request $request)
+    {
+        $user = Auth::user();
+        if ($user->is_verified_seller) {
+            return back()->with('status', 'You already have a verified badge.');
+        }
+        if ($user->verified_badge_application) {
+            return back()->with('status', 'You already have a pending verified badge application.');
+        }
+        if (!$user->isKycVerified()) {
+            return back()->with('error', 'Please complete KYC verification before applying for a verified badge.');
+        }
+        if (!$user->business_profile_completed) {
+            return back()->with('error', 'Please complete your business profile before applying.');
+        }
+        $user->update(['verified_badge_application' => true]);
+        return back()->with('status', 'Verified badge application submitted. Admin will review shortly.');
     }
 
     public function listingCreate()
@@ -1409,13 +1493,34 @@ class WebController extends Controller
     }
 
     public function adminBusinessVerify(User $user) {
-        $user->update(['is_verified_seller' => true]);
+        $user->update(['is_verified_seller' => true, 'verified_badge_application' => false]);
         return back()->with('status', 'Business verified.');
     }
 
     public function adminBusinessUnverify(User $user) {
         $user->update(['is_verified_seller' => false]);
         return back()->with('status', 'Business unverified.');
+    }
+
+    public function adminVerifyBadgeApplications()
+    {
+        $users = User::where('verified_badge_application', true)
+            ->where('is_verified_seller', false)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+        return view('pages.admin.verified-badge-applications', compact('users'));
+    }
+
+    public function adminApproveBadge(User $user)
+    {
+        $user->update(['is_verified_seller' => true, 'verified_badge_application' => false]);
+        return back()->with('status', 'Verified badge approved for ' . $user->name . '.');
+    }
+
+    public function adminRejectBadge(User $user)
+    {
+        $user->update(['verified_badge_application' => false]);
+        return back()->with('status', 'Verified badge application rejected for ' . $user->name . '.');
     }
 
     /* Messaging - Media Attachments */

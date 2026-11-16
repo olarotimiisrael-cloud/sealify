@@ -105,12 +105,50 @@
                     </div>
                 @endif
                 
-                <div class="text-2xl font-bold text-{{ $catColor }}-600">₦{{ number_format($listing->price, 0) }}</div>
+                <div class="text-2xl font-black text-emerald-600">₦{{ number_format($listing->price, 0) }}</div>
+                @if ($listing->price_negotiable)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100">
+                        Negotiable
+                    </span>
+                @endif
+                @if ($listing->user->is_verified_seller)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold text-slate-700 bg-slate-100 border border-slate-200">
+                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2L2 7l8 5 8-5-8-5zM2 17l8 5 8-5M2 12l8 5 8-5"></path></svg>
+                        Delivery Available
+                    </span>
+                @endif
+                <div class="flex items-center gap-1 text-[11px] text-slate-500 mt-2">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>{{ $listing->created_at->format('g:ia') }}</span>
+                    <span class="text-slate-400">•</span>
+                    <span>{{ $listing->created_at->diffForHumans() }}</span>
+                </div>
                 <p class="text-slate-600 mb-6 leading-relaxed">{{ $listing->description }}</p>
+
+                <!-- Safety Tips Notification -->
+                <div class="bg-amber-900/20 border border-amber-900/40 rounded-xl p-4 mb-6 relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500" />
+                    <div class="flex items-start gap-3">
+                        <div class="flex-shrink-0 mt-0.5">
+                            <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-bold text-amber-800 mb-1">Safety Tips</h4>
+                            <ul class="text-sm text-amber-600 list-disc list-inside space-y-1">
+                                <li>Meet in a safe, public place</li>
+                                <li>Inspect the item before payment</li>
+                                <li>Do not send money to sellers you have not met</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="space-y-3 text-sm text-slate-600">
                     <div class="flex justify-between items-center bg-slate-50/50 px-4 py-3 rounded-xl border border-slate-100">
-                        <span class="font-medium text-slate-500">Location</span>
+                        <span class="flex items-center gap-1.5 font-medium text-slate-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
+                            Location
+                        </span>
                         <span class="font-bold text-slate-900">{{ $listing->location }}</span>
                     </div>
                     <div class="flex justify-between items-start gap-4 bg-slate-50/50 px-4 py-3 rounded-xl border border-slate-100">
@@ -126,7 +164,10 @@
                         <span class="font-bold text-slate-900">{{ $listing->user->name ?? 'Sealify User' }}</span>
                     </div>
                     <div class="flex justify-between items-center bg-slate-50/50 px-4 py-3 rounded-xl border border-slate-100">
-                        <span class="font-medium text-slate-500">Views</span>
+                        <span class="flex items-center gap-1.5 font-medium text-slate-500">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Views
+                        </span>
                         <span class="font-bold text-slate-900">{{ $listing->views_count }}</span>
                     </div>
                 </div>
@@ -174,6 +215,10 @@
                     </div>
                 </div>
                 <p class="text-slate-600 text-sm">{{ $listing->user->location ?? 'Ogbomosoland, Oyo State' }}</p>
+                <div class="flex items-center gap-1 text-[11px] text-slate-500 mt-2">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Member Since {{ $listing->user->created_at->format('Y') }}
+                </div>
                 @if ($activePromotion)
                     <div class="mt-4 pt-4 border-t border-slate-200">
                         <div class="flex items-center gap-2 text-xs text-slate-600">

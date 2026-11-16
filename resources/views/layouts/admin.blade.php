@@ -64,6 +64,10 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.418-9.418a4 4 0 10-5.656 5.656m7.071-2.828 2.829 2.829a1 1 0 010 1.414l-4.243 4.243a1 1 0 01-1.414 0l-2.828-2.829a1 1 0 00-1.414 0l-2.829 2.829a1 1 0 01-1.414 0l-4.243-4.243a1 1 0 010-1.414l2.828-2.829a1 1 0 011.414 0l4.243 4.243a1 1 0 011.414 0l2.829-2.829a1 1 0 011.414 0z"></path></svg>
                     Announcements
                 </a>
+                <a href="{{ route('admin.badge-applications') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Badge Applications
+                </a>
                 <a href="{{ route('admin.email.broadcaster') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a4 4 0 004 4h10a4 4 0 004-4V3M3 7l9 1m-9 1l9-1M3 13l9 1m-9 1l9-1M3 13v10a4 4 0 004 4h10a4 4 0 004-4V13"></path></svg>
                     Email Broadcaster
