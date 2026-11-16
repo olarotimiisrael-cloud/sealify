@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Category;
+use App\Models\Comment;
 use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Favorite;
@@ -117,8 +118,9 @@ class WebController extends Controller
         $activePromotion = $listing->activePromotion()->with('user')->first();
         $reviews = $listing->reviews()->with('buyer')->latest()->get();
         $userReview = auth()->check() ? $listing->reviews()->where('buyer_id', auth()->id())->first() : null;
+        $comments = $listing->comments()->with('user', 'replies.user')->whereNull('parent_id')->latest()->get();
 
-        return view('pages.listings.show', compact('listing', 'settings', 'activePromotion', 'reviews', 'userReview'));
+        return view('pages.listings.show', compact('listing', 'settings', 'activePromotion', 'reviews', 'userReview', 'comments'));
     }
 
     public function storeReview(Request $request, Listing $listing)
@@ -144,6 +146,43 @@ class WebController extends Controller
         );
 
         return back()->with('status', 'Your review has been submitted.');
+    }
+
+    public function storeComment(Request $request, Listing $listing)
+    {
+        $user = Auth::user();
+
+        if (! $user) {
+            return redirect()->route('login')->with('error', 'You must be logged in to comment.');
+        }
+
+        $validated = $request->validate([
+            'content' => ['required', 'string', 'max:2000'],
+            'parent_id' => ['nullable', 'integer', 'exists:comments,id'],
+        ]);
+
+        Comment::create([
+            'user_id' => $user->id,
+            'commentable_type' => Listing::class,
+            'commentable_id' => $listing->id,
+            'parent_id' => $validated['parent_id'] ?? null,
+            'content' => $validated['content'],
+        ]);
+
+        return back()->with('status', 'Your comment has been posted.');
+    }
+
+    public function deleteComment(Comment $comment)
+    {
+        $user = Auth::user();
+
+        if (! $user || ($comment->user_id !== $user->id && ! $user->isAdmin())) {
+            abort(403);
+        }
+
+        $comment->delete();
+
+        return back()->with('status', 'Comment deleted.');
     }
 
     public function category(string $slug)
@@ -242,7 +281,8 @@ class WebController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'condition' => 'required|in:new,like_new,good,fair,poor',
+            'condition' => 'required|in:new,like_new,good,fair,poor,needs_repair',
+            'condition_note' => 'nullable|string|max:100',
             'location' => 'required|string|max:255',
             'images' => 'nullable|array|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
@@ -284,7 +324,8 @@ class WebController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
-            'condition' => 'required|in:new,like_new,good,fair,poor',
+            'condition' => 'required|in:new,like_new,good,fair,poor,needs_repair',
+            'condition_note' => 'nullable|string|max:100',
             'location' => 'required|string|max:255',
             'new_images' => 'nullable|array|max:10',
             'new_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',

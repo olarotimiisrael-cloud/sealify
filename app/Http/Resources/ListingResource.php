@@ -34,6 +34,8 @@ class ListingResource extends JsonResource
             'original_price' => $this->original_price,
             'price_negotiable' => $this->price_negotiable,
             'condition' => $this->condition,
+            'condition_note' => $this->condition_note,
+            'condition_label' => $this->condition_label,
             'location' => $this->location,
             'status' => $this->status,
             'views_count' => $this->views_count,

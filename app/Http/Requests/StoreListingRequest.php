@@ -22,7 +22,8 @@ class StoreListingRequest extends FormRequest
             'condition' => [
                 'required',
                 'string',
-                'in:new,like_new,good,fair,needs_repair',
+                'in:new,like_new,good,fair,poor,needs_repair',
+            'condition_note' => ['sometimes', 'nullable', 'string', 'max:100'],
             ],
             'location' => ['required', 'string', 'max:120'],
             'status' => ['sometimes', 'string', 'in:draft,active'],

@@ -64,7 +64,17 @@
                         <option value="good" {{ old('condition', $listing->condition) == 'good' ? 'selected' : '' }}>Good</option>
                         <option value="fair" {{ old('condition', $listing->condition) == 'fair' ? 'selected' : '' }}>Fair</option>
                         <option value="poor" {{ old('condition', $listing->condition) == 'poor' ? 'selected' : '' }}>Poor</option>
+                        <option value="needs_repair" {{ old('condition', $listing->condition) == 'needs_repair' ? 'selected' : '' }}>Needs Repair</option>
                     </select>
+                </div>
+
+                <div>
+                    <label for="condition_note" class="block text-sm font-medium text-slate-700">Condition details <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input id="condition_note" name="condition_note" type="text" maxlength="100"
+                           value="{{ old('condition_note', $listing->condition_note) }}"
+                           placeholder="e.g. Small scratch on the back, battery lasts 4 hours"
+                           class="mt-1 block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                    <p class="text-xs text-slate-400 mt-1">Describe the exact condition buyers should know about this item.</p>
                 </div>
 
                 <div>

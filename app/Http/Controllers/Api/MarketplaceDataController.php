@@ -332,6 +332,7 @@ class MarketplaceDataController extends Controller
                 'price' => [$required, 'numeric', 'min:0', 'max:999999999.99'],
                 'original_price' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:999999999.99'],
                 'condition' => [$required, 'string', 'max:50'],
+                'condition_note' => ['sometimes', 'nullable', 'string', 'max:100'],
                 'location' => [$required, 'string', 'max:120'],
                 'status' => ['sometimes', 'in:draft,active,sold,archived'],
                 'video_url' => ['sometimes', 'nullable', 'url', 'max:2048'],

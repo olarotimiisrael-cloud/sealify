@@ -1,6 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
+@php $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : []; @endphp
 <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 space-y-5 lg:space-y-6">
 
     <!-- LOCATION CHIP -->
@@ -45,6 +46,9 @@
                         <span class="absolute top-3 right-3 bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-sm">Featured</span>
                         <img src="{{ $imageUrl }}" alt="{{ $promoListing->title }}"
                              class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
+                        <div class="absolute top-12 right-3 z-20" onclick="event.stopPropagation()">
+                            @include('partials.favorite-button', ['listing' => $promoListing, 'isFav' => in_array($promoListing->id, $favoriteIds, true), 'formClass' => 'static'])
+                        </div>
                         <div class="p-3 md:p-4 flex-1">
                             <h3 class="font-bold text-slate-900 text-base mb-1 line-clamp-1">{{ $promoListing->title }}</h3>
                             <div class="text-emerald-600 font-black text-lg mb-2">₦{{ number_format($promoListing->price, 0) }}</div>
@@ -139,18 +143,11 @@
                                 <img src="{{ $imageUrl }}" alt=""
                                      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                 <span class="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
-                                    {{ $listing->condition ?? 'New' }}
+                                    {{ $listing->condition_label ?? 'New' }}
                                 </span>
                             </div>
                         </a>
-                        @auth
-                            <form method="POST" action="{{ route('listings.favorite', $listing) }}" class="absolute top-2 right-2 z-10">
-                                @csrf
-                                <button type="submit" class="fav-btn {{ $isFav ? 'is-fav' : '' }}" title="{{ $isFav ? 'Remove from favorites' : 'Save to favorites' }}" aria-label="Save to favorites" aria-pressed="{{ $isFav ? 'true' : 'false' }}">
-                                    <svg class="w-5 h-5" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
-                                </button>
-                            </form>
-                        @endauth
+                        @include('partials.favorite-button', ['listing' => $listing, 'isFav' => $isFav, 'formClass' => 'absolute top-2 right-2 z-10'])
                         <a href="{{ route('listings.show', $listing) }}" class="block">
                             <h3 class="font-bold text-slate-900 text-sm mt-2 group-hover:text-emerald-600 transition-colors mb-1 line-clamp-1">{{ $listing->title }}</h3>
                             <div class="flex items-center gap-1 text-emerald-600 font-black text-sm mb-1">₦{{ number_format($listing->price, 0) }}</div>

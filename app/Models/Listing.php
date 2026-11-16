@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -28,6 +29,7 @@ class Listing extends Model
         'price',
         'price_negotiable',
         'condition',
+        'condition_note',
         'location',
         'status',
         'views_count',
@@ -51,6 +53,22 @@ class Listing extends Model
     public function getRouteKeyName(): string
     {
         return 'slug';
+    }
+
+    public function getConditionLabelAttribute(): string
+    {
+        $labels = [
+            'new' => 'New',
+            'like_new' => 'Like New',
+            'good' => 'Good',
+            'fair' => 'Fair',
+            'poor' => 'Poor',
+            'needs_repair' => 'Needs Repair',
+        ];
+
+        $base = $labels[$this->condition] ?? Str::headline((string) $this->condition);
+
+        return $this->condition_note ? "{$base} ({$this->condition_note})" : $base;
     }
 
     public function user(): BelongsTo
@@ -86,6 +104,11 @@ class Listing extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function comments(): MorphMany
+    {
+        return $this->morphMany(Comment::class, 'commentable');
     }
 
     public function activePromotion(): HasOne

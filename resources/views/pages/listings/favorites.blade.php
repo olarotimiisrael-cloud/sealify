@@ -41,7 +41,7 @@
                             <div class="aspect-video bg-slate-100 overflow-hidden relative">
                                 <img src="{{ optional($listing->images)->first()?->url ?? asset('logo.png') }}" alt="{{ $listing->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                                 @if ($listing->condition)
-                                    <span class="absolute top-3 left-3 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow">{{ $listing->condition }}</span>
+                                    <span class="absolute top-3 left-3 bg-emerald-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow">{{ $listing->condition_label ?? $listing->condition }}</span>
                                 @endif
                             </div>
                         </a>

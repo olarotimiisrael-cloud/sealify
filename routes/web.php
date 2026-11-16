@@ -16,6 +16,8 @@ Route::get('/listings', [WebController::class, 'listings'])->name('listings.inde
 Route::get('/listings/create', [WebController::class, 'listingCreate'])->name('listings.create');
 Route::get('/listings/{listing}', [WebController::class, 'listingShow'])->name('listings.show');
 Route::post('/listings/{listing}/review', [WebController::class, 'storeReview'])->name('listings.review')->middleware('auth');
+Route::post('/listings/{listing}/comment', [WebController::class, 'storeComment'])->name('listings.comment')->middleware('auth');
+Route::delete('/comments/{comment}', [WebController::class, 'deleteComment'])->name('comments.destroy')->middleware('auth');
 Route::get('/categories/{slug}', [WebController::class, 'category'])->name('categories.show');
 Route::get('/categories', [WebController::class, 'categories'])->name('categories.index');
 

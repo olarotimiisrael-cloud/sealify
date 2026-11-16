@@ -54,7 +54,7 @@
                             <img src="{{ $listingImageUrl }}" alt="{{ $listing->title }}"
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             <span class="absolute top-3 left-3 bg-{{ $color }}-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md">
-                                {{ $listing->condition ?? 'New' }}
+                                {{ $listing->condition_label ?? 'New' }}
                             </span>
                         </div>
                     </a>
