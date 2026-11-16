@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-md mx-auto px-3 sm:px-4 space-y-4">
+<div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 space-y-5 lg:space-y-6">
 
     <!-- LOCATION CHIP -->
     <div class="mt-2 flex items-center justify-center gap-2">
@@ -13,7 +13,8 @@
     </div>
 
     <!-- SEARCH BAR (prominent, centered) -->
-    <form method="GET" action="{{ route('listings.index') }}" class="relative w-full">
+    <div class="flex justify-center">
+    <form method="GET" action="{{ route('listings.index') }}" class="relative w-full max-w-lg lg:max-w-xl">
         <div class="flex items-center gap-2 px-3 py-2 rounded-2xl border border-emerald-200 bg-white shadow-sm">
             <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             <input name="q" value="{{ request('q') }}" placeholder="What are you looking for? (e.g. iPhone, Toyota, Ankara)"
@@ -23,9 +24,10 @@
             </button>
         </div>
     </form>
+    </div>
 
     <!-- QUICK ACTION CHIPS -->
-    <div class="grid grid-cols-2 gap-2">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2 max-w-lg lg:max-w-2xl mx-auto">
         <button type="button" onclick="openAllCategoriesModal()"
            class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-white text-slate-700 text-sm font-medium shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all">
             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 114 0v11a2 2 0 11-4 0V6zm16 13a2 2 0 10-4 0v-4a2 2 0 114 0v4zm-6-5a2 2 0 10-4 0v3a2 2 0 004 0v-3zm0 0l4 4m0 0l-4-4m4 4V9h4v12"/></svg>
@@ -38,31 +40,31 @@
         </a>
     </div>
 
-    <!-- RECOMMENDED (horizontal scroll category cards) -->
-    <div class="space-y-3">
-        <div class="flex items-center justify-between">
-            <h2 class="text-lg font-black text-slate-900 tracking-tight">Recommended for you</h2>
-            <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+        <!-- RECOMMENDED (horizontal scroll mobile, grid tablet+) -->
+        <div class="space-y-3">
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-black text-slate-900 tracking-tight">Recommended for you</h2>
+                <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                @foreach ($topCategories->take(8) as $category)
+                    @php
+                        $iconMap = [
+                            'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
+                            'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
+                            'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
+                        ];
+                        $icon = $iconMap[$category->icon] ?? '🏷️';
+                    @endphp
+                    <a href="{{ route('categories.show', $category->slug) }}"
+                       class="flex-shrink-0 rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col items-center gap-2 text-center">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-xl">{{ $icon }}</div>
+                        <span class="text-xs font-bold text-slate-900 leading-tight line-clamp-2">{{ $category->name }}</span>
+                        <span class="text-[10px] text-emerald-500 font-medium">{{ $category->listings_count ?? 0 }} items</span>
+                    </a>
+                @endforeach
+            </div>
         </div>
-        <div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-            @foreach ($topCategories->take(8) as $category)
-                @php
-                    $iconMap = [
-                        'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
-                        'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
-                        'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
-                    ];
-                    $icon = $iconMap[$category->icon] ?? '🏷️';
-                @endphp
-                <a href="{{ route('categories.show', $category->slug) }}"
-                   class="flex-shrink-0 w-[90px] rounded-2xl border border-emerald-100 bg-white p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all flex flex-col items-center gap-2 text-center">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center border border-emerald-100 text-xl">{{ $icon }}</div>
-                    <span class="text-xs font-bold text-slate-900 leading-tight line-clamp-2">{{ $category->name }}</span>
-                    <span class="text-[10px] text-emerald-500 font-medium">{{ $category->listings_count ?? 0 }} items</span>
-                </a>
-            @endforeach
-        </div>
-    </div>
 
     <!-- CATEGORY TILES (compact grid) -->
     <div class="space-y-3">
@@ -70,7 +72,7 @@
             <h2 class="text-lg font-black text-slate-900 tracking-tight">All Categories</h2>
             <button type="button" onclick="openAllCategoriesModal()" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">See All →</button>
         </div>
-        <div class="grid grid-cols-4 gap-2">
+        <div class="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2">
             @foreach ($topCategories->take(12) as $category)
                 @php
                     $iconMap = [
@@ -105,7 +107,7 @@
                 </a>
             </div>
         @else
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 @foreach ($listings as $listing)
                     @php
                         $placeholderMap = [

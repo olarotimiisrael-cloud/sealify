@@ -1,4 +1,4 @@
-<footer class="bg-white border-t border-slate-200 pt-8 pb-32 mt-6 font-sans shadow-sm">
+<footer class="bg-white border-t border-slate-200 pt-8 pb-32 lg:pb-8 mt-6 font-sans shadow-sm">
     <div class="max-w-7xl mx-auto px-4 space-y-10">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- Logo & Tagline -->

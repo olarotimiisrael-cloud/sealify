@@ -30,7 +30,7 @@
 <body class="bg-white text-slate-900 font-sans antialiased">
     @include('partials.navbar')
 
-    <main class="min-h-screen">
+    <main class="min-h-screen pb-20 lg:pb-0">
         @yield('content')
     </main>
 

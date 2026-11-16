@@ -1,5 +1,5 @@
 <!-- MOBILE BOTTOM NAV (marketplace app style) -->
-<nav class="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 shadow-lg px-2 pb-4">
+<nav class="fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-slate-200 shadow-lg px-2 pb-4 md:pb-4 lg:hidden">
     <div class="max-w-md mx-auto grid grid-cols-5 gap-1">
         <a href="{{ route('home') }}"
            class="{{ request()->routeIs('home') ? 'text-emerald-600' : 'text-slate-500' }} flex flex-col items-center gap-1 px-1 py-2 rounded-xl transition-colors {{ request()->routeIs('home') ? 'bg-emerald-50' : '' }}">
@@ -16,9 +16,9 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
             <span class="text-[10px] font-bold uppercase tracking-wider">Sell</span>
         </a>
-        <a href="{{ route('messages.index') }}"
-           class="{{ request()->routeIs('messages.*') ? 'text-emerald-600' : 'text-slate-500' }} flex flex-col items-center gap-1 px-1 py-2 rounded-xl transition-colors {{ request()->routeIs('messages.*') ? 'bg-emerald-50' : '' }}">
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 16c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm-4-4c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2zm8 0c0 1.1.9 2 2 2s2-.9 2-2-.9-2-2-2-2 .9-2 2z"/></svg>
+<a href="{{ route('messages.index') }}"
+            class="{{ request()->routeIs('messages.*') ? 'text-emerald-600' : 'text-slate-500' }} flex flex-col items-center gap-1 px-1 py-2 rounded-xl transition-colors {{ request()->routeIs('messages.*') ? 'bg-emerald-50' : '' }}">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
             <span class="text-[10px] font-bold uppercase tracking-wider">Messages</span>
         </a>
         <a href="{{ route('profile.show') }}"
