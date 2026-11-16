@@ -97,6 +97,28 @@
             </div>
         </div>
     </div>
+<!-- Payment Accounts -->
+    <div class="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 mb-4">Payment Accounts (Cashout)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Flutterwave</p>
+                <a href="https://flutterwave.com/pay/8eqijxd7cmv1" target="_blank" class="text-sm text-emerald-600 font-bold hover:underline">flutterwave.com/pay/8eqijxd7cmv1</a>
+            </div>
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Opay</p>
+                <p class="text-sm text-slate-900 font-medium">6117594285</p>
+            </div>
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">USDC (Polygon/Ethereum)</p>
+                <p class="text-xs text-slate-400 font-mono break-all">0xa82B567566714030363fFf131AC1855CC35A3C07</p>
+            </div>
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">USDC (Solana)</p>
+                <p class="text-xs text-slate-400 font-mono break-all">313PDEUQoCeLg75C2SfukfZTuMQhfoYm3sAJALL6pVpW</p>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 

@@ -1471,9 +1471,14 @@ class WebController extends Controller
         $this->authorize('view', $conversation);
 
         $request->validate([
-            'type' => 'required|in:offer,answer,ice-candidate',
+            'type' => 'required|in:offer,answer,ice-candidate,hangup',
             'payload' => 'required|array',
         ]);
+
+        // Clean old signaling messages (older than 5 minutes) to prevent buildup
+        \App\Models\SignalingMessage::where('conversation_id', $conversation->id)
+            ->where('created_at', '<', now()->subMinutes(5))
+            ->delete();
 
         $signal = \App\Models\SignalingMessage::create([
             'conversation_id' => $conversation->id,
@@ -1492,9 +1497,12 @@ class WebController extends Controller
     public function signalingPoll(Request $request, Conversation $conversation) {
         $this->authorize('view', $conversation);
 
+        $since = $request->input('since', now()->subMinutes(2)->toISOString());
+
+        // Get signals from other user, newer than since
         $signals = \App\Models\SignalingMessage::where('conversation_id', $conversation->id)
             ->where('sender_id', '!=', Auth::id())
-            ->where('created_at', '>', $request->input('since', now()->subMinutes(5)->toISOString()))
+            ->where('created_at', '>', $since)
             ->orderBy('created_at')
             ->get();
 

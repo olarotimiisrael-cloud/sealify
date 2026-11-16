@@ -204,17 +204,41 @@ let signalingChannel = null;
 let callInProgress = false;
 
 async function initWebRTC() {
-    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    const servers = {
+        iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun.cloudflare.com:3478' },
+        ],
+    };
     pc = new RTCPeerConnection(servers);
 
     pc.ontrack = event => {
         const remoteStream = event.streams[0];
-        document.getElementById('remote-video').srcObject = remoteStream;
+        const remoteVideo = document.getElementById('remote-video');
+        if (remoteVideo) {
+            remoteVideo.srcObject = remoteStream;
+        }
+        // Update status to connected
+        const statusEl = document.getElementById('call-status');
+        if (statusEl) statusEl.textContent = 'Connected';
     };
 
     pc.onicecandidate = event => {
         if (event.candidate) {
             sendSignaling({ type: 'ice-candidate', candidate: event.candidate });
+        }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+        const statusEl = document.getElementById('call-status');
+        if (!statusEl) return;
+        if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+            statusEl.textContent = 'Connected';
+        } else if (pc.iceConnectionState === 'disconnected') {
+            statusEl.textContent = 'Reconnecting…';
+        } else if (pc.iceConnectionState === 'failed') {
+            statusEl.textContent = 'Connection failed';
         }
     };
 
@@ -224,14 +248,14 @@ async function initWebRTC() {
 
     signalingChannel = setInterval(async () => {
         try {
-            const r = await fetch(`{{ route('messages.signaling.poll', $conversation) }}?since=${Date.now()}`, {
+            const r = await fetch(`{{ route('messages.signaling.poll', $conversation) }}?since=${Date.now() - 30000}`, {
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             });
             const data = await r.json();
-            if (data.success && data.signals.length) {
+            if (data.success && data.signals && data.signals.length) {
                 data.signals.forEach(s => handleRemoteSignal(s));
             }
         } catch (err) {
@@ -381,24 +405,36 @@ function handleRemoteSignal(signal) {
     const data = signal.payload || {};
     if (signal.type === 'offer') {
         const callType = data.callType || 'video';
-        // Show incoming call prompt
+        // Incoming call — show accept prompt if not already in a call
         if (!callInProgress) {
-            if (confirm('Incoming ' + (callType === 'voice' ? 'voice' : 'video') + ' call. Accept?')) {
-                acceptIncomingCall(callType);
-            }
+            // Accept automatically for now (can add ringtone/accept UI later)
+            acceptIncomingCall(callType).then(() => {
+                // After setting up local stream and pc, handle the offer
+                pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }))
+                    .then(() => pc.createAnswer())
+                    .then(answer => pc.setLocalDescription(answer))
+                    .then(() => {
+                        sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
+                        // Flush buffered ICE candidates
+                        pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
+                        pendingIceCandidates = [];
+                    })
+                    .catch(err => console.error('Handle offer error:', err));
+            });
             return;
         }
+        // Already in a call — handle the offer
         pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }))
             .then(() => pc.createAnswer())
             .then(answer => pc.setLocalDescription(answer))
             .then(() => {
                 sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
-                // Flush buffered ICE candidates
                 pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
                 pendingIceCandidates = [];
             })
             .catch(err => console.error('Handle offer error:', err));
     } else if (signal.type === 'answer') {
+        if (!pc) return;
         pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }))
             .then(() => {
                 pendingIceCandidates.forEach(c => pc.addIceCandidate(c).catch(() => {}));
@@ -409,7 +445,6 @@ function handleRemoteSignal(signal) {
         if (pc && pc.remoteDescription) {
             pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(e => console.error('ICE error:', e));
         } else {
-            // Buffer until remote description is set
             pendingIceCandidates.push(new RTCIceCandidate(data.candidate));
         }
     } else if (signal.type === 'hangup') {

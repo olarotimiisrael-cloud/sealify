@@ -26,8 +26,8 @@
 
 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
-                    <div class="text-2xl font-bold text-slate-900">{{ $user->listings->count() }}</div>
-                    <div class="text-xs text-slate-500">Listings</div>
+                    <div class="text-2xl font-bold text-amber-500">₦{{ number_format($user->walletBalance(), 0) }}</div>
+                    <div class="text-xs text-slate-500">Wallet (Non-withdrawable)</div>
                 </div>
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div class="text-2xl font-bold text-slate-900">{{ $user->favoriteListings->count() }}</div>
@@ -47,10 +47,9 @@
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div class="text-2xl font-bold text-slate-900">{{ $referralStatus['count'] ?? 0 }}</div>
                     <div class="text-xs text-slate-500">Successful Referrals</div>
+<div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                    <p class="text-xs text-amber-800 font-bold">⚠️ Wallet balance is non-withdrawable. It can only be spent on Sealify ad promotions.</p>
                 </div>
-            </div>
-
-            @if (!empty($referralStatus['count']))
                 <div class="mt-6 p-4 rounded-xl border border-emerald-100 bg-emerald-50 text-sm text-emerald-700">
                     <p class="font-bold mb-2">Referral Promotion Status</p>
                     <p class="mb-1">{{ $referralStatus['count'] }} successful referrals of {{ config('promotions.referral.double_free_promotion_referrals', 20) }} needed for 2-week free promotion.</p>

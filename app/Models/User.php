@@ -390,9 +390,49 @@ class User extends Authenticatable implements MustVerifyEmail
         ];
     }
 
-    public function isAdmin(): bool
+    public function walletBalance(): float
     {
-        return $this->role === 'admin';
+        return (float) $this->balance;
+    }
+
+    public function creditWallet(float $amount, string $description, $source = null): void
+    {
+        $this->forceFill([
+            'balance' => (float) $this->balance + $amount,
+        ])->save();
+
+        WalletTransaction::create([
+            'user_id' => $this->id,
+            'type' => 'credit',
+            'amount' => $amount,
+            'balance_after' => $this->balance,
+            'description' => $description,
+            'source_type' => $source ? get_class($source) : null,
+            'source_id' => $source?->id,
+        ]);
+    }
+
+    public function debitWallet(float $amount, string $description, $source = null): bool
+    {
+        if ((float) $this->balance < $amount) {
+            return false;
+        }
+
+        $this->forceFill([
+            'balance' => (float) $this->balance - $amount,
+        ])->save();
+
+        WalletTransaction::create([
+            'user_id' => $this->id,
+            'type' => 'debit',
+            'amount' => $amount,
+            'balance_after' => $this->balance,
+            'description' => $description,
+            'source_type' => $source ? get_class($source) : null,
+            'source_id' => $source?->id,
+        ]);
+
+        return true;
     }
 
     // ------------------------------------------------------------------

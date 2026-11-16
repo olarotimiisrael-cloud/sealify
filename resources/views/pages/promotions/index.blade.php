@@ -10,7 +10,92 @@
                 <div class="mb-5 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-rose-700">{{ session('error') }}</div>
             @endif
 
-            {{-- Referral Status --}}
+{{-- Wallet Balance --}}
+            <div class="mb-6 bg-amber-50 rounded-xl p-6 border border-amber-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h4 class="font-bold text-slate-900">Sealify Wallet</h4>
+                        <p class="text-sm text-slate-500">Earned from referrals — spendable on Sealify promotions only</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-3xl font-black text-amber-600">₦{{ number_format($user->walletBalance(), 0) }}</p>
+                        <p class="text-xs text-slate-500">wallet balance</p>
+                    </div>
+                </div>
+                <div class="mt-3 p-3 bg-amber-100 rounded-lg">
+                    <p class="text-xs text-amber-800 font-bold">⚠️ This balance is non-withdrawable. It can only be used to pay for ad promotions on Sealify.</p>
+                </div>
+            </div>
+
+            {{-- Direct Payment Methods --}}
+            <div class="mb-6 bg-slate-50 rounded-xl p-6">
+                <h4 class="font-bold text-slate-900 mb-3">Pay for Promotions Directly</h4>
+                <p class="text-sm text-slate-500 mb-4">You can also pay for special ad promotions directly using any of these methods:</p>
+                
+                <div class="space-y-3">
+                    {{-- Flutterwave --}}
+                    <a href="https://flutterwave.com/pay/8eqijxd7cmv1" target="_blank"
+                       class="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200 hover:border-emerald-300 transition-colors">
+                        <div class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-xs">FW</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-slate-900">Flutterwave</p>
+                            <p class="text-xs text-slate-500">Credit/Debit Card, Bank Transfer, USSD</p>
+                        </div>
+                        <span class="text-xs text-emerald-600 font-bold">Pay →</span>
+                    </a>
+                    
+                    {{-- Opay --}}
+                    <div class="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center text-green-600 font-bold text-xs">OP</div>
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-slate-900">Opay</p>
+                            <p class="text-xs text-slate-500">Account: 6117594285</p>
+                        </div>
+                        <button type="button" onclick="navigator.clipboard.writeText('6117594285'); alert('Opay account copied!');" class="text-xs text-emerald-600 font-bold hover:underline">Copy</button>
+                    </div>
+                    
+                    {{-- USDC Polygon --}}
+                    <div class="p-3 bg-white rounded-xl border border-slate-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center text-purple-600 font-bold text-xs">USDC</div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-900">USDC (Polygon)</p>
+                                <p class="text-xs text-slate-500">Send only USDC on Polygon network</p>
+                            </div>
+                            <button type="button" onclick="navigator.clipboard.writeText('0xa82B567566714030363fFf131AC1855CC35A3C07'); alert('Address copied!');" class="text-xs text-emerald-600 font-bold hover:underline">Copy</button>
+                        </div>
+                        <p class="text-xs text-slate-400 font-mono break-all">0xa82B567566714030363fFf131AC1855CC35A3C07</p>
+                    </div>
+                    
+                    {{-- USDC Ethereum --}}
+                    <div class="p-3 bg-white rounded-xl border border-slate-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">USDC</div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-900">USDC (Ethereum)</p>
+                                <p class="text-xs text-slate-500">Send only USDC on Ethereum network</p>
+                            </div>
+                            <button type="button" onclick="navigator.clipboard.writeText('0xa82B567566714030363fFf131AC1855CC35A3C07'); alert('Address copied!');" class="text-xs text-emerald-600 font-bold hover:underline">Copy</button>
+                        </div>
+                        <p class="text-xs text-slate-400 font-mono break-all">0xa82B567566714030363fFf131AC1855CC35A3C07</p>
+                    </div>
+                    
+                    {{-- USDC Solana --}}
+                    <div class="p-3 bg-white rounded-xl border border-slate-200">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center text-teal-600 font-bold text-xs">USDC</div>
+                            <div class="flex-1">
+                                <p class="text-sm font-bold text-slate-900">USDC (Solana)</p>
+                                <p class="text-xs text-slate-500">Send only USDC on Solana network</p>
+                            </div>
+                            <button type="button" onclick="navigator.clipboard.writeText('313PDEUQoCeLg75C2SfukfZTuMQhfoYm3sAJALL6pVpW'); alert('Address copied!');" class="text-xs text-emerald-600 font-bold hover:underline">Copy</button>
+                        </div>
+                        <p class="text-xs text-slate-400 font-mono break-all">313PDEUQoCeLg75C2SfukfZTuMQhfoYm3sAJALL6pVpW</p>
+                    </div>
+                </div>
+                
+                <p class="text-xs text-slate-400 mt-4">All payments are processed and verified by admin. After payment, your promotion will be activated.</p>
+            </div>
             <div class="mb-6 bg-slate-50 rounded-xl p-6">
                 <div class="flex items-center justify-between mb-3">
                     <div>
