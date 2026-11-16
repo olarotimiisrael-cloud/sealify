@@ -29,7 +29,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div class="bg-white shadow-sm rounded-2xl border border-emerald-100 p-6 flex flex-col items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h4l3-8 4 16 3-8h4"/></svg>
             </div>
             <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider mb-1">Market Pulse</h3>
             <p class="text-3xl font-black text-emerald-600">Live</p>
@@ -66,7 +66,7 @@
         <h2 class="text-2xl font-black text-slate-900 tracking-tight mb-6">Browse Categories</h2>
         <p class="text-slate-600 mb-8">Discover verified items & local services in Ogbomosoland</p>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-6">
             @foreach ($topCategories as $category)
                 @php
                     $color = $category->color ?? 'emerald';
@@ -77,13 +77,76 @@
                     ];
                     $icon = $iconMap[$category->icon] ?? '🏷️';
                 @endphp
-                <a href="{{ route('categories.show', $category->slug) }}"
-                   class="flex flex-col items-center gap-2 p-3 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 transition-all text-xs font-medium">
+                    <a href="{{ route('categories.show', $category->slug) }}"
+                       class="flex flex-col items-center gap-2 p-3 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100 transition-all text-xs font-medium">
                     <div class="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center text-lg border border-emerald-200">{{ $icon }}</div>
                     <span class="font-medium leading-tight">{{ $category->name }}</span>
                     <span class="text-emerald-400 text-xs mt-1">{{ $category->listings_count ?? 0 }}</span>
                 </a>
             @endforeach
+        </div>
+
+        <!-- SEE ALL CATEGORIES BUTTON -->
+        <div class="flex justify-center mb-10">
+            <button id="seeAllCategoriesBtn"
+                    class="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-emerald-200 text-emerald-700 font-semibold rounded-full hover:bg-emerald-50 hover:border-emerald-300 hover:shadow-lg hover:shadow-emerald-100 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                    aria-label="See all categories">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+                <span>See All Categories</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ALL CATEGORIES MODAL SHEET -->
+    <div id="allCategoriesModal" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="closeAllCategoriesModal()"></div>
+        <div class="fixed inset-0 flex items-end justify-center p-4 sm:p-0">
+            <div class="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-t-3xl shadow-2xl overflow-hidden flex flex-col animate-slide-up">
+                <div class="flex items-center justify-between p-4 sm:p-6 border-b border-slate-100 sticky top-0 bg-white z-10">
+                    <h2 id="modal-title" class="text-xl sm:text-2xl font-black text-slate-900">All Categories</h2>
+                    <button onclick="closeAllCategoriesModal()" class="p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors" aria-label="Close">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+                    @php
+                        $parentCategories = $categories->where('parent_id', null)->sortBy('sort_order');
+                        $childCategories = $categories->where('parent_id', '!=', null)->groupBy('parent_id');
+                        $iconMap = [
+                            'smartphone' => '📱', 'car' => '🚗', 'home' => '🏠', 'shirt' => '👕',
+                            'sofa' => '🛋️', 'wrench' => '🔧', 'briefcase' => '💼', 'laptop' => '💻',
+                            'baby' => '👶', 'paw' => '🐾', 'leaf' => '🌿', 'factory' => '🏭',
+                        ];
+                    @endphp
+                    @foreach ($parentCategories as $parent)
+                        <div class="mb-8">
+                            <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2 pb-2 border-b border-slate-100">
+                                @php $pIcon = $iconMap[$parent->icon] ?? '🏷️'; @endphp
+                                <span class="text-2xl">{{ $pIcon }}</span>
+                                {{ $parent->name }}
+                                <span class="text-sm font-normal text-slate-500 ml-auto">{{ ($parent->listings_count ?? 0) }} listings</span>
+                            </h3>
+                            @if ($childCategories->has($parent->id))
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                    @foreach ($childCategories[$parent->id] as $child)
+                                        <a href="{{ route('categories.show', $child->slug) }}"
+                                           class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-100 bg-slate-50 text-slate-700 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-md hover:shadow-emerald-100 transition-all duration-200 text-sm font-medium"
+                                           onclick="closeAllCategoriesModal()">
+                                            {{ $child->name }}
+                                            <span class="text-slate-400 font-normal">{{ $child->listings_count ?? 0 }}</span>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
         </div>
     </div>
 
@@ -153,7 +216,7 @@
                         $imageUrl = $listing->images->first()?->url ?? ($placeholderMap[$listing->title] ?? 'https://images.unsplash.com/photo-1560472355-6374e3fd260d?w=800&q=80');
                     @endphp
                     <a href="{{ route('listings.show', $listing) }}" class="block group">
-                        <div class="aspect-[4/3] bg-gradient-to-br from-emerald-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-emerald-100 group-hover:border-emerald-300 transition-colors relative">
+                        <div class="aspect-[4/3] bg-gradient-to-br from-emerald-50 to-slate-50 rounded-2xl overflow-hidden mb-3 border border-emerald-100 shadow-lg shadow-emerald-100/50 group-hover:border-emerald-300 group-hover:shadow-xl group-hover:shadow-emerald-200 transition-all duration-300 relative">
                             <img src="{{ $imageUrl }}" alt="" title=""
                                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
                             <span class="absolute top-3 left-3 bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded-lg shadow-md">
@@ -178,4 +241,52 @@
         @endif
     </div>
 </div>
+@push('styles')
+<style>
+    @keyframes slide-up {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    .animate-slide-up {
+        animation: slide-up 0.3s ease-out;
+    }
+</style>
+@endpush
+@push('scripts')
+<script>
+    function openAllCategoriesModal() {
+        const modal = document.getElementById('allCategoriesModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeAllCategoriesModal() {
+        const modal = document.getElementById('allCategoriesModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    document.getElementById('seeAllCategoriesBtn')?.addEventListener('click', openAllCategoriesModal);
+
+    document.getElementById('allCategoriesModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeAllCategoriesModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeAllCategoriesModal();
+        }
+    });
+</script>
+@endpush
 @endsection

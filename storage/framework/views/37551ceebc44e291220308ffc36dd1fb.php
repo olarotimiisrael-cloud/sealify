@@ -1,4 +1,4 @@
-<nav class="bg-white border-b border-emerald-50 sticky top-0 z-50 shadow-sm">
+<nav class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
     <div class="relative">
         <div class="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-500"></div>
         <div class="max-w-7xl mx-auto px-4 py-3">
@@ -28,7 +28,7 @@
                             <?php endif; ?>
                         <?php endif; ?>
                     </a>
-                    <a href="<?php echo e(route('notifications.index')); ?>" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group">
+                    <button id="notif-btn" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" onclick="toggleNotifDrawer()" title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
                         <?php if(auth()->guard()->check()): ?>
                             <?php
@@ -38,9 +38,9 @@
                                 <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center"><?php echo e($unreadNotifications); ?></span>
                             <?php endif; ?>
                         <?php endif; ?>
-                    </a>
+                    </button>
                     <?php if(auth()->guard()->check()): ?>
-                        <a href="<?php echo e(route('login')); ?>" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
+                        <a href="<?php echo e(route('profile.show')); ?>" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                         </a>
                     <?php else: ?>
@@ -59,11 +59,11 @@
                 <p class="text-xs font-black text-slate-900 uppercase tracking-wider">User Menu</p>
             </div>
             <a href="<?php echo e(route('profile.show')); ?>" class="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-slate-900 font-medium transition-colors block">
-                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Profile
             </a>
             <a href="<?php echo e(route('settings')); ?>" class="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 rounded-xl text-slate-900 font-medium transition-colors block">
-                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 Settings
             </a>
             <?php if(auth()->user()->isAdmin()): ?>
@@ -95,5 +95,80 @@
             </a>
         </div>
     <?php endif; ?>
+
+    <!-- NOTIFICATIONS DRAWER -->
+    <?php if(auth()->guard()->check()): ?>
+    <div id="notif-backdrop" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]" onclick="toggleNotifDrawer()"></div>
+    <div id="notif-drawer" class="hidden fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white shadow-2xl z-[61] flex flex-col transition-transform duration-300 translate-x-full">
+        <div class="flex items-start justify-between p-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 leading-tight">Notifications</h3>
+                    <p class="text-sm text-slate-500">
+                        <?php $unreadCount = App\Models\Notification::where('user_id', auth()->id())->where('read_at', null)->count(); ?>
+                        <?php echo e($unreadCount); ?> unread update<?php echo e($unreadCount === 1 ? '' : 's'); ?>
+
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="toggleNotifDrawer()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" title="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            <?php $drawerNotifications = App\Models\Notification::where('user_id', auth()->id())->latest()->take(20)->get(); ?>
+            <?php if($drawerNotifications->isEmpty()): ?>
+                <div class="flex items-center justify-center h-full">
+                    <p class="text-slate-500 text-sm">No notifications right now.</p>
+                </div>
+            <?php else: ?>
+                <ul class="divide-y divide-slate-100">
+                    <?php $__currentLoopData = $drawerNotifications; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $notification): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li class="px-6 py-4 hover:bg-slate-50 transition-colors <?php echo e($notification->read_at ? '' : 'bg-emerald-50/40'); ?>">
+                            <div class="flex items-start gap-3">
+                                <span class="mt-1 w-2 h-2 rounded-full <?php echo e($notification->read_at ? 'bg-transparent' : 'bg-emerald-500'); ?>"></span>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-slate-900"><?php echo e($notification->title ?? 'Notification'); ?></p>
+                                    <?php if(!empty($notification->description)): ?>
+                                        <p class="text-sm text-slate-600 mt-0.5"><?php echo e($notification->description); ?></p>
+                                    <?php endif; ?>
+                                    <p class="text-xs text-slate-400 mt-1"><?php echo e($notification->created_at?->diffForHumans()); ?></p>
+                                </div>
+                            </div>
+                        </li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+
+        <div class="p-4 border-t border-slate-100">
+            <a href="<?php echo e(route('notifications.index')); ?>" class="block text-center text-sm font-semibold text-emerald-600 hover:text-emerald-700">View all notifications</a>
+        </div>
+    </div>
+    <?php endif; ?>
 </nav>
+
+<script>
+function toggleNotifDrawer() {
+    const drawer = document.getElementById('notif-drawer');
+    const backdrop = document.getElementById('notif-backdrop');
+    if (!drawer || !backdrop) return;
+    const isOpening = drawer.classList.contains('hidden');
+    if (isOpening) {
+        drawer.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => drawer.classList.remove('translate-x-full'));
+    } else {
+        drawer.classList.add('translate-x-full');
+        setTimeout(() => {
+            drawer.classList.add('hidden');
+            backdrop.classList.add('hidden');
+        }, 300);
+    }
+}
+</script>
 <?php /**PATH C:\Users\THE~SEAL CW LTD\dyad-apps\sealify\resources\views/partials/navbar.blade.php ENDPATH**/ ?>
