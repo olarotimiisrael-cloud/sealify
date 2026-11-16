@@ -17,7 +17,7 @@
     $iconSize = $iconMap[$size] ?? 'h-8 w-auto';
 @endphp
 
-<div class="sealify-logo inline-flex items-center gap-1.5 {{ $class }}">
+<div class="sealify-logo inline-flex items-center gap-1 {{ $class }}">
     <img src="{{ asset('logo-small.png') }}" alt="Sealify" class="{{ $iconSize }} shrink-0 drop-shadow-sm">
     <span class="sealify-wordmark inline-flex items-center gap-0">
         <span class="{{ $textSize }} font-black tracking-tight sealify-seal">Seal</span>
