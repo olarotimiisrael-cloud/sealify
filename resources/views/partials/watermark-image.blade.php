@@ -25,7 +25,7 @@ $logoUrl = asset('logo.png');
          decoding="async">
 
     {{-- Transparent Sealify watermark using original logo --}}
-    <div class="absolute bottom-3 right-3 z-20 pointer-events-none">
+    <div class="absolute bottom-3 left-3 z-20 pointer-events-none">
         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-black/45 backdrop-blur-sm border border-white/20 shadow-xl text-white">
             <img src="{{ $logoUrl }}"
                  alt="Sealify"
