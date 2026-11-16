@@ -1,10 +1,6 @@
-@props(['class' => '', 'size' => 'lg'])
-
-{--
-  Sealify brand wordmark: "Seal" in deep navy, "ify" in gold/amber.
-  size: sm (text-base), md (text-lg), lg (text-xl), xl (text-2xl)
---}
 @php
+    $size = $size ?? 'lg';
+    $class = $class ?? '';
     $sizeMap = [
         'sm' => 'text-base',
         'md' => 'text-lg',
@@ -15,8 +11,8 @@
 @endphp
 
 <div class="sealify-logo inline-flex items-center gap-0 {{ $class }}">
-    <span class="{{ $textSize }} font-black tracking-tight text-[#0f172a] sealify-seal">Seal</span>
-    <span class="{{ $textSize }} font-black tracking-tight text-[#f59e0b] drop-shadow-[0_0_12px_rgba(245,158,11,0.6)] sealify-ify">ify</span>
+    <span class="{{ $textSize }} font-black tracking-tight sealify-seal" style="color:#0f172a;">Seal</span>
+    <span class="{{ $textSize }} font-black tracking-tight sealify-ify" style="color:#f59e0b;">ify</span>
 </div>
 
 <style>
