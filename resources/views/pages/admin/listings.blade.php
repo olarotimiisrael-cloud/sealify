@@ -52,8 +52,14 @@
                     <tr class="group hover:bg-slate-50">
                         <td class="px-6 py-4">
                             <div class="flex items-center gap-3">
-                                <img src="{{ $listing->images->first()?->url ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80' }}"
-                                     class="w-10 h-10 rounded-lg object-cover">
+                                <div class="w-10 h-10 rounded-lg object-cover relative overflow-hidden flex-shrink-0">
+                                    @include('partials.watermark-image', [
+                                        'src' => $listing->images->first()?->url ?? 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+                                        'alt' => $listing->title,
+                                        'class' => 'w-full h-full object-cover',
+                                        'download' => false,
+                                    ])
+                                </div>
                                 <div>
                                     <p class="font-medium text-slate-900 line-clamp-1">{{ $listing->title }}</p>
                                     <p class="text-xs text-slate-500">#{{ $listing->id }}</p>

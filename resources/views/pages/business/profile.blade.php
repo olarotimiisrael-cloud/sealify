@@ -191,7 +191,11 @@
                     @foreach ($user->listings->take(9) as $listing)
                         <a href="{{ route('listings.show', $listing) }}" class="block group border border-slate-100 rounded-xl p-3 hover:border-emerald-200 transition-colors">
                             <div class="aspect-[4/3] bg-slate-100 rounded-lg overflow-hidden mb-2">
-                                <img src="{{ $listing->images->first()?->url ?? asset('logo.png') }}" class="w-full h-full object-cover">
+                                @include('partials.watermark-image', [
+                                    'src' => $listing->images->first()?->url ?? asset('images/sealify-placeholder.png'),
+                                    'alt' => $listing->title,
+                                    'class' => 'w-full h-full object-cover',
+                                ])
                             </div>
                             <h4 class="font-bold text-sm text-slate-900 group-hover:text-emerald-600 line-clamp-1">{{ $listing->title }}</h4>
                             <span class="text-xs text-emerald-600 font-bold">₦{{ number_format($listing->price, 0) }}</span>

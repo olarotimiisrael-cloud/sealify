@@ -144,9 +144,13 @@
                     <div class="relative group">
                         <a href="{{ route('listings.show', $listing) }}" class="block">
                             <div class="aspect-video relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 group-hover:border-emerald-200 transition-all">
-                                <img src="{{ $imageUrl }}" alt=""
-                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-                                <span class="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm">
+                                @include('partials.watermark-image', [
+                                    'src' => $imageUrl,
+                                    'alt' => $listing->title,
+                                    'class' => 'w-full h-full object-cover group-hover:scale-105 transition-transform duration-300',
+                                    'download' => false,
+                                ])
+                                <span class="absolute top-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-sm z-20">
                                     {{ $listing->condition_label ?? 'New' }}
                                 </span>
                             </div>
