@@ -7,7 +7,7 @@
         <div class="p-6">
             <div class="flex items-center gap-2 mb-8">
                 <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-7 w-auto">
-                <span class="text-emerald-600 font-black text-lg tracking-tight">Sealify</span>
+                <span class="font-black text-lg tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
             </div>
             <p class="text-xs text-slate-500 uppercase tracking-widest mb-6 font-bold">Admin Panel</p>
 

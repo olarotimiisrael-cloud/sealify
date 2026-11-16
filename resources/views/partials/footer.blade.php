@@ -5,7 +5,7 @@
             <div class="space-y-4">
                 <div class="flex items-center gap-2">
                     <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-6 w-auto">
-                    <span class="text-emerald-600 font-black text-lg tracking-tight">Sealify</span>
+                    <span class="font-black text-lg tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
                 </div>
                 <p class="text-xs text-slate-800 leading-relaxed max-w-xs">
                     Nigeria's most trusted local marketplace. We connect verified buyers and sellers in Ogbomosoland, Oyo State, and across the federation.

@@ -2,7 +2,7 @@
     <x-form-card title="Sign in to Sealify" subtitle="Welcome back. Buy, sell, and connect locally.">
         <div class="flex items-center justify-center mb-6">
             <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-8 w-auto">
-            <span class="text-emerald-600 font-black text-xl tracking-tight">Sealify</span>
+            <span class="font-black text-xl tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
         </div>
 
         @if (session('status'))

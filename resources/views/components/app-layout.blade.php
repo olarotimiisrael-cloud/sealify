@@ -36,7 +36,7 @@
                 <div class="flex items-center justify-between">
                     <a href="{{ route('home') }}" class="flex items-center gap-2 group">
                         <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-8 w-auto">
-                        <span class="text-emerald-600 font-black text-xl tracking-tight">Sealify</span>
+                        <span class="font-black text-xl tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
                     </a>
 
                     <div class="hidden md:flex items-center gap-4">
@@ -98,7 +98,7 @@
                 <div>
                     <div class="flex items-center gap-2 mb-3">
                         <img src="{{ asset('logo.png') }}" alt="Sealify" class="h-6 w-auto">
-                        <span class="text-emerald-600 font-black text-lg tracking-tight">Sealify</span>
+                        <span class="font-black text-lg tracking-tight"><span class="text-[#1e3a5f]">Seal</span><span class="text-amber-500">ify</span></span>
                     </div>
                     <p class="text-xs text-slate-800 leading-relaxed">
                         Nigeria's most trusted local marketplace. Connecting verified buyers and sellers in Ogbomosoland, Oyo State, and across Nigeria.
