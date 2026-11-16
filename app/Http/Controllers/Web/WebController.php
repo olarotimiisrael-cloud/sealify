@@ -218,7 +218,12 @@ class WebController extends Controller
     public function marketInsights() { return view('pages.market-insights'); }
     public function community() { return view('pages.community'); }
     public function safety() { return view('pages.safety'); }
-    public function vendors() { return view('pages.vendors'); }
+    public function vendors() {
+        $verifiedMerchants = User::where('is_verified_seller', true)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return view('pages.vendors', compact('verifiedMerchants'));
+    }
 
     public function profile()
     {
