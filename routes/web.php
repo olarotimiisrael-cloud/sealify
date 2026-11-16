@@ -71,6 +71,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/conversations/{conversation}/messages/attachments', [WebController::class, 'messageAttachmentStore'])->name('messages.attachments.store');
     Route::get('/messages/attachments/{attachment}', [WebController::class, 'messageAttachmentShow'])->name('messages.attachments.show');
     Route::post('/conversations/{conversation}/video-call', [WebController::class, 'videoCallInitiate'])->name('messages.video-call');
+    Route::post('/conversations/{conversation}/signaling', [WebController::class, 'signalingStore'])->name('messages.signaling.store');
+    Route::get('/conversations/{conversation}/signaling', [WebController::class, 'signalingPoll'])->name('messages.signaling.poll');
 
     Route::get('/bank-accounts', [WebController::class, 'bankAccounts'])->name('bank-accounts.index');
     Route::post('/bank-accounts', [WebController::class, 'bankAccountStore'])->name('bank-accounts.store');

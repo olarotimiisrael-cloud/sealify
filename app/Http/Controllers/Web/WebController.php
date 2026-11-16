@@ -15,6 +15,7 @@ use \App\Models\Message;
 use App\Models\Promotion;
 use App\Models\Report;
 use App\Models\SiteSetting;
+use App\Models\SignalingMessage;
 use App\Models\SmsOtp;
 use App\Models\Transaction;
 use App\Models\User;
@@ -42,9 +43,14 @@ class WebController extends Controller
     {
         $listings = Listing::active()->latest()->paginate(12);
         $categories = Category::withCount('listings')->orderBy('name')->get();
+        $topCategories = Category::topLevel()->active()->withCount('listings')->orderBy('sort_order')->get();
         $settings = SiteSetting::first();
 
-        return view('pages.home', compact('listings', 'categories', 'settings'));
+        $userLocation = auth()->check() ? auth()->user()->location : null;
+        $neighborhoodHubs = $this->neighborhoodHubs();
+        $stats = $this->marketStats();
+
+        return view('pages.home', compact('listings', 'categories', 'topCategories', 'settings', 'userLocation', 'neighborhoodHubs', 'stats'));
     }
 
     public function listings(Request $request)
@@ -57,12 +63,40 @@ class WebController extends Controller
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
+        if ($request->filled('location')) {
+            $query->where('location', 'like', '%'.$request->location.'%');
+        }
 
         $listings = $query->latest()->paginate(12)->withQueryString();
         $categories = Category::orderBy('name')->get();
         $settings = SiteSetting::first();
 
-        return view('pages.listings.index', compact('listings', 'categories', 'settings'));
+        $userLocation = auth()->check() ? auth()->user()->location : ($request->filled('location') ? $request->location : null);
+        $neighborhoodHubs = $this->neighborhoodHubs();
+
+        return view('pages.listings.index', compact('listings', 'categories', 'settings', 'userLocation', 'neighborhoodHubs'));
+    }
+
+    private function neighborhoodHubs(): array
+    {
+        return [
+            ['key' => 'all', 'label' => 'All Ogbomoso', 'icon' => 'grid', 'query' => null],
+            ['key' => 'under-g', 'label' => 'Under G', 'icon' => 'home', 'query' => 'Under G'],
+            ['key' => 'lautech-gate', 'label' => 'LAUTECH Gate', 'icon' => 'academic', 'query' => 'LAUTECH'],
+            ['key' => 'takie-square', 'label' => 'Takie Square', 'icon' => 'building', 'query' => 'Takie'],
+            ['key' => 'sabo-market', 'label' => 'Sabo Market', 'icon' => 'store', 'query' => 'Sabo'],
+            ['key' => 'adenike-area', 'label' => 'Adenike Area', 'icon' => 'building', 'query' => 'Adenike'],
+            ['key' => 'aroje-akala', 'label' => 'Aroje & Akala Way', 'icon' => 'map', 'query' => 'Aroje'],
+        ];
+    }
+
+    private function marketStats(): array
+    {
+        return [
+            'community' => User::count(),
+            'impressions' => (int) Listing::sum('views_count'),
+            'volume' => Listing::active()->count(),
+        ];
     }
 
     public function listingShow(Listing $listing)
@@ -725,6 +759,49 @@ class WebController extends Controller
             'conversation_id' => $conversation->id,
             'initiator_id' => Auth::id(),
             'initiator_name' => Auth::user()->name,
+        ]);
+    }
+
+    public function signalingStore(Request $request, Conversation $conversation) {
+        $this->authorize('view', $conversation);
+
+        $request->validate([
+            'type' => 'required|in:offer,answer,ice-candidate',
+            'payload' => 'required|array',
+        ]);
+
+        $signal = \App\Models\SignalingMessage::create([
+            'conversation_id' => $conversation->id,
+            'sender_id' => Auth::id(),
+            'type' => $request->input('type'),
+            'payload' => $request->input('payload'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'signal_id' => $signal->id,
+            'created_at' => $signal->created_at->toISOString(),
+        ]);
+    }
+
+    public function signalingPoll(Request $request, Conversation $conversation) {
+        $this->authorize('view', $conversation);
+
+        $signals = \App\Models\SignalingMessage::where('conversation_id', $conversation->id)
+            ->where('sender_id', '!=', Auth::id())
+            ->where('created_at', '>', $request->input('since', now()->subMinutes(5)->toISOString()))
+            ->orderBy('created_at')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'signals' => $signals->map(fn($s) => [
+                'id' => $s->id,
+                'type' => $s->type,
+                'payload' => $s->payload,
+                'sender_id' => $s->sender_id,
+                'created_at' => $s->created_at->toISOString(),
+            ]),
         ]);
     }
 

@@ -28,7 +28,7 @@
                             @endif
                         @endauth
                     </a>
-                    <a href="{{ route('notifications.index') }}" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group">
+                    <button id="notif-btn" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" onclick="toggleNotifDrawer()" title="Notifications">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
                         @auth
                             @php
@@ -38,7 +38,7 @@
                                 <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{{ $unreadNotifications }}</span>
                             @endif
                         @endauth
-                    </a>
+                    </button>
                     @auth
                         <a href="{{ route('profile.show') }}" class="p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -95,4 +95,78 @@
             </a>
         </div>
     @endauth
+
+    <!-- NOTIFICATIONS DRAWER -->
+    @auth
+    <div id="notif-backdrop" class="hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-[60]" onclick="toggleNotifDrawer()"></div>
+    <div id="notif-drawer" class="hidden fixed top-0 right-0 h-full w-full sm:w-[480px] bg-white shadow-2xl z-[61] flex flex-col transition-transform duration-300 translate-x-full">
+        <div class="flex items-start justify-between p-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"/></svg>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 leading-tight">Notifications</h3>
+                    <p class="text-sm text-slate-500">
+                        @php $unreadCount = App\Models\Notification::where('user_id', auth()->id())->where('read_at', null)->count(); @endphp
+                        {{ $unreadCount }} unread update{{ $unreadCount === 1 ? '' : 's' }}
+                    </p>
+                </div>
+            </div>
+            <button type="button" onclick="toggleNotifDrawer()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors" title="Close">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto">
+            @php $drawerNotifications = App\Models\Notification::where('user_id', auth()->id())->latest()->take(20)->get(); @endphp
+            @if ($drawerNotifications->isEmpty())
+                <div class="flex items-center justify-center h-full">
+                    <p class="text-slate-500 text-sm">No notifications right now.</p>
+                </div>
+            @else
+                <ul class="divide-y divide-slate-100">
+                    @foreach ($drawerNotifications as $notification)
+                        <li class="px-6 py-4 hover:bg-slate-50 transition-colors {{ $notification->read_at ? '' : 'bg-emerald-50/40' }}">
+                            <div class="flex items-start gap-3">
+                                <span class="mt-1 w-2 h-2 rounded-full {{ $notification->read_at ? 'bg-transparent' : 'bg-emerald-500' }}"></span>
+                                <div class="flex-1">
+                                    <p class="text-sm font-semibold text-slate-900">{{ $notification->title ?? 'Notification' }}</p>
+                                    @if (!empty($notification->description))
+                                        <p class="text-sm text-slate-600 mt-0.5">{{ $notification->description }}</p>
+                                    @endif
+                                    <p class="text-xs text-slate-400 mt-1">{{ $notification->created_at?->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+
+        <div class="p-4 border-t border-slate-100">
+            <a href="{{ route('notifications.index') }}" class="block text-center text-sm font-semibold text-emerald-600 hover:text-emerald-700">View all notifications</a>
+        </div>
+    </div>
+    @endauth
 </nav>
+
+<script>
+function toggleNotifDrawer() {
+    const drawer = document.getElementById('notif-drawer');
+    const backdrop = document.getElementById('notif-backdrop');
+    if (!drawer || !backdrop) return;
+    const isOpening = drawer.classList.contains('hidden');
+    if (isOpening) {
+        drawer.classList.remove('hidden');
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => drawer.classList.remove('translate-x-full'));
+    } else {
+        drawer.classList.add('translate-x-full');
+        setTimeout(() => {
+            drawer.classList.add('hidden');
+            backdrop.classList.add('hidden');
+        }, 300);
+    }
+}
+</script>

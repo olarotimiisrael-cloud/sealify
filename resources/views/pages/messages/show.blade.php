@@ -116,6 +116,41 @@ if ($badgeColor && $badgeLabel) {
                     Send
                 </button>
             </form>
+            <div class="mt-3 flex items-center gap-3">
+                <button id="voice-record-btn" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-400 text-white font-medium transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 3a3 3 0 00-3 3v5a3 3 0 006 0V6a3 3 0 00-3-3z"/></svg>
+                    <span id="voice-record-label">Record</span>
+                </button>
+                <span id="voice-record-status" class="text-xs text-slate-500 hidden">Recording…</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CALL MODAL -->
+<div id="call-modal" class="hidden fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-4">
+    <div class="w-full max-w-4xl">
+        <div class="flex items-center justify-between mb-4 text-white">
+            <div>
+                <p id="call-title" class="font-bold text-lg">Call</p>
+                <p id="call-status" class="text-sm text-slate-300">Connecting…</p>
+            </div>
+            <div id="call-timer" class="text-sm font-mono text-emerald-300">00:00</div>
+        </div>
+        <div class="relative rounded-2xl overflow-hidden bg-slate-800 aspect-video">
+            <video id="remote-video" autoplay playsinline class="w-full h-full object-cover bg-black"></video>
+            <video id="local-video" autoplay playsinline muted class="absolute bottom-4 right-4 w-32 sm:w-44 rounded-xl border-2 border-white shadow-lg object-cover bg-black aspect-video"></video>
+        </div>
+        <div class="flex items-center justify-center gap-4 mt-6">
+            <button id="toggle-mic" type="button" class="w-12 h-12 rounded-full bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center transition-colors" title="Toggle microphone">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 3a3 3 0 00-3 3v5a3 3 0 006 0V6a3 3 0 00-3-3z"/></svg>
+            </button>
+            <button id="end-call" type="button" class="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center transition-colors" title="End call">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l-4 4m0 0l-4-4m4 4V3"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12a9 9 0 0118 0"/></svg>
+            </button>
+            <button id="toggle-cam" type="button" class="w-12 h-12 rounded-full bg-slate-700 hover:bg-slate-600 text-white flex items-center justify-center transition-colors" title="Toggle camera">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </button>
         </div>
     </div>
 </div>
@@ -128,52 +163,194 @@ window.addEventListener('beforeinstallprompt', (e) => {
     document.getElementById('install-app-btn').classList.remove('hidden');
 });
 
-function startVideoCall(type) {
-    if (!confirm('Start ' + type + ' call with this user?')) return;
-    
-    fetch('{{ route('messages.video-call', $conversation) }}', {
+/* --- WebRTC Video Call with Signaling --- */
+
+let pc;
+let localStream;
+let signalingChannel = null;
+let callInProgress = false;
+
+async function initWebRTC() {
+    const servers = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+    pc = new RTCPeerConnection(servers);
+
+    pc.ontrack = event => {
+        const remoteStream = event.streams[0];
+        document.getElementById('remote-video').srcObject = remoteStream;
+    };
+
+    pc.onicecandidate = event => {
+        if (event.candidate) {
+            sendSignaling({ type: 'ice-candidate', candidate: event.candidate });
+        }
+    };
+
+    if (localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    }
+
+    signalingChannel = setInterval(async () => {
+        try {
+            const r = await fetch(`{{ route('messages.signaling.poll', $conversation) }}?since=${Date.now()}`, {
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await r.json();
+            if (data.success && data.signals.length) {
+                data.signals.forEach(s => handleRemoteSignal(s));
+            }
+        } catch (err) {
+            console.error('Signaling poll error:', err);
+        }
+    }, 2000);
+}
+
+async function handleRemoteSignal(signal) {
+    const data = signal.payload;
+    if (signal.type === 'offer') {
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: data.sdp }));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignaling({ type: 'answer', payload: { sdp: pc.localDescription.sdp } });
+    } else if (signal.type === 'answer') {
+        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: data.sdp }));
+    } else if (signal.type === 'ice-candidate') {
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {
+            console.error('ICE candidate error:', e);
+        }
+    }
+}
+
+async function sendSignaling(message) {
+    await fetch(`{{ route('messages.signaling.store', $conversation) }}`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ type: type })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert(type.charAt(0).toUpperCase() + type.slice(1) + ' call initiated!\nSession: ' + data.call_session_id + '\n\nNote: WebRTC signaling server integration required for actual call connection.');
-        } else {
-            alert('Failed to initiate call.');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Failed to initiate call.');
+        body: JSON.stringify(message)
     });
 }
 
-document.getElementById('media-input').addEventListener('change', function(e) {
+async function startVideoCall(type) {
+    if (!confirm('Start ' + type + ' call with this user?')) return;
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            video: type === 'video',
+            audio: true
+        });
+
+        document.getElementById('local-video').srcObject = localStream;
+
+        if (!callInProgress) {
+            await initWebRTC();
+            callInProgress = true;
+        }
+
+        if (type === 'video') {
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            sendSignaling({ type: 'offer', payload: { sdp: pc.localDescription.sdp } });
+        }
+
+        showCallModal(true);
+    } catch (err) {
+        console.error('WebRTC error:', err);
+        alert('Failed to access camera/microphone: ' + err.message);
+    }
+}
+
+function showCallModal(show) {
+    const modal = document.getElementById('call-modal');
+    modal.classList.toggle('hidden', !show);
+    modal.classList.toggle('block', show);
+
+    if (show) {
+        document.getElementById('call-title').textContent = 'Video Call';
+        document.getElementById('call-status').textContent = 'Connecting…';
+        startTimer();
+    }
+}
+
+function startTimer() {
+    const timerEl = document.getElementById('call-timer');
+    let seconds = 0;
+    setInterval(() => {
+        seconds++;
+        const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+        const s = String(seconds % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+    }, 1000);
+}
+
+function hangUp() {
+    callInProgress = false;
+    if (pc) {
+        pc.close();
+        pc = null;
+    }
+    if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+    }
+    if (signalingChannel) {
+        clearInterval(signalingChannel);
+        signalingChannel = null;
+    }
+    showCallModal(false);
+    alert('Call ended.');
+}
+
+document.getElementById('end-call').addEventListener('click', hangUp);
+document.getElementById('toggle-mic').addEventListener('click', () => {
+    const btn = document.getElementById('toggle-mic');
+    const muted = btn.getAttribute('data-muted') === 'true';
+    if (localStream) {
+        localStream.getAudioTracks().forEach(track => track.enabled = !muted);
+    }
+    btn.setAttribute('data-muted', String(!muted));
+    btn.innerHTML = !muted
+        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-14 0m7 7v4m-4 0h8M12 3a3 3 0 00-3 3v5a3 3 0 006 0V6a3 3 0 00-3-3z"/></svg>'
+        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8l-4 4m0 0l-4-4m4 4V3"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12a9 9 0 0118 0"/></svg>';
+});
+
+document.getElementById('toggle-cam').addEventListener('click', () => {
+    const btn = document.getElementById('toggle-cam');
+    const off = btn.getAttribute('data-off') === 'true';
+    if (localStream) {
+        localStream.getVideoTracks().forEach(track => track.enabled = !off);
+    }
+    btn.setAttribute('data-off', String(!off));
+    btn.innerHTML = !off
+        ? '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+        : '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>';
+});
+
+/* --- Media attachment upload (image/voice/video) --- */
+function handleMediaUpload(e) {
     const files = e.target.files;
     if (files.length === 0) return;
-    
+
     const formData = new FormData();
     for (let file of files) {
         formData.append('file', file);
     }
-    
-    // Detect type from first file
+
     const firstFile = files[0];
     let type = 'image';
     if (firstFile.type.startsWith('audio/')) type = 'voice';
     if (firstFile.type.startsWith('video/')) type = 'video';
     formData.append('type', type);
-    
+
     const btn = document.getElementById('send-btn');
     btn.disabled = true;
     btn.innerHTML = '<svg class="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l-2.647 2.647a.5.5 0 01-.708-.708L3.057 13H4c1.257 0 2.343-.904 2.674-2.196A7.962 7.962 0 0112 4a7.962 7.962 0 017.938 7c0 2.373-.905 4.36-2.374 5.878l-2.647 2.647a.5.5 0 01-.708-.708L11.943 13H14c.373 0 .741-.042 1.09-.305A7.98 7.98 0 0022 12c0-2.072-.797-3.94-2.196-5.392z"></path></svg> Uploading...';
-    
+
     fetch('{{ route('messages.attachments.store', $conversation) }}', {
         method: 'POST',
         headers: {
@@ -198,8 +375,90 @@ document.getElementById('media-input').addEventListener('change', function(e) {
         btn.disabled = false;
         btn.innerHTML = 'Send';
     });
+}
+
+document.getElementById('media-input').addEventListener('change', handleMediaUpload);
+const fileInputEl = document.getElementById('file-input');
+if (fileInputEl) fileInputEl.addEventListener('change', handleMediaUpload);
+
+/* --- Voice note recording with MediaRecorder --- */
+let voiceRecorder = null;
+let voiceChunks = [];
+let voiceRecording = false;
+
+async function uploadVoiceBlob(blob) {
+    const file = new File([blob], 'voice-note.webm', { type: 'audio/webm' });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'voice');
+
+    const btn = document.getElementById('send-btn');
+    btn.disabled = true;
+    btn.innerHTML = 'Sending…';
+
+    await fetch('{{ route('messages.attachments.store', $conversation) }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Voice upload failed.');
+            btn.disabled = false;
+            btn.innerHTML = 'Send';
+        }
+    })
+    .catch(error => {
+        console.error('Voice upload error:', error);
+        alert('Voice upload failed.');
+        btn.disabled = false;
+        btn.innerHTML = 'Send';
+    });
+}
+
+const voiceRecordBtn = document.getElementById('voice-record-btn');
+const voiceRecordStatus = document.getElementById('voice-record-status');
+const voiceRecordLabel = document.getElementById('voice-record-label');
+
+voiceRecordBtn.addEventListener('click', async () => {
+    if (!voiceRecording) {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            voiceRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+            voiceChunks = [];
+            voiceRecorder.ondataavailable = e => { if (e.data.size) voiceChunks.push(e.data); };
+            voiceRecorder.onstop = () => {
+                stream.getTracks().forEach(track => track.stop());
+                const blob = new Blob(voiceChunks, { type: 'audio/webm' });
+                uploadVoiceBlob(blob);
+            };
+            voiceRecorder.start();
+            voiceRecording = true;
+            voiceRecordBtn.classList.replace('bg-blue-500', 'bg-rose-500');
+            voiceRecordBtn.classList.replace('hover:bg-blue-400', 'hover:bg-rose-400');
+            voiceRecordLabel.textContent = 'Stop';
+            voiceRecordStatus.classList.remove('hidden');
+        } catch (err) {
+            console.error('Voice record error:', err);
+            alert('Microphone access denied.');
+        }
+    } else {
+        voiceRecorder.stop();
+        voiceRecording = false;
+        voiceRecordBtn.classList.replace('bg-rose-500', 'bg-blue-500');
+        voiceRecordBtn.classList.replace('hover:bg-rose-400', 'hover:bg-blue-400');
+        voiceRecordLabel.textContent = 'Record';
+        voiceRecordStatus.classList.add('hidden');
+    }
 });
 
+/* --- Message form submit --- */
 document.getElementById('message-form').addEventListener('submit', function(e) {
     const textInput = document.getElementById('message-text-input');
     const contentInput = document.querySelector('input[name="content"]');
