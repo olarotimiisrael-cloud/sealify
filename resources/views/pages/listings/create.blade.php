@@ -28,6 +28,14 @@
             <form method="POST" action="{{ route('listings.store') }}" enctype="multipart/form-data" class="space-y-6">
                 @csrf
 
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 flex items-start gap-3">
+                    <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <div>
+                        <p class="text-sm font-bold text-amber-800 mb-1">No AI-generated images allowed</p>
+                        <p class="text-sm text-amber-700">Do not use AI-generated content to represent the item you are listing. Upload only real photos and a short video of the actual item to avoid misleading or deceiving buyers.</p>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div>
                         <label for="title" class="block text-sm font-medium text-slate-700">Title</label>
@@ -94,6 +102,13 @@
                     <input id="images" name="images[]" type="file" accept="image/*" multiple
                            class="mt-1 block w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
                     <p class="text-xs text-slate-400 mt-1">Upload up to 10 images (JPEG, PNG, GIF, WebP). Max 2MB each.</p>
+                </div>
+
+                <div>
+                    <label for="video" class="block text-sm font-medium text-slate-700">Short Item Video <span class="font-normal text-slate-400">(optional)</span></label>
+                    <input id="video" name="video" type="file" accept="video/*"
+                           class="mt-1 block w-full text-slate-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100">
+                    <p class="text-xs text-slate-400 mt-1">Upload 1 short video of the actual item (MP4, MOV). Max 50MB.</p>
                 </div>
 
                 <button type="submit"

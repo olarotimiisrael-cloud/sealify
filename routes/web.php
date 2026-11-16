@@ -178,8 +178,11 @@ Route::middleware(['auth', 'verified', 'active', 'admin'])->prefix('admin')->nam
     Route::post('/verified-badge-applications/{user}/approve', [WebController::class, 'adminApproveBadge'])->name('badge.approve');
     Route::post('/verified-badge-applications/{user}/reject', [WebController::class, 'adminRejectBadge'])->name('badge.reject');
 
-/* Promotions */
-Route::get('/promotions', [WebController::class, 'adminPromotions'])->name('promotions');
+/* Neighborhood Hubs (Admin) */
+Route::get('/neighborhood-hubs', [WebController::class, 'adminNeighborhoodHubs'])->name('admin.neighborhood-hubs');
+Route::post('/neighborhood-hubs', [WebController::class, 'adminNeighborhoodHubStore'])->name('admin.neighborhood-hubs.store');
+Route::put('/neighborhood-hubs/{hub}', [WebController::class, 'adminNeighborhoodHubUpdate'])->name('admin.neighborhood-hubs.update');
+Route::delete('/neighborhood-hubs/{hub}', [WebController::class, 'adminNeighborhoodHubDestroy'])->name('admin.neighborhood-hubs.destroy');
 Route::post('/promotions/{promotion}/stop', [WebController::class, 'adminPromotionStop'])->name('promotions.stop');
 Route::post('/promotions/{promotion}/email', [WebController::class, 'adminPromotionEmail'])->name('promotions.email');
 Route::delete('/promotions/{promotion}', [WebController::class, 'adminPromotionDestroy'])->name('promotions.destroy');

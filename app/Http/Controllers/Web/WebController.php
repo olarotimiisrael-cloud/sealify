@@ -10,6 +10,7 @@ use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Favorite;
 use App\Models\KycVerification;
+use App\Models\NeighborhoodHub;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use \App\Models\Message;
@@ -44,7 +45,10 @@ class WebController extends Controller
 {
     public function home()
     {
-        $listings = Listing::active()->latest()->paginate(12);
+        $listings = Listing::active()
+            ->with(['images', 'user'])
+            ->latest()
+            ->paginate(12);
         $categories = Category::withCount('listings')->orderBy('name')->get();
         $topCategories = Category::topLevel()->active()->withCount('listings')->orderBy('sort_order')->get();
         $settings = SiteSetting::first();
@@ -90,15 +94,14 @@ class WebController extends Controller
 
     private function neighborhoodHubs(): array
     {
-        return [
-            ['key' => 'all', 'label' => 'All Ogbomoso', 'icon' => 'grid', 'query' => null],
-            ['key' => 'under-g', 'label' => 'Under G', 'icon' => 'home', 'query' => 'Under G'],
-            ['key' => 'lautech-gate', 'label' => 'LAUTECH Gate', 'icon' => 'academic', 'query' => 'LAUTECH'],
-            ['key' => 'takie-square', 'label' => 'Takie Square', 'icon' => 'building', 'query' => 'Takie'],
-            ['key' => 'sabo-market', 'label' => 'Sabo Market', 'icon' => 'store', 'query' => 'Sabo'],
-            ['key' => 'adenike-area', 'label' => 'Adenike Area', 'icon' => 'building', 'query' => 'Adenike'],
-            ['key' => 'aroje-akala', 'label' => 'Aroje & Akala Way', 'icon' => 'map', 'query' => 'Aroje'],
-        ];
+        return NeighborhoodHub::active()->get()->map(function ($hub) {
+            return [
+                'key' => $hub->key,
+                'label' => $hub->label,
+                'icon' => $hub->icon,
+                'query' => $hub->query,
+            ];
+        })->toArray();
     }
 
     private function marketStats(): array
@@ -370,7 +373,7 @@ class WebController extends Controller
             'location' => 'required|string|max:255',
             'images' => 'nullable|array|max:10',
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'video_url' => 'nullable|url',
+            'video' => 'nullable|file|mimes:mp4,mov,webm|max:51200',
         ]);
 
         $listing = Auth::user()->listings()->create(array_merge($data, [
@@ -388,6 +391,11 @@ class WebController extends Controller
                     'sort_order' => $sortOrder++,
                 ]);
             }
+        }
+
+        if ($request->hasFile('video')) {
+            $videoPath = $request->file('video')->store('listings/' . $listing->id . '/videos', 'public');
+            $listing->update(['video_url' => $videoPath]);
         }
 
         return redirect()->route('listings.show', $listing)->with('status', 'Ad posted.');
@@ -413,9 +421,14 @@ class WebController extends Controller
             'location' => 'required|string|max:255',
             'new_images' => 'nullable|array|max:10',
             'new_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'video_url' => 'nullable|url',
+            'video' => 'nullable|file|mimes:mp4,mov,webm|max:51200',
         ]);
         $listing->update($data);
+
+        if ($request->hasFile('video')) {
+            $videoPath = $request->file('video')->store('listings/' . $listing->id . '/videos', 'public');
+            $listing->update(['video_url' => $videoPath]);
+        }
 
         // Remove images marked for deletion
         $toRemove = json_decode($request->input('images_to_remove', '[]'), true);
@@ -1261,6 +1274,51 @@ class WebController extends Controller
     public function adminPromotions() {
         $promotions = Promotion::with('listing.user')->orderBy('created_at', 'desc')->paginate(20);
         return view('pages.admin.promotions', compact('promotions'));
+    }
+
+    public function adminNeighborhoodHubs() {
+        $hubs = NeighborhoodHub::orderBy('sort_order')->get();
+        return view('pages.admin.neighborhood-hubs', compact('hubs'));
+    }
+
+    public function adminNeighborhoodHubStore(Request $request) {
+        $data = $request->validate([
+            'key' => ['required', 'string', 'max:50', 'unique:neighborhood_hubs,key'],
+            'label' => ['required', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:30'],
+            'query' => ['nullable', 'string', 'max:100'],
+            'sort_order' => ['nullable', 'integer'],
+        ]);
+
+        NeighborhoodHub::create([
+            'key' => $data['key'],
+            'label' => $data['label'],
+            'icon' => $data['icon'] ?? 'grid',
+            'query' => $data['query'] ?? null,
+            'sort_order' => $data['sort_order'] ?? 0,
+            'is_active' => true,
+        ]);
+
+        return back()->with('status', 'Neighborhood hub added.');
+    }
+
+    public function adminNeighborhoodHubUpdate(Request $request, NeighborhoodHub $hub) {
+        $data = $request->validate([
+            'label' => ['required', 'string', 'max:100'],
+            'icon' => ['nullable', 'string', 'max:30'],
+            'query' => ['nullable', 'string', 'max:100'],
+            'sort_order' => ['nullable', 'integer'],
+            'is_active' => ['nullable', 'boolean'],
+        ]);
+
+        $hub->update($data);
+
+        return back()->with('status', 'Neighborhood hub updated.');
+    }
+
+    public function adminNeighborhoodHubDestroy(NeighborhoodHub $hub) {
+        $hub->delete();
+        return back()->with('status', 'Neighborhood hub deleted.');
     }
 
     public function adminPromotionStop(Promotion $promotion) {

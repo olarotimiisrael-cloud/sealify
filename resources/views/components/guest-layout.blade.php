@@ -6,9 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ $title ?? 'Sealify' }} — Sealify Nigeria</title>
     <meta name="theme-color" content="#10b981">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <style>
-        body { @apply bg-slate-50 text-slate-900 font-sans antialiased; }
+        body { background-color: #f8fafc; color: #0f172a; }
     </style>
     @stack('styles')
     <style>
@@ -26,13 +26,6 @@
         .dark .border-gray-200 { border-color: #334155 !important; }
         .dark .text-white { color: #f8fafc !important; }
     </style>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: {} },
-        }
-    </script>
 </head>
 <body class="dark:bg-slate-900 dark:text-slate-100">
     <nav class="bg-white border-b border-slate-100 sticky top-0 z-50 shadow-sm">

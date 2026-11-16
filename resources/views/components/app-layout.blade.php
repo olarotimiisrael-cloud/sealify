@@ -8,7 +8,7 @@
     <meta name="description" content="Buy, sell, and connect locally in Ogbomosoland, Oyo State, and across Nigeria.">
     <meta name="theme-color" content="#10b981">
     <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     @stack('styles')
     <style>
         .dark .text-slate-900 { color: #e2e8f0 !important; }

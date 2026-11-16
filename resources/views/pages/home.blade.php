@@ -3,15 +3,6 @@
 @section('content')
 @php
     $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : [];
-    $locationChips = [
-        ['label' => 'All Ogbomoso', 'query' => null],
-        ['label' => 'LAUTECH Gate', 'query' => 'LAUTECH Gate'],
-        ['label' => 'Takie Square', 'query' => 'Takie Square'],
-        ['label' => 'Sabo Market', 'query' => 'Sabo Market'],
-        ['label' => 'Adenike Area', 'query' => 'Adenike Area'],
-        ['label' => 'Aroje & Akala Way', 'query' => 'Aroje & Akala Way'],
-        ['label' => 'Under G', 'query' => 'Under G'],
-    ];
 @endphp
 <div class="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 space-y-6">
 
@@ -23,9 +14,9 @@
         </h3>
         <p class="text-slate-600 text-sm mb-3">Filter by campus zones in Ogbomosoland</p>
         <div class="flex flex-wrap gap-2 overflow-x-auto pb-2 no-scrollbar">
-            @foreach ($locationChips as $chip)
-                <?php $isActive = request('location') === $chip['query']; ?>
-                <a href="{{ route('listings.index', array_merge(request()->only(['q', 'category']), $chip['query'] ? ['location' => $chip['query']] : [])) }}"
+            @foreach ($neighborhoodHubs as $chip)
+                <?php $isActive = request('location') === ($chip['query'] ?? null); ?>
+                <a href="{{ route('listings.index', array_merge(request()->only(['q', 'category']), ($chip['query'] ?? null) ? ['location' => $chip['query']] : [])) }}"
                    class="inline-flex items-center gap-1.5 whitespace-nowrap px-4 py-2 rounded-full border text-sm font-medium transition-all
                           {{ $isActive ? 'bg-emerald-600 border-emerald-600 text-white shadow-md shadow-emerald-200' : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300' }}">
                     <span class="w-2.5 h-2.5 rounded-full {{ $isActive ? 'bg-white' : 'bg-emerald-100' }} flex items-center justify-center text-[9px] font-bold">
@@ -136,7 +127,15 @@
     <div class="space-y-3">
         <div class="flex items-center justify-between">
             <h2 class="text-lg font-black text-slate-900 tracking-tight">Marketplace Feeds</h2>
-            <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="toggleLayout('grid')" id="gridBtn" class="p-2 rounded-lg bg-emerald-100 text-emerald-600 transition-colors" title="Grid View">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                </button>
+                <button type="button" onclick="toggleLayout('list')" id="listBtn" class="p-2 rounded-lg bg-slate-100 text-slate-500 transition-colors" title="List View">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"></path></svg>
+                </button>
+                <a href="{{ route('listings.index') }}" class="text-xs text-emerald-600 font-bold uppercase tracking-widest">View all →</a>
+            </div>
         </div>
 
         @if ($listings->isEmpty())
@@ -149,7 +148,7 @@
             </div>
         @else
             @php $favoriteIds = auth()->check() ? auth()->user()->favoriteListings()->pluck('listings.id')->all() : []; @endphp
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div id="listingsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 transition-all duration-300">
                 @foreach ($listings as $listing)
                     @php
                         $placeholderMap = [
@@ -200,7 +199,53 @@
             .fav-btn.is-fav svg path{animation:favpop .4s ease;}
             @keyframes favpop{0%{transform:scale(1)}40%{transform:scale(1.4)}70%{transform:scale(.9)}100%{transform:scale(1)}}
             .dark .fav-btn{background:rgba(15,23,42,.8);color:#e2e8f0;}
+            /* List view layout */
+            #listingsContainer.list-view {
+                grid-template-columns: 1fr !important;
+            }
+            #listingsContainer.list-view > div {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                gap: 1rem;
+            }
+            #listingsContainer.list-view > div > a:first-child {
+                flex-shrink: 0;
+                width: 120px;
+            }
+            #listingsContainer.list-view > div > a:first-child .aspect-video {
+                aspect-ratio: 1 / 1;
+            }
+            #listingsContainer.list-view > div .fav-btn {
+                position: static !important;
+            }
         </style>
+        @endpush
+        @push('scripts')
+        <script>
+            function toggleLayout(mode) {
+                const container = document.getElementById('listingsContainer');
+                const gridBtn = document.getElementById('gridBtn');
+                const listBtn = document.getElementById('listBtn');
+                if (mode === 'list') {
+                    container.classList.add('list-view');
+                    gridBtn.classList.remove('bg-emerald-100', 'text-emerald-600');
+                    gridBtn.classList.add('bg-slate-100', 'text-slate-500');
+                    listBtn.classList.remove('bg-slate-100', 'text-slate-500');
+                    listBtn.classList.add('bg-emerald-100', 'text-emerald-600');
+                } else {
+                    container.classList.remove('list-view');
+                    listBtn.classList.remove('bg-emerald-100', 'text-emerald-600');
+                    listBtn.classList.add('bg-slate-100', 'text-slate-500');
+                    gridBtn.classList.remove('bg-slate-100', 'text-slate-500');
+                    gridBtn.classList.add('bg-emerald-100', 'text-emerald-600');
+                }
+                localStorage.setItem('sealify-layout', mode);
+            }
+            // Restore saved layout
+            const savedLayout = localStorage.getItem('sealify-layout');
+            if (savedLayout === 'list') toggleLayout('list');
+        </script>
         @endpush
     </div>
 </div>

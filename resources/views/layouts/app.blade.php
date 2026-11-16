@@ -24,12 +24,10 @@
     <meta name="apple-mobile-web-app-title" content="Sealify">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preload" as="style" href="{{ asset('css/app.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/app.css') }}">
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: { extend: {} },
-        }
+        tailwind = { config: { darkMode: 'class' } };
     </script>
     <script>
         (function () {
@@ -44,20 +42,6 @@
     </script>
     @stack('styles')
     <style>
-        .dark .text-slate-900 { color: #e2e8f0 !important; }
-        .dark .text-slate-800 { color: #cbd5e1 !important; }
-        .dark .text-slate-700 { color: #94a3b8 !important; }
-        .dark .text-slate-600 { color: #64748b !important; }
-        .dark .text-slate-500 { color: #94a3b8 !important; }
-        .dark .text-slate-400 { color: #64748b !important; }
-        .dark .text-slate-300 { color: #94a3b8 !important; }
-        .dark .bg-white { background-color: #0f172a !important; }
-        .dark .bg-gray-50 { background-color: #0f172a !important; }
-        .dark .bg-gray-100 { background-color: #1e293b !important; }
-        .dark .border-slate-200 { border-color: #334155 !important; }
-        .dark .border-slate-300 { border-color: #475569 !important; }
-        .dark .border-gray-200 { border-color: #334155 !important; }
-        .dark .text-white { color: #f8fafc !important; }
         /* Favorite (love) button */
         .fav-btn{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:9999px;background:#fff;color:#f43f5e;box-shadow:0 2px 10px rgba(0,0,0,.18);transition:transform .18s ease,color .18s ease,background .18s ease;}
         .fav-btn:hover{transform:scale(1.12);color:#e11d48;background:#fff;}
