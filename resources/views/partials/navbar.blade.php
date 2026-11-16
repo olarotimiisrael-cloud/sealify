@@ -45,9 +45,6 @@
                     @auth
                         <button id="notif-btn" class="relative p-2 text-slate-800 hover:text-emerald-600 hover:bg-emerald-50 transition-colors rounded-xl group" onclick="toggleNotifDrawer()" title="Notifications">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13 19l0-1M14 19l0-1M19 19l0-1"></path></svg>
-                            @php
-                                $unreadNotifications = App\Models\Notification::where('user_id', auth()->id())->where('read_at', null)->count();
-                            @endphp
                             @if ($unreadNotifications > 0)
                                 <span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{{ $unreadNotifications }}</span>
                             @endif

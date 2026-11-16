@@ -37,6 +37,7 @@ class Listing extends Model
         'original_price',
         'video_url',
         'youtube_url',
+        'tiktok_url',
         'specifications',
         'featured',
     ];

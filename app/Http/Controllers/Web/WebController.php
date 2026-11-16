@@ -379,6 +379,7 @@ class WebController extends Controller
             'images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'video' => 'nullable|file|mimes:mp4,mov,webm|max:51200',
             'youtube_url' => 'nullable|url',
+            'tiktok_url' => 'nullable|url',
         ]);
 
         $listing = Auth::user()->listings()->create(array_merge($data, [
@@ -428,6 +429,7 @@ class WebController extends Controller
             'new_images.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'video' => 'nullable|file|mimes:mp4,mov,webm|max:51200',
             'youtube_url' => 'nullable|url',
+            'tiktok_url' => 'nullable|url',
         ]);
         $listing->update($data);
 
