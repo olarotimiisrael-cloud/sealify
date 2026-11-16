@@ -194,6 +194,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    public function communityPosts(): HasMany
+    {
+        return $this->hasMany(CommunityPost::class, 'user_id');
+    }
+
     public function conversations(): BelongsToMany
     {
         return $this->belongsToMany(Conversation::class, 'conversation_participants')

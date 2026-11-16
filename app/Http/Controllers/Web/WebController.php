@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Announcement;
 use App\Models\Category;
 use App\Models\Comment;
+use App\Models\CommunityPost;
 use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Favorite;
@@ -216,7 +217,10 @@ class WebController extends Controller
     public function faq() { return view('pages.faq'); }
     public function helpCenter() { return view('pages.help-center'); }
     public function marketInsights() { return view('pages.market-insights'); }
-    public function community() { return view('pages.community'); }
+    public function community() {
+        $posts = CommunityPost::published()->with('author')->orderBy('created_at', 'desc')->get();
+        return view('pages.community', compact('posts'));
+    }
     public function safety() { return view('pages.safety'); }
     public function vendors() {
         $verifiedMerchants = User::where('is_verified_seller', true)
@@ -1469,6 +1473,39 @@ class WebController extends Controller
     public function adminAnnouncementDestroy(Announcement $announcement) {
         $announcement->delete();
         return back()->with('status', 'Announcement deleted.');
+    }
+
+    /* Community News Board (Admin) */
+    public function adminCommunity() {
+        $posts = CommunityPost::with('author')->orderBy('created_at', 'desc')->paginate(20);
+        return view('pages.admin.community', compact('posts'));
+    }
+
+    public function adminCommunityStore(Request $request) {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'is_published' => 'sometimes|boolean',
+        ]);
+        CommunityPost::create(array_merge($request->only(['title', 'content', 'is_published']), [
+            'user_id' => auth()->id(),
+        ]));
+        return back()->with('status', 'Community post created.');
+    }
+
+    public function adminCommunityUpdate(Request $request, CommunityPost $post) {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'is_published' => 'sometimes|boolean',
+        ]);
+        $post->update($request->only(['title', 'content', 'is_published']));
+        return back()->with('status', 'Community post updated.');
+    }
+
+    public function adminCommunityDestroy(CommunityPost $post) {
+        $post->delete();
+        return back()->with('status', 'Community post deleted.');
     }
 
     /* SEO, AdSense & Analytics */

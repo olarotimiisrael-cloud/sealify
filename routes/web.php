@@ -216,6 +216,12 @@ Route::delete('/promotions/{promotion}', [WebController::class, 'adminPromotionD
     Route::post('/announcements', [WebController::class, 'adminAnnouncementStore'])->name('announcements.store');
     Route::delete('/announcements/{announcement}', [WebController::class, 'adminAnnouncementDestroy'])->name('announcements.destroy');
 
+    /* Community News Board */
+    Route::get('/community', [WebController::class, 'adminCommunity'])->name('community');
+    Route::post('/community', [WebController::class, 'adminCommunityStore'])->name('community.store');
+    Route::put('/community/{post}', [WebController::class, 'adminCommunityUpdate'])->name('community.update');
+    Route::delete('/community/{post}', [WebController::class, 'adminCommunityDestroy'])->name('community.destroy');
+
     /* Email Broadcaster */
     Route::get('/email-broadcaster', [WebController::class, 'adminEmailBroadcaster'])->name('email.broadcaster');
     Route::post('/email-broadcaster/send', [WebController::class, 'adminEmailSend'])->name('email.broadcaster.send');

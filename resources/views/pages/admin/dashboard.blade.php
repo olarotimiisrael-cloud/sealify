@@ -67,6 +67,10 @@
                 <span class="text-xl">??</span>
                 <span class="font-medium text-slate-900">Resolve Disputes</span>
             </a>
+            <a href="{{ route('admin.community') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:text-emerald-600 transition-colors">
+                <span class="text-xl">??</span>
+                <span class="font-medium text-slate-900">Community News</span>
+            </a>
         </div>
     </div>
 
