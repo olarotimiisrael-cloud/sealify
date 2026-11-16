@@ -176,7 +176,7 @@ class WebController extends Controller
     {
         $user = Auth::user();
 
-        if (! $user || ($comment->user_id !== $user->id && ! $user->isAdmin())) {
+        if (! $user || ! $user->isAdmin()) {
             abort(403);
         }
 
@@ -383,20 +383,58 @@ class WebController extends Controller
 
     public function toggleFavorite(Request $request, Listing $listing)
     {
-        $favorite = Favorite::where('user_id', Auth::id())->where('listing_id', $listing->id)->first();
+        $user = Auth::user();
+        $favorite = Favorite::where('user_id', $user->id)->where('listing_id', $listing->id)->first();
         $nowFavorite = false;
 
         if ($favorite) {
             $favorite->delete();
         } else {
-            Favorite::create(['user_id' => Auth::id(), 'listing_id' => $listing->id]);
+            Favorite::create(['user_id' => $user->id, 'listing_id' => $listing->id]);
             $nowFavorite = true;
+
+            // Notify the seller (listing owner) — skip if favoriting your own ad
+            if ($listing->user_id !== $user->id) {
+                $seller = $listing->user;
+
+                // In-app notification
+                $notificationData = [
+                    'user_id' => $seller->id,
+                    'title' => 'Someone saved your ad',
+                    'description' => $user->name . ' added your ad "' . $listing->title . '" to favorites.',
+                    'link_url' => route('listings.show', $listing),
+                    'data' => [
+                        'favorited_by' => [
+                            'id' => $user->id,
+                            'name' => $user->name,
+                            'username' => $user->username,
+                            'phone' => $user->phone_number ?? $user->phone ?? null,
+                            'email' => $user->email,
+                            'profile_url' => route('profile.show', $user->username),
+                        ],
+                        'listing_url' => route('listings.show', $listing),
+                        'listing_title' => $listing->title,
+                    ],
+                ];
+
+                \App\Models\Notification::create($notificationData);
+
+                // Email notification (if seller has email notifications enabled)
+                if ($seller->email_notifications) {
+                    try {
+                        Mail::to($seller)->send(new \App\Mail\ListingFavoritedMail($listing, $seller, $user));
+                    } catch (\Throwable $e) {
+                        // Email failure should not break favoriting
+                        logger()->warning('Failed to send favorite notification email: ' . $e->getMessage());
+                    }
+                }
+            }
         }
 
         if ($request->expectsJson()) {
             return response()->json([
                 'favorited' => $nowFavorite,
-                'count' => Auth::user()->favoriteListings()->count(),
+                'count' => $user->favoriteListings()->count(),
             ]);
         }
 

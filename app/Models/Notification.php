@@ -13,12 +13,15 @@ class Notification extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id', 'type', 'title', 'description', 'link_url', 'read_at',
+        'user_id', 'type', 'title', 'description', 'link_url', 'data', 'read_at',
     ];
 
     protected function casts(): array
     {
-        return ['read_at' => 'datetime'];
+        return [
+            'read_at' => 'datetime',
+            'data' => 'array',
+        ];
     }
 
     public function user(): BelongsTo

@@ -15,6 +15,36 @@
                             <p class="text-sm font-medium text-slate-900">{{ $notification->title ?? 'Notification' }}</p>
                             <p class="text-xs text-slate-500">{{ $notification->description ?? '' }}</p>
                             <p class="text-[10px] text-slate-400 mt-1">{{ $notification->created_at ?? '' }}</p>
+
+                            @if($notification->data && !empty($notification->data['favorited_by']))
+                                <div class="mt-3 p-4 rounded-xl bg-emerald-50 border border-emerald-100">
+                                    <p class="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-2">Favorited by</p>
+                                    <div class="space-y-1 text-sm">
+                                        <p class="font-bold text-slate-900">{{ $notification->data['favorited_by']['name'] ?? 'User' }}</p>
+                                        @if(!empty($notification->data['favorited_by']['phone']))
+                                            <p class="text-slate-600">Phone: {{ $notification->data['favorited_by']['phone'] }}</p>
+                                        @endif
+                                        @if(!empty($notification->data['favorited_by']['email']))
+                                            <p class="text-slate-600">Email: {{ $notification->data['favorited_by']['email'] }}</p>
+                                        @endif
+                                        @if(!empty($notification->data['favorited_by']['username']))
+                                            <p class="text-slate-600">Username: {{ $notification->data['favorited_by']['username'] }}</p>
+                                        @endif
+                                    </div>
+                                    @if(!empty($notification->data['listing_url']))
+                                        <div class="mt-3 flex gap-2">
+                                            <a href="{{ $notification->data['listing_url'] }}"
+                                               class="inline-flex items-center px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition-colors">
+                                                View Ad
+                                            </a>
+                                            <a href="{{ $notification->data['favorited_by']['profile_url'] ?? '#' }}"
+                                               class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors">
+                                                View Profile
+                                            </a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </li>
                     @endforeach
                 </ul>

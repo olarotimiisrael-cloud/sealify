@@ -292,19 +292,11 @@
                                     <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-xs">
                                         {{ strtoupper(substr($comment->user->name ?? 'U', 0, 1)) }}
                                     </div>
-                                    <div>
-                                        <span class="text-sm font-bold text-slate-900">{{ $comment->user->name ?? 'User' }}</span>
-                                        <p class="text-xs text-slate-400">{{ $comment->created_at->diffForHumans() }}</p>
-                                    </div>
+                                <div>
+                                    <span class="text-sm font-bold text-slate-900">{{ $comment->user->name ?? 'User' }}</span>
+                                    <p class="text-xs text-slate-400">{{ $comment->created_at->diffForHumans() }}</p>
                                 </div>
-                                @auth
-                                    @if ($comment->user_id === auth()->id() || auth()->user()->isAdmin())
-                                        <form method="POST" action="{{ route('comments.destroy', $comment) }}" onsubmit="return confirm('Delete this comment?')" class="inline">
-                                            @csrf @method('DELETE')
-                                            <button class="text-xs text-rose-500 hover:text-rose-700 font-bold">Delete</button>
-                                        </form>
-                                    @endif
-                                @endauth
+                            </div>
                             </div>
                             <p class="text-sm text-slate-600">{{ $comment->content }}</p>
 
