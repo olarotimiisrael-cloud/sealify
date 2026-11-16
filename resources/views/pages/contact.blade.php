@@ -8,7 +8,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 <div class="space-y-4">
                     <p class="text-sm font-medium text-slate-900">Email</p>
-                    <p class="text-slate-600">support@sealify.ng</p>
+                    <p class="text-slate-600">support@sealify.com.ng</p>
                     <p class="text-sm font-medium text-slate-900">Phone</p>
                     <p class="text-slate-600">+234 813 120 8468</p>
                     <p class="text-sm font-medium text-slate-900">Office</p>
