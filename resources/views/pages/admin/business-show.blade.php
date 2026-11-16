@@ -71,9 +71,12 @@
                 <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Instagram</p>
                 <p class="text-sm text-slate-900 font-medium">{{ $user->instagram_handle ?? 'Not set' }}</p>
             </div>
-            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
-                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Twitter</p>
-                <p class="text-sm text-slate-900 font-medium">{{ $user->twitter_handle ?? 'Not set' }}</p>
+<div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Rating</p>
+                <p class="text-sm text-slate-900 font-medium">
+                    @php $br = $user->averageRating(); $brc = $user->reviewCount(); @endphp
+                    {{ number_format($br, 1) }} / 5 ({{ $brc }} review{{ $brc === 1 ? '' : 's' }})
+                </p>
             </div>
         </div>
 

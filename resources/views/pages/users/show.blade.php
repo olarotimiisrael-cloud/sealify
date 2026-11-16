@@ -25,6 +25,10 @@
                     <div class="text-xs text-slate-500">Successful Referrals</div>
                 </div>
                 <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
+                    <div class="text-2xl font-bold text-amber-500">{{ number_format($user->averageRating(), 1) }}</div>
+                    <div class="text-xs text-slate-500">Avg Rating ({{ $user->reviewCount() }} reviews)</div>
+                </div>
+                <div class="p-4 rounded-xl border border-slate-100 bg-slate-50">
                     <div class="text-2xl font-bold text-slate-900">{{ round($referralStatus['progress'] ?? 0) }}%</div>
                     <div class="text-xs text-slate-500">Toward 2-Week Free Promotion</div>
                 </div>

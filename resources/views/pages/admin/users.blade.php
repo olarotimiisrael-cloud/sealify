@@ -45,6 +45,7 @@
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">Status</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">KYC</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm">Listings</th>
+                    <th class="px-6 py-4 font-bold text-slate-900 text-sm">Rating</th>
                     <th class="px-6 py-4 font-bold text-slate-900 text-sm text-right">Actions</th>
                 </tr>
             </thead>
@@ -99,6 +100,18 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 text-sm text-slate-600">{{ $user->listings->count() }}</td>
+                            <td class="px-6 py-4 text-sm text-slate-600">
+                                @php $r = $user->averageRating(); $rc = $user->reviewCount(); @endphp
+                                @if ($rc > 0)
+                                    <div class="flex items-center gap-1">
+                                        <span class="font-bold text-amber-500">{{ number_format($r, 1) }}</span>
+                                        <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
+                                        <span class="text-xs text-slate-400">({{ $rc }})</span>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-slate-400">No ratings</span>
+                                @endif
+                            </td>
 <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
                                 <a href="{{ route('admin.users.edit', $user) }}" class="p-2 rounded-lg hover:bg-slate-100 text-slate-600 transition-colors" title="Edit">
