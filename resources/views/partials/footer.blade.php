@@ -37,8 +37,15 @@
                 <h4 class="text-sm font-black text-slate-700 uppercase tracking-wider">Support &amp; Community</h4>
                 <ul class="space-y-2 text-xs text-slate-800">
                     <li><a href="{{ route('faq') }}" class="hover:text-emerald-600 transition-colors">Help &amp; FAQ</a></li>
+                    <li><a href="{{ route('help-center') }}" class="hover:text-emerald-600 transition-colors">Help Center</a></li>
                     <li><a href="{{ route('contact') }}" class="hover:text-emerald-600 transition-colors">Contact Us</a></li>
                     <li><a href="{{ route('dispute') }}" class="hover:text-emerald-600 transition-colors">File Trade Dispute</a></li>
+                </ul>
+                <h4 class="text-sm font-black text-slate-700 uppercase tracking-wider pt-2">Legal</h4>
+                <ul class="space-y-2 text-xs text-slate-800">
+                    <li><a href="{{ route('terms') }}" class="hover:text-emerald-600 transition-colors">Terms &amp; Conditions</a></li>
+                    <li><a href="{{ route('privacy') }}" class="hover:text-emerald-600 transition-colors">Privacy Policy</a></li>
+                    <li><a href="{{ route('refund-policy') }}" class="hover:text-emerald-600 transition-colors">Refund Policy</a></li>
                 </ul>
             </div>
             <!-- Contact -->

@@ -26,6 +26,9 @@ Route::get('/how-it-works', [WebController::class, 'howItWorks'])->name('how-it-
 Route::get('/contact', [WebController::class, 'contact'])->name('contact');
 Route::get('/faq', [WebController::class, 'faq'])->name('faq');
 Route::get('/help-center', [WebController::class, 'helpCenter'])->name('help-center');
+Route::get('/terms', [WebController::class, 'terms'])->name('terms');
+Route::get('/privacy', [WebController::class, 'privacy'])->name('privacy');
+Route::get('/refund-policy', [WebController::class, 'refundPolicy'])->name('refund-policy');
 Route::get('/market-insights', [WebController::class, 'marketInsights'])->name('market-insights');
 Route::get('/community', [WebController::class, 'community'])->name('community');
 Route::get('/safety', [WebController::class, 'safety'])->name('safety');

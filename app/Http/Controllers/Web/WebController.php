@@ -295,6 +295,9 @@ class WebController extends Controller
     }
     public function faq() { return view('pages.faq'); }
     public function helpCenter() { return view('pages.help-center'); }
+    public function terms() { return view('pages.terms'); }
+    public function privacy() { return view('pages.privacy'); }
+    public function refundPolicy() { return view('pages.refund-policy'); }
     public function marketInsights() { return view('pages.market-insights'); }
     public function community() {
         $posts = CommunityPost::published()->with('author')->orderBy('created_at', 'desc')->get();
