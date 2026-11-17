@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\WebController;
 |--------------------------------------------------------------------------
 */
 
+Route::get('/', [WebController::class, 'home'])->name('home');
 Route::post('/feedback', [WebController::class, 'storeFeedback'])->name('feedback.store');
 
 Route::get('/listings', [WebController::class, 'listings'])->name('listings.index');
