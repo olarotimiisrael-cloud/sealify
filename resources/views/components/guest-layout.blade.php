@@ -68,7 +68,7 @@
 
     @include('partials.footer')
 
-    @stack('scripts')
+    @include('partials.feedback-button')
 
     <script>
         function toggleTheme() {

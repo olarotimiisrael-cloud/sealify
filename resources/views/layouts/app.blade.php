@@ -61,7 +61,7 @@
     </main>
 
     @include('partials.footer')
-    @include('partials.bottom-nav')
+    @include('partials.feedback-button')
 
     <!-- PWA Install Script -->
     <script>

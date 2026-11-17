@@ -10,6 +10,7 @@ use App\Models\CommunityPost;
 use App\Models\Conversation;
 use App\Models\Dispute;
 use App\Models\Favorite;
+use App\Models\Feedback;
 use App\Models\KycVerification;
 use App\Models\NeighborhoodHub;
 use App\Models\Listing;
@@ -1418,6 +1419,55 @@ class WebController extends Controller
     public function adminNeighborhoodHubDestroy(NeighborhoodHub $hub) {
         $hub->delete();
         return back()->with('status', 'Neighborhood hub deleted.');
+    }
+
+    public function storeFeedback(Request $request) {
+        $data = $request->validate([
+            'type' => ['required', 'string', 'in:general,bug,suggestion,complaint'],
+            'message' => ['required', 'string', 'max:2000'],
+        ]);
+
+        Feedback::create([
+            'user_id' => auth()->id(),
+            'name' => auth()->user()->name ?? $request->input('name'),
+            'email' => auth()->user()->email ?? $request->input('email'),
+            'type' => $data['type'],
+            'message' => $data['message'],
+            'page_url' => $request->header('Referer'),
+            'status' => 'pending',
+        ]);
+
+        // Notify admin via email
+        try {
+            $adminEmail = config('mail.admin_email', 'admin@sealify.com.ng');
+            $subject = 'New Feedback Submitted - Sealify';
+            $content = '<h2>New Feedback</h2>' .
+                       '<p><strong>Type:</strong> ' . e($data['type']) . '</p>' .
+                       '<p><strong>Message:</strong> ' . e($data['message']) . '</p>' .
+                       '<p><strong>Page:</strong> ' . e($request->header('Referer')) . '</p>' .
+                       '<p><strong>User:</strong> ' . e(auth()->user()->name ?? 'Guest') . '</p>';
+            $headers = [
+                'From: Sealify Nigeria <noreply@sealify.com.ng>',
+                'Reply-To: support@sealify.com.ng',
+                'MIME-Version: 1.0',
+                'Content-Type: text/html; charset=UTF-8',
+            ];
+            mail($adminEmail, $subject, $content, implode("\r\n", $headers), '-f noreply@sealify.com.ng');
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to notify admin of feedback: ' . $e->getMessage());
+        }
+
+        return back()->with('status', 'Thank you for your feedback!');
+    }
+
+    public function adminFeedback() {
+        $feedbacks = Feedback::with('user')->latest()->paginate(20);
+        return view('pages.admin.feedback', compact('feedbacks'));
+    }
+
+    public function adminFeedbackResolve(Feedback $feedback) {
+        $feedback->update(['status' => 'resolved']);
+        return back()->with('status', 'Feedback marked as resolved.');
     }
 
     public function adminPromotionStop(Promotion $promotion) {

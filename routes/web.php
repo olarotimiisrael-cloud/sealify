@@ -10,7 +10,7 @@ use App\Http\Controllers\Web\WebController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [WebController::class, 'home'])->name('home');
+Route::post('/feedback', [WebController::class, 'storeFeedback'])->name('feedback.store');
 
 Route::get('/listings', [WebController::class, 'listings'])->name('listings.index');
 Route::get('/listings/create', [WebController::class, 'listingCreate'])->name('listings.create');
@@ -189,6 +189,10 @@ Route::get('/neighborhood-hubs', [WebController::class, 'adminNeighborhoodHubs']
 Route::post('/neighborhood-hubs', [WebController::class, 'adminNeighborhoodHubStore'])->name('admin.neighborhood-hubs.store');
 Route::put('/neighborhood-hubs/{hub}', [WebController::class, 'adminNeighborhoodHubUpdate'])->name('admin.neighborhood-hubs.update');
 Route::delete('/neighborhood-hubs/{hub}', [WebController::class, 'adminNeighborhoodHubDestroy'])->name('admin.neighborhood-hubs.destroy');
+
+/* Feedback */
+Route::get('/feedback', [WebController::class, 'adminFeedback'])->name('feedback');
+Route::post('/feedback/{feedback}/resolve', [WebController::class, 'adminFeedbackResolve'])->name('feedback.resolve');
 Route::post('/promotions/{promotion}/stop', [WebController::class, 'adminPromotionStop'])->name('promotions.stop');
 Route::post('/promotions/{promotion}/email', [WebController::class, 'adminPromotionEmail'])->name('promotions.email');
 Route::delete('/promotions/{promotion}', [WebController::class, 'adminPromotionDestroy'])->name('promotions.destroy');
